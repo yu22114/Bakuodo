@@ -1,15 +1,23 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapPin, Clock, Users, Zap, Plus, User, Check, X, Star, Radio, Flame } from "lucide-react";
+import { supabase } from "../lib/supabase";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 type GenreKey = "Breaking" | "Popping" | "Locking" | "Waacking" | "Voguing" | "House" | "Krump" | "Hip-Hop";
 
-interface Organizer { dancer_name: string; avatar: string; }
 interface Cypher {
-  id: string; title: string; starts_at: string; location: string;
-  genres: GenreKey[]; organizer: Organizer; participant_count: number;
-  max_members: number | null; status: string; description: string; hot: boolean;
+  id: string;
+  title: string;
+  starts_at: string;
+  location: string;
+  genres: GenreKey[];
+  organizer: { dancer_name: string; avatar: string };
+  participant_count: number;
+  max_members: number | null;
+  status: string;
+  description: string;
+  hot: boolean;
 }
 interface FormState {
   title: string; date: string; time: string; location: string;
@@ -19,20 +27,11 @@ interface ProfileState { dancer_name: string; genres: GenreKey[]; }
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const GENRES: GenreKey[] = ["Breaking","Popping","Locking","Waacking","Voguing","House","Krump","Hip-Hop"];
-
 const GENRE_COLORS: Record<GenreKey, string> = {
-  Breaking: "#FF3D00", Popping: "#00E5FF", Locking: "#FFD600",
-  Waacking: "#E040FB", Voguing: "#FF4081", House: "#69FF47",
-  Krump: "#FF6D00", "Hip-Hop": "#40C4FF",
+  Breaking:"#FF3D00", Popping:"#00E5FF", Locking:"#FFD600",
+  Waacking:"#E040FB", Voguing:"#FF4081", House:"#69FF47",
+  Krump:"#FF6D00", "Hip-Hop":"#40C4FF",
 };
-
-const MOCK_CYPHERS: Cypher[] = [
-  { id:"1", title:"渋谷地下サイファー", starts_at:"2025-07-05T21:00:00", location:"渋谷駅 ハチ公前広場", genres:["Breaking","Popping"], organizer:{dancer_name:"RYU",avatar:"R"}, participant_count:7, max_members:15, status:"open", description:"毎週土曜の夜戦。初心者歓迎。気軽に来てください。", hot:true },
-  { id:"2", title:"SHIBUYA LOCK SESSION", starts_at:"2025-07-06T18:30:00", location:"代々木公園 ケヤキ並木", genres:["Locking","Waacking"], organizer:{dancer_name:"MIKI",avatar:"M"}, participant_count:4, max_members:10, status:"open", description:"ロッキング特化サイファー。ファンキーな時間を一緒に。", hot:false },
-  { id:"3", title:"VOGUE BALLROOM NIGHT", starts_at:"2025-07-07T22:00:00", location:"新宿 2丁目 CLUB ARC", genres:["Voguing","House"], organizer:{dancer_name:"DIANA",avatar:"D"}, participant_count:12, max_members:20, status:"open", description:"ボールルームスタイル限定。ドレスコードあり。", hot:true },
-  { id:"4", title:"夜の公園 B-BOY SESSION", starts_at:"2025-07-08T19:00:00", location:"上野恩賜公園 噴水前", genres:["Breaking"], organizer:{dancer_name:"TATSU",avatar:"T"}, participant_count:9, max_members:null, status:"open", description:"制限なし。スキルレベル問わず集合。", hot:false },
-  { id:"5", title:"KRUMP BATTLE PRACTICE", starts_at:"2025-07-09T20:00:00", location:"池袋東口 西武前", genres:["Krump","Hip-Hop"], organizer:{dancer_name:"ZERO",avatar:"Z"}, participant_count:3, max_members:8, status:"open", description:"バトル形式で練習。本気勢のみ。", hot:false },
-];
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
 function formatDate(iso: string) {
@@ -68,7 +67,7 @@ function ParticipantBar({ count, max }: { count: number; max: number | null }) {
   return (
     <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
       <div style={{ flex:1, height:"3px", background:"rgba(255,255,255,0.1)", borderRadius:"2px", overflow:"hidden" }}>
-        <div style={{ width:`${pct}%`, height:"100%", background:color, transition:"width 0.6s ease", boxShadow:`0 0 8px ${color}` }} />
+        <div style={{ width:`${pct}%`, height:"100%", background:color, boxShadow:`0 0 8px ${color}` }} />
       </div>
       <span style={{ fontSize:"11px", color, fontFamily:"'Space Mono',monospace", minWidth:"60px", textAlign:"right" }}>
         {count}{max ? `/${max}` : ""} 人
@@ -82,19 +81,16 @@ function CypherCard({ cypher, onClick, joined, onJoin }: { cypher: Cypher; onCli
   const until = timeUntil(cypher.starts_at);
   const [hover, setHover] = useState(false);
   const color = GENRE_COLORS[cypher.genres[0]] ?? "#ffffff";
-
   return (
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{ background:hover?"rgba(255,255,255,0.06)":"rgba(255,255,255,0.03)", border:cypher.hot?"1px solid rgba(255,61,0,0.5)":"1px solid rgba(255,255,255,0.08)", borderRadius:"4px", padding:"16px", cursor:"pointer", transition:"all 0.2s ease", transform:hover?"translateY(-2px)":"none", position:"relative", overflow:"hidden" }}>
-      {cypher.hot && (
-        <div style={{ position:"absolute", top:0, right:0, background:"#FF3D00", padding:"3px 10px", fontSize:"9px", fontFamily:"'Space Mono',monospace", letterSpacing:"0.1em", color:"#fff", fontWeight:"bold" }}>🔥 HOT</div>
-      )}
+      {cypher.hot && <div style={{ position:"absolute", top:0, right:0, background:"#FF3D00", padding:"3px 10px", fontSize:"9px", fontFamily:"'Space Mono',monospace", color:"#fff", fontWeight:"bold" }}>🔥 HOT</div>}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"10px" }}>
         <div style={{ flex:1, paddingRight:"40px" }}>
           <h3 style={{ margin:0, fontSize:"15px", fontWeight:700, color:"#F5F5F5", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.05em", lineHeight:1.2 }}>{cypher.title}</h3>
           <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.4)", marginTop:"2px", fontFamily:"'Space Mono',monospace" }}>by {cypher.organizer.dancer_name}</div>
         </div>
-        <div style={{ width:"36px", height:"36px", borderRadius:"2px", background:`linear-gradient(135deg, ${color}33, transparent)`, border:`1px solid ${color}44`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"14px", fontWeight:"bold", color, fontFamily:"'Bebas Neue',sans-serif", flexShrink:0 }}>
+        <div style={{ width:"36px", height:"36px", borderRadius:"2px", background:`linear-gradient(135deg,${color}33,transparent)`, border:`1px solid ${color}44`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"14px", fontWeight:"bold", color, fontFamily:"'Bebas Neue',sans-serif", flexShrink:0 }}>
           {cypher.organizer.avatar}
         </div>
       </div>
@@ -114,7 +110,7 @@ function CypherCard({ cypher, onClick, joined, onJoin }: { cypher: Cypher; onCli
       </div>
       <ParticipantBar count={cypher.participant_count} max={cypher.max_members} />
       <button onClick={e => { e.stopPropagation(); onJoin(cypher.id); }}
-        style={{ marginTop:"12px", width:"100%", padding:"9px", border:joined?"1px solid rgba(105,255,71,0.5)":"1px solid rgba(255,255,255,0.2)", borderRadius:"2px", background:joined?"rgba(105,255,71,0.1)":"transparent", color:joined?"#69FF47":"rgba(255,255,255,0.7)", fontSize:"11px", fontFamily:"'Space Mono',monospace", letterSpacing:"0.1em", cursor:"pointer", transition:"all 0.2s", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px" }}>
+        style={{ marginTop:"12px", width:"100%", padding:"9px", border:joined?"1px solid rgba(105,255,71,0.5)":"1px solid rgba(255,255,255,0.2)", borderRadius:"2px", background:joined?"rgba(105,255,71,0.1)":"transparent", color:joined?"#69FF47":"rgba(255,255,255,0.7)", fontSize:"11px", fontFamily:"'Space Mono',monospace", letterSpacing:"0.1em", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px" }}>
         {joined ? <><Check size={12} /> JOINED</> : <><Plus size={12} /> JUMP IN</>}
       </button>
     </div>
@@ -128,8 +124,8 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
     <div style={{ position:"fixed", inset:0, zIndex:100, background:"rgba(0,0,0,0.85)", backdropFilter:"blur(8px)", display:"flex", alignItems:"flex-end" }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{ width:"100%", maxWidth:"480px", margin:"0 auto", background:"#111", border:"1px solid rgba(255,255,255,0.12)", borderBottom:"none", borderRadius:"8px 8px 0 0", padding:"24px 20px 40px" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"20px" }}>
-          <h2 style={{ margin:0, fontSize:"24px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.05em", color:"#F5F5F5", lineHeight:1.1 }}>{cypher.title}</h2>
-          <button onClick={onClose} style={{ background:"none", border:"none", color:"rgba(255,255,255,0.5)", cursor:"pointer", padding:"4px" }}><X size={20} /></button>
+          <h2 style={{ margin:0, fontSize:"24px", fontFamily:"'Bebas Neue',sans-serif", color:"#F5F5F5", lineHeight:1.1 }}>{cypher.title}</h2>
+          <button onClick={onClose} style={{ background:"none", border:"none", color:"rgba(255,255,255,0.5)", cursor:"pointer" }}><X size={20} /></button>
         </div>
         <div style={{ display:"flex", flexWrap:"wrap", gap:"6px", marginBottom:"16px" }}>
           {cypher.genres.map(g => <GenreBadge key={g} genre={g} size="md" />)}
@@ -150,9 +146,56 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
   );
 }
 
+// ─── TOP SCREEN ───────────────────────────────────────────────────────────────
 function TopScreen({ onNav, joined, onJoin, onCardClick }: { onNav: (s: string) => void; joined: string[]; onJoin: (id: string) => void; onCardClick: (c: Cypher) => void }) {
   const [filter, setFilter] = useState<GenreKey | "ALL">("ALL");
-  const filtered = filter === "ALL" ? MOCK_CYPHERS : MOCK_CYPHERS.filter(c => c.genres.includes(filter));
+  const [cyphers, setCyphers] = useState<Cypher[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchCyphers() {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("cyphers")
+        .select(`
+          id, title, starts_at, location, description, max_members, status,
+          profiles:organizer_id ( dancer_name ),
+          cypher_genres ( genres:genre_id ( name ) ),
+          participations ( count )
+        `)
+        .eq("status", "open")
+        .order("starts_at");
+
+      if (error) { console.error(error); setLoading(false); return; }
+
+      const shaped: Cypher[] = (data ?? []).map((row: any) => {
+        const name = row.profiles?.dancer_name ?? "UNKNOWN";
+        const genres: GenreKey[] = (row.cypher_genres ?? [])
+          .map((cg: any) => cg.genres?.name as GenreKey)
+          .filter(Boolean);
+        const count = row.participations?.[0]?.count ?? 0;
+        return {
+          id: row.id,
+          title: row.title,
+          starts_at: row.starts_at,
+          location: row.location,
+          description: row.description ?? "",
+          max_members: row.max_members,
+          status: row.status,
+          genres,
+          organizer: { dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?" },
+          participant_count: Number(count),
+          hot: Number(count) >= 5,
+        };
+      });
+      setCyphers(shaped);
+      setLoading(false);
+    }
+    fetchCyphers();
+  }, []);
+
+  const filtered = filter === "ALL" ? cyphers : cyphers.filter(c => c.genres.includes(filter));
+
   return (
     <div style={{ paddingBottom:"80px" }}>
       <div style={{ padding:"32px 16px 20px", borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
@@ -178,25 +221,85 @@ function TopScreen({ onNav, joined, onJoin, onCardClick }: { onNav: (s: string) 
         ))}
       </div>
       <div style={{ display:"flex", flexDirection:"column", gap:"8px", padding:"12px 16px" }}>
-        {filtered.map(c => <CypherCard key={c.id} cypher={c} onClick={() => onCardClick(c)} joined={joined.includes(c.id)} onJoin={onJoin} />)}
+        {loading ? (
+          <div style={{ textAlign:"center", padding:"40px", color:"rgba(255,255,255,0.3)", fontFamily:"'Space Mono',monospace", fontSize:"12px" }}>
+            LOADING...
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={{ textAlign:"center", padding:"40px", color:"rgba(255,255,255,0.3)", fontFamily:"'Space Mono',monospace", fontSize:"12px" }}>
+            まだサイファーがありません。最初に作ろう！
+          </div>
+        ) : (
+          filtered.map(c => <CypherCard key={c.id} cypher={c} onClick={() => onCardClick(c)} joined={joined.includes(c.id)} onJoin={onJoin} />)
+        )}
       </div>
     </div>
   );
 }
 
+// ─── POST SCREEN ──────────────────────────────────────────────────────────────
 function PostScreen({ onNav }: { onNav: (s: string) => void }) {
   const [form, setForm] = useState<FormState>({ title:"", date:"", time:"", location:"", genres:[], description:"", max_members:"" });
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const toggleGenre = (g: GenreKey) => setForm(f => ({ ...f, genres: f.genres.includes(g) ? f.genres.filter(x => x !== g) : [...f.genres, g] }));
-  const handleSubmit = () => { if (!form.title||!form.date||!form.location) return; setSubmitted(true); setTimeout(()=>onNav("top"),1800); };
+
+  const handleSubmit = async () => {
+    if (!form.title || !form.date || !form.location) return;
+    setLoading(true);
+    setError("");
+
+    const starts_at = form.time
+      ? `${form.date}T${form.time}:00`
+      : `${form.date}T00:00:00`;
+
+    // ① サイファー本体を挿入（organizer_idはnullで仮投稿）
+    const { data: cypher, error: cErr } = await supabase
+      .from("cyphers")
+      .insert({
+        title: form.title,
+        location: form.location,
+        description: form.description,
+        starts_at,
+        max_members: form.max_members ? Number(form.max_members) : null,
+        organizer_id: null,
+      })
+      .select()
+      .single();
+
+    if (cErr || !cypher) { setError("投稿に失敗しました。もう一度お試しください。"); setLoading(false); return; }
+
+    // ② ジャンルを紐付け
+    if (form.genres.length > 0) {
+      const { data: genreRows } = await supabase
+        .from("genres")
+        .select("id, name")
+        .in("name", form.genres);
+
+      if (genreRows && genreRows.length > 0) {
+        await supabase.from("cypher_genres").insert(
+          genreRows.map((g: any) => ({ cypher_id: cypher.id, genre_id: g.id }))
+        );
+      }
+    }
+
+    setLoading(false);
+    setSubmitted(true);
+    setTimeout(() => onNav("top"), 1800);
+  };
+
   const inp: React.CSSProperties = { width:"100%", padding:"10px 12px", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"2px", color:"#F5F5F5", fontSize:"14px", fontFamily:"'Space Mono',monospace", outline:"none", boxSizing:"border-box" };
   const lbl: React.CSSProperties = { display:"block", fontSize:"9px", fontFamily:"'Space Mono',monospace", letterSpacing:"0.15em", color:"rgba(255,255,255,0.4)", marginBottom:"6px", textTransform:"uppercase" };
+
   if (submitted) return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", minHeight:"70vh", gap:"16px" }}>
       <div style={{ width:"72px", height:"72px", borderRadius:"50%", background:"rgba(105,255,71,0.1)", border:"2px solid #69FF47", display:"flex", alignItems:"center", justifyContent:"center" }}><Check size={32} color="#69FF47" /></div>
       <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"28px", color:"#69FF47", margin:0 }}>POSTED!</p>
     </div>
   );
+
   return (
     <div style={{ paddingBottom:"80px" }}>
       <div style={{ padding:"24px 16px 16px", borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
@@ -204,6 +307,7 @@ function PostScreen({ onNav }: { onNav: (s: string) => void }) {
         <h2 style={{ margin:0, fontFamily:"'Bebas Neue',sans-serif", fontSize:"32px", color:"#F5F5F5" }}>サイファーを作る</h2>
       </div>
       <div style={{ padding:"20px 16px", display:"flex", flexDirection:"column", gap:"16px" }}>
+        {error && <div style={{ padding:"10px 12px", background:"rgba(255,61,0,0.1)", border:"1px solid rgba(255,61,0,0.3)", borderRadius:"2px", color:"#FF3D00", fontSize:"12px", fontFamily:"'Space Mono',monospace" }}>{error}</div>}
         <div><label style={lbl}>イベント名 *</label><input style={inp} placeholder="例: 渋谷夜間サイファー" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} /></div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px" }}>
           <div><label style={lbl}>日付 *</label><input type="date" style={inp} value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))} /></div>
@@ -220,14 +324,17 @@ function PostScreen({ onNav }: { onNav: (s: string) => void }) {
         </div>
         <div><label style={lbl}>詳細説明</label><textarea style={{...inp,minHeight:"80px",resize:"vertical"} as React.CSSProperties} placeholder="参加者へのメッセージ..." value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} /></div>
         <div><label style={lbl}>参加定員</label><input style={inp} type="number" placeholder="空欄 = 無制限" value={form.max_members} onChange={e=>setForm(f=>({...f,max_members:e.target.value}))} /></div>
-        <button onClick={handleSubmit} style={{ width:"100%", padding:"14px", border:"none", borderRadius:"2px", background:form.title&&form.date&&form.location?"linear-gradient(135deg,#FF3D00,#FF6D00)":"rgba(255,255,255,0.06)", color:form.title&&form.date&&form.location?"#fff":"rgba(255,255,255,0.3)", fontSize:"15px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:form.title&&form.date&&form.location?"pointer":"not-allowed" }}>
-          <Zap size={15} style={{ display:"inline", marginRight:"8px", verticalAlign:"middle" }} />サイファーを投稿する
+        <button onClick={handleSubmit} disabled={loading}
+          style={{ width:"100%", padding:"14px", border:"none", borderRadius:"2px", background:form.title&&form.date&&form.location?"linear-gradient(135deg,#FF3D00,#FF6D00)":"rgba(255,255,255,0.06)", color:form.title&&form.date&&form.location?"#fff":"rgba(255,255,255,0.3)", fontSize:"15px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:form.title&&form.date&&form.location?"pointer":"not-allowed", opacity:loading?0.6:1 }}>
+          <Zap size={15} style={{ display:"inline", marginRight:"8px", verticalAlign:"middle" }} />
+          {loading ? "投稿中..." : "サイファーを投稿する"}
         </button>
       </div>
     </div>
   );
 }
 
+// ─── PROFILE SCREEN ───────────────────────────────────────────────────────────
 function ProfileScreen() {
   const [profile, setProfile] = useState<ProfileState>({ dancer_name:"", genres:[] });
   const [saved, setSaved] = useState(false);
@@ -270,6 +377,7 @@ function ProfileScreen() {
   );
 }
 
+// ─── BOTTOM NAV ───────────────────────────────────────────────────────────────
 function BottomNav({ current, onNav }: { current: string; onNav: (s: string) => void }) {
   const items = [{id:"top",icon:<Flame size={20}/>,label:"CYPHER"},{id:"post",icon:<Plus size={20}/>,label:"POST"},{id:"profile",icon:<User size={20}/>,label:"ME"}];
   return (
@@ -286,6 +394,7 @@ function BottomNav({ current, onNav }: { current: string; onNav: (s: string) => 
   );
 }
 
+// ─── APP ──────────────────────────────────────────────────────────────────────
 export default function BakuOdori() {
   const [screen, setScreen] = useState("top");
   const [joined, setJoined] = useState<string[]>([]);
