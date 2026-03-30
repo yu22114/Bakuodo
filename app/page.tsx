@@ -1,23 +1,17 @@
 "use client";
 import { useState, useEffect } from "react";
-import { MapPin, Clock, Users, Zap, Plus, User, Check, X, Star, Radio, Flame } from "lucide-react";
+import { MapPin, Clock, Users, Zap, Plus, User, Check, X, Star, Radio, Flame, LogOut } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 type GenreKey = "Breaking" | "Popping" | "Locking" | "Waacking" | "Voguing" | "House" | "Krump" | "Hip-Hop";
 
 interface Cypher {
-  id: string;
-  title: string;
-  starts_at: string;
-  location: string;
-  genres: GenreKey[];
-  organizer: { dancer_name: string; avatar: string };
-  participant_count: number;
-  max_members: number | null;
-  status: string;
-  description: string;
-  hot: boolean;
+  id: string; title: string; starts_at: string; location: string;
+  genres: GenreKey[]; organizer: { dancer_name: string; avatar: string };
+  participant_count: number; max_members: number | null;
+  status: string; description: string; hot: boolean;
 }
 interface FormState {
   title: string; date: string; time: string; location: string;
@@ -49,6 +43,50 @@ function timeUntil(iso: string) {
   if (d > 0) return `${d}日後`;
   if (h > 0) return `${h}時間後`;
   return "まもなく";
+}
+
+// ─── LOGIN SCREEN ─────────────────────────────────────────────────────────────
+function LoginScreen() {
+  const [loading, setLoading] = useState(false);
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: typeof window !== "undefined" ? window.location.origin : "",
+      },
+    });
+  };
+
+  return (
+    <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"24px", background:"#0a0a0a" }}>
+      {/* Logo */}
+      <div style={{ marginBottom:"48px", textAlign:"center" }}>
+        <h1 style={{ margin:0, fontSize:"72px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.1em", background:"linear-gradient(135deg,#FF3D00,#FF6D00,#FFD600)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text", lineHeight:1 }}>爆踊</h1>
+        <p style={{ margin:"8px 0 0", fontSize:"12px", color:"rgba(255,255,255,0.4)", fontFamily:"'Space Mono',monospace", letterSpacing:"0.1em" }}>今日、ここで、踊ろう。</p>
+      </div>
+
+      {/* Google Login Button */}
+      <button
+        onClick={handleGoogleLogin}
+        disabled={loading}
+        style={{ display:"flex", alignItems:"center", gap:"12px", padding:"14px 24px", background:"#fff", border:"none", borderRadius:"4px", cursor:loading?"not-allowed":"pointer", opacity:loading?0.7:1, fontSize:"14px", fontFamily:"'Space Mono',monospace", fontWeight:"bold", color:"#111", width:"100%", maxWidth:"320px", justifyContent:"center", transition:"all 0.2s" }}>
+        {/* Google Icon */}
+        <svg width="18" height="18" viewBox="0 0 18 18">
+          <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/>
+          <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/>
+          <path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/>
+          <path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z"/>
+        </svg>
+        {loading ? "ログイン中..." : "Googleでログイン"}
+      </button>
+
+      <p style={{ marginTop:"24px", fontSize:"10px", color:"rgba(255,255,255,0.2)", fontFamily:"'Space Mono',monospace", textAlign:"center", lineHeight:1.8 }}>
+        ログインすることで利用規約に<br/>同意したものとみなします
+      </p>
+    </div>
+  );
 }
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
@@ -147,7 +185,7 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
 }
 
 // ─── TOP SCREEN ───────────────────────────────────────────────────────────────
-function TopScreen({ onNav, joined, onJoin, onCardClick }: { onNav: (s: string) => void; joined: string[]; onJoin: (id: string) => void; onCardClick: (c: Cypher) => void }) {
+function TopScreen({ onNav, joined, onJoin, onCardClick, user }: { onNav: (s: string) => void; joined: string[]; onJoin: (id: string) => void; onCardClick: (c: Cypher) => void; user: SupabaseUser }) {
   const [filter, setFilter] = useState<GenreKey | "ALL">("ALL");
   const [cyphers, setCyphers] = useState<Cypher[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,28 +203,12 @@ function TopScreen({ onNav, joined, onJoin, onCardClick }: { onNav: (s: string) 
         `)
         .eq("status", "open")
         .order("starts_at");
-
       if (error) { console.error(error); setLoading(false); return; }
-
       const shaped: Cypher[] = (data ?? []).map((row: any) => {
         const name = row.profiles?.dancer_name ?? "UNKNOWN";
-        const genres: GenreKey[] = (row.cypher_genres ?? [])
-          .map((cg: any) => cg.genres?.name as GenreKey)
-          .filter(Boolean);
+        const genres: GenreKey[] = (row.cypher_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
         const count = row.participations?.[0]?.count ?? 0;
-        return {
-          id: row.id,
-          title: row.title,
-          starts_at: row.starts_at,
-          location: row.location,
-          description: row.description ?? "",
-          max_members: row.max_members,
-          status: row.status,
-          genres,
-          organizer: { dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?" },
-          participant_count: Number(count),
-          hot: Number(count) >= 5,
-        };
+        return { id:row.id, title:row.title, starts_at:row.starts_at, location:row.location, description:row.description??"", max_members:row.max_members, status:row.status, genres, organizer:{ dancer_name:name, avatar:name[0]?.toUpperCase()??"?" }, participant_count:Number(count), hot:Number(count)>=5 };
       });
       setCyphers(shaped);
       setLoading(false);
@@ -199,9 +221,19 @@ function TopScreen({ onNav, joined, onJoin, onCardClick }: { onNav: (s: string) 
   return (
     <div style={{ paddingBottom:"80px" }}>
       <div style={{ padding:"32px 16px 20px", borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
-        <div style={{ fontSize:"10px", fontFamily:"'Space Mono',monospace", color:"rgba(255,255,255,0.3)", letterSpacing:"0.2em", marginBottom:"6px" }}>▶ LIVE SESSIONS</div>
-        <h1 style={{ margin:0, fontSize:"42px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.1em", background:"linear-gradient(135deg,#FF3D00,#FF6D00,#FFD600)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text", lineHeight:1 }}>爆踊</h1>
-        <p style={{ margin:"6px 0 0", fontSize:"11px", color:"rgba(255,255,255,0.4)", fontFamily:"'Space Mono',monospace" }}>今日、ここで、踊ろう。</p>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+          <div>
+            <div style={{ fontSize:"10px", fontFamily:"'Space Mono',monospace", color:"rgba(255,255,255,0.3)", letterSpacing:"0.2em", marginBottom:"6px" }}>▶ LIVE SESSIONS</div>
+            <h1 style={{ margin:0, fontSize:"42px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.1em", background:"linear-gradient(135deg,#FF3D00,#FF6D00,#FFD600)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text", lineHeight:1 }}>爆踊</h1>
+            <p style={{ margin:"6px 0 0", fontSize:"11px", color:"rgba(255,255,255,0.4)", fontFamily:"'Space Mono',monospace" }}>今日、ここで、踊ろう。</p>
+          </div>
+          {/* ユーザーアバター */}
+          <div style={{ display:"flex", alignItems:"center", gap:"8px", marginTop:"8px" }}>
+            {user.user_metadata?.avatar_url && (
+              <img src={user.user_metadata.avatar_url} alt="avatar" style={{ width:"32px", height:"32px", borderRadius:"50%", border:"1px solid rgba(255,255,255,0.2)" }} />
+            )}
+          </div>
+        </div>
       </div>
       <div style={{ display:"flex", gap:"6px", padding:"12px 16px", overflowX:"auto", scrollbarWidth:"none", borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
         {(["ALL", ...GENRES] as (GenreKey | "ALL")[]).slice(0,7).map(g => (
@@ -222,13 +254,9 @@ function TopScreen({ onNav, joined, onJoin, onCardClick }: { onNav: (s: string) 
       </div>
       <div style={{ display:"flex", flexDirection:"column", gap:"8px", padding:"12px 16px" }}>
         {loading ? (
-          <div style={{ textAlign:"center", padding:"40px", color:"rgba(255,255,255,0.3)", fontFamily:"'Space Mono',monospace", fontSize:"12px" }}>
-            LOADING...
-          </div>
+          <div style={{ textAlign:"center", padding:"40px", color:"rgba(255,255,255,0.3)", fontFamily:"'Space Mono',monospace", fontSize:"12px" }}>LOADING...</div>
         ) : filtered.length === 0 ? (
-          <div style={{ textAlign:"center", padding:"40px", color:"rgba(255,255,255,0.3)", fontFamily:"'Space Mono',monospace", fontSize:"12px" }}>
-            まだサイファーがありません。最初に作ろう！
-          </div>
+          <div style={{ textAlign:"center", padding:"40px", color:"rgba(255,255,255,0.3)", fontFamily:"'Space Mono',monospace", fontSize:"12px" }}>まだサイファーがありません。最初に作ろう！</div>
         ) : (
           filtered.map(c => <CypherCard key={c.id} cypher={c} onClick={() => onCardClick(c)} joined={joined.includes(c.id)} onJoin={onJoin} />)
         )}
@@ -238,55 +266,29 @@ function TopScreen({ onNav, joined, onJoin, onCardClick }: { onNav: (s: string) 
 }
 
 // ─── POST SCREEN ──────────────────────────────────────────────────────────────
-function PostScreen({ onNav }: { onNav: (s: string) => void }) {
+function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: SupabaseUser }) {
   const [form, setForm] = useState<FormState>({ title:"", date:"", time:"", location:"", genres:[], description:"", max_members:"" });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const toggleGenre = (g: GenreKey) => setForm(f => ({ ...f, genres: f.genres.includes(g) ? f.genres.filter(x => x !== g) : [...f.genres, g] }));
 
   const handleSubmit = async () => {
     if (!form.title || !form.date || !form.location) return;
-    setLoading(true);
-    setError("");
-
-    const starts_at = form.time
-      ? `${form.date}T${form.time}:00`
-      : `${form.date}T00:00:00`;
-
-    // ① サイファー本体を挿入（organizer_idはnullで仮投稿）
+    setLoading(true); setError("");
+    const starts_at = form.time ? `${form.date}T${form.time}:00` : `${form.date}T00:00:00`;
     const { data: cypher, error: cErr } = await supabase
       .from("cyphers")
-      .insert({
-        title: form.title,
-        location: form.location,
-        description: form.description,
-        starts_at,
-        max_members: form.max_members ? Number(form.max_members) : null,
-        organizer_id: null,
-      })
-      .select()
-      .single();
-
-    if (cErr || !cypher) { setError("投稿に失敗しました。もう一度お試しください。"); setLoading(false); return; }
-
-    // ② ジャンルを紐付け
+      .insert({ title:form.title, location:form.location, description:form.description, starts_at, max_members:form.max_members?Number(form.max_members):null, organizer_id:user.id })
+      .select().single();
+    if (cErr || !cypher) { setError("投稿に失敗しました。"); setLoading(false); return; }
     if (form.genres.length > 0) {
-      const { data: genreRows } = await supabase
-        .from("genres")
-        .select("id, name")
-        .in("name", form.genres);
-
+      const { data: genreRows } = await supabase.from("genres").select("id,name").in("name", form.genres);
       if (genreRows && genreRows.length > 0) {
-        await supabase.from("cypher_genres").insert(
-          genreRows.map((g: any) => ({ cypher_id: cypher.id, genre_id: g.id }))
-        );
+        await supabase.from("cypher_genres").insert(genreRows.map((g: any) => ({ cypher_id:cypher.id, genre_id:g.id })));
       }
     }
-
-    setLoading(false);
-    setSubmitted(true);
+    setLoading(false); setSubmitted(true);
     setTimeout(() => onNav("top"), 1800);
   };
 
@@ -335,10 +337,13 @@ function PostScreen({ onNav }: { onNav: (s: string) => void }) {
 }
 
 // ─── PROFILE SCREEN ───────────────────────────────────────────────────────────
-function ProfileScreen() {
+function ProfileScreen({ user }: { user: SupabaseUser }) {
   const [profile, setProfile] = useState<ProfileState>({ dancer_name:"", genres:[] });
   const [saved, setSaved] = useState(false);
   const toggleGenre = (g: GenreKey) => { setProfile(p=>({...p,genres:p.genres.includes(g)?p.genres.filter(x=>x!==g):[...p.genres,g]})); setSaved(false); };
+
+  const handleSignOut = async () => { await supabase.auth.signOut(); };
+
   return (
     <div style={{ paddingBottom:"80px" }}>
       <div style={{ padding:"24px 16px 16px", borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
@@ -346,15 +351,18 @@ function ProfileScreen() {
         <h2 style={{ margin:0, fontFamily:"'Bebas Neue',sans-serif", fontSize:"32px", color:"#F5F5F5" }}>ダンサー設定</h2>
       </div>
       <div style={{ padding:"20px 16px", display:"flex", flexDirection:"column", gap:"24px" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:"16px" }}>
-          <div style={{ width:"64px", height:"64px", borderRadius:"4px", background:"linear-gradient(135deg,#FF3D00,#FF6D00)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"28px", fontFamily:"'Bebas Neue',sans-serif", color:"#fff" }}>
-            {profile.dancer_name?profile.dancer_name[0].toUpperCase():"?"}
+        {/* Googleアカウント情報 */}
+        <div style={{ display:"flex", alignItems:"center", gap:"12px", padding:"12px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:"4px" }}>
+          {user.user_metadata?.avatar_url && <img src={user.user_metadata.avatar_url} alt="avatar" style={{ width:"40px", height:"40px", borderRadius:"50%" }} />}
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:"12px", color:"#F5F5F5", fontFamily:"'Space Mono',monospace" }}>{user.user_metadata?.full_name ?? user.email}</div>
+            <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.3)", fontFamily:"'Space Mono',monospace" }}>{user.email}</div>
           </div>
-          <div>
-            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"22px", color:"#F5F5F5" }}>{profile.dancer_name||"YOUR NAME"}</div>
-            <div style={{ fontSize:"10px", fontFamily:"'Space Mono',monospace", color:"rgba(255,255,255,0.3)" }}>{profile.genres.length>0?profile.genres.join(" · "):"No genres set"}</div>
-          </div>
+          <button onClick={handleSignOut} style={{ background:"none", border:"1px solid rgba(255,255,255,0.15)", borderRadius:"2px", color:"rgba(255,255,255,0.4)", cursor:"pointer", padding:"6px 8px", display:"flex", alignItems:"center", gap:"4px", fontSize:"10px", fontFamily:"'Space Mono',monospace" }}>
+            <LogOut size={12} /> ログアウト
+          </button>
         </div>
+
         <div>
           <label style={{ display:"block", fontSize:"9px", fontFamily:"'Space Mono',monospace", letterSpacing:"0.15em", color:"rgba(255,255,255,0.4)", marginBottom:"6px", textTransform:"uppercase" as const }}>ダンサーネーム</label>
           <input style={{ width:"100%", padding:"10px 12px", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"2px", color:"#F5F5F5", fontSize:"16px", fontFamily:"'Bebas Neue',sans-serif", outline:"none", boxSizing:"border-box" as const }} placeholder="DANCER NAME" value={profile.dancer_name} onChange={e=>{setProfile(p=>({...p,dancer_name:e.target.value}));setSaved(false);}} />
@@ -399,7 +407,24 @@ export default function BakuOdori() {
   const [screen, setScreen] = useState("top");
   const [joined, setJoined] = useState<string[]>([]);
   const [detail, setDetail] = useState<Cypher | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    // 初期セッション確認
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
+      setAuthLoading(false);
+    });
+    // 認証状態の変化を監視
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   const handleJoin = (id: string) => setJoined(j => j.includes(id) ? j.filter(x => x !== id) : [...j, id]);
+
   return (
     <>
       <style>{`
@@ -410,12 +435,23 @@ export default function BakuOdori() {
         input[type="date"],input[type="time"]{color-scheme:dark}
         textarea{font-family:inherit}
       `}</style>
+
       <div style={{ maxWidth:"480px", margin:"0 auto", minHeight:"100vh", background:"#0a0a0a" }}>
-        {screen==="top"     && <TopScreen onNav={setScreen} joined={joined} onJoin={handleJoin} onCardClick={setDetail}/>}
-        {screen==="post"    && <PostScreen onNav={setScreen}/>}
-        {screen==="profile" && <ProfileScreen/>}
-        <BottomNav current={screen} onNav={setScreen}/>
-        {detail && <DetailModal cypher={detail} onClose={()=>setDetail(null)} joined={joined.includes(detail.id)} onJoin={handleJoin}/>}
+        {authLoading ? (
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh" }}>
+            <div style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"24px", color:"rgba(255,255,255,0.3)", letterSpacing:"0.2em" }}>LOADING...</div>
+          </div>
+        ) : !user ? (
+          <LoginScreen />
+        ) : (
+          <>
+            {screen==="top"     && <TopScreen onNav={setScreen} joined={joined} onJoin={handleJoin} onCardClick={setDetail} user={user}/>}
+            {screen==="post"    && <PostScreen onNav={setScreen} user={user}/>}
+            {screen==="profile" && <ProfileScreen user={user}/>}
+            <BottomNav current={screen} onNav={setScreen}/>
+            {detail && <DetailModal cypher={detail} onClose={()=>setDetail(null)} joined={joined.includes(detail.id)} onJoin={handleJoin}/>}
+          </>
+        )}
       </div>
     </>
   );
