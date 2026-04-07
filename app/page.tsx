@@ -494,15 +494,27 @@ export default function BakuOdori() {
   const [authLoading, setAuthLoading] = useState(true);
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
+  // ログイン時にprofilesレコードを自動作成（存在しない場合のみ）
+  const ensureProfile = async (u: SupabaseUser) => {
+    await supabase.from("profiles").upsert(
+      { id: u.id, dancer_name: u.user_metadata?.full_name ?? "" },
+      { onConflict: "id", ignoreDuplicates: true }
+    );
+  };
+
   useEffect(() => {
     // 初期セッション確認
     supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
+      const u = data.session?.user ?? null;
+      setUser(u);
+      if (u) ensureProfile(u);
       setAuthLoading(false);
     });
     // 認証状態の変化を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) ensureProfile(u);
     });
     return () => subscription.unsubscribe();
   }, []);
