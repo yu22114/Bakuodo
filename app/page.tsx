@@ -323,7 +323,7 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
       .from("cyphers")
       .insert({ title:form.title, location:form.location, description:form.description, starts_at, max_members:form.max_members?Number(form.max_members):null, organizer_id:user.id })
       .select().single();
-    if (cErr || !cypher) { setError("投稿に失敗しました。"); setLoading(false); return; }
+    if (cErr || !cypher) { console.error("cypher insert error:", cErr); setError(`投稿に失敗しました。エラー: ${cErr?.message ?? "不明"}`); setLoading(false); return; }
     if (form.genres.length > 0) {
       const { data: genreRows } = await supabase.from("genres").select("id,name").in("name", form.genres);
       if (genreRows && genreRows.length > 0) {
