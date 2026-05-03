@@ -9,7 +9,7 @@ type GenreKey = "Breaking" | "Popping" | "Locking" | "Waacking" | "House" | "Kru
 
 interface Cypher {
   id: string; title: string; starts_at: string; location: string;
-  genres: GenreKey[]; organizer: { dancer_name: string; avatar: string };
+  genres: GenreKey[]; organizer: { id: string; dancer_name: string; avatar: string };
   participant_count: number; max_members: number | null;
   status: string; description: string; hot: boolean;
 }
@@ -227,8 +227,9 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
   const isEnded = timeUntil(cypher.starts_at) === "終了";
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [selectedParticipant, setSelectedParticipant] = useState<ParticipantProfile | null>(null);
+  const [organizerProfile, setOrganizerProfile] = useState<ParticipantProfile | null>(null);
 
-  // 参加者一覧をDBから取得
+  // 参加者一覧をDBから取得（joined変化時にも再取得）
   useEffect(() => {
     async function fetchParticipants() {
       const { data } = await supabase
@@ -250,6 +251,29 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
     fetchParticipants();
   }, [cypher.id, joined]);
 
+  // 主催者のプロフィールをDBから取得
+  useEffect(() => {
+    async function fetchOrganizer() {
+      const { data } = await supabase
+        .from("profiles")
+        .select("dancer_name, genres, instagram, dance_years, age_group, gender")
+        .eq("id", cypher.organizer.id)
+        .single();
+      if (data) {
+        setOrganizerProfile({
+          profile_id: cypher.organizer.id,
+          dancer_name: data.dancer_name ?? "UNKNOWN",
+          genres: (data.genres ?? []) as GenreKey[],
+          instagram: data.instagram ?? null,
+          dance_years: data.dance_years ?? null,
+          age_group: data.age_group ?? null,
+          gender: data.gender ?? null,
+        });
+      }
+    }
+    fetchOrganizer();
+  }, [cypher.organizer.id]);
+
   return (
     <div style={{ position:"fixed", inset:0, zIndex:100, background:"rgba(0,0,0,0.4)", backdropFilter:"blur(4px)", display:"flex", alignItems:"flex-end" }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{ width:"100%", maxWidth:"480px", margin:"0 auto", background:"#FFFFFF", border:"1px solid rgba(0,0,0,0.08)", borderBottom:"none", borderRadius:"12px 12px 0 0", padding:"24px 20px 40px", boxShadow:"0 -4px 24px rgba(0,0,0,0.1)" }}>
@@ -263,7 +287,11 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
         <div style={{ display:"flex", flexDirection:"column", gap:"8px", marginBottom:"16px" }}>
           <div style={{ display:"flex", gap:"10px", fontSize:"13px", color:"rgba(0,0,0,0.65)", fontFamily:"'Space Mono',monospace", alignItems:"center" }}><Clock size={14} color="rgba(0,0,0,0.4)" /> {date} {time}</div>
           <div style={{ display:"flex", gap:"10px", fontSize:"13px", color:"rgba(0,0,0,0.65)", fontFamily:"'Space Mono',monospace", alignItems:"center" }}><MapPin size={14} color="rgba(0,0,0,0.4)" /> {cypher.location}</div>
-          <div style={{ display:"flex", gap:"10px", fontSize:"13px", color:"rgba(0,0,0,0.65)", fontFamily:"'Space Mono',monospace", alignItems:"center" }}><User size={14} color="rgba(0,0,0,0.4)" /> 主催: {cypher.organizer.dancer_name}</div>
+          {/* 主催者名クリックでプロフィール表示 */}
+          <button onClick={() => organizerProfile && setSelectedParticipant(organizerProfile)}
+            style={{ display:"flex", gap:"10px", fontSize:"13px", color:"rgba(0,0,0,0.65)", fontFamily:"'Space Mono',monospace", alignItems:"center", background:"none", border:"none", cursor:organizerProfile?"pointer":"default", padding:0, textAlign:"left", textDecoration:organizerProfile?"underline dotted":"none", textUnderlineOffset:"3px" }}>
+            <User size={14} color="rgba(0,0,0,0.4)" /> 主催: {cypher.organizer.dancer_name}
+          </button>
         </div>
         {cypher.description && <p style={{ fontSize:"13px", color:"rgba(0,0,0,0.55)", lineHeight:1.7, marginBottom:"20px", fontFamily:"'Space Mono',monospace" }}>{cypher.description}</p>}
         <ParticipantBar count={cypher.participant_count} max={cypher.max_members} />
@@ -302,7 +330,7 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
 }
 
 // ─── TOP SCREEN ───────────────────────────────────────────────────────────────
-function TopScreen({ onNav, onCardClick, user }: { onNav: (s: string) => void; onCardClick: (c: Cypher) => void; user: SupabaseUser }) {
+function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName }: { onNav: (s: string) => void; onCardClick: (c: Cypher) => void; user: SupabaseUser; refreshKey: number; dancerName: string }) {
   const [filter, setFilter] = useState<GenreKey | "ALL">("ALL");
   const [cyphers, setCyphers] = useState<Cypher[]>([]);
   const [loading, setLoading] = useState(true);
@@ -313,7 +341,7 @@ function TopScreen({ onNav, onCardClick, user }: { onNav: (s: string) => void; o
       const { data, error } = await supabase
         .from("cyphers")
         .select(`
-          id, title, starts_at, location, description, max_members, status,
+          id, title, organizer_id, starts_at, location, description, max_members, status,
           profiles:organizer_id ( dancer_name ),
           cypher_genres ( genres:genre_id ( name ) ),
           participations ( count )
@@ -324,13 +352,13 @@ function TopScreen({ onNav, onCardClick, user }: { onNav: (s: string) => void; o
         const name = row.profiles?.dancer_name ?? "UNKNOWN";
         const genres: GenreKey[] = (row.cypher_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
         const count = row.participations?.[0]?.count ?? 0;
-        return { id:row.id, title:row.title, starts_at:row.starts_at, location:row.location, description:row.description??"", max_members:row.max_members, status:row.status, genres, organizer:{ dancer_name:name, avatar:name[0]?.toUpperCase()??"?" }, participant_count:Number(count), hot:Number(count)>=5 };
+        return { id:row.id, title:row.title, starts_at:row.starts_at, location:row.location, description:row.description??"", max_members:row.max_members, status:row.status, genres, organizer:{ id:row.organizer_id, dancer_name:name, avatar:name[0]?.toUpperCase()??"?" }, participant_count:Number(count), hot:Number(count)>=5 };
       });
       setCyphers(shaped);
       setLoading(false);
     }
     fetchCyphers();
-  }, []);
+  }, [refreshKey]);
 
   const filtered = filter === "ALL" ? cyphers : cyphers.filter(c => c.genres.includes(filter));
   const activeCount = filtered.filter(c => timeUntil(c.starts_at) !== "終了").length;
@@ -347,14 +375,11 @@ function TopScreen({ onNav, onCardClick, user }: { onNav: (s: string) => void; o
             <p style={{ margin:"6px 0 0", fontSize:"11px", color:"rgba(0,0,0,0.4)", fontFamily:"'Space Mono',monospace" }}>今日、ここで、踊ろう。</p>
           </div>
           {/* プロフィールアイコン（クリックでプロフィール画面へ）*/}
-          <button onClick={() => onNav("profile")} style={{ background:"none", border:"none", cursor:"pointer", padding:"4px", marginTop:"8px", borderRadius:"50%" }}>
-            {user.user_metadata?.avatar_url ? (
-              <img src={user.user_metadata.avatar_url} alt="プロフィール" style={{ width:"36px", height:"36px", borderRadius:"50%", border:"2px solid rgba(0,0,0,0.1)", display:"block" }} />
-            ) : (
-              <div style={{ width:"36px", height:"36px", borderRadius:"50%", background:"rgba(0,0,0,0.08)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                <User size={18} color="rgba(0,0,0,0.4)" />
-              </div>
-            )}
+          <button onClick={() => onNav("profile")} style={{ background:"none", border:"none", cursor:"pointer", padding:"4px", marginTop:"8px", display:"flex", flexDirection:"column", alignItems:"center", gap:"3px" }}>
+            <div style={{ width:"36px", height:"36px", borderRadius:"50%", background:"linear-gradient(135deg,#FF3D00,#FF6D00)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"15px", fontFamily:"'Bebas Neue',sans-serif", color:"#fff", border:"2px solid rgba(0,0,0,0.08)" }}>
+              {dancerName ? dancerName[0].toUpperCase() : <User size={16} color="#fff" />}
+            </div>
+            {dancerName && <span style={{ fontSize:"8px", fontFamily:"'Space Mono',monospace", color:"rgba(0,0,0,0.4)", maxWidth:"48px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{dancerName}</span>}
           </button>
         </div>
       </div>
@@ -540,18 +565,17 @@ function ProfileScreen({ user }: { user: SupabaseUser }) {
     fetchProfile();
   }, [user.id]);
 
-  // プロフィールをDBに保存
+  // プロフィールをDBに保存（ensureProfileでレコードは必ず存在するのでupdateを使用）
   const handleSave = async () => {
     setSaveError("");
-    const { error } = await supabase.from("profiles").upsert({
-      id: user.id,
+    const { error } = await supabase.from("profiles").update({
       dancer_name: profile.dancer_name,
       genres: profile.genres,
       instagram: profile.instagram || null,
       dance_years: profile.dance_years ? Number(profile.dance_years) : null,
       age_group: profile.age_group || null,
       gender: profile.gender || null,
-    }, { onConflict: "id" });
+    }).eq("id", user.id);
     if (error) {
       console.error("profile save error:", error);
       setSaveError(`保存に失敗しました: ${error.message}`);
@@ -674,6 +698,10 @@ export default function BakuOdori() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  // TopScreen再フェッチトリガー（参加/キャンセル後にインクリメント）
+  const [refreshKey, setRefreshKey] = useState(0);
+  // ダンサーネーム（ヘッダー表示用）
+  const [dancerName, setDancerName] = useState("");
 
   // ログイン時にprofilesレコードを自動作成（存在しない場合のみ）
   const ensureProfile = async (u: SupabaseUser) => {
@@ -683,34 +711,56 @@ export default function BakuOdori() {
     );
   };
 
+  // ログイン後にダンサーネームと参加済みサイファー一覧をDBから取得
+  const fetchUserData = async (u: SupabaseUser) => {
+    const [profileRes, partsRes] = await Promise.all([
+      supabase.from("profiles").select("dancer_name").eq("id", u.id).single(),
+      supabase.from("participations").select("cypher_id").eq("profile_id", u.id),
+    ]);
+    if (profileRes.data?.dancer_name) setDancerName(profileRes.data.dancer_name);
+    if (partsRes.data) setJoined(partsRes.data.map((p: any) => p.cypher_id));
+  };
+
   useEffect(() => {
     // 初期セッション確認
     supabase.auth.getSession().then(({ data }) => {
       const u = data.session?.user ?? null;
       setUser(u);
-      if (u) ensureProfile(u);
+      if (u) { ensureProfile(u); fetchUserData(u); }
       setAuthLoading(false);
     });
     // 認証状態の変化を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const u = session?.user ?? null;
       setUser(u);
-      if (u) ensureProfile(u);
+      if (u) { ensureProfile(u); fetchUserData(u); }
     });
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleJoin = (id: string) => {
+  // 参加ボタン：DBにINSERT → joinedに追加 → カード再フェッチ
+  const handleJoin = async (id: string) => {
+    if (!user) return;
     if (joined.includes(id)) {
       // キャンセル時は確認モーダルを表示
       setConfirmId(id);
     } else {
+      const { error } = await supabase.from("participations").insert({ cypher_id: id, profile_id: user.id });
+      if (error) { console.error("join error:", error); return; }
       setJoined(j => [...j, id]);
+      setRefreshKey(k => k + 1);
     }
   };
 
-  const handleConfirmCancel = () => {
-    if (confirmId) setJoined(j => j.filter(x => x !== confirmId));
+  // キャンセル確定：DBからDELETE → joinedから除去 → カード再フェッチ
+  const handleConfirmCancel = async () => {
+    if (confirmId && user) {
+      const { error } = await supabase.from("participations").delete()
+        .eq("cypher_id", confirmId).eq("profile_id", user.id);
+      if (error) { console.error("cancel error:", error); setConfirmId(null); return; }
+      setJoined(j => j.filter(x => x !== confirmId));
+      setRefreshKey(k => k + 1);
+    }
     setConfirmId(null);
   };
 
@@ -734,7 +784,7 @@ export default function BakuOdori() {
           <LoginScreen />
         ) : (
           <>
-            {screen==="top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} user={user}/>}
+            {screen==="top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} user={user} refreshKey={refreshKey} dancerName={dancerName}/>}
             {screen==="post"    && <PostScreen onNav={setScreen} user={user}/>}
             {screen==="profile" && <ProfileScreen user={user}/>}
             <BottomNav current={screen} onNav={setScreen}/>
