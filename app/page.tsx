@@ -511,6 +511,7 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
 function ProfileScreen({ user }: { user: SupabaseUser }) {
   const [profile, setProfile] = useState<ProfileState>({ dancer_name:"", genres:[], instagram:"", dance_years:"", age_group:"", gender:"" });
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [loading, setLoading] = useState(true);
 
   const toggleGenre = (g: GenreKey) => { setProfile(p=>({...p,genres:p.genres.includes(g)?p.genres.filter(x=>x!==g):[...p.genres,g]})); setSaved(false); };
@@ -541,6 +542,7 @@ function ProfileScreen({ user }: { user: SupabaseUser }) {
 
   // プロフィールをDBに保存
   const handleSave = async () => {
+    setSaveError("");
     const { error } = await supabase.from("profiles").upsert({
       id: user.id,
       dancer_name: profile.dancer_name,
@@ -550,7 +552,12 @@ function ProfileScreen({ user }: { user: SupabaseUser }) {
       age_group: profile.age_group || null,
       gender: profile.gender || null,
     }, { onConflict: "id" });
-    if (!error) setSaved(true);
+    if (error) {
+      console.error("profile save error:", error);
+      setSaveError(`保存に失敗しました: ${error.message}`);
+    } else {
+      setSaved(true);
+    }
   };
 
   const inp: React.CSSProperties = { width:"100%", padding:"10px 12px", background:"#F5F7FA", border:"1px solid rgba(0,0,0,0.1)", borderRadius:"6px", color:"#111111", fontSize:"14px", fontFamily:"'Space Mono',monospace", outline:"none", boxSizing:"border-box" };
@@ -633,6 +640,7 @@ function ProfileScreen({ user }: { user: SupabaseUser }) {
           </div>
         </div>
 
+        {saveError && <div style={{ padding:"10px 12px", background:"rgba(255,61,0,0.06)", border:"1px solid rgba(255,61,0,0.25)", borderRadius:"6px", color:"#FF3D00", fontSize:"12px", fontFamily:"'Space Mono',monospace" }}>{saveError}</div>}
         <button onClick={handleSave} style={{ width:"100%", padding:"13px", border:"none", borderRadius:"6px", background:saved?"rgba(22,163,74,0.1)":"#FF3D00", color:saved?"#16A34A":"#fff", fontSize:"14px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px" }}>
           {saved?<><Check size={15}/>SAVED!</>:<><Star size={15}/>プロフィールを保存する</>}
         </button>
