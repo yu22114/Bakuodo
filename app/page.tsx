@@ -350,21 +350,30 @@ function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName }: { onNav
   useEffect(() => {
     async function fetchCyphers() {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("cyphers")
-        .select(`
-          id, title, organizer_id, starts_at, location, description, max_members, status,
-          profiles:organizer_id ( dancer_name ),
-          cypher_genres ( genres:genre_id ( name ) ),
-          participations ( profile_id )
-        `)
-        .order("starts_at");
-      if (error) { console.error(error); setLoading(false); return; }
-      const shaped: Cypher[] = (data ?? []).map((row: any) => {
+      // cyphersとparticipationsを別々に取得（Embed joinのFK依存を避ける）
+      const [cypherRes, partRes] = await Promise.all([
+        supabase
+          .from("cyphers")
+          .select(`
+            id, title, organizer_id, starts_at, location, description, max_members, status,
+            profiles:organizer_id ( dancer_name ),
+            cypher_genres ( genres:genre_id ( name ) )
+          `)
+          .order("starts_at"),
+        supabase.from("participations").select("cypher_id"),
+      ]);
+      if (cypherRes.error) { console.error(cypherRes.error); setLoading(false); return; }
+
+      // cypher_idごとの参加者数マップを作成
+      const countMap: Record<string, number> = {};
+      (partRes.data ?? []).forEach((p: any) => {
+        countMap[p.cypher_id] = (countMap[p.cypher_id] ?? 0) + 1;
+      });
+
+      const shaped: Cypher[] = (cypherRes.data ?? []).map((row: any) => {
         const name = row.profiles?.dancer_name ?? "UNKNOWN";
         const genres: GenreKey[] = (row.cypher_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
-        // participations配列の長さで参加者数を算出（countクエリより確実）
-        const count = (row.participations ?? []).length;
+        const count = countMap[row.id] ?? 0;
         return { id:row.id, title:row.title, starts_at:row.starts_at, location:row.location, description:row.description??"", max_members:row.max_members, status:row.status, genres, organizer:{ id:row.organizer_id, dancer_name:name, avatar:name[0]?.toUpperCase()??"?" }, participant_count:count, hot:count>=5 };
       });
       setCyphers(shaped);
@@ -578,17 +587,18 @@ function ProfileScreen({ user, onDancerNameChange }: { user: SupabaseUser; onDan
     fetchProfile();
   }, [user.id]);
 
-  // プロフィールをDBに保存（ensureProfileでレコードは必ず存在するのでupdateを使用）
+  // プロフィールをDBに保存（upsertで行が存在しない場合でも確実に保存）
   const handleSave = async () => {
     setSaveError("");
-    const { error } = await supabase.from("profiles").update({
+    const { error } = await supabase.from("profiles").upsert({
+      id: user.id,
       dancer_name: profile.dancer_name,
       genres: profile.genres,
       instagram: profile.instagram || null,
       dance_years: profile.dance_years ? Number(profile.dance_years) : null,
       age_group: profile.age_group || null,
       gender: profile.gender || null,
-    }).eq("id", user.id);
+    }, { onConflict: "id" });
     if (error) {
       console.error("profile save error:", error);
       setSaveError(`保存に失敗しました: ${error.message}`);
@@ -732,7 +742,9 @@ export default function BakuOdori() {
       supabase.from("profiles").select("dancer_name").eq("id", u.id).single(),
       supabase.from("participations").select("cypher_id").eq("profile_id", u.id),
     ]);
-    if (profileRes.data?.dancer_name) setDancerName(profileRes.data.dancer_name);
+    // dancer_nameがあればそれを、なければGoogleの名前をフォールバック
+    const name = profileRes.data?.dancer_name || u.user_metadata?.full_name || "";
+    if (name) setDancerName(name);
     if (partsRes.data) setJoined(partsRes.data.map((p: any) => p.cypher_id));
   };
 
