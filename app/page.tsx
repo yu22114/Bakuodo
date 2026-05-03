@@ -178,10 +178,78 @@ function CypherCard({ cypher, onClick }: { cypher: Cypher; onClick: () => void }
   );
 }
 
+// 参加者プロフィールの型
+interface ParticipantProfile {
+  profile_id: string;
+  dancer_name: string;
+  genres: GenreKey[];
+  instagram: string | null;
+  dance_years: number | null;
+  age_group: string | null;
+  gender: string | null;
+}
+
+// 参加者プロフィールを表示するミニシート
+function ParticipantSheet({ participant, onClose }: { participant: ParticipantProfile; onClose: () => void }) {
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:200, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center", padding:"20px" }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ background:"#FFFFFF", borderRadius:"12px", padding:"24px", maxWidth:"300px", width:"100%", boxShadow:"0 8px 32px rgba(0,0,0,0.15)" }}>
+        {/* アバター */}
+        <div style={{ display:"flex", alignItems:"center", gap:"14px", marginBottom:"16px" }}>
+          <div style={{ width:"52px", height:"52px", borderRadius:"50%", background:"linear-gradient(135deg,#FF3D00,#FF6D00)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"22px", fontFamily:"'Bebas Neue',sans-serif", color:"#fff", flexShrink:0 }}>
+            {participant.dancer_name[0]?.toUpperCase() ?? "?"}
+          </div>
+          <div>
+            <div style={{ fontSize:"18px", fontFamily:"'Bebas Neue',sans-serif", color:"#111111", letterSpacing:"0.05em" }}>{participant.dancer_name || "UNKNOWN"}</div>
+            {participant.instagram && <div style={{ fontSize:"11px", color:"#A855F7", fontFamily:"'Space Mono',monospace" }}>@{participant.instagram}</div>}
+          </div>
+        </div>
+        {/* 詳細情報 */}
+        <div style={{ display:"flex", flexWrap:"wrap", gap:"8px", marginBottom:"16px" }}>
+          {participant.age_group && <span style={{ fontSize:"11px", padding:"3px 8px", background:"rgba(0,0,0,0.05)", borderRadius:"4px", color:"rgba(0,0,0,0.6)", fontFamily:"'Space Mono',monospace" }}>{participant.age_group}</span>}
+          {participant.dance_years != null && <span style={{ fontSize:"11px", padding:"3px 8px", background:"rgba(0,0,0,0.05)", borderRadius:"4px", color:"rgba(0,0,0,0.6)", fontFamily:"'Space Mono',monospace" }}>歴{participant.dance_years}年</span>}
+          {participant.gender && <span style={{ fontSize:"11px", padding:"3px 8px", background:"rgba(0,0,0,0.05)", borderRadius:"4px", color:"rgba(0,0,0,0.6)", fontFamily:"'Space Mono',monospace" }}>{participant.gender}</span>}
+        </div>
+        {participant.genres?.length > 0 && (
+          <div style={{ display:"flex", flexWrap:"wrap", gap:"5px", marginBottom:"16px" }}>
+            {participant.genres.map(g => <GenreBadge key={g} genre={g} />)}
+          </div>
+        )}
+        <button onClick={onClose} style={{ width:"100%", padding:"10px", border:"1px solid rgba(0,0,0,0.12)", borderRadius:"6px", background:"transparent", color:"rgba(0,0,0,0.5)", fontSize:"12px", fontFamily:"'Space Mono',monospace", cursor:"pointer" }}>閉じる</button>
+      </div>
+    </div>
+  );
+}
+
 function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | null; onClose: () => void; joined: boolean; onJoin: (id: string) => void }) {
   if (!cypher) return null;
   const { date, time } = formatDate(cypher.starts_at);
   const isEnded = timeUntil(cypher.starts_at) === "終了";
+  const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
+  const [selectedParticipant, setSelectedParticipant] = useState<ParticipantProfile | null>(null);
+
+  // 参加者一覧をDBから取得
+  useEffect(() => {
+    async function fetchParticipants() {
+      const { data } = await supabase
+        .from("participations")
+        .select("profile_id, profiles:profile_id ( dancer_name, genres, instagram, dance_years, age_group, gender )")
+        .eq("cypher_id", cypher.id);
+      if (data) {
+        setParticipants(data.map((row: any) => ({
+          profile_id: row.profile_id,
+          dancer_name: row.profiles?.dancer_name ?? "UNKNOWN",
+          genres: (row.profiles?.genres ?? []) as GenreKey[],
+          instagram: row.profiles?.instagram ?? null,
+          dance_years: row.profiles?.dance_years ?? null,
+          age_group: row.profiles?.age_group ?? null,
+          gender: row.profiles?.gender ?? null,
+        })));
+      }
+    }
+    fetchParticipants();
+  }, [cypher.id, joined]);
+
   return (
     <div style={{ position:"fixed", inset:0, zIndex:100, background:"rgba(0,0,0,0.4)", backdropFilter:"blur(4px)", display:"flex", alignItems:"flex-end" }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{ width:"100%", maxWidth:"480px", margin:"0 auto", background:"#FFFFFF", border:"1px solid rgba(0,0,0,0.08)", borderBottom:"none", borderRadius:"12px 12px 0 0", padding:"24px 20px 40px", boxShadow:"0 -4px 24px rgba(0,0,0,0.1)" }}>
@@ -199,6 +267,23 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
         </div>
         {cypher.description && <p style={{ fontSize:"13px", color:"rgba(0,0,0,0.55)", lineHeight:1.7, marginBottom:"20px", fontFamily:"'Space Mono',monospace" }}>{cypher.description}</p>}
         <ParticipantBar count={cypher.participant_count} max={cypher.max_members} />
+
+        {/* 参加者アイコン一覧 */}
+        {participants.length > 0 && (
+          <div style={{ marginTop:"16px" }}>
+            <div style={{ fontSize:"9px", fontFamily:"'Space Mono',monospace", color:"rgba(0,0,0,0.35)", letterSpacing:"0.15em", marginBottom:"8px" }}>PARTICIPANTS</div>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:"8px" }}>
+              {participants.map(p => (
+                <button key={p.profile_id} onClick={() => setSelectedParticipant(p)}
+                  style={{ width:"40px", height:"40px", borderRadius:"50%", background:"linear-gradient(135deg,#FF3D00,#FF6D00)", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"16px", fontFamily:"'Bebas Neue',sans-serif", color:"#fff", flexShrink:0 }}
+                  title={p.dancer_name}>
+                  {p.dancer_name[0]?.toUpperCase() ?? "?"}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {isEnded ? (
           <div style={{ marginTop:"20px", padding:"14px", background:"rgba(0,0,0,0.04)", borderRadius:"6px", textAlign:"center", fontSize:"13px", color:"rgba(0,0,0,0.4)", fontFamily:"'Space Mono',monospace" }}>
             このサイファーは終了しました
@@ -210,6 +295,8 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
           </button>
         )}
       </div>
+      {/* 参加者プロフィールシート */}
+      {selectedParticipant && <ParticipantSheet participant={selectedParticipant} onClose={() => setSelectedParticipant(null)} />}
     </div>
   );
 }
