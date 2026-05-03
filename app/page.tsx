@@ -226,8 +226,18 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
   const { date, time } = formatDate(cypher.starts_at);
   const isEnded = timeUntil(cypher.starts_at) === "終了";
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
+  const [participantsFetched, setParticipantsFetched] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState<ParticipantProfile | null>(null);
-  const [organizerProfile, setOrganizerProfile] = useState<ParticipantProfile | null>(null);
+  // 主催者プロフィール：取得失敗時はcypherの情報で初期化しておく
+  const [organizerProfile, setOrganizerProfile] = useState<ParticipantProfile>({
+    profile_id: cypher.organizer.id,
+    dancer_name: cypher.organizer.dancer_name,
+    genres: [],
+    instagram: null,
+    dance_years: null,
+    age_group: null,
+    gender: null,
+  });
 
   // 参加者一覧をDBから取得（joined変化時にも再取得）
   useEffect(() => {
@@ -246,12 +256,13 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
           age_group: row.profiles?.age_group ?? null,
           gender: row.profiles?.gender ?? null,
         })));
+        setParticipantsFetched(true);
       }
     }
     fetchParticipants();
   }, [cypher.id, joined]);
 
-  // 主催者のプロフィールをDBから取得
+  // 主催者のプロフィールをDBから取得（追加情報があれば上書き）
   useEffect(() => {
     async function fetchOrganizer() {
       const { data } = await supabase
@@ -262,7 +273,7 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
       if (data) {
         setOrganizerProfile({
           profile_id: cypher.organizer.id,
-          dancer_name: data.dancer_name ?? "UNKNOWN",
+          dancer_name: data.dancer_name ?? cypher.organizer.dancer_name,
           genres: (data.genres ?? []) as GenreKey[],
           instagram: data.instagram ?? null,
           dance_years: data.dance_years ?? null,
@@ -294,7 +305,8 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
           </button>
         </div>
         {cypher.description && <p style={{ fontSize:"13px", color:"rgba(0,0,0,0.55)", lineHeight:1.7, marginBottom:"20px", fontFamily:"'Space Mono',monospace" }}>{cypher.description}</p>}
-        <ParticipantBar count={cypher.participant_count} max={cypher.max_members} />
+        {/* DB取得後は参加者リストの実数を表示、取得前はcypherの値を使う */}
+        <ParticipantBar count={participantsFetched ? participants.length : cypher.participant_count} max={cypher.max_members} />
 
         {/* 参加者アイコン一覧 */}
         {participants.length > 0 && (
@@ -344,15 +356,16 @@ function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName }: { onNav
           id, title, organizer_id, starts_at, location, description, max_members, status,
           profiles:organizer_id ( dancer_name ),
           cypher_genres ( genres:genre_id ( name ) ),
-          participations ( count )
+          participations ( profile_id )
         `)
         .order("starts_at");
       if (error) { console.error(error); setLoading(false); return; }
       const shaped: Cypher[] = (data ?? []).map((row: any) => {
         const name = row.profiles?.dancer_name ?? "UNKNOWN";
         const genres: GenreKey[] = (row.cypher_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
-        const count = row.participations?.[0]?.count ?? 0;
-        return { id:row.id, title:row.title, starts_at:row.starts_at, location:row.location, description:row.description??"", max_members:row.max_members, status:row.status, genres, organizer:{ id:row.organizer_id, dancer_name:name, avatar:name[0]?.toUpperCase()??"?" }, participant_count:Number(count), hot:Number(count)>=5 };
+        // participations配列の長さで参加者数を算出（countクエリより確実）
+        const count = (row.participations ?? []).length;
+        return { id:row.id, title:row.title, starts_at:row.starts_at, location:row.location, description:row.description??"", max_members:row.max_members, status:row.status, genres, organizer:{ id:row.organizer_id, dancer_name:name, avatar:name[0]?.toUpperCase()??"?" }, participant_count:count, hot:count>=5 };
       });
       setCyphers(shaped);
       setLoading(false);
@@ -533,7 +546,7 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
 }
 
 // ─── PROFILE SCREEN ───────────────────────────────────────────────────────────
-function ProfileScreen({ user }: { user: SupabaseUser }) {
+function ProfileScreen({ user, onDancerNameChange }: { user: SupabaseUser; onDancerNameChange?: (name: string) => void }) {
   const [profile, setProfile] = useState<ProfileState>({ dancer_name:"", genres:[], instagram:"", dance_years:"", age_group:"", gender:"" });
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -581,6 +594,8 @@ function ProfileScreen({ user }: { user: SupabaseUser }) {
       setSaveError(`保存に失敗しました: ${error.message}`);
     } else {
       setSaved(true);
+      // ヘッダーのダンサーネームも即時更新
+      if (profile.dancer_name) onDancerNameChange?.(profile.dancer_name);
     }
   };
 
@@ -786,7 +801,7 @@ export default function BakuOdori() {
           <>
             {screen==="top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} user={user} refreshKey={refreshKey} dancerName={dancerName}/>}
             {screen==="post"    && <PostScreen onNav={setScreen} user={user}/>}
-            {screen==="profile" && <ProfileScreen user={user}/>}
+            {screen==="profile" && <ProfileScreen user={user} onDancerNameChange={setDancerName}/>}
             <BottomNav current={screen} onNav={setScreen}/>
             {detail && <DetailModal cypher={detail} onClose={()=>setDetail(null)} joined={joined.includes(detail.id)} onJoin={handleJoin}/>}
             {confirmId && <ConfirmModal onConfirm={handleConfirmCancel} onCancel={()=>setConfirmId(null)} />}
