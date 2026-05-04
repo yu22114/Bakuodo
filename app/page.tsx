@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { MapPin, Clock, Users, Zap, Plus, User, Check, X, Star, Radio, Flame, LogOut, Activity } from "lucide-react";
+import { MapPin, Clock, Users, Zap, Plus, User, Check, X, Star, Radio, Flame, LogOut, Activity, Trash2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
@@ -569,6 +569,8 @@ function ActivityScreen({ user }: { user: SupabaseUser }) {
   // 参加者一覧シート（主催タブ用）
   const [participantSheet, setParticipantSheet] = useState<{ title: string; participants: ParticipantProfile[] } | null>(null);
   const [selectedParticipant, setSelectedParticipant] = useState<ParticipantProfile | null>(null);
+  // 削除確認
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchActivity() {
@@ -627,6 +629,19 @@ function ActivityScreen({ user }: { user: SupabaseUser }) {
     setParticipantSheet({ title: cypher.title, participants });
   };
 
+  // サイファーを削除する（participationsはDB側でcascade削除される想定、なければ先に削除）
+  const handleDeleteCypher = async () => {
+    if (!deleteConfirmId) return;
+    // 参加者レコードを先に削除（FK制約がある場合に備えて）
+    await supabase.from("participations").delete().eq("cypher_id", deleteConfirmId);
+    await supabase.from("cypher_genres").delete().eq("cypher_id", deleteConfirmId);
+    const { error } = await supabase.from("cyphers").delete().eq("id", deleteConfirmId);
+    if (!error) {
+      setHostedCyphers(prev => prev.filter(c => c.id !== deleteConfirmId));
+    }
+    setDeleteConfirmId(null);
+  };
+
   const rowStyle: React.CSSProperties = { background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", padding: "14px 16px" };
 
   return (
@@ -675,18 +690,24 @@ function ActivityScreen({ user }: { user: SupabaseUser }) {
               const { date, time } = formatDate(c.starts_at);
               const until = timeUntil(c.starts_at);
               return (
-                <button key={c.id} onClick={() => handleOpenParticipants(c)}
-                  style={{ ...rowStyle, cursor: "pointer", width: "100%", textAlign: "left" }}>
+                <div key={c.id} style={{ ...rowStyle, cursor: "pointer" }} onClick={() => handleOpenParticipants(c)}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "3px" }}>
-                    <div style={{ fontSize: "15px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111" }}>{c.title}</div>
-                    <span style={{ fontSize: "12px", fontFamily: "'Space Mono',monospace", color: "#FF3D00", fontWeight: "bold", flexShrink: 0, marginLeft: "8px" }}>{c.participant_count}人</span>
+                    <div style={{ fontSize: "15px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111", flex: 1 }}>{c.title}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, marginLeft: "8px" }}>
+                      <span style={{ fontSize: "12px", fontFamily: "'Space Mono',monospace", color: "#FF3D00", fontWeight: "bold" }}>{c.participant_count}人</span>
+                      {/* 削除ボタン：クリックイベントを親に伝播させない */}
+                      <button onClick={e => { e.stopPropagation(); setDeleteConfirmId(c.id); }}
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: "2px", display: "flex", alignItems: "center", color: "rgba(0,0,0,0.25)" }}>
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "11px", color: "rgba(0,0,0,0.5)", fontFamily: "'Space Mono',monospace", marginBottom: "6px" }}>
                     <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Clock size={10} color="rgba(0,0,0,0.35)" />{date} {time}</span>
                     <span style={{ padding: "1px 6px", background: until === "終了" ? "rgba(0,0,0,0.06)" : "rgba(255,61,0,0.08)", borderRadius: "3px", color: until === "終了" ? "rgba(0,0,0,0.4)" : "#FF3D00", fontWeight: "bold", fontSize: "9px" }}>{until}</span>
                   </div>
                   <div style={{ fontSize: "9px", color: "rgba(0,0,0,0.3)", fontFamily: "'Space Mono',monospace" }}>タップして参加者を確認 →</div>
-                </button>
+                </div>
               );
             })
         )}
@@ -727,6 +748,31 @@ function ActivityScreen({ user }: { user: SupabaseUser }) {
         </div>
       )}
       {selectedParticipant && <ParticipantSheet participant={selectedParticipant} onClose={() => setSelectedParticipant(null)} />}
+
+      {/* サイファー削除確認モーダル */}
+      {deleteConfirmId && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}
+          onClick={() => setDeleteConfirmId(null)}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: "#FFFFFF", borderRadius: "12px", padding: "28px 24px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
+            <div style={{ fontSize: "28px", marginBottom: "8px" }}>🗑️</div>
+            <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: "20px", color: "#111111", marginBottom: "8px" }}>サイファーを削除</div>
+            <div style={{ fontSize: "13px", color: "rgba(0,0,0,0.5)", marginBottom: "24px", lineHeight: "1.6" }}>
+              このサイファーを削除すると、参加者の記録もすべて消えます。本当に削除しますか？
+            </div>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button onClick={() => setDeleteConfirmId(null)}
+                style={{ flex: 1, padding: "12px", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Space Mono',monospace", fontSize: "11px", color: "rgba(0,0,0,0.5)" }}>
+                キャンセル
+              </button>
+              <button onClick={handleDeleteCypher}
+                style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "#FF3D00", cursor: "pointer", fontFamily: "'Space Mono',monospace", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>
+                削除する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
