@@ -190,7 +190,59 @@ interface ParticipantProfile {
 }
 
 // 参加者プロフィールを表示するミニシート
-function ParticipantSheet({ participant, onClose }: { participant: ParticipantProfile; onClose: () => void }) {
+function ParticipantSheet({ participant, onClose, currentUserId }: { participant: ParticipantProfile; onClose: () => void; currentUserId?: string }) {
+  const [likes, setLikes] = useState(0);
+  const [bads, setBads] = useState(0);
+  const [myReaction, setMyReaction] = useState<"like" | "bad" | null>(null);
+  const [reacting, setReacting] = useState(false);
+
+  // リアクション数と自分のリアクションを取得
+  useEffect(() => {
+    async function fetchReactions() {
+      const { data } = await supabase
+        .from("profile_reactions")
+        .select("reaction, from_profile_id")
+        .eq("to_profile_id", participant.profile_id);
+      if (!data) return;
+      setLikes(data.filter(r => r.reaction === "like").length);
+      setBads(data.filter(r => r.reaction === "bad").length);
+      if (currentUserId) {
+        const mine = data.find(r => r.from_profile_id === currentUserId);
+        setMyReaction(mine ? (mine.reaction as "like" | "bad") : null);
+      }
+    }
+    fetchReactions();
+  }, [participant.profile_id, currentUserId]);
+
+  // いいね／バッドをトグル
+  const handleReact = async (reaction: "like" | "bad") => {
+    if (!currentUserId || currentUserId === participant.profile_id || reacting) return;
+    setReacting(true);
+    if (myReaction === reaction) {
+      // 同じボタン → 取り消し
+      await supabase.from("profile_reactions").delete()
+        .eq("from_profile_id", currentUserId).eq("to_profile_id", participant.profile_id);
+      if (reaction === "like") setLikes(n => n - 1); else setBads(n => n - 1);
+      setMyReaction(null);
+    } else {
+      if (myReaction) {
+        // 別のリアクションに切り替え
+        await supabase.from("profile_reactions").update({ reaction })
+          .eq("from_profile_id", currentUserId).eq("to_profile_id", participant.profile_id);
+        if (myReaction === "like") setLikes(n => n - 1); else setBads(n => n - 1);
+        if (reaction === "like") setLikes(n => n + 1); else setBads(n => n + 1);
+      } else {
+        // 新規
+        await supabase.from("profile_reactions").insert({ from_profile_id: currentUserId, to_profile_id: participant.profile_id, reaction });
+        if (reaction === "like") setLikes(n => n + 1); else setBads(n => n + 1);
+      }
+      setMyReaction(reaction);
+    }
+    setReacting(false);
+  };
+
+  const isSelf = currentUserId === participant.profile_id;
+
   return (
     <div style={{ position:"fixed", inset:0, zIndex:200, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center", padding:"20px" }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{ background:"#FFFFFF", borderRadius:"12px", padding:"24px", maxWidth:"300px", width:"100%", boxShadow:"0 8px 32px rgba(0,0,0,0.15)" }}>
@@ -215,13 +267,39 @@ function ParticipantSheet({ participant, onClose }: { participant: ParticipantPr
             {participant.genres.map(g => <GenreBadge key={g} genre={g} />)}
           </div>
         )}
+
+        {/* いいね・バッドボタン（自分自身には表示しない） */}
+        {!isSelf && currentUserId && (
+          <div style={{ display:"flex", gap:"8px", marginBottom:"14px" }}>
+            <button onClick={() => handleReact("like")} disabled={reacting}
+              style={{ flex:1, padding:"10px", border: myReaction==="like" ? "1px solid #16A34A" : "1px solid rgba(0,0,0,0.12)", borderRadius:"8px", background: myReaction==="like" ? "rgba(22,163,74,0.08)" : "transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px", fontSize:"13px", fontFamily:"'Space Mono',monospace", color: myReaction==="like" ? "#16A34A" : "rgba(0,0,0,0.5)", transition:"all 0.15s" }}>
+              👍 <span style={{ fontWeight:"bold" }}>{likes}</span>
+            </button>
+            <button onClick={() => handleReact("bad")} disabled={reacting}
+              style={{ flex:1, padding:"10px", border: myReaction==="bad" ? "1px solid #EF4444" : "1px solid rgba(0,0,0,0.12)", borderRadius:"8px", background: myReaction==="bad" ? "rgba(239,68,68,0.08)" : "transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px", fontSize:"13px", fontFamily:"'Space Mono',monospace", color: myReaction==="bad" ? "#EF4444" : "rgba(0,0,0,0.5)", transition:"all 0.15s" }}>
+              👎 <span style={{ fontWeight:"bold" }}>{bads}</span>
+            </button>
+          </div>
+        )}
+        {/* 自分自身のプロフィールを見ているとき：リアクション集計だけ表示 */}
+        {isSelf && (likes > 0 || bads > 0) && (
+          <div style={{ display:"flex", gap:"8px", marginBottom:"14px" }}>
+            <div style={{ flex:1, padding:"10px", border:"1px solid rgba(0,0,0,0.08)", borderRadius:"8px", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px", fontSize:"13px", fontFamily:"'Space Mono',monospace", color:"rgba(0,0,0,0.5)" }}>
+              👍 <span style={{ fontWeight:"bold" }}>{likes}</span>
+            </div>
+            <div style={{ flex:1, padding:"10px", border:"1px solid rgba(0,0,0,0.08)", borderRadius:"8px", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px", fontSize:"13px", fontFamily:"'Space Mono',monospace", color:"rgba(0,0,0,0.5)" }}>
+              👎 <span style={{ fontWeight:"bold" }}>{bads}</span>
+            </div>
+          </div>
+        )}
+
         <button onClick={onClose} style={{ width:"100%", padding:"10px", border:"1px solid rgba(0,0,0,0.12)", borderRadius:"6px", background:"transparent", color:"rgba(0,0,0,0.5)", fontSize:"12px", fontFamily:"'Space Mono',monospace", cursor:"pointer" }}>閉じる</button>
       </div>
     </div>
   );
 }
 
-function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | null; onClose: () => void; joined: boolean; onJoin: (id: string) => void }) {
+function DetailModal({ cypher, onClose, joined, onJoin, user }: { cypher: Cypher | null; onClose: () => void; joined: boolean; onJoin: (id: string) => void; user: SupabaseUser | null }) {
   if (!cypher) return null;
 
   // useEffectのクロージャ内でTypeScriptがnullチェックを追跡できないため先に変数化
@@ -342,7 +420,7 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
         )}
       </div>
       {/* 参加者プロフィールシート */}
-      {selectedParticipant && <ParticipantSheet participant={selectedParticipant} onClose={() => setSelectedParticipant(null)} />}
+      {selectedParticipant && <ParticipantSheet participant={selectedParticipant} onClose={() => setSelectedParticipant(null)} currentUserId={user?.id} />}
     </div>
   );
 }
@@ -749,7 +827,7 @@ function ActivityScreen({ user }: { user: SupabaseUser }) {
           </div>
         </div>
       )}
-      {selectedParticipant && <ParticipantSheet participant={selectedParticipant} onClose={() => setSelectedParticipant(null)} />}
+      {selectedParticipant && <ParticipantSheet participant={selectedParticipant} onClose={() => setSelectedParticipant(null)} currentUserId={user.id} />}
 
       {/* サイファー削除確認モーダル */}
       {deleteConfirmId && (
@@ -1068,7 +1146,7 @@ export default function BakuOdori() {
             {screen==="profile"  && <ProfileScreen user={user} onDancerNameChange={setDancerName}/>}
             {screen==="activity" && <ActivityScreen user={user}/>}
             <BottomNav current={screen} onNav={setScreen}/>
-            {detail && <DetailModal cypher={detail} onClose={()=>setDetail(null)} joined={joined.includes(detail.id)} onJoin={handleJoin}/>}
+            {detail && <DetailModal cypher={detail} onClose={()=>setDetail(null)} joined={joined.includes(detail.id)} onJoin={handleJoin} user={user}/>}
             {confirmId && <ConfirmModal onConfirm={handleConfirmCancel} onCancel={()=>setConfirmId(null)} />}
           </>
         )}
