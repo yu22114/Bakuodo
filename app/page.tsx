@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { MapPin, Clock, Users, Zap, Plus, User, Check, X, Star, Radio, Flame, LogOut } from "lucide-react";
+import { MapPin, Clock, Users, Zap, Plus, User, Check, X, Star, Radio, Flame, LogOut, Activity } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
@@ -560,6 +560,177 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
   );
 }
 
+// ─── ACTIVITY SCREEN ──────────────────────────────────────────────────────────
+function ActivityScreen({ user }: { user: SupabaseUser }) {
+  const [tab, setTab] = useState<"joined" | "hosted">("joined");
+  const [joinedCyphers, setJoinedCyphers] = useState<Array<{ id: string; title: string; starts_at: string; location: string; organizer_name: string }>>([]);
+  const [hostedCyphers, setHostedCyphers] = useState<Array<{ id: string; title: string; starts_at: string; location: string; participant_count: number }>>([]);
+  const [loading, setLoading] = useState(true);
+  // 参加者一覧シート（主催タブ用）
+  const [participantSheet, setParticipantSheet] = useState<{ title: string; participants: ParticipantProfile[] } | null>(null);
+  const [selectedParticipant, setSelectedParticipant] = useState<ParticipantProfile | null>(null);
+
+  useEffect(() => {
+    async function fetchActivity() {
+      setLoading(true);
+      const userId = user.id;
+      const [joinedRes, hostedRes, allPartsRes] = await Promise.all([
+        // 参加中のサイファー一覧
+        supabase.from("participations")
+          .select("cyphers:cypher_id ( id, title, starts_at, location, profiles:organizer_id ( dancer_name ) )")
+          .eq("profile_id", userId),
+        // 主催したサイファー一覧
+        supabase.from("cyphers")
+          .select("id, title, starts_at, location")
+          .eq("organizer_id", userId)
+          .order("starts_at", { ascending: false }),
+        // 参加者数マップ用
+        supabase.from("participations").select("cypher_id"),
+      ]);
+
+      if (joinedRes.data) {
+        setJoinedCyphers(
+          (joinedRes.data as any[])
+            .map((row) => row.cyphers)
+            .filter(Boolean)
+            .map((c: any) => ({ id: c.id, title: c.title, starts_at: c.starts_at, location: c.location, organizer_name: c.profiles?.dancer_name ?? "UNKNOWN" }))
+        );
+      }
+
+      const countMap: Record<string, number> = {};
+      (allPartsRes.data ?? []).forEach((p: any) => { countMap[p.cypher_id] = (countMap[p.cypher_id] ?? 0) + 1; });
+
+      if (hostedRes.data) {
+        setHostedCyphers((hostedRes.data as any[]).map((c) => ({
+          id: c.id, title: c.title, starts_at: c.starts_at, location: c.location, participant_count: countMap[c.id] ?? 0,
+        })));
+      }
+      setLoading(false);
+    }
+    fetchActivity();
+  }, [user.id]);
+
+  // 主催サイファーをタップ→参加者一覧を取得してシートを開く
+  const handleOpenParticipants = async (cypher: { id: string; title: string }) => {
+    const { data } = await supabase.from("participations")
+      .select("profile_id, profiles:profile_id ( dancer_name, genres, instagram, dance_years, age_group, gender )")
+      .eq("cypher_id", cypher.id);
+    const participants: ParticipantProfile[] = (data ?? []).map((row: any) => ({
+      profile_id: row.profile_id,
+      dancer_name: row.profiles?.dancer_name ?? "UNKNOWN",
+      genres: (row.profiles?.genres ?? []) as GenreKey[],
+      instagram: row.profiles?.instagram ?? null,
+      dance_years: row.profiles?.dance_years ?? null,
+      age_group: row.profiles?.age_group ?? null,
+      gender: row.profiles?.gender ?? null,
+    }));
+    setParticipantSheet({ title: cypher.title, participants });
+  };
+
+  const rowStyle: React.CSSProperties = { background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", padding: "14px 16px" };
+
+  return (
+    <div style={{ paddingBottom: "80px", background: "#FAFAFA" }}>
+      {/* ヘッダー */}
+      <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
+        <div style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ MY ACTIVITY</div>
+        <h2 style={{ margin: 0, fontFamily: "'Bebas Neue',sans-serif", fontSize: "32px", color: "#111111" }}>参加・主催</h2>
+      </div>
+
+      {/* タブ */}
+      <div style={{ display: "flex", background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
+        {(["joined", "hosted"] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            style={{ flex: 1, padding: "13px", border: "none", background: "transparent", borderBottom: `2px solid ${tab === t ? "#FF3D00" : "transparent"}`, color: tab === t ? "#FF3D00" : "rgba(0,0,0,0.4)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: tab === t ? "bold" : "normal" }}>
+            {t === "joined" ? "参加中" : "主催"}
+          </button>
+        ))}
+      </div>
+
+      {/* リスト */}
+      <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>LOADING...</div>
+        ) : tab === "joined" ? (
+          joinedCyphers.length === 0
+            ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>まだ参加しているサイファーはありません</div>
+            : joinedCyphers.map(c => {
+              const { date, time } = formatDate(c.starts_at);
+              const until = timeUntil(c.starts_at);
+              return (
+                <div key={c.id} style={rowStyle}>
+                  <div style={{ fontSize: "15px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111", marginBottom: "3px" }}>{c.title}</div>
+                  <div style={{ fontSize: "10px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace", marginBottom: "7px" }}>by {c.organizer_name}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "11px", color: "rgba(0,0,0,0.5)", fontFamily: "'Space Mono',monospace" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Clock size={10} color="rgba(0,0,0,0.35)" />{date} {time}</span>
+                    <span style={{ padding: "1px 6px", background: until === "終了" ? "rgba(0,0,0,0.06)" : "rgba(255,61,0,0.08)", borderRadius: "3px", color: until === "終了" ? "rgba(0,0,0,0.4)" : "#FF3D00", fontWeight: "bold", fontSize: "9px" }}>{until}</span>
+                  </div>
+                </div>
+              );
+            })
+        ) : (
+          hostedCyphers.length === 0
+            ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>まだサイファーを作成していません</div>
+            : hostedCyphers.map(c => {
+              const { date, time } = formatDate(c.starts_at);
+              const until = timeUntil(c.starts_at);
+              return (
+                <button key={c.id} onClick={() => handleOpenParticipants(c)}
+                  style={{ ...rowStyle, cursor: "pointer", width: "100%", textAlign: "left" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "3px" }}>
+                    <div style={{ fontSize: "15px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111" }}>{c.title}</div>
+                    <span style={{ fontSize: "12px", fontFamily: "'Space Mono',monospace", color: "#FF3D00", fontWeight: "bold", flexShrink: 0, marginLeft: "8px" }}>{c.participant_count}人</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "11px", color: "rgba(0,0,0,0.5)", fontFamily: "'Space Mono',monospace", marginBottom: "6px" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Clock size={10} color="rgba(0,0,0,0.35)" />{date} {time}</span>
+                    <span style={{ padding: "1px 6px", background: until === "終了" ? "rgba(0,0,0,0.06)" : "rgba(255,61,0,0.08)", borderRadius: "3px", color: until === "終了" ? "rgba(0,0,0,0.4)" : "#FF3D00", fontWeight: "bold", fontSize: "9px" }}>{until}</span>
+                  </div>
+                  <div style={{ fontSize: "9px", color: "rgba(0,0,0,0.3)", fontFamily: "'Space Mono',monospace" }}>タップして参加者を確認 →</div>
+                </button>
+              );
+            })
+        )}
+      </div>
+
+      {/* 参加者一覧シート */}
+      {participantSheet && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }}
+          onClick={() => setParticipantSheet(null)}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "#FFFFFF", borderRadius: "12px 12px 0 0", padding: "24px 20px 40px", maxHeight: "80vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <div>
+                <div style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.15em", marginBottom: "4px" }}>PARTICIPANTS</div>
+                <div style={{ fontSize: "22px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111" }}>{participantSheet.title}</div>
+              </div>
+              <button onClick={() => setParticipantSheet(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(0,0,0,0.4)", padding: "4px" }}><X size={20} /></button>
+            </div>
+            {participantSheet.participants.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "32px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>まだ参加者はいません</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {participantSheet.participants.map(p => (
+                  <button key={p.profile_id} onClick={() => setSelectedParticipant(p)}
+                    style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", background: "#F5F7FA", border: "none", borderRadius: "8px", cursor: "pointer", textAlign: "left", width: "100%" }}>
+                    <div style={{ width: "38px", height: "38px", borderRadius: "50%", background: "linear-gradient(135deg,#FF3D00,#FF6D00)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Bebas Neue',sans-serif", color: "#fff", flexShrink: 0 }}>
+                      {p.dancer_name[0]?.toUpperCase() ?? "?"}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: "15px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111" }}>{p.dancer_name}</div>
+                      {p.instagram && <div style={{ fontSize: "10px", color: "#A855F7", fontFamily: "'Space Mono',monospace" }}>@{p.instagram}</div>}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {selectedParticipant && <ParticipantSheet participant={selectedParticipant} onClose={() => setSelectedParticipant(null)} />}
+    </div>
+  );
+}
+
 // ─── PROFILE SCREEN ───────────────────────────────────────────────────────────
 function ProfileScreen({ user, onDancerNameChange }: { user: SupabaseUser; onDancerNameChange?: (name: string) => void }) {
   const [profile, setProfile] = useState<ProfileState>({ dancer_name:"", genres:[], instagram:"", dance_years:"", age_group:"", gender:"" });
@@ -706,7 +877,7 @@ function ProfileScreen({ user, onDancerNameChange }: { user: SupabaseUser; onDan
 
 // ─── BOTTOM NAV ───────────────────────────────────────────────────────────────
 function BottomNav({ current, onNav }: { current: string; onNav: (s: string) => void }) {
-  const items = [{id:"top",icon:<Flame size={20}/>,label:"CYPHER"},{id:"post",icon:<Plus size={20}/>,label:"POST"},{id:"profile",icon:<User size={20}/>,label:"ME"}];
+  const items = [{id:"top",icon:<Flame size={20}/>,label:"CYPHER"},{id:"post",icon:<Plus size={20}/>,label:"POST"},{id:"activity",icon:<Activity size={20}/>,label:"MY"}];
   return (
     <div style={{ position:"fixed", bottom:0, left:0, right:0, background:"rgba(255,255,255,0.95)", backdropFilter:"blur(12px)", borderTop:"1px solid rgba(0,0,0,0.08)", display:"flex", zIndex:50, maxWidth:"480px", margin:"0 auto", boxShadow:"0 -2px 12px rgba(0,0,0,0.06)" }}>
       {items.map(item=>(
@@ -817,9 +988,10 @@ export default function BakuOdori() {
           <LoginScreen />
         ) : (
           <>
-            {screen==="top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} user={user} refreshKey={refreshKey} dancerName={dancerName}/>}
-            {screen==="post"    && <PostScreen onNav={setScreen} user={user}/>}
-            {screen==="profile" && <ProfileScreen user={user} onDancerNameChange={setDancerName}/>}
+            {screen==="top"      && <TopScreen onNav={setScreen} onCardClick={setDetail} user={user} refreshKey={refreshKey} dancerName={dancerName}/>}
+            {screen==="post"     && <PostScreen onNav={setScreen} user={user}/>}
+            {screen==="profile"  && <ProfileScreen user={user} onDancerNameChange={setDancerName}/>}
+            {screen==="activity" && <ActivityScreen user={user}/>}
             <BottomNav current={screen} onNav={setScreen}/>
             {detail && <DetailModal cypher={detail} onClose={()=>setDetail(null)} joined={joined.includes(detail.id)} onJoin={handleJoin}/>}
             {confirmId && <ConfirmModal onConfirm={handleConfirmCancel} onCancel={()=>setConfirmId(null)} />}
