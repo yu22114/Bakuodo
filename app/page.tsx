@@ -785,28 +785,31 @@ function ProfileScreen({ user, onDancerNameChange }: { user: SupabaseUser; onDan
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [loading, setLoading] = useState(true);
+  // 過去の開催サイファー履歴
+  const [hostedHistory, setHostedHistory] = useState<Array<{ id: string; title: string; starts_at: string; location: string }>>([]);
 
   const toggleGenre = (g: GenreKey) => { setProfile(p=>({...p,genres:p.genres.includes(g)?p.genres.filter(x=>x!==g):[...p.genres,g]})); setSaved(false); };
   const handleSignOut = async () => { await supabase.auth.signOut(); };
 
-  // 既存のプロフィールをDBから読み込む
+  // プロフィールと開催履歴をまとめてDBから読み込む
   useEffect(() => {
     async function fetchProfile() {
-      const { data } = await supabase
-        .from("profiles")
-        .select("dancer_name, genres, instagram, dance_years, age_group, gender")
-        .eq("id", user.id)
-        .single();
-      if (data) {
+      const [profileRes, hostedRes] = await Promise.all([
+        supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender").eq("id", user.id).single(),
+        supabase.from("cyphers").select("id, title, starts_at, location").eq("organizer_id", user.id).order("starts_at", { ascending: false }),
+      ]);
+      if (profileRes.data) {
+        const d = profileRes.data;
         setProfile({
-          dancer_name: data.dancer_name ?? "",
-          genres: (data.genres ?? []) as GenreKey[],
-          instagram: data.instagram ?? "",
-          dance_years: data.dance_years != null ? String(data.dance_years) : "",
-          age_group: data.age_group ?? "",
-          gender: data.gender ?? "",
+          dancer_name: d.dancer_name ?? "",
+          genres: (d.genres ?? []) as GenreKey[],
+          instagram: d.instagram ?? "",
+          dance_years: d.dance_years != null ? String(d.dance_years) : "",
+          age_group: d.age_group ?? "",
+          gender: d.gender ?? "",
         });
       }
+      if (hostedRes.data) setHostedHistory(hostedRes.data);
       setLoading(false);
     }
     fetchProfile();
@@ -918,6 +921,30 @@ function ProfileScreen({ user, onDancerNameChange }: { user: SupabaseUser; onDan
         <button onClick={handleSave} style={{ width:"100%", padding:"13px", border:"none", borderRadius:"6px", background:saved?"rgba(22,163,74,0.1)":"#FF3D00", color:saved?"#16A34A":"#fff", fontSize:"14px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px" }}>
           {saved?<><Check size={15}/>SAVED!</>:<><Star size={15}/>プロフィールを保存する</>}
         </button>
+
+        {/* 開催したサイファーの履歴 */}
+        {hostedHistory.length > 0 && (
+          <div>
+            <div style={{ fontSize:"9px", fontFamily:"'Space Mono',monospace", letterSpacing:"0.15em", color:"rgba(0,0,0,0.35)", marginBottom:"10px", textTransform:"uppercase" as const }}>▶ HOSTED CYPHERS</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
+              {hostedHistory.map(c => {
+                const { date, time } = formatDate(c.starts_at);
+                const ended = timeUntil(c.starts_at) === "終了";
+                return (
+                  <div key={c.id} style={{ padding:"10px 14px", background:"#FFFFFF", border:"1px solid rgba(0,0,0,0.08)", borderRadius:"8px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <div>
+                      <div style={{ fontSize:"14px", fontFamily:"'Bebas Neue',sans-serif", color: ended ? "rgba(0,0,0,0.4)" : "#111111" }}>{c.title}</div>
+                      <div style={{ fontSize:"10px", color:"rgba(0,0,0,0.4)", fontFamily:"'Space Mono',monospace", marginTop:"2px", display:"flex", alignItems:"center", gap:"6px" }}>
+                        <Clock size={9} color="rgba(0,0,0,0.3)" />{date} {time}
+                      </div>
+                    </div>
+                    {ended && <span style={{ fontSize:"9px", fontFamily:"'Space Mono',monospace", color:"rgba(0,0,0,0.3)", padding:"2px 7px", border:"1px solid rgba(0,0,0,0.1)", borderRadius:"3px" }}>終了</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
