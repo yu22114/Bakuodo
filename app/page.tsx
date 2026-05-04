@@ -796,7 +796,7 @@ export default function BakuOdori() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
-        body,html{background:#FAFAFA;color:#111111;-webkit-font-smoothing:antialiased}
+        body,html{background:#00FF00;color:#111111;-webkit-font-smoothing:antialiased}
         ::-webkit-scrollbar{display:none}
         textarea{font-family:inherit}
         select{appearance:none;-webkit-appearance:none}
