@@ -223,6 +223,12 @@ function ParticipantSheet({ participant, onClose }: { participant: ParticipantPr
 
 function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | null; onClose: () => void; joined: boolean; onJoin: (id: string) => void }) {
   if (!cypher) return null;
+
+  // useEffectのクロージャ内でTypeScriptがnullチェックを追跡できないため先に変数化
+  const cypherId = cypher.id;
+  const organizerId = cypher.organizer.id;
+  const organizerName = cypher.organizer.dancer_name;
+
   const { date, time } = formatDate(cypher.starts_at);
   const isEnded = timeUntil(cypher.starts_at) === "終了";
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
@@ -230,8 +236,8 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
   const [selectedParticipant, setSelectedParticipant] = useState<ParticipantProfile | null>(null);
   // 主催者プロフィール：取得失敗時はcypherの情報で初期化しておく
   const [organizerProfile, setOrganizerProfile] = useState<ParticipantProfile>({
-    profile_id: cypher.organizer.id,
-    dancer_name: cypher.organizer.dancer_name,
+    profile_id: organizerId,
+    dancer_name: organizerName,
     genres: [],
     instagram: null,
     dance_years: null,
@@ -245,7 +251,7 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
       const { data } = await supabase
         .from("participations")
         .select("profile_id, profiles:profile_id ( dancer_name, genres, instagram, dance_years, age_group, gender )")
-        .eq("cypher_id", cypher.id);
+        .eq("cypher_id", cypherId);
       if (data) {
         setParticipants(data.map((row: any) => ({
           profile_id: row.profile_id,
@@ -260,7 +266,7 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
       }
     }
     fetchParticipants();
-  }, [cypher.id, joined]);
+  }, [cypherId, joined]);
 
   // 主催者のプロフィールをDBから取得（追加情報があれば上書き）
   useEffect(() => {
@@ -268,12 +274,12 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
       const { data } = await supabase
         .from("profiles")
         .select("dancer_name, genres, instagram, dance_years, age_group, gender")
-        .eq("id", cypher.organizer.id)
+        .eq("id", organizerId)
         .single();
       if (data) {
         setOrganizerProfile({
-          profile_id: cypher.organizer.id,
-          dancer_name: data.dancer_name ?? cypher.organizer.dancer_name,
+          profile_id: organizerId,
+          dancer_name: data.dancer_name ?? organizerName,
           genres: (data.genres ?? []) as GenreKey[],
           instagram: data.instagram ?? null,
           dance_years: data.dance_years ?? null,
@@ -283,7 +289,7 @@ function DetailModal({ cypher, onClose, joined, onJoin }: { cypher: Cypher | nul
       }
     }
     fetchOrganizer();
-  }, [cypher.organizer.id]);
+  }, [organizerId]);
 
   return (
     <div style={{ position:"fixed", inset:0, zIndex:100, background:"rgba(0,0,0,0.4)", backdropFilter:"blur(4px)", display:"flex", alignItems:"flex-end" }} onClick={onClose}>
