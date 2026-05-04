@@ -365,6 +365,8 @@ function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName }: { onNav
             profiles:organizer_id ( dancer_name ),
             cypher_genres ( genres:genre_id ( name ) )
           `)
+          // 終了済み（starts_atが現在時刻より1時間以上前）は取得しない
+          .gte("starts_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
           .order("starts_at"),
         supabase.from("participations").select("cypher_id"),
       ]);
