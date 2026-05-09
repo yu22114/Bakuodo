@@ -299,7 +299,7 @@ function ParticipantSheet({ participant, onClose, currentUserId }: { participant
   );
 }
 
-function DetailModal({ cypher, onClose, joined, onJoin, user }: { cypher: Cypher | null; onClose: () => void; joined: boolean; onJoin: (id: string) => void; user: SupabaseUser | null }) {
+function DetailModal({ cypher, onClose, joined, onJoin, user, isJoining }: { cypher: Cypher | null; onClose: () => void; joined: boolean; onJoin: (id: string) => void; user: SupabaseUser | null; isJoining?: boolean }) {
   if (!cypher) return null;
 
   // useEffectのクロージャ内でTypeScriptがnullチェックを追跡できないため先に変数化
@@ -408,16 +408,28 @@ function DetailModal({ cypher, onClose, joined, onJoin, user }: { cypher: Cypher
           </div>
         )}
 
-        {isEnded ? (
-          <div style={{ marginTop:"20px", padding:"14px", background:"rgba(0,0,0,0.04)", borderRadius:"6px", textAlign:"center", fontSize:"13px", color:"rgba(0,0,0,0.4)", fontFamily:"'Space Mono',monospace" }}>
-            このサイファーは終了しました
-          </div>
-        ) : (
-          <button onClick={() => { onJoin(cypher.id); if (!joined) onClose(); }}
-            style={{ marginTop:"20px", width:"100%", padding:"14px", border:"none", borderRadius:"6px", background:joined?"rgba(22,163,74,0.1)":"#FF3D00", color:joined?"#16A34A":"#fff", fontSize:"14px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px" }}>
-            {joined ? <><Check size={16} /> 参加済み — キャンセルする</> : <><Zap size={16} /> このサイファーに参加する</>}
-          </button>
-        )}
+        {(() => {
+          // 主催者は参加ボタンを表示しない
+          const isOrganizer = user?.id === cypher.organizer.id;
+          if (isEnded) return (
+            <div style={{ marginTop:"20px", padding:"14px", background:"rgba(0,0,0,0.04)", borderRadius:"6px", textAlign:"center", fontSize:"13px", color:"rgba(0,0,0,0.4)", fontFamily:"'Space Mono',monospace" }}>
+              このサイファーは終了しました
+            </div>
+          );
+          if (isOrganizer) return (
+            <div style={{ marginTop:"20px", padding:"14px", background:"rgba(255,61,0,0.05)", border:"1px solid rgba(255,61,0,0.2)", borderRadius:"6px", textAlign:"center", fontSize:"13px", color:"rgba(255,61,0,0.6)", fontFamily:"'Space Mono',monospace" }}>
+              あなたが主催するサイファーです
+            </div>
+          );
+          return (
+            <button
+              onClick={() => { onJoin(cypher.id); if (!joined) onClose(); }}
+              disabled={isJoining}
+              style={{ marginTop:"20px", width:"100%", padding:"14px", border:"none", borderRadius:"6px", background:joined?"rgba(22,163,74,0.1)":"#FF3D00", color:joined?"#16A34A":"#fff", fontSize:"14px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:isJoining?"not-allowed":"pointer", opacity:isJoining?0.6:1, display:"flex", alignItems:"center", justifyContent:"center", gap:"8px" }}>
+              {joined ? <><Check size={16} /> 参加済み — キャンセルする</> : <><Zap size={16} /> このサイファーに参加する</>}
+            </button>
+          );
+        })()}
       </div>
       {/* 参加者プロフィールシート */}
       {selectedParticipant && <ParticipantSheet participant={selectedParticipant} onClose={() => setSelectedParticipant(null)} currentUserId={user?.id} />}
@@ -1057,6 +1069,8 @@ export default function BakuOdori() {
   const [refreshKey, setRefreshKey] = useState(0);
   // ダンサーネーム（ヘッダー表示用）
   const [dancerName, setDancerName] = useState("");
+  // DB INSERT処理中のサイファーID（二重参加防止）
+  const [joining, setJoining] = useState<string[]>([]);
 
   // ログイン時にprofilesレコードを自動作成（存在しない場合のみ）
   const ensureProfile = async (u: SupabaseUser) => {
@@ -1102,7 +1116,11 @@ export default function BakuOdori() {
       // キャンセル時は確認モーダルを表示
       setConfirmId(id);
     } else {
+      // 処理中なら多重実行を防ぐ
+      if (joining.includes(id)) return;
+      setJoining(j => [...j, id]);
       const { error } = await supabase.from("participations").insert({ cypher_id: id, profile_id: user.id });
+      setJoining(j => j.filter(x => x !== id));
       if (error) { console.error("join error:", error); return; }
       setJoined(j => [...j, id]);
       setRefreshKey(k => k + 1);
@@ -1146,7 +1164,7 @@ export default function BakuOdori() {
             {screen==="profile"  && <ProfileScreen user={user} onDancerNameChange={setDancerName}/>}
             {screen==="activity" && <ActivityScreen user={user}/>}
             <BottomNav current={screen} onNav={setScreen}/>
-            {detail && <DetailModal cypher={detail} onClose={()=>setDetail(null)} joined={joined.includes(detail.id)} onJoin={handleJoin} user={user}/>}
+            {detail && <DetailModal cypher={detail} onClose={()=>setDetail(null)} joined={joined.includes(detail.id)} onJoin={handleJoin} user={user} isJoining={joining.includes(detail.id)}/>}
             {confirmId && <ConfirmModal onConfirm={handleConfirmCancel} onCancel={()=>setConfirmId(null)} />}
           </>
         )}
