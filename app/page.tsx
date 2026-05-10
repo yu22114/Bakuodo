@@ -5,10 +5,10 @@ import { supabase } from "../lib/supabase";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
-type GenreKey = "Breaking" | "Popping" | "Locking" | "Waacking" | "House" | "Krump" | "Hip-Hop";
+type GenreKey = "Breaking" | "Popping" | "Locking" | "Waacking" | "House" | "Krump" | "Hip-Hop" | "All Style";
 
 interface Cypher {
-  id: string; title: string; starts_at: string; location: string;
+  id: string; title: string; starts_at: string; ends_at: string | null; location: string;
   genres: GenreKey[]; organizer: { id: string; dancer_name: string; avatar: string };
   participant_count: number; max_members: number | null;
   status: string; description: string; hot: boolean;
@@ -25,17 +25,19 @@ interface ProfileState {
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 // Voguingを削除
-const GENRES: GenreKey[] = ["Breaking","Popping","Locking","Waacking","House","Krump","Hip-Hop"];
+const GENRES: GenreKey[] = ["Breaking","Popping","Locking","Waacking","House","Krump","Hip-Hop","All Style"];
 // 白背景でも見やすい色に調整
 const GENRE_COLORS: Record<GenreKey, string> = {
   Breaking:"#FF3D00", Popping:"#0891B2", Locking:"#D97706",
   Waacking:"#A855F7", House:"#16A34A", Krump:"#EA580C", "Hip-Hop":"#2563EB",
+  "All Style":"#6366F1",
 };
 
-// 30分刻みの時間選択肢を生成
+// 30分刻みの時間選択肢を生成（9:00スタート、0:00〜8:30は末尾）
 const TIME_OPTIONS = Array.from({length: 48}, (_, i) => {
-  const h = Math.floor(i / 2);
-  const m = i % 2 === 0 ? "00" : "30";
+  const adjusted = (i + 18) % 48;
+  const h = Math.floor(adjusted / 2);
+  const m = adjusted % 2 === 0 ? "00" : "30";
   return `${String(h).padStart(2,"0")}:${m}`;
 });
 
@@ -380,7 +382,7 @@ function DetailModal({ cypher, onClose, joined, onJoin, user, isJoining }: { cyp
           {cypher.genres.map(g => <GenreBadge key={g} genre={g} size="md" />)}
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:"8px", marginBottom:"16px" }}>
-          <div style={{ display:"flex", gap:"10px", fontSize:"13px", color:"rgba(0,0,0,0.65)", fontFamily:"'Space Mono',monospace", alignItems:"center" }}><Clock size={14} color="rgba(0,0,0,0.4)" /> {date} {time}</div>
+          <div style={{ display:"flex", gap:"10px", fontSize:"13px", color:"rgba(0,0,0,0.65)", fontFamily:"'Space Mono',monospace", alignItems:"center" }}><Clock size={14} color="rgba(0,0,0,0.4)" /> {date} {time}{cypher.ends_at ? ` ~ ${formatDate(cypher.ends_at).time}` : ""}</div>
           <div style={{ display:"flex", gap:"10px", fontSize:"13px", color:"rgba(0,0,0,0.65)", fontFamily:"'Space Mono',monospace", alignItems:"center" }}><MapPin size={14} color="rgba(0,0,0,0.4)" /> {cypher.location}</div>
           {/* 主催者名クリックでプロフィール表示 */}
           <button onClick={() => organizerProfile && setSelectedParticipant(organizerProfile)}
@@ -451,7 +453,7 @@ function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName }: { onNav
         supabase
           .from("cyphers")
           .select(`
-            id, title, organizer_id, starts_at, location, description, max_members, status,
+            id, title, organizer_id, starts_at, ends_at, location, description, max_members, status,
             profiles:organizer_id ( dancer_name ),
             cypher_genres ( genres:genre_id ( name ) )
           `)
@@ -472,7 +474,7 @@ function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName }: { onNav
         const name = row.profiles?.dancer_name ?? "UNKNOWN";
         const genres: GenreKey[] = (row.cypher_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
         const count = countMap[row.id] ?? 0;
-        return { id:row.id, title:row.title, starts_at:row.starts_at, location:row.location, description:row.description??"", max_members:row.max_members, status:row.status, genres, organizer:{ id:row.organizer_id, dancer_name:name, avatar:name[0]?.toUpperCase()??"?" }, participant_count:count, hot:count>=5 };
+        return { id:row.id, title:row.title, starts_at:row.starts_at, ends_at:row.ends_at??null, location:row.location, description:row.description??"", max_members:row.max_members, status:row.status, genres, organizer:{ id:row.organizer_id, dancer_name:name, avatar:name[0]?.toUpperCase()??"?" }, participant_count:count, hot:count>=5 };
       });
       setCyphers(shaped);
       setLoading(false);
@@ -554,9 +556,10 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
     if (!form.title || !form.date || !form.location) return;
     setLoading(true); setError("");
     const starts_at = form.start_time ? `${form.date}T${form.start_time}:00` : `${form.date}T00:00:00`;
+    const ends_at = form.end_time ? `${form.date}T${form.end_time}:00` : null;
     const { data: cypher, error: cErr } = await supabase
       .from("cyphers")
-      .insert({ title:form.title, location:form.location, description:form.description, starts_at, max_members:form.max_members?Number(form.max_members):null, organizer_id:user.id })
+      .insert({ title:form.title, location:form.location, description:form.description, starts_at, ends_at, max_members:form.max_members?Number(form.max_members):null, organizer_id:user.id })
       .select().single();
     if (cErr || !cypher) { console.error("cypher insert error:", cErr); setError(`投稿に失敗しました。エラー: ${cErr?.message ?? "不明"}`); setLoading(false); return; }
     if (form.genres.length > 0) {
