@@ -579,7 +579,7 @@ function StationSearch({ value, onChange, inputStyle }: { value: string; onChang
       <input
         style={inputStyle}
         value={query}
-        placeholder="例: 渋谷、赤坂見附"
+        placeholder="例: 渋谷駅、新宿駅"
         onChange={e => { setQuery(e.target.value); onChange(e.target.value); }}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
       />
@@ -674,7 +674,7 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
           <StationSearch value={form.station} onChange={v=>setForm(f=>({...f,station:v}))} inputStyle={inp} />
         </div>
 
-        <div><label style={lbl}>会場・スタジオ名</label><input style={inp} placeholder="例: REI DANCE STUDIO、代々木公園" value={form.studio} onChange={e=>setForm(f=>({...f,studio:e.target.value}))} /></div>
+        <div><label style={lbl}>会場・スタジオ名</label><input style={inp} placeholder="例: 代々木worcle、Buzz渋谷" value={form.studio} onChange={e=>setForm(f=>({...f,studio:e.target.value}))} /></div>
 
         {/* イベント名は任意・場所名フォールバックあり */}
         <div><label style={lbl}>イベント名</label><input style={inp} placeholder="空白の場合は開催場所名がイベント名になります" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} /></div>
