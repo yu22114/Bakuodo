@@ -5,10 +5,10 @@ import { supabase } from "../lib/supabase";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
-type GenreKey = "Breaking" | "Popping" | "Locking" | "Waacking" | "House" | "Krump" | "Hip-Hop";
+type GenreKey = "Breaking" | "Popping" | "Locking" | "Waacking" | "House" | "Krump" | "Hip-Hop" | "All Style";
 
 interface Cypher {
-  id: string; title: string; starts_at: string; location: string;
+  id: string; title: string; starts_at: string; ends_at: string | null; location: string;
   genres: GenreKey[]; organizer: { id: string; dancer_name: string; avatar: string };
   participant_count: number; max_members: number | null;
   status: string; description: string; hot: boolean;
@@ -25,17 +25,19 @@ interface ProfileState {
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 // Voguingを削除
-const GENRES: GenreKey[] = ["Breaking","Popping","Locking","Waacking","House","Krump","Hip-Hop"];
+const GENRES: GenreKey[] = ["Breaking","Popping","Locking","Waacking","House","Krump","Hip-Hop","All Style"];
 // 白背景でも見やすい色に調整
 const GENRE_COLORS: Record<GenreKey, string> = {
   Breaking:"#FF3D00", Popping:"#0891B2", Locking:"#D97706",
   Waacking:"#A855F7", House:"#16A34A", Krump:"#EA580C", "Hip-Hop":"#2563EB",
+  "All Style":"#6366F1",
 };
 
-// 30分刻みの時間選択肢を生成
+// 30分刻みの時間選択肢を生成（9:00スタート、0:00〜8:30は末尾）
 const TIME_OPTIONS = Array.from({length: 48}, (_, i) => {
-  const h = Math.floor(i / 2);
-  const m = i % 2 === 0 ? "00" : "30";
+  const adjusted = (i + 18) % 48;
+  const h = Math.floor(adjusted / 2);
+  const m = adjusted % 2 === 0 ? "00" : "30";
   return `${String(h).padStart(2,"0")}:${m}`;
 });
 
@@ -299,7 +301,7 @@ function ParticipantSheet({ participant, onClose, currentUserId }: { participant
   );
 }
 
-function DetailModal({ cypher, onClose, joined, onJoin, user }: { cypher: Cypher | null; onClose: () => void; joined: boolean; onJoin: (id: string) => void; user: SupabaseUser | null }) {
+function DetailModal({ cypher, onClose, joined, onJoin, user, isJoining }: { cypher: Cypher | null; onClose: () => void; joined: boolean; onJoin: (id: string) => void; user: SupabaseUser | null; isJoining?: boolean }) {
   if (!cypher) return null;
 
   // useEffectのクロージャ内でTypeScriptがnullチェックを追跡できないため先に変数化
@@ -380,7 +382,7 @@ function DetailModal({ cypher, onClose, joined, onJoin, user }: { cypher: Cypher
           {cypher.genres.map(g => <GenreBadge key={g} genre={g} size="md" />)}
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:"8px", marginBottom:"16px" }}>
-          <div style={{ display:"flex", gap:"10px", fontSize:"13px", color:"rgba(0,0,0,0.65)", fontFamily:"'Space Mono',monospace", alignItems:"center" }}><Clock size={14} color="rgba(0,0,0,0.4)" /> {date} {time}</div>
+          <div style={{ display:"flex", gap:"10px", fontSize:"13px", color:"rgba(0,0,0,0.65)", fontFamily:"'Space Mono',monospace", alignItems:"center" }}><Clock size={14} color="rgba(0,0,0,0.4)" /> {date} {time}{cypher.ends_at ? ` ~ ${formatDate(cypher.ends_at).time}` : ""}</div>
           <div style={{ display:"flex", gap:"10px", fontSize:"13px", color:"rgba(0,0,0,0.65)", fontFamily:"'Space Mono',monospace", alignItems:"center" }}><MapPin size={14} color="rgba(0,0,0,0.4)" /> {cypher.location}</div>
           {/* 主催者名クリックでプロフィール表示 */}
           <button onClick={() => organizerProfile && setSelectedParticipant(organizerProfile)}
@@ -408,16 +410,28 @@ function DetailModal({ cypher, onClose, joined, onJoin, user }: { cypher: Cypher
           </div>
         )}
 
-        {isEnded ? (
-          <div style={{ marginTop:"20px", padding:"14px", background:"rgba(0,0,0,0.04)", borderRadius:"6px", textAlign:"center", fontSize:"13px", color:"rgba(0,0,0,0.4)", fontFamily:"'Space Mono',monospace" }}>
-            このサイファーは終了しました
-          </div>
-        ) : (
-          <button onClick={() => { onJoin(cypher.id); if (!joined) onClose(); }}
-            style={{ marginTop:"20px", width:"100%", padding:"14px", border:"none", borderRadius:"6px", background:joined?"rgba(22,163,74,0.1)":"#FF3D00", color:joined?"#16A34A":"#fff", fontSize:"14px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px" }}>
-            {joined ? <><Check size={16} /> 参加済み — キャンセルする</> : <><Zap size={16} /> このサイファーに参加する</>}
-          </button>
-        )}
+        {(() => {
+          // 主催者は参加ボタンを表示しない
+          const isOrganizer = user?.id === cypher.organizer.id;
+          if (isEnded) return (
+            <div style={{ marginTop:"20px", padding:"14px", background:"rgba(0,0,0,0.04)", borderRadius:"6px", textAlign:"center", fontSize:"13px", color:"rgba(0,0,0,0.4)", fontFamily:"'Space Mono',monospace" }}>
+              このサイファーは終了しました
+            </div>
+          );
+          if (isOrganizer) return (
+            <div style={{ marginTop:"20px", padding:"14px", background:"rgba(255,61,0,0.05)", border:"1px solid rgba(255,61,0,0.2)", borderRadius:"6px", textAlign:"center", fontSize:"13px", color:"rgba(255,61,0,0.6)", fontFamily:"'Space Mono',monospace" }}>
+              あなたが主催するサイファーです
+            </div>
+          );
+          return (
+            <button
+              onClick={() => { onJoin(cypher.id); if (!joined) onClose(); }}
+              disabled={isJoining}
+              style={{ marginTop:"20px", width:"100%", padding:"14px", border:"none", borderRadius:"6px", background:joined?"rgba(22,163,74,0.1)":"#FF3D00", color:joined?"#16A34A":"#fff", fontSize:"14px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:isJoining?"not-allowed":"pointer", opacity:isJoining?0.6:1, display:"flex", alignItems:"center", justifyContent:"center", gap:"8px" }}>
+              {joined ? <><Check size={16} /> 参加済み — キャンセルする</> : <><Zap size={16} /> このサイファーに参加する</>}
+            </button>
+          );
+        })()}
       </div>
       {/* 参加者プロフィールシート */}
       {selectedParticipant && <ParticipantSheet participant={selectedParticipant} onClose={() => setSelectedParticipant(null)} currentUserId={user?.id} />}
@@ -439,7 +453,7 @@ function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName }: { onNav
         supabase
           .from("cyphers")
           .select(`
-            id, title, organizer_id, starts_at, location, description, max_members, status,
+            id, title, organizer_id, starts_at, ends_at, location, description, max_members, status,
             profiles:organizer_id ( dancer_name ),
             cypher_genres ( genres:genre_id ( name ) )
           `)
@@ -460,7 +474,7 @@ function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName }: { onNav
         const name = row.profiles?.dancer_name ?? "UNKNOWN";
         const genres: GenreKey[] = (row.cypher_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
         const count = countMap[row.id] ?? 0;
-        return { id:row.id, title:row.title, starts_at:row.starts_at, location:row.location, description:row.description??"", max_members:row.max_members, status:row.status, genres, organizer:{ id:row.organizer_id, dancer_name:name, avatar:name[0]?.toUpperCase()??"?" }, participant_count:count, hot:count>=5 };
+        return { id:row.id, title:row.title, starts_at:row.starts_at, ends_at:row.ends_at??null, location:row.location, description:row.description??"", max_members:row.max_members, status:row.status, genres, organizer:{ id:row.organizer_id, dancer_name:name, avatar:name[0]?.toUpperCase()??"?" }, participant_count:count, hot:count>=5 };
       });
       setCyphers(shaped);
       setLoading(false);
@@ -542,9 +556,10 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
     if (!form.title || !form.date || !form.location) return;
     setLoading(true); setError("");
     const starts_at = form.start_time ? `${form.date}T${form.start_time}:00` : `${form.date}T00:00:00`;
+    const ends_at = form.end_time ? `${form.date}T${form.end_time}:00` : null;
     const { data: cypher, error: cErr } = await supabase
       .from("cyphers")
-      .insert({ title:form.title, location:form.location, description:form.description, starts_at, max_members:form.max_members?Number(form.max_members):null, organizer_id:user.id })
+      .insert({ title:form.title, location:form.location, description:form.description, starts_at, ends_at, max_members:form.max_members?Number(form.max_members):null, organizer_id:user.id })
       .select().single();
     if (cErr || !cypher) { console.error("cypher insert error:", cErr); setError(`投稿に失敗しました。エラー: ${cErr?.message ?? "不明"}`); setLoading(false); return; }
     if (form.genres.length > 0) {
@@ -1057,6 +1072,8 @@ export default function BakuOdori() {
   const [refreshKey, setRefreshKey] = useState(0);
   // ダンサーネーム（ヘッダー表示用）
   const [dancerName, setDancerName] = useState("");
+  // DB INSERT処理中のサイファーID（二重参加防止）
+  const [joining, setJoining] = useState<string[]>([]);
 
   // ログイン時にprofilesレコードを自動作成（存在しない場合のみ）
   const ensureProfile = async (u: SupabaseUser) => {
@@ -1102,7 +1119,11 @@ export default function BakuOdori() {
       // キャンセル時は確認モーダルを表示
       setConfirmId(id);
     } else {
+      // 処理中なら多重実行を防ぐ
+      if (joining.includes(id)) return;
+      setJoining(j => [...j, id]);
       const { error } = await supabase.from("participations").insert({ cypher_id: id, profile_id: user.id });
+      setJoining(j => j.filter(x => x !== id));
       if (error) { console.error("join error:", error); return; }
       setJoined(j => [...j, id]);
       setRefreshKey(k => k + 1);
@@ -1146,7 +1167,7 @@ export default function BakuOdori() {
             {screen==="profile"  && <ProfileScreen user={user} onDancerNameChange={setDancerName}/>}
             {screen==="activity" && <ActivityScreen user={user}/>}
             <BottomNav current={screen} onNav={setScreen}/>
-            {detail && <DetailModal cypher={detail} onClose={()=>setDetail(null)} joined={joined.includes(detail.id)} onJoin={handleJoin} user={user}/>}
+            {detail && <DetailModal cypher={detail} onClose={()=>setDetail(null)} joined={joined.includes(detail.id)} onJoin={handleJoin} user={user} isJoining={joining.includes(detail.id)}/>}
             {confirmId && <ConfirmModal onConfirm={handleConfirmCancel} onCancel={()=>setConfirmId(null)} />}
           </>
         )}
