@@ -16,7 +16,7 @@ interface Cypher {
 interface FormState {
   title: string; date: string; start_time: string; end_time: string;
   station: string; studio: string; genres: GenreKey[]; description: string;
-  max_members: string; payment: string;
+  max_members: string; payment: string[];
 }
 interface ProfileState {
   dancer_name: string; genres: GenreKey[];
@@ -599,7 +599,7 @@ function StationSearch({ value, onChange, inputStyle }: { value: string; onChang
 
 // ─── POST SCREEN ──────────────────────────────────────────────────────────────
 function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: SupabaseUser }) {
-  const [form, setForm] = useState<FormState>({ title:"", date:"", start_time:"", end_time:"", station:"", studio:"", genres:[], description:"", max_members:"", payment:"" });
+  const [form, setForm] = useState<FormState>({ title:"", date:"", start_time:"", end_time:"", station:"", studio:"", genres:[], description:"", max_members:"", payment:[] });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -698,9 +698,9 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
           <label style={lbl}>支払い方法</label>
           <div style={{ display:"flex", gap:"8px", flexWrap:"wrap" }}>
             {["現金","PayPay","無料"].map(p => {
-              const sel = form.payment === p;
+              const sel = form.payment.includes(p);
               return (
-                <button key={p} onClick={()=>setForm(f=>({...f,payment:f.payment===p?"":p}))}
+                <button key={p} onClick={()=>setForm(f=>({...f,payment:f.payment.includes(p)?f.payment.filter(x=>x!==p):[...f.payment,p]}))}
                   style={{ padding:"8px 16px", border:sel?"1px solid #FF3D00":"1px solid rgba(0,0,0,0.1)", borderRadius:"6px", background:sel?"rgba(255,61,0,0.08)":"transparent", color:sel?"#FF3D00":"rgba(0,0,0,0.45)", fontSize:"12px", fontFamily:"'Space Mono',monospace", cursor:"pointer" }}>
                   {p}
                 </button>
