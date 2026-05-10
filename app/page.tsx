@@ -164,7 +164,7 @@ function CypherCard({ cypher, onClick }: { cypher: Cypher; onClick: () => void }
       <div style={{ display:"flex", flexDirection:"column", gap:"5px", marginBottom:"12px" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
           <Clock size={11} color="rgba(0,0,0,0.35)" />
-          <span style={{ fontSize:"11px", color:"rgba(0,0,0,0.6)", fontFamily:"'Space Mono',monospace" }}>{date} {time}</span>
+          <span style={{ fontSize:"11px", color:"rgba(0,0,0,0.6)", fontFamily:"'Space Mono',monospace" }}>{date} {time}{cypher.ends_at ? ` ~ ${formatDate(cypher.ends_at).time}` : ""}</span>
           <span style={{ fontSize:"9px", padding:"1px 6px", background:isEnded?"rgba(0,0,0,0.06)":"rgba(255,61,0,0.08)", borderRadius:"3px", color:isEnded?"rgba(0,0,0,0.4)":"#FF3D00", fontFamily:"'Space Mono',monospace", fontWeight:"bold" }}>{until}</span>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
