@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MapPin, Clock, Users, Zap, Plus, User, Check, X, Star, Radio, Flame, LogOut, Activity, Trash2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
@@ -15,7 +15,7 @@ interface Cypher {
 }
 interface FormState {
   title: string; date: string; start_time: string; end_time: string;
-  location: string; genres: GenreKey[]; description: string;
+  station: string; studio: string; genres: GenreKey[]; description: string;
   max_members: string; payment: string;
 }
 interface ProfileState {
@@ -544,24 +544,79 @@ function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName }: { onNav
   );
 }
 
+// ─── STATION SEARCH ───────────────────────────────────────────────────────────
+function StationSearch({ value, onChange, inputStyle }: { value: string; onChange: (v: string) => void; inputStyle: React.CSSProperties }) {
+  const [query, setQuery] = useState(value);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [open, setOpen] = useState(false);
+  // 選択操作でqueryが変わったときに再検索しないためのフラグ
+  const skipRef = useRef(false);
+
+  useEffect(() => {
+    if (skipRef.current) { skipRef.current = false; return; }
+    if (!query.trim()) { setSuggestions([]); setOpen(false); return; }
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/stations?q=${encodeURIComponent(query)}`);
+        const data: string[] = await res.json();
+        setSuggestions(data);
+        setOpen(data.length > 0);
+      } catch { setSuggestions([]); }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const select = (name: string) => {
+    const display = name + "駅";
+    skipRef.current = true;
+    setQuery(display);
+    onChange(display);
+    setOpen(false);
+  };
+
+  return (
+    <div style={{ position:"relative" }}>
+      <input
+        style={inputStyle}
+        value={query}
+        placeholder="例: 渋谷、赤坂見附"
+        onChange={e => { setQuery(e.target.value); onChange(e.target.value); }}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+      />
+      {open && (
+        <div style={{ position:"absolute", top:"calc(100% + 4px)", left:0, right:0, background:"#fff", border:"1px solid rgba(0,0,0,0.1)", borderRadius:"6px", boxShadow:"0 4px 16px rgba(0,0,0,0.1)", zIndex:50, overflow:"hidden" }}>
+          {suggestions.map(s => (
+            <button key={s} onMouseDown={() => select(s)}
+              style={{ display:"block", width:"100%", padding:"10px 14px", border:"none", borderBottom:"1px solid rgba(0,0,0,0.05)", background:"none", textAlign:"left", fontSize:"13px", fontFamily:"'Space Mono',monospace", color:"#111111", cursor:"pointer" }}>
+              {s}駅
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── POST SCREEN ──────────────────────────────────────────────────────────────
 function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: SupabaseUser }) {
-  const [form, setForm] = useState<FormState>({ title:"", date:"", start_time:"", end_time:"", location:"", genres:[], description:"", max_members:"", payment:"" });
+  const [form, setForm] = useState<FormState>({ title:"", date:"", start_time:"", end_time:"", station:"", studio:"", genres:[], description:"", max_members:"", payment:"" });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const toggleGenre = (g: GenreKey) => setForm(f => ({ ...f, genres: f.genres.includes(g) ? f.genres.filter(x => x !== g) : [...f.genres, g] }));
 
   const handleSubmit = async () => {
-    if (!form.date || !form.location) return;
+    if (!form.date || !form.station) return;
     setLoading(true); setError("");
+    // 駅名＋スタジオ名を結合してlocationとして保存
+    const location = form.studio ? `${form.station} ${form.studio}` : form.station;
     // タイトル未入力時は場所名をイベント名として使用
-    const title = form.title.trim() || form.location;
+    const title = form.title.trim() || location;
     const starts_at = form.start_time ? `${form.date}T${form.start_time}:00` : `${form.date}T00:00:00`;
     const ends_at = form.end_time ? `${form.date}T${form.end_time}:00` : null;
     const { data: cypher, error: cErr } = await supabase
       .from("cyphers")
-      .insert({ title, location:form.location, description:form.description, starts_at, ends_at, max_members:form.max_members?Number(form.max_members):null, organizer_id:user.id })
+      .insert({ title, location, description:form.description, starts_at, ends_at, max_members:form.max_members?Number(form.max_members):null, organizer_id:user.id })
       .select().single();
     if (cErr || !cypher) { console.error("cypher insert error:", cErr); setError(`投稿に失敗しました。エラー: ${cErr?.message ?? "不明"}`); setLoading(false); return; }
     if (form.genres.length > 0) {
@@ -614,7 +669,12 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
           </div>
         </div>
 
-        <div><label style={lbl}>場所 <span style={{color:"#FF3D00"}}>*</span></label><input style={inp} placeholder="例: 渋谷駅 ハチ公前" value={form.location} onChange={e=>setForm(f=>({...f,location:e.target.value}))} /></div>
+        <div>
+          <label style={lbl}>最寄り駅 <span style={{color:"#FF3D00"}}>*</span></label>
+          <StationSearch value={form.station} onChange={v=>setForm(f=>({...f,station:v}))} inputStyle={inp} />
+        </div>
+
+        <div><label style={lbl}>会場・スタジオ名</label><input style={inp} placeholder="例: REI DANCE STUDIO、代々木公園" value={form.studio} onChange={e=>setForm(f=>({...f,studio:e.target.value}))} /></div>
 
         {/* イベント名は任意・場所名フォールバックあり */}
         <div><label style={lbl}>イベント名</label><input style={inp} placeholder="空白の場合は開催場所名がイベント名になります" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} /></div>
@@ -650,7 +710,7 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
         </div>
 
         <button onClick={handleSubmit} disabled={loading}
-          style={{ width:"100%", padding:"14px", border:"none", borderRadius:"6px", background:form.date&&form.location?"#FF3D00":"rgba(0,0,0,0.06)", color:form.date&&form.location?"#fff":"rgba(0,0,0,0.25)", fontSize:"15px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:form.date&&form.location?"pointer":"not-allowed", opacity:loading?0.6:1 }}>
+          style={{ width:"100%", padding:"14px", border:"none", borderRadius:"6px", background:form.date&&form.station?"#FF3D00":"rgba(0,0,0,0.06)", color:form.date&&form.station?"#fff":"rgba(0,0,0,0.25)", fontSize:"15px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:form.date&&form.station?"pointer":"not-allowed", opacity:loading?0.6:1 }}>
           <Zap size={15} style={{ display:"inline", marginRight:"8px", verticalAlign:"middle" }} />
           {loading ? "投稿中..." : "サイファーを投稿する"}
         </button>
