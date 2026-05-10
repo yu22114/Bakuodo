@@ -553,13 +553,15 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
   const toggleGenre = (g: GenreKey) => setForm(f => ({ ...f, genres: f.genres.includes(g) ? f.genres.filter(x => x !== g) : [...f.genres, g] }));
 
   const handleSubmit = async () => {
-    if (!form.title || !form.date || !form.location) return;
+    if (!form.date || !form.location) return;
     setLoading(true); setError("");
+    // タイトル未入力時は場所名をイベント名として使用
+    const title = form.title.trim() || form.location;
     const starts_at = form.start_time ? `${form.date}T${form.start_time}:00` : `${form.date}T00:00:00`;
     const ends_at = form.end_time ? `${form.date}T${form.end_time}:00` : null;
     const { data: cypher, error: cErr } = await supabase
       .from("cyphers")
-      .insert({ title:form.title, location:form.location, description:form.description, starts_at, ends_at, max_members:form.max_members?Number(form.max_members):null, organizer_id:user.id })
+      .insert({ title, location:form.location, description:form.description, starts_at, ends_at, max_members:form.max_members?Number(form.max_members):null, organizer_id:user.id })
       .select().single();
     if (cErr || !cypher) { console.error("cypher insert error:", cErr); setError(`投稿に失敗しました。エラー: ${cErr?.message ?? "不明"}`); setLoading(false); return; }
     if (form.genres.length > 0) {
@@ -591,9 +593,8 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
       <div style={{ padding:"20px 16px", display:"flex", flexDirection:"column", gap:"16px" }}>
         {error && <div style={{ padding:"10px 12px", background:"rgba(255,61,0,0.06)", border:"1px solid rgba(255,61,0,0.25)", borderRadius:"6px", color:"#FF3D00", fontSize:"12px", fontFamily:"'Space Mono',monospace" }}>{error}</div>}
 
-        <div><label style={lbl}>イベント名 *</label><input style={inp} placeholder="例: 渋谷夜間サイファー" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} /></div>
-
-        <div><label style={lbl}>日付 *</label><input type="date" style={inp} value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))} /></div>
+        {/* 日付・時間・場所を先に（必須） */}
+        <div><label style={lbl}>日付 <span style={{color:"#FF3D00"}}>*</span></label><input type="date" style={inp} value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))} /></div>
 
         {/* 30分刻みの開始・終了時間 */}
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px" }}>
@@ -613,7 +614,10 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
           </div>
         </div>
 
-        <div><label style={lbl}>場所 *</label><input style={inp} placeholder="例: 渋谷駅 ハチ公前" value={form.location} onChange={e=>setForm(f=>({...f,location:e.target.value}))} /></div>
+        <div><label style={lbl}>場所 <span style={{color:"#FF3D00"}}>*</span></label><input style={inp} placeholder="例: 渋谷駅 ハチ公前" value={form.location} onChange={e=>setForm(f=>({...f,location:e.target.value}))} /></div>
+
+        {/* イベント名は任意・場所名フォールバックあり */}
+        <div><label style={lbl}>イベント名</label><input style={inp} placeholder="空白の場合は開催場所名がイベント名になります" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} /></div>
 
         <div>
           <label style={lbl}>ジャンル</label>
@@ -646,7 +650,7 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
         </div>
 
         <button onClick={handleSubmit} disabled={loading}
-          style={{ width:"100%", padding:"14px", border:"none", borderRadius:"6px", background:form.title&&form.date&&form.location?"#FF3D00":"rgba(0,0,0,0.06)", color:form.title&&form.date&&form.location?"#fff":"rgba(0,0,0,0.25)", fontSize:"15px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:form.title&&form.date&&form.location?"pointer":"not-allowed", opacity:loading?0.6:1 }}>
+          style={{ width:"100%", padding:"14px", border:"none", borderRadius:"6px", background:form.date&&form.location?"#FF3D00":"rgba(0,0,0,0.06)", color:form.date&&form.location?"#fff":"rgba(0,0,0,0.25)", fontSize:"15px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:form.date&&form.location?"pointer":"not-allowed", opacity:loading?0.6:1 }}>
           <Zap size={15} style={{ display:"inline", marginRight:"8px", verticalAlign:"middle" }} />
           {loading ? "投稿中..." : "サイファーを投稿する"}
         </button>
