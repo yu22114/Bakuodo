@@ -33,8 +33,9 @@ const GENRE_COLORS: Record<GenreKey, string> = {
 };
 
 // 30分刻みの時間選択肢を生成
+// 6時始まりで30分刻み（6:00〜5:30）
 const TIME_OPTIONS = Array.from({length: 48}, (_, i) => {
-  const h = Math.floor(i / 2);
+  const h = (Math.floor(i / 2) + 6) % 24;
   const m = i % 2 === 0 ? "00" : "30";
   return `${String(h).padStart(2,"0")}:${m}`;
 });
