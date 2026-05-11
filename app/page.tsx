@@ -192,12 +192,14 @@ interface ParticipantProfile {
 
 // 参加者プロフィールを表示するミニシート
 // ─── PUBLIC PROFILE SCREEN ───────────────────────────────────────────────────
-function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogout, onViewProfile }: {
+function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogout, onViewProfile, onCypherClick, onEditCypher }: {
   profileId: string; currentUserId: string;
   onBack?: () => void;       // オーバーレイ表示時に戻るボタンを出す
   onEdit?: () => void;       // 自分のプロフィール時に編集画面へ
   onLogout?: () => void;     // ログアウト
   onViewProfile?: (id: string) => void;
+  onCypherClick?: (cypherId: string) => void;  // サイファー詳細を開く
+  onEditCypher?: (cypherId: string) => void;   // サイファーを編集する
 }) {
   const isOwn = profileId === currentUserId;
   type ProfileData = { dancer_name: string; genres: GenreKey[]; instagram: string | null; dance_years: number | null; age_group: string | null; gender: string | null };
@@ -205,10 +207,6 @@ function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogou
   type JoinedCypher = { id: string; title: string; starts_at: string; location: string; organizer_name: string };
 
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  const [likes, setLikes] = useState(0);
-  const [bads, setBads] = useState(0);
-  const [myReaction, setMyReaction] = useState<"like" | "bad" | null>(null);
-  const [reacting, setReacting] = useState(false);
   // フォロー関連state
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
@@ -232,9 +230,8 @@ function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogou
   useEffect(() => {
     async function fetchAll() {
       setLoading(true);
-      const [profileRes, reactionsRes, hostedRes, allPartsRes, followersRes, followingRes] = await Promise.all([
+      const [profileRes, hostedRes, allPartsRes, followersRes, followingRes] = await Promise.all([
         supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender").eq("id", profileId).single(),
-        supabase.from("profile_reactions").select("reaction, from_profile_id").eq("to_profile_id", profileId),
         supabase.from("cyphers").select("id, title, starts_at, location").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("participations").select("cypher_id"),
         // フォロワー数（このプロフィールをフォローしている人）
@@ -246,11 +243,6 @@ function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogou
         const d = profileRes.data as any;
         setProfileData({ dancer_name: d.dancer_name ?? "", genres: (d.genres ?? []) as GenreKey[], instagram: d.instagram ?? null, dance_years: d.dance_years ?? null, age_group: d.age_group ?? null, gender: d.gender ?? null });
       }
-      const reactions = reactionsRes.data ?? [];
-      setLikes(reactions.filter((r: any) => r.reaction === "like").length);
-      setBads(reactions.filter((r: any) => r.reaction === "bad").length);
-      const mine = reactions.find((r: any) => r.from_profile_id === currentUserId);
-      setMyReaction(mine ? mine.reaction as "like" | "bad" : null);
       setFollowerCount(followersRes.count ?? 0);
       setFollowingCount(followingRes.count ?? 0);
       // 自分が相手をフォロー中かどうか確認
@@ -315,28 +307,6 @@ function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogou
       setFollowSheet({ type, users: (data ?? []).map((r: any) => ({ id: r.following_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN" })) });
     }
     setFollowSheetLoading(false);
-  };
-
-  // いいね／バッドをトグル
-  const handleReact = async (reaction: "like" | "bad") => {
-    if (isOwn || reacting) return;
-    setReacting(true);
-    if (myReaction === reaction) {
-      await supabase.from("profile_reactions").delete().eq("from_profile_id", currentUserId).eq("to_profile_id", profileId);
-      if (reaction === "like") setLikes(n => n - 1); else setBads(n => n - 1);
-      setMyReaction(null);
-    } else {
-      if (myReaction) {
-        await supabase.from("profile_reactions").update({ reaction }).eq("from_profile_id", currentUserId).eq("to_profile_id", profileId);
-        if (myReaction === "like") setLikes(n => n - 1); else setBads(n => n - 1);
-        if (reaction === "like") setLikes(n => n + 1); else setBads(n => n + 1);
-      } else {
-        await supabase.from("profile_reactions").insert({ from_profile_id: currentUserId, to_profile_id: profileId, reaction });
-        if (reaction === "like") setLikes(n => n + 1); else setBads(n => n + 1);
-      }
-      setMyReaction(reaction);
-    }
-    setReacting(false);
   };
 
   // 主催サイファーの参加者一覧を開く
@@ -449,23 +419,6 @@ function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogou
             </div>
           )}
 
-          {/* いいね・バッド */}
-          <div style={{ display: "flex", gap: "8px" }}>
-            {isOwn ? (<>
-              <div style={{ flex:1, padding:"12px", border:"1px solid rgba(0,0,0,0.08)", borderRadius:"8px", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px", fontSize:"16px", fontFamily:"'Space Mono',monospace", color:"rgba(0,0,0,0.5)", background:"#FFFFFF" }}>👍 <span style={{ fontWeight:"bold" }}>{likes}</span></div>
-              <div style={{ flex:1, padding:"12px", border:"1px solid rgba(0,0,0,0.08)", borderRadius:"8px", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px", fontSize:"16px", fontFamily:"'Space Mono',monospace", color:"rgba(0,0,0,0.5)", background:"#FFFFFF" }}>👎 <span style={{ fontWeight:"bold" }}>{bads}</span></div>
-            </>) : (<>
-              <button onClick={() => handleReact("like")} disabled={reacting}
-                style={{ flex:1, padding:"12px", border:myReaction==="like"?"1px solid #16A34A":"1px solid rgba(0,0,0,0.12)", borderRadius:"8px", background:myReaction==="like"?"rgba(22,163,74,0.08)":"#FFFFFF", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px", fontSize:"16px", fontFamily:"'Space Mono',monospace", color:myReaction==="like"?"#16A34A":"rgba(0,0,0,0.5)" }}>
-                👍 <span style={{ fontWeight:"bold" }}>{likes}</span>
-              </button>
-              <button onClick={() => handleReact("bad")} disabled={reacting}
-                style={{ flex:1, padding:"12px", border:myReaction==="bad"?"1px solid #EF4444":"1px solid rgba(0,0,0,0.12)", borderRadius:"8px", background:myReaction==="bad"?"rgba(239,68,68,0.08)":"#FFFFFF", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px", fontSize:"16px", fontFamily:"'Space Mono',monospace", color:myReaction==="bad"?"#EF4444":"rgba(0,0,0,0.5)" }}>
-                👎 <span style={{ fontWeight:"bold" }}>{bads}</span>
-              </button>
-            </>)}
-          </div>
-
           {/* 自分のプロフィール：参加中・主催タブ */}
           {isOwn && (<>
             <div style={{ display:"flex", background:"#FFFFFF", border:"1px solid rgba(0,0,0,0.08)", borderRadius:"10px 10px 0 0", overflow:"hidden" }}>
@@ -494,12 +447,13 @@ function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogou
                 hostedCyphers.length===0
                   ? <div style={{ textAlign:"center", padding:"32px", color:"rgba(0,0,0,0.35)", fontFamily:"'Space Mono',monospace", fontSize:"12px" }}>まだサイファーを主催していません</div>
                   : hostedCyphers.map(c => { const { date, time } = formatDate(c.starts_at); const until = timeUntil(c.starts_at); return (
-                    <div key={c.id} onClick={() => handleOpenParticipants(c)} style={{ padding:"12px 14px", borderBottom:"1px solid rgba(0,0,0,0.05)", cursor:"pointer" }}>
+                    <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding:"12px 14px", borderBottom:"1px solid rgba(0,0,0,0.05)", cursor:onCypherClick?"pointer":"default" }}>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
                         <div style={{ fontSize:"14px", fontFamily:"'Bebas Neue',sans-serif", color:"#111111", flex:1 }}>{c.title}</div>
-                        <div style={{ display:"flex", alignItems:"center", gap:"8px", flexShrink:0, marginLeft:"8px" }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:"4px", flexShrink:0, marginLeft:"8px" }}>
                           <span style={{ fontSize:"12px", fontFamily:"'Space Mono',monospace", color:"#FF3D00", fontWeight:"bold" }}>{c.participant_count}人</span>
-                          <button onClick={e=>{e.stopPropagation();setDeleteConfirmId(c.id);}} style={{ background:"none", border:"none", cursor:"pointer", padding:"2px", color:"rgba(0,0,0,0.25)" }}><Trash2 size={14}/></button>
+                          <button onClick={e=>{e.stopPropagation();onEditCypher?.(c.id);}} title="編集" style={{ background:"none", border:"none", cursor:"pointer", padding:"4px", color:"rgba(0,0,0,0.3)", minWidth:"44px", minHeight:"44px", display:"flex", alignItems:"center", justifyContent:"center" }}><Pencil size={13}/></button>
+                          <button onClick={e=>{e.stopPropagation();setDeleteConfirmId(c.id);}} title="削除" style={{ background:"none", border:"none", cursor:"pointer", padding:"4px", color:"rgba(0,0,0,0.25)", minWidth:"44px", minHeight:"44px", display:"flex", alignItems:"center", justifyContent:"center" }}><Trash2 size={14}/></button>
                         </div>
                       </div>
                       <div style={{ display:"flex", alignItems:"center", gap:"8px", fontSize:"10px", color:"rgba(0,0,0,0.4)", fontFamily:"'Space Mono',monospace", marginTop:"3px" }}>
@@ -518,7 +472,7 @@ function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogou
               <div style={{ fontSize:"9px", fontFamily:"'Space Mono',monospace", letterSpacing:"0.15em", color:"rgba(0,0,0,0.35)", marginBottom:"8px", textTransform:"uppercase" as const }}>▶ HOSTED CYPHERS</div>
               <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
                 {hostedCyphers.map(c => { const { date, time } = formatDate(c.starts_at); const ended = timeUntil(c.starts_at)==="終了"; return (
-                  <div key={c.id} style={{ padding:"10px 14px", background:"#FFFFFF", border:"1px solid rgba(0,0,0,0.08)", borderRadius:"8px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding:"10px 14px", background:"#FFFFFF", border:"1px solid rgba(0,0,0,0.08)", borderRadius:"8px", display:"flex", justifyContent:"space-between", alignItems:"center", cursor:onCypherClick?"pointer":"default" }}>
                     <div>
                       <div style={{ fontSize:"14px", fontFamily:"'Bebas Neue',sans-serif", color:ended?"rgba(0,0,0,0.4)":"#111111" }}>{c.title}</div>
                       <div style={{ fontSize:"10px", color:"rgba(0,0,0,0.4)", fontFamily:"'Space Mono',monospace", marginTop:"2px", display:"flex", alignItems:"center", gap:"6px" }}><Clock size={9} color="rgba(0,0,0,0.3)"/>{date} {time}</div>
@@ -695,12 +649,13 @@ function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, user }: {
   return (
     <div style={{ position:"fixed", inset:0, zIndex:100, background:"rgba(0,0,0,0.4)", backdropFilter:"blur(4px)", display:"flex", alignItems:"flex-end" }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{ width:"100%", maxWidth:"480px", margin:"0 auto", background:"#FFFFFF", border:"1px solid rgba(0,0,0,0.08)", borderBottom:"none", borderRadius:"12px 12px 0 0", maxHeight:"88vh", display:"flex", flexDirection:"column", boxShadow:"0 -4px 24px rgba(0,0,0,0.1)" }}>
+        {/* ヘッダー（スクロールに追随しない固定部分）*/}
+        <div style={{ padding:"20px 20px 0", display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexShrink:0, borderRadius:"12px 12px 0 0" }}>
+          <h2 style={{ margin:0, fontSize:"24px", fontFamily:"'Bebas Neue',sans-serif", color:"#111111", lineHeight:1.1, flex:1 }}>{cypher.title}</h2>
+          <button onClick={onClose} style={{ background:"none", border:"none", color:"rgba(0,0,0,0.4)", cursor:"pointer", marginLeft:"12px", minWidth:"44px", minHeight:"44px", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}><X size={22} /></button>
+        </div>
         {/* スクロール可能なコンテンツ領域 */}
-        <div style={{ overflowY:"auto", padding:"24px 20px 0", flex:1 }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"20px" }}>
-            <h2 style={{ margin:0, fontSize:"24px", fontFamily:"'Bebas Neue',sans-serif", color:"#111111", lineHeight:1.1, flex:1 }}>{cypher.title}</h2>
-            <button onClick={onClose} style={{ background:"none", border:"none", color:"rgba(0,0,0,0.4)", cursor:"pointer", padding:"4px", marginLeft:"12px" }}><X size={20} /></button>
-          </div>
+        <div style={{ overflowY:"auto", padding:"8px 20px 0", flex:1 }}>
           <div style={{ display:"flex", flexWrap:"wrap", gap:"6px", marginBottom:"16px" }}>
             {cypher.genres.map(g => <GenreBadge key={g} genre={g} size="md" />)}
           </div>
@@ -736,12 +691,19 @@ function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, user }: {
             <div style={{ marginTop:"20px", padding:"14px", background:"rgba(0,0,0,0.04)", borderRadius:"6px", textAlign:"center", fontSize:"13px", color:"rgba(0,0,0,0.4)", fontFamily:"'Space Mono',monospace" }}>
               このサイファーは終了しました
             </div>
-          ) : (
-            <button onClick={() => { onJoin(cypher.id); if (!joined) onClose(); }}
-              style={{ marginTop:"20px", width:"100%", padding:"14px", border:"none", borderRadius:"6px", background:joined?"rgba(22,163,74,0.1)":"#FF3D00", color:joined?"#16A34A":"#fff", fontSize:"14px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px" }}>
-              {joined ? <><Check size={16} /> 参加済み — キャンセルする</> : <><Zap size={16} /> このサイファーに参加する</>}
-            </button>
-          )}
+          ) : (() => {
+            const isFull = !joined && cypher.max_members !== null && participantsFetched && participants.length >= cypher.max_members;
+            return isFull ? (
+              <div style={{ marginTop:"20px", padding:"14px", background:"rgba(255,61,0,0.06)", border:"1px solid rgba(255,61,0,0.2)", borderRadius:"6px", textAlign:"center", fontSize:"13px", color:"#FF3D00", fontFamily:"'Space Mono',monospace" }}>
+                定員に達しています（{participants.length}/{cypher.max_members}人）
+              </div>
+            ) : (
+              <button onClick={() => { onJoin(cypher.id); if (!joined) onClose(); }}
+                style={{ marginTop:"20px", width:"100%", padding:"14px", border:"none", borderRadius:"6px", background:joined?"rgba(22,163,74,0.1)":"#FF3D00", color:joined?"#16A34A":"#fff", fontSize:"14px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px" }}>
+                {joined ? <><Check size={16} /> 参加済み — キャンセルする</> : <><Zap size={16} /> このサイファーに参加する</>}
+              </button>
+            );
+          })()}
 
           {/* ─── コメントセクション ─── */}
           <div style={{ marginTop:"28px", borderTop:"1px solid rgba(0,0,0,0.07)", paddingTop:"20px" }}>
@@ -1020,7 +982,7 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px" }}>
           <div>
             <label style={lbl}>開始時間</label>
-            <select style={inp} value={form.start_time} onChange={e=>setForm(f=>({...f,start_time:e.target.value}))}>
+            <select style={inp} value={form.start_time} onChange={e=>{const v=e.target.value;setForm(f=>({...f,start_time:v,end_time:f.end_time&&v&&f.end_time<=v?"":f.end_time}))}}>
               <option value="">未設定</option>
               {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
@@ -1029,7 +991,7 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
             <label style={lbl}>終了時間</label>
             <select style={inp} value={form.end_time} onChange={e=>setForm(f=>({...f,end_time:e.target.value}))}>
               <option value="">未設定</option>
-              {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+              {TIME_OPTIONS.filter(t=>!form.start_time||t>form.start_time).map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
         </div>
@@ -1071,6 +1033,116 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
           style={{ width:"100%", padding:"14px", border:"none", borderRadius:"6px", background:form.date&&form.station?"#FF3D00":"rgba(0,0,0,0.06)", color:form.date&&form.station?"#fff":"rgba(0,0,0,0.25)", fontSize:"15px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:form.date&&form.station?"pointer":"not-allowed", opacity:loading?0.6:1 }}>
           <Zap size={15} style={{ display:"inline", marginRight:"8px", verticalAlign:"middle" }} />
           {loading ? "投稿中..." : "サイファーを投稿する"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── EDIT CYPHER SCREEN ──────────────────────────────────────────────────────
+function EditCypherScreen({ cypherId, user, onBack, onSaved }: { cypherId: string; user: SupabaseUser; onBack: () => void; onSaved: () => void }) {
+  const [form, setForm] = useState<FormState>({ title:"", date:"", start_time:"", end_time:"", station:"", studio:"", genres:[], description:"", max_members:"", payment:[] });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const toggleGenre = (g: GenreKey) => setForm(f => ({ ...f, genres: f.genres.includes(g) ? f.genres.filter(x => x !== g) : [...f.genres, g] }));
+
+  useEffect(() => {
+    async function fetchCypher() {
+      const { data } = await supabase.from("cyphers")
+        .select("id, title, starts_at, ends_at, location, description, max_members, cypher_genres(genres:genre_id(name))")
+        .eq("id", cypherId).single();
+      if (data) {
+        const starts = new Date((data as any).starts_at);
+        const ends = (data as any).ends_at ? new Date((data as any).ends_at) : null;
+        const dateStr = `${starts.getFullYear()}-${String(starts.getMonth()+1).padStart(2,"0")}-${String(starts.getDate()).padStart(2,"0")}`;
+        const startTime = `${String(starts.getHours()).padStart(2,"0")}:${String(starts.getMinutes()).padStart(2,"0")}`;
+        const endTime = ends ? `${String(ends.getHours()).padStart(2,"0")}:${String(ends.getMinutes()).padStart(2,"0")}` : "";
+        const locParts = ((data as any).location ?? "").split(" ");
+        const station = locParts[0] ?? "";
+        const studio = locParts.slice(1).join(" ");
+        const genres = ((data as any).cypher_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
+        setForm({ title: (data as any).title ?? "", date: dateStr, start_time: startTime, end_time: endTime, station, studio, genres, description: (data as any).description ?? "", max_members: (data as any).max_members ? String((data as any).max_members) : "", payment: [] });
+      }
+      setLoading(false);
+    }
+    fetchCypher();
+  }, [cypherId]);
+
+  const handleSave = async () => {
+    if (!form.date || !form.station) return;
+    setSaving(true); setError("");
+    const starts_at = form.start_time ? `${form.date}T${form.start_time}:00` : `${form.date}T00:00:00`;
+    const ends_at = form.end_time ? `${form.date}T${form.end_time}:00` : null;
+    const location = form.studio ? `${form.station} ${form.studio}` : form.station;
+    const title = form.title.trim() || location;
+    const { error: uErr } = await supabase.from("cyphers").update({ title, location, description: form.description, starts_at, ends_at, max_members: form.max_members ? Number(form.max_members) : null }).eq("id", cypherId).eq("organizer_id", user.id);
+    if (uErr) { setError(`保存に失敗しました: ${uErr.message}`); setSaving(false); return; }
+    await supabase.from("cypher_genres").delete().eq("cypher_id", cypherId);
+    if (form.genres.length > 0) {
+      const { data: genreRows } = await supabase.from("genres").select("id,name").in("name", form.genres);
+      if (genreRows && genreRows.length > 0) {
+        await supabase.from("cypher_genres").insert(genreRows.map((g: any) => ({ cypher_id: cypherId, genre_id: g.id })));
+      }
+    }
+    setSaving(false);
+    onSaved();
+  };
+
+  const inp: React.CSSProperties = { width:"100%", padding:"10px 12px", background:"#F5F7FA", border:"1px solid rgba(0,0,0,0.1)", borderRadius:"6px", color:"#111111", fontSize:"14px", fontFamily:"'Space Mono',monospace", outline:"none", boxSizing:"border-box" };
+  const lbl: React.CSSProperties = { display:"block", fontSize:"9px", fontFamily:"'Space Mono',monospace", letterSpacing:"0.15em", color:"rgba(0,0,0,0.45)", marginBottom:"6px", textTransform:"uppercase" as const };
+
+  if (loading) return (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"50vh" }}>
+      <div style={{ fontFamily:"'Space Mono',monospace", fontSize:"12px", color:"rgba(0,0,0,0.3)" }}>LOADING...</div>
+    </div>
+  );
+
+  return (
+    <div style={{ paddingBottom:"80px", background:"#FAFAFA" }}>
+      <div style={{ padding:"24px 16px 16px", borderBottom:"1px solid rgba(0,0,0,0.08)", background:"#FFFFFF" }}>
+        <button onClick={onBack} style={{ background:"none", border:"none", cursor:"pointer", color:"rgba(0,0,0,0.5)", fontFamily:"'Space Mono',monospace", fontSize:"11px", padding:0, marginBottom:"10px", display:"flex", alignItems:"center", gap:"4px", minHeight:"44px" }}>
+          ← BACK
+        </button>
+        <div style={{ fontSize:"10px", fontFamily:"'Space Mono',monospace", color:"rgba(0,0,0,0.35)", letterSpacing:"0.2em", marginBottom:"4px" }}>▶ EDIT SESSION</div>
+        <h2 style={{ margin:0, fontFamily:"'Bebas Neue',sans-serif", fontSize:"32px", color:"#111111" }}>サイファーを編集</h2>
+      </div>
+      <div style={{ padding:"20px 16px", display:"flex", flexDirection:"column", gap:"16px" }}>
+        {error && <div style={{ padding:"10px 12px", background:"rgba(255,61,0,0.06)", border:"1px solid rgba(255,61,0,0.25)", borderRadius:"6px", color:"#FF3D00", fontSize:"12px", fontFamily:"'Space Mono',monospace" }}>{error}</div>}
+        <div><label style={lbl}>最寄り駅 <span style={{color:"#FF3D00"}}>*</span></label><StationSearch value={form.station} onChange={v=>setForm(f=>({...f,station:v}))} inputStyle={inp} /></div>
+        <div><label style={lbl}>会場・スタジオ名</label><input style={inp} placeholder="例: 代々木worcle、Buzz渋谷" value={form.studio} onChange={e=>setForm(f=>({...f,studio:e.target.value}))} /></div>
+        <div><label style={lbl}>日付 <span style={{color:"#FF3D00"}}>*</span></label><input type="date" style={inp} value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))} /></div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px" }}>
+          <div>
+            <label style={lbl}>開始時間</label>
+            <select style={inp} value={form.start_time} onChange={e=>{const v=e.target.value;setForm(f=>({...f,start_time:v,end_time:f.end_time&&v&&f.end_time<=v?"":f.end_time}))}}>
+              <option value="">未設定</option>
+              {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={lbl}>終了時間</label>
+            <select style={inp} value={form.end_time} onChange={e=>setForm(f=>({...f,end_time:e.target.value}))}>
+              <option value="">未設定</option>
+              {TIME_OPTIONS.filter(t=>!form.start_time||t>form.start_time).map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+        </div>
+        <div><label style={lbl}>イベント名 <span style={{color:"rgba(0,0,0,0.3)",fontSize:"8px"}}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} /></div>
+        <div>
+          <label style={lbl}>ジャンル</label>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:"7px" }}>
+            {GENRES.map(g => { const sel=form.genres.includes(g); const col=GENRE_COLORS[g]; return (
+              <button key={g} onClick={()=>toggleGenre(g)} style={{ padding:"6px 12px", border:sel?`1px solid ${col}`:"1px solid rgba(0,0,0,0.1)", borderRadius:"20px", background:sel?`${col}15`:"transparent", color:sel?col:"rgba(0,0,0,0.45)", fontSize:"10px", fontFamily:"'Space Mono',monospace", cursor:"pointer" }}>{g}</button>
+            );})}
+          </div>
+        </div>
+        <div><label style={lbl}>詳細説明</label><textarea style={{...inp,minHeight:"80px",resize:"vertical"} as React.CSSProperties} placeholder="参加者へのメッセージ..." value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} /></div>
+        <div><label style={lbl}>参加定員</label><input style={inp} type="number" min="1" placeholder="空欄 = 無制限" value={form.max_members} onChange={e=>setForm(f=>({...f,max_members:e.target.value}))} /></div>
+        <button onClick={handleSave} disabled={saving}
+          style={{ width:"100%", padding:"14px", border:"none", borderRadius:"6px", background:form.date&&form.station?"#FF3D00":"rgba(0,0,0,0.06)", color:form.date&&form.station?"#fff":"rgba(0,0,0,0.25)", fontSize:"15px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:form.date&&form.station?"pointer":"not-allowed", opacity:saving?0.6:1 }}>
+          <Check size={15} style={{ display:"inline", marginRight:"8px", verticalAlign:"middle" }} />
+          {saving ? "保存中..." : "変更を保存する"}
         </button>
       </div>
     </div>
@@ -1329,6 +1401,8 @@ export default function BakuOdori() {
   // 通知関連
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  // サイファー編集
+  const [editCypherId, setEditCypherId] = useState<string | null>(null);
 
   // ログイン時にprofilesレコードを自動作成（存在しない場合のみ）
   const ensureProfile = async (u: SupabaseUser) => {
@@ -1375,6 +1449,21 @@ export default function BakuOdori() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // サイファーIDからフルデータを取得してDetailModalを開く
+  const openCypherDetail = async (cypherId: string) => {
+    const { data: row } = await supabase.from("cyphers").select(`
+      id, title, organizer_id, starts_at, ends_at, location, description, max_members, status,
+      profiles:organizer_id ( dancer_name ),
+      cypher_genres ( genres:genre_id ( name ) )
+    `).eq("id", cypherId).single();
+    if (!row) return;
+    const name = (row as any).profiles?.dancer_name ?? "UNKNOWN";
+    const genres: GenreKey[] = ((row as any).cypher_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
+    const { count: partCount } = await supabase.from("participations").select("id", { count: "exact", head: true }).eq("cypher_id", cypherId);
+    const cypher: Cypher = { id: (row as any).id, title: (row as any).title, starts_at: (row as any).starts_at, ends_at: (row as any).ends_at ?? null, location: (row as any).location, description: (row as any).description ?? "", max_members: (row as any).max_members, status: (row as any).status, genres, organizer: { id: (row as any).organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?" }, participant_count: partCount ?? 0, hot: (partCount ?? 0) >= 5 };
+    setDetail(cypher);
+  };
+
   // 参加ボタン：DBにINSERT → joinedに追加 → カード再フェッチ → 主催者に通知
   const handleJoin = async (id: string) => {
     if (!user) return;
@@ -1382,6 +1471,15 @@ export default function BakuOdori() {
       // キャンセル時は確認モーダルを表示
       setConfirmId(id);
     } else {
+      // max_members チェック（定員に達していたら参加不可）
+      const { data: cypherCheck } = await supabase.from("cyphers").select("organizer_id, max_members").eq("id", id).single();
+      if (cypherCheck?.max_members) {
+        const { count: partCount } = await supabase.from("participations").select("id", { count: "exact", head: true }).eq("cypher_id", id);
+        if (partCount !== null && partCount >= cypherCheck.max_members) {
+          alert("このサイファーは定員に達しています");
+          return;
+        }
+      }
       const { error } = await supabase.from("participations").insert({ cypher_id: id, profile_id: user.id });
       if (error) { console.error("join error:", error); return; }
       setJoined(j => [...j, id]);
@@ -1437,11 +1535,22 @@ export default function BakuOdori() {
             {screen==="top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} user={user} refreshKey={refreshKey} dancerName={dancerName} unreadCount={unreadCount} onBell={()=>setShowNotifications(true)}/>}
             {screen==="post"    && <PostScreen onNav={setScreen} user={user}/>}
             {/* MYタブ：自分のPublicProfileScreenを表示。鉛筆アイコンでedit画面へ */}
-            {screen==="profile" && <PublicProfileScreen profileId={user.id} currentUserId={user.id} onEdit={()=>setScreen("edit")} onLogout={()=>supabase.auth.signOut()} onViewProfile={id=>setProfileStack(s=>[...s,id])}/>}
+            {screen==="profile" && <PublicProfileScreen profileId={user.id} currentUserId={user.id} onEdit={()=>setScreen("edit")} onLogout={()=>supabase.auth.signOut()} onViewProfile={id=>setProfileStack(s=>[...s,id])} onCypherClick={openCypherDetail} onEditCypher={id=>setEditCypherId(id)}/>}
             {screen==="edit"    && <EditProfileScreen user={user} onDancerNameChange={setDancerName} onBack={()=>setScreen("profile")}/>}
             <BottomNav current={screen} onNav={s=>{setScreen(s);setProfileStack([]);}}/>
             {detail && <DetailModal cypher={detail} onClose={()=>setDetail(null)} joined={joined.includes(detail.id)} onJoin={handleJoin} onViewProfile={id=>{setProfileStack(s=>[...s,id]);}} user={user}/>}
             {confirmId && <ConfirmModal onConfirm={handleConfirmCancel} onCancel={()=>setConfirmId(null)} />}
+            {/* サイファー編集オーバーレイ */}
+            {editCypherId && (
+              <div style={{ position:"fixed", inset:0, zIndex:150, background:"#FAFAFA", overflowY:"auto", animation:"slideInRight 0.22s ease-out" }}>
+                <EditCypherScreen
+                  cypherId={editCypherId}
+                  user={user}
+                  onBack={()=>setEditCypherId(null)}
+                  onSaved={()=>{ setEditCypherId(null); setRefreshKey(k=>k+1); }}
+                />
+              </div>
+            )}
             {/* お知らせオーバーレイ */}
             {showNotifications && (
               <NotificationScreen
@@ -1457,6 +1566,7 @@ export default function BakuOdori() {
                 currentUserId={user.id}
                 onBack={()=>setProfileStack(s=>s.slice(0,-1))}
                 onViewProfile={id=>setProfileStack(s=>[...s,id])}
+                onCypherClick={openCypherDetail}
               />
             )}
           </>
