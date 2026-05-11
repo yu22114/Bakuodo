@@ -15,8 +15,8 @@ interface Cypher {
 }
 interface FormState {
   title: string; date: string; start_time: string; end_time: string;
-  location: string; genres: GenreKey[]; description: string;
-  max_members: string; payment: string;
+  station: string; studio: string; genres: GenreKey[]; description: string;
+  max_members: string; payment: string[];
 }
 interface ProfileState {
   dancer_name: string; genres: GenreKey[];
@@ -863,20 +863,55 @@ function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, unreadCou
 }
 
 // ─── POST SCREEN ──────────────────────────────────────────────────────────────
+// ─── STATION SEARCH ───────────────────────────────────────────────────────────
+// HeartRails APIで駅名をインクリメンタル検索するコンポーネント
+function StationSearch({ value, onChange, inputStyle }: { value: string; onChange: (v: string) => void; inputStyle: React.CSSProperties }) {
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!value.trim()) { setSuggestions([]); return; }
+    const t = setTimeout(async () => {
+      const res = await fetch(`/api/stations?q=${encodeURIComponent(value)}`);
+      const data: string[] = await res.json();
+      setSuggestions(data);
+      setOpen(data.length > 0);
+    }, 250);
+    return () => clearTimeout(t);
+  }, [value]);
+  return (
+    <div style={{ position: "relative" }}>
+      <input style={inputStyle} placeholder="例: 渋谷、新宿" value={value} onChange={e => { onChange(e.target.value); setOpen(true); }} onBlur={() => setTimeout(() => setOpen(false), 150)} />
+      {open && suggestions.length > 0 && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid rgba(0,0,0,0.12)", borderRadius: "6px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", zIndex: 50, overflow: "hidden" }}>
+          {suggestions.map(s => (
+            <button key={s} onMouseDown={() => { onChange(s); setOpen(false); }}
+              style={{ width: "100%", padding: "10px 12px", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontSize: "13px", fontFamily: "'Space Mono',monospace", borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
+              {s}駅
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: SupabaseUser }) {
-  const [form, setForm] = useState<FormState>({ title:"", date:"", start_time:"", end_time:"", location:"", genres:[], description:"", max_members:"", payment:"" });
+  const [form, setForm] = useState<FormState>({ title:"", date:"", start_time:"", end_time:"", station:"", studio:"", genres:[], description:"", max_members:"", payment:[] });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const toggleGenre = (g: GenreKey) => setForm(f => ({ ...f, genres: f.genres.includes(g) ? f.genres.filter(x => x !== g) : [...f.genres, g] }));
+  const togglePayment = (p: string) => setForm(f => ({ ...f, payment: f.payment.includes(p) ? f.payment.filter(x => x !== p) : [...f.payment, p] }));
 
   const handleSubmit = async () => {
-    if (!form.title || !form.date || !form.location) return;
+    if (!form.title || !form.date || !form.station) return;
     setLoading(true); setError("");
     const starts_at = form.start_time ? `${form.date}T${form.start_time}:00` : `${form.date}T00:00:00`;
+    // station + studio を location カラムに結合して保存
+    const location = form.studio ? `${form.station} ${form.studio}` : form.station;
     const { data: cypher, error: cErr } = await supabase
       .from("cyphers")
-      .insert({ title:form.title, location:form.location, description:form.description, starts_at, max_members:form.max_members?Number(form.max_members):null, organizer_id:user.id })
+      .insert({ title:form.title, location, description:form.description, starts_at, max_members:form.max_members?Number(form.max_members):null, organizer_id:user.id })
       .select().single();
     if (cErr || !cypher) { console.error("cypher insert error:", cErr); setError(`投稿に失敗しました。エラー: ${cErr?.message ?? "不明"}`); setLoading(false); return; }
     if (form.genres.length > 0) {
@@ -930,7 +965,8 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
           </div>
         </div>
 
-        <div><label style={lbl}>場所 *</label><input style={inp} placeholder="例: 渋谷駅 ハチ公前" value={form.location} onChange={e=>setForm(f=>({...f,location:e.target.value}))} /></div>
+        <div><label style={lbl}>最寄り駅 *</label><StationSearch value={form.station} onChange={v=>setForm(f=>({...f,station:v}))} inputStyle={inp} /></div>
+        <div><label style={lbl}>会場・スタジオ名</label><input style={inp} placeholder="例: 代々木worcle、Buzz渋谷" value={form.studio} onChange={e=>setForm(f=>({...f,studio:e.target.value}))} /></div>
 
         <div>
           <label style={lbl}>ジャンル</label>
@@ -946,14 +982,14 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
         {/* 参加定員（最小1）*/}
         <div><label style={lbl}>参加定員</label><input style={inp} type="number" min="1" placeholder="空欄 = 無制限" value={form.max_members} onChange={e=>setForm(f=>({...f,max_members:e.target.value}))} /></div>
 
-        {/* 支払い方法 */}
+        {/* 支払い方法（複数選択可）*/}
         <div>
-          <label style={lbl}>支払い方法</label>
+          <label style={lbl}>支払い方法（複数選択可）</label>
           <div style={{ display:"flex", gap:"8px", flexWrap:"wrap" }}>
-            {["現金","PayPay","無料"].map(p => {
-              const sel = form.payment === p;
+            {["現金","PayPay","LINE Pay","無料"].map(p => {
+              const sel = form.payment.includes(p);
               return (
-                <button key={p} onClick={()=>setForm(f=>({...f,payment:f.payment===p?"":p}))}
+                <button key={p} onClick={()=>togglePayment(p)}
                   style={{ padding:"8px 16px", border:sel?"1px solid #FF3D00":"1px solid rgba(0,0,0,0.1)", borderRadius:"6px", background:sel?"rgba(255,61,0,0.08)":"transparent", color:sel?"#FF3D00":"rgba(0,0,0,0.45)", fontSize:"12px", fontFamily:"'Space Mono',monospace", cursor:"pointer" }}>
                   {p}
                 </button>
@@ -963,7 +999,7 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
         </div>
 
         <button onClick={handleSubmit} disabled={loading}
-          style={{ width:"100%", padding:"14px", border:"none", borderRadius:"6px", background:form.title&&form.date&&form.location?"#FF3D00":"rgba(0,0,0,0.06)", color:form.title&&form.date&&form.location?"#fff":"rgba(0,0,0,0.25)", fontSize:"15px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:form.title&&form.date&&form.location?"pointer":"not-allowed", opacity:loading?0.6:1 }}>
+          style={{ width:"100%", padding:"14px", border:"none", borderRadius:"6px", background:form.title&&form.date&&form.station?"#FF3D00":"rgba(0,0,0,0.06)", color:form.title&&form.date&&form.station?"#fff":"rgba(0,0,0,0.25)", fontSize:"15px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.15em", cursor:form.title&&form.date&&form.station?"pointer":"not-allowed", opacity:loading?0.6:1 }}>
           <Zap size={15} style={{ display:"inline", marginRight:"8px", verticalAlign:"middle" }} />
           {loading ? "投稿中..." : "サイファーを投稿する"}
         </button>
