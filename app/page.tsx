@@ -301,7 +301,133 @@ function ParticipantSheet({ participant, onClose, currentUserId }: { participant
   );
 }
 
-function DetailModal({ cypher, onClose, joined, onJoin, user, isJoining }: { cypher: Cypher | null; onClose: () => void; joined: boolean; onJoin: (id: string) => void; user: SupabaseUser | null; isJoining?: boolean }) {
+// ─── USER PROFILE SCREEN ──────────────────────────────────────────────────────
+function UserProfileScreen({ profileId, currentUserId, onBack, onEdit }: {
+  profileId: string; currentUserId: string; onBack: () => void; onEdit?: () => void;
+}) {
+  const [profile, setProfile] = useState<ParticipantProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [likes, setLikes] = useState(0);
+  const [bads, setBads] = useState(0);
+  const [myReaction, setMyReaction] = useState<"like" | "bad" | null>(null);
+  const [reacting, setReacting] = useState(false);
+  const isSelf = profileId === currentUserId;
+
+  useEffect(() => {
+    async function fetchAll() {
+      const [profileRes, reactionsRes] = await Promise.all([
+        supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender").eq("id", profileId).single(),
+        supabase.from("profile_reactions").select("reaction, from_profile_id").eq("to_profile_id", profileId),
+      ]);
+      if (profileRes.data) {
+        const d = profileRes.data;
+        setProfile({ profile_id: profileId, dancer_name: d.dancer_name ?? "UNKNOWN", genres: (d.genres ?? []) as GenreKey[], instagram: d.instagram ?? null, dance_years: d.dance_years ?? null, age_group: d.age_group ?? null, gender: d.gender ?? null });
+      }
+      if (reactionsRes.data) {
+        setLikes(reactionsRes.data.filter(r => r.reaction === "like").length);
+        setBads(reactionsRes.data.filter(r => r.reaction === "bad").length);
+        const mine = reactionsRes.data.find(r => r.from_profile_id === currentUserId);
+        setMyReaction(mine ? mine.reaction as "like" | "bad" : null);
+      }
+      setLoading(false);
+    }
+    fetchAll();
+  }, [profileId, currentUserId]);
+
+  const handleReact = async (reaction: "like" | "bad") => {
+    if (isSelf || reacting) return;
+    setReacting(true);
+    if (myReaction === reaction) {
+      await supabase.from("profile_reactions").delete().eq("from_profile_id", currentUserId).eq("to_profile_id", profileId);
+      if (reaction === "like") setLikes(n => n - 1); else setBads(n => n - 1);
+      setMyReaction(null);
+    } else {
+      if (myReaction) {
+        await supabase.from("profile_reactions").update({ reaction }).eq("from_profile_id", currentUserId).eq("to_profile_id", profileId);
+        if (myReaction === "like") setLikes(n => n - 1); else setBads(n => n - 1);
+        if (reaction === "like") setLikes(n => n + 1); else setBads(n => n + 1);
+      } else {
+        await supabase.from("profile_reactions").insert({ from_profile_id: currentUserId, to_profile_id: profileId, reaction });
+        if (reaction === "like") setLikes(n => n + 1); else setBads(n => n + 1);
+      }
+      setMyReaction(reaction);
+    }
+    setReacting(false);
+  };
+
+  if (loading) return (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"60vh" }}>
+      <div style={{ fontFamily:"'Space Mono',monospace", fontSize:"12px", color:"rgba(0,0,0,0.3)" }}>LOADING...</div>
+    </div>
+  );
+  if (!profile) return null;
+
+  return (
+    <div style={{ paddingBottom:"80px", background:"#FAFAFA", minHeight:"100vh" }}>
+      {/* ヘッダー */}
+      <div style={{ padding:"20px 16px 16px", background:"#FFFFFF", borderBottom:"1px solid rgba(0,0,0,0.08)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <button onClick={onBack} style={{ background:"none", border:"none", cursor:"pointer", color:"rgba(0,0,0,0.5)", fontSize:"12px", fontFamily:"'Space Mono',monospace", padding:0, display:"flex", alignItems:"center", gap:"6px" }}>
+          ← BACK
+        </button>
+        {isSelf && onEdit && (
+          <button onClick={onEdit} style={{ background:"none", border:"1px solid rgba(0,0,0,0.15)", borderRadius:"6px", cursor:"pointer", color:"rgba(0,0,0,0.5)", fontSize:"11px", fontFamily:"'Space Mono',monospace", padding:"6px 14px" }}>
+            編集
+          </button>
+        )}
+      </div>
+      {/* プロフィール本体 */}
+      <div style={{ padding:"40px 16px 24px", display:"flex", flexDirection:"column", alignItems:"center", gap:"16px" }}>
+        <div style={{ width:"88px", height:"88px", borderRadius:"50%", background:"linear-gradient(135deg,#FF3D00,#FF6D00)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"36px", fontFamily:"'Bebas Neue',sans-serif", color:"#fff" }}>
+          {profile.dancer_name[0]?.toUpperCase() ?? "?"}
+        </div>
+        <div style={{ textAlign:"center" }}>
+          <div style={{ fontSize:"30px", fontFamily:"'Bebas Neue',sans-serif", color:"#111111", letterSpacing:"0.05em" }}>{profile.dancer_name || "UNKNOWN"}</div>
+          {profile.instagram && (
+            // Instagramハンドルをタップするとインスタに飛ぶ
+            <a href={`https://www.instagram.com/${profile.instagram}`} target="_blank" rel="noopener noreferrer"
+              style={{ fontSize:"13px", color:"#A855F7", fontFamily:"'Space Mono',monospace", textDecoration:"none" }}>
+              @{profile.instagram}
+            </a>
+          )}
+        </div>
+        {(profile.age_group || profile.dance_years != null || profile.gender) && (
+          <div style={{ display:"flex", gap:"8px", flexWrap:"wrap", justifyContent:"center" }}>
+            {profile.age_group && <span style={{ fontSize:"11px", padding:"4px 10px", background:"rgba(0,0,0,0.05)", borderRadius:"4px", color:"rgba(0,0,0,0.6)", fontFamily:"'Space Mono',monospace" }}>{profile.age_group}</span>}
+            {profile.dance_years != null && <span style={{ fontSize:"11px", padding:"4px 10px", background:"rgba(0,0,0,0.05)", borderRadius:"4px", color:"rgba(0,0,0,0.6)", fontFamily:"'Space Mono',monospace" }}>歴{profile.dance_years}年</span>}
+            {profile.gender && <span style={{ fontSize:"11px", padding:"4px 10px", background:"rgba(0,0,0,0.05)", borderRadius:"4px", color:"rgba(0,0,0,0.6)", fontFamily:"'Space Mono',monospace" }}>{profile.gender}</span>}
+          </div>
+        )}
+        {profile.genres?.length > 0 && (
+          <div style={{ display:"flex", flexWrap:"wrap", gap:"6px", justifyContent:"center" }}>
+            {profile.genres.map(g => <GenreBadge key={g} genre={g} size="md" />)}
+          </div>
+        )}
+        {/* リアクション（他ユーザーは押せる、自分は集計のみ） */}
+        <div style={{ display:"flex", gap:"12px", marginTop:"8px" }}>
+          {!isSelf ? (
+            <>
+              <button onClick={() => handleReact("like")} disabled={reacting}
+                style={{ padding:"12px 24px", border: myReaction==="like"?"1px solid #16A34A":"1px solid rgba(0,0,0,0.12)", borderRadius:"8px", background: myReaction==="like"?"rgba(22,163,74,0.08)":"#FFFFFF", cursor:"pointer", display:"flex", alignItems:"center", gap:"8px", fontSize:"15px", fontFamily:"'Space Mono',monospace", color: myReaction==="like"?"#16A34A":"rgba(0,0,0,0.5)" }}>
+                👍 <span style={{ fontWeight:"bold" }}>{likes}</span>
+              </button>
+              <button onClick={() => handleReact("bad")} disabled={reacting}
+                style={{ padding:"12px 24px", border: myReaction==="bad"?"1px solid #EF4444":"1px solid rgba(0,0,0,0.12)", borderRadius:"8px", background: myReaction==="bad"?"rgba(239,68,68,0.08)":"#FFFFFF", cursor:"pointer", display:"flex", alignItems:"center", gap:"8px", fontSize:"15px", fontFamily:"'Space Mono',monospace", color: myReaction==="bad"?"#EF4444":"rgba(0,0,0,0.5)" }}>
+                👎 <span style={{ fontWeight:"bold" }}>{bads}</span>
+              </button>
+            </>
+          ) : (likes > 0 || bads > 0) ? (
+            <>
+              <div style={{ padding:"12px 24px", border:"1px solid rgba(0,0,0,0.08)", borderRadius:"8px", display:"flex", alignItems:"center", gap:"8px", fontSize:"15px", fontFamily:"'Space Mono',monospace", color:"rgba(0,0,0,0.5)" }}>👍 <span style={{ fontWeight:"bold" }}>{likes}</span></div>
+              <div style={{ padding:"12px 24px", border:"1px solid rgba(0,0,0,0.08)", borderRadius:"8px", display:"flex", alignItems:"center", gap:"8px", fontSize:"15px", fontFamily:"'Space Mono',monospace", color:"rgba(0,0,0,0.5)" }}>👎 <span style={{ fontWeight:"bold" }}>{bads}</span></div>
+            </>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailModal({ cypher, onClose, joined, onJoin, user, isJoining, onNavigateToProfile }: { cypher: Cypher | null; onClose: () => void; joined: boolean; onJoin: (id: string) => void; user: SupabaseUser | null; isJoining?: boolean; onNavigateToProfile: (id: string) => void }) {
   if (!cypher) return null;
 
   // useEffectのクロージャ内でTypeScriptがnullチェックを追跡できないため先に変数化
@@ -313,7 +439,6 @@ function DetailModal({ cypher, onClose, joined, onJoin, user, isJoining }: { cyp
   const isEnded = timeUntil(cypher.starts_at) === "終了";
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
-  const [selectedParticipant, setSelectedParticipant] = useState<ParticipantProfile | null>(null);
   // 主催者プロフィール：取得失敗時はcypherの情報で初期化しておく
   const [organizerProfile, setOrganizerProfile] = useState<ParticipantProfile>({
     profile_id: organizerId,
@@ -385,7 +510,7 @@ function DetailModal({ cypher, onClose, joined, onJoin, user, isJoining }: { cyp
           <div style={{ display:"flex", gap:"10px", fontSize:"13px", color:"rgba(0,0,0,0.65)", fontFamily:"'Space Mono',monospace", alignItems:"center" }}><Clock size={14} color="rgba(0,0,0,0.4)" /> {date} {time}{cypher.ends_at ? ` ~ ${formatDate(cypher.ends_at).time}` : ""}</div>
           <div style={{ display:"flex", gap:"10px", fontSize:"13px", color:"rgba(0,0,0,0.65)", fontFamily:"'Space Mono',monospace", alignItems:"center" }}><MapPin size={14} color="rgba(0,0,0,0.4)" /> {cypher.location}</div>
           {/* 主催者名クリックでプロフィール表示 */}
-          <button onClick={() => organizerProfile && setSelectedParticipant(organizerProfile)}
+          <button onClick={() => { onNavigateToProfile(organizerId); onClose(); }}
             style={{ display:"flex", gap:"10px", fontSize:"13px", color:"rgba(0,0,0,0.65)", fontFamily:"'Space Mono',monospace", alignItems:"center", background:"none", border:"none", cursor:organizerProfile?"pointer":"default", padding:0, textAlign:"left", textDecoration:organizerProfile?"underline dotted":"none", textUnderlineOffset:"3px" }}>
             <User size={14} color="rgba(0,0,0,0.4)" /> 主催: {cypher.organizer.dancer_name}
           </button>
@@ -400,7 +525,7 @@ function DetailModal({ cypher, onClose, joined, onJoin, user, isJoining }: { cyp
             <div style={{ fontSize:"9px", fontFamily:"'Space Mono',monospace", color:"rgba(0,0,0,0.35)", letterSpacing:"0.15em", marginBottom:"8px" }}>PARTICIPANTS</div>
             <div style={{ display:"flex", flexWrap:"wrap", gap:"8px" }}>
               {participants.map(p => (
-                <button key={p.profile_id} onClick={() => setSelectedParticipant(p)}
+                <button key={p.profile_id} onClick={() => { onNavigateToProfile(p.profile_id); onClose(); }}
                   style={{ width:"40px", height:"40px", borderRadius:"50%", background:"linear-gradient(135deg,#FF3D00,#FF6D00)", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"16px", fontFamily:"'Bebas Neue',sans-serif", color:"#fff", flexShrink:0 }}
                   title={p.dancer_name}>
                   {p.dancer_name[0]?.toUpperCase() ?? "?"}
@@ -433,14 +558,12 @@ function DetailModal({ cypher, onClose, joined, onJoin, user, isJoining }: { cyp
           );
         })()}
       </div>
-      {/* 参加者プロフィールシート */}
-      {selectedParticipant && <ParticipantSheet participant={selectedParticipant} onClose={() => setSelectedParticipant(null)} currentUserId={user?.id} />}
     </div>
   );
 }
 
 // ─── TOP SCREEN ───────────────────────────────────────────────────────────────
-function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName }: { onNav: (s: string) => void; onCardClick: (c: Cypher) => void; user: SupabaseUser; refreshKey: number; dancerName: string }) {
+function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, onViewOwnProfile }: { onNav: (s: string) => void; onCardClick: (c: Cypher) => void; user: SupabaseUser; refreshKey: number; dancerName: string; onViewOwnProfile: () => void }) {
   const [filter, setFilter] = useState<GenreKey | "ALL">("ALL");
   const [cyphers, setCyphers] = useState<Cypher[]>([]);
   const [loading, setLoading] = useState(true);
@@ -496,8 +619,8 @@ function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName }: { onNav
             <h1 style={{ margin:0, fontSize:"42px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.1em", background:"linear-gradient(135deg,#FF3D00,#FF6D00,#D97706)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text", lineHeight:1 }}>爆踊</h1>
             <p style={{ margin:"6px 0 0", fontSize:"11px", color:"rgba(0,0,0,0.4)", fontFamily:"'Space Mono',monospace" }}>今日、ここで、踊ろう。</p>
           </div>
-          {/* プロフィールアイコン（クリックでプロフィール画面へ）*/}
-          <button onClick={() => onNav("profile")} style={{ background:"none", border:"none", cursor:"pointer", padding:"4px", marginTop:"8px", display:"flex", flexDirection:"column", alignItems:"center", gap:"3px" }}>
+          {/* プロフィールアイコン（クリックで自分のプロフィール画面へ）*/}
+          <button onClick={onViewOwnProfile} style={{ background:"none", border:"none", cursor:"pointer", padding:"4px", marginTop:"8px", display:"flex", flexDirection:"column", alignItems:"center", gap:"3px" }}>
             <div style={{ width:"36px", height:"36px", borderRadius:"50%", background:"linear-gradient(135deg,#FF3D00,#FF6D00)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"15px", fontFamily:"'Bebas Neue',sans-serif", color:"#fff", border:"2px solid rgba(0,0,0,0.08)" }}>
               {dancerName ? dancerName[0].toUpperCase() : <User size={16} color="#fff" />}
             </div>
@@ -720,7 +843,7 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
 }
 
 // ─── ACTIVITY SCREEN ──────────────────────────────────────────────────────────
-function ActivityScreen({ user }: { user: SupabaseUser }) {
+function ActivityScreen({ user, onNavigateToProfile }: { user: SupabaseUser; onNavigateToProfile: (id: string) => void }) {
   const [tab, setTab] = useState<"joined" | "hosted">("joined");
   const [joinedCyphers, setJoinedCyphers] = useState<Array<{ id: string; title: string; starts_at: string; location: string; organizer_name: string }>>([]);
   const [hostedCyphers, setHostedCyphers] = useState<Array<{ id: string; title: string; starts_at: string; location: string; participant_count: number }>>([]);
@@ -890,7 +1013,7 @@ function ActivityScreen({ user }: { user: SupabaseUser }) {
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {participantSheet.participants.map(p => (
-                  <button key={p.profile_id} onClick={() => setSelectedParticipant(p)}
+                  <button key={p.profile_id} onClick={() => { setParticipantSheet(null); onNavigateToProfile(p.profile_id); }}
                     style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", background: "#F5F7FA", border: "none", borderRadius: "8px", cursor: "pointer", textAlign: "left", width: "100%" }}>
                     <div style={{ width: "38px", height: "38px", borderRadius: "50%", background: "linear-gradient(135deg,#FF3D00,#FF6D00)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Bebas Neue',sans-serif", color: "#fff", flexShrink: 0 }}>
                       {p.dancer_name[0]?.toUpperCase() ?? "?"}
@@ -906,7 +1029,6 @@ function ActivityScreen({ user }: { user: SupabaseUser }) {
           </div>
         </div>
       )}
-      {selectedParticipant && <ParticipantSheet participant={selectedParticipant} onClose={() => setSelectedParticipant(null)} currentUserId={user.id} />}
 
       {/* サイファー削除確認モーダル */}
       {deleteConfirmId && (
@@ -1138,6 +1260,15 @@ export default function BakuOdori() {
   const [dancerName, setDancerName] = useState("");
   // DB INSERT処理中のサイファーID（二重参加防止）
   const [joining, setJoining] = useState<string[]>([]);
+  // プロフィール画面に遷移するユーザーID
+  const [viewProfileId, setViewProfileId] = useState<string | null>(null);
+
+  // プロフィール画面への遷移（モーダルを閉じてから画面切替）
+  const navigateToProfile = (profileId: string) => {
+    setDetail(null);
+    setViewProfileId(profileId);
+    setScreen("userProfile");
+  };
 
   // ログイン時にprofilesレコードを自動作成（存在しない場合のみ）
   const ensureProfile = async (u: SupabaseUser) => {
@@ -1226,12 +1357,20 @@ export default function BakuOdori() {
           <LoginScreen />
         ) : (
           <>
-            {screen==="top"      && <TopScreen onNav={setScreen} onCardClick={setDetail} user={user} refreshKey={refreshKey} dancerName={dancerName}/>}
-            {screen==="post"     && <PostScreen onNav={setScreen} user={user}/>}
-            {screen==="profile"  && <ProfileScreen user={user} onDancerNameChange={setDancerName}/>}
-            {screen==="activity" && <ActivityScreen user={user}/>}
+            {screen==="top"         && <TopScreen onNav={setScreen} onCardClick={setDetail} user={user} refreshKey={refreshKey} dancerName={dancerName} onViewOwnProfile={() => navigateToProfile(user.id)}/>}
+            {screen==="post"        && <PostScreen onNav={setScreen} user={user}/>}
+            {screen==="profile"     && <ProfileScreen user={user} onDancerNameChange={setDancerName}/>}
+            {screen==="activity"    && <ActivityScreen user={user} onNavigateToProfile={navigateToProfile}/>}
+            {screen==="userProfile" && viewProfileId && (
+              <UserProfileScreen
+                profileId={viewProfileId}
+                currentUserId={user.id}
+                onBack={() => { setScreen("top"); setViewProfileId(null); }}
+                onEdit={viewProfileId === user.id ? () => setScreen("profile") : undefined}
+              />
+            )}
             <BottomNav current={screen} onNav={setScreen}/>
-            {detail && <DetailModal cypher={detail} onClose={()=>setDetail(null)} joined={joined.includes(detail.id)} onJoin={handleJoin} user={user} isJoining={joining.includes(detail.id)}/>}
+            {detail && <DetailModal cypher={detail} onClose={()=>setDetail(null)} joined={joined.includes(detail.id)} onJoin={handleJoin} user={user} isJoining={joining.includes(detail.id)} onNavigateToProfile={navigateToProfile}/>}
             {confirmId && <ConfirmModal onConfirm={handleConfirmCancel} onCancel={()=>setConfirmId(null)} />}
           </>
         )}
