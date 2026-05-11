@@ -564,8 +564,8 @@ function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogou
 
       {/* フォロワー・フォロー一覧シート */}
       {followSheet && (
-        <div style={{ position:"fixed", inset:0, zIndex:200, background:"rgba(0,0,0,0.4)", backdropFilter:"blur(4px)", display:"flex", alignItems:"flex-end" }} onClick={() => setFollowSheet(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ width:"100%", maxWidth:"480px", margin:"0 auto", background:"#FFFFFF", borderRadius:"12px 12px 0 0", padding:"24px 20px 40px", maxHeight:"70vh", overflowY:"auto" }}>
+        <div style={{ position:"fixed", inset:0, zIndex:200, background:"rgba(0,0,0,0.4)", backdropFilter:"blur(4px)", display:"flex", alignItems:"center", justifyContent:"center", padding:"24px" }} onClick={() => setFollowSheet(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ width:"100%", maxWidth:"360px", background:"#FFFFFF", borderRadius:"16px", padding:"24px 20px", maxHeight:"70vh", overflowY:"auto", boxShadow:"0 8px 40px rgba(0,0,0,0.18)" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"20px" }}>
               <div>
                 <div style={{ fontSize:"9px", fontFamily:"'Space Mono',monospace", color:"rgba(0,0,0,0.35)", letterSpacing:"0.15em", marginBottom:"4px" }}>
