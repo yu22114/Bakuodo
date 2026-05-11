@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
-type GenreKey = "Breaking" | "Popping" | "Locking" | "Waacking" | "House" | "Krump" | "Hip-Hop";
+type GenreKey = "Breaking" | "Popping" | "Locking" | "Waacking" | "House" | "Krump" | "Hip-Hop" | "All Style";
 
 interface Cypher {
   id: string; title: string; starts_at: string; location: string;
@@ -25,11 +25,11 @@ interface ProfileState {
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 // Voguingを削除
-const GENRES: GenreKey[] = ["Breaking","Popping","Locking","Waacking","House","Krump","Hip-Hop"];
+const GENRES: GenreKey[] = ["Breaking","Popping","Locking","Waacking","House","Krump","Hip-Hop","All Style"];
 // 白背景でも見やすい色に調整
 const GENRE_COLORS: Record<GenreKey, string> = {
   Breaking:"#FF3D00", Popping:"#0891B2", Locking:"#D97706",
-  Waacking:"#A855F7", House:"#16A34A", Krump:"#EA580C", "Hip-Hop":"#2563EB",
+  Waacking:"#A855F7", House:"#16A34A", Krump:"#EA580C", "Hip-Hop":"#2563EB", "All Style":"#6B7280",
 };
 
 // 30分刻みの時間選択肢を生成
