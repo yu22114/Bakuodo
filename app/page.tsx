@@ -75,7 +75,7 @@ function LoginScreen() {
   return (
     <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"24px", background:"#FFFFFF" }}>
       <div style={{ marginBottom:"48px", textAlign:"center" }}>
-        <h1 style={{ margin:0, fontSize:"72px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.1em", background:"linear-gradient(135deg,#FF3D00,#FF6D00,#D97706)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text", lineHeight:1 }}>爆踊</h1>
+        <h1 style={{ margin:0, fontSize:"72px", fontFamily:"'Rampart One',sans-serif", letterSpacing:"0.05em", background:"linear-gradient(135deg,#FF3D00,#FF6D00,#D97706)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text", lineHeight:1 }}>爆踊</h1>
         <p style={{ margin:"8px 0 0", fontSize:"12px", color:"rgba(0,0,0,0.4)", fontFamily:"'Space Mono',monospace", letterSpacing:"0.1em" }}>今日、ここで、踊ろう。</p>
       </div>
       <button
@@ -799,7 +799,7 @@ function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, unreadCou
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
           <div>
             <div style={{ fontSize:"10px", fontFamily:"'Space Mono',monospace", color:"rgba(0,0,0,0.35)", letterSpacing:"0.2em", marginBottom:"6px" }}>▶ LIVE SESSIONS</div>
-            <h1 style={{ margin:0, fontSize:"42px", fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.1em", background:"linear-gradient(135deg,#FF3D00,#FF6D00,#D97706)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text", lineHeight:1 }}>爆踊</h1>
+            <h1 style={{ margin:0, fontSize:"42px", fontFamily:"'Rampart One',sans-serif", letterSpacing:"0.05em", background:"linear-gradient(135deg,#FF3D00,#FF6D00,#D97706)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text", lineHeight:1 }}>爆踊</h1>
             <p style={{ margin:"6px 0 0", fontSize:"11px", color:"rgba(0,0,0,0.4)", fontFamily:"'Space Mono',monospace" }}>今日、ここで、踊ろう。</p>
           </div>
           {/* 右上アイコン群 */}
