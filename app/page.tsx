@@ -8,7 +8,7 @@ import type { User as SupabaseUser } from "@supabase/supabase-js";
 type GenreKey = "Breaking" | "Popping" | "Locking" | "Waacking" | "House" | "Krump" | "Hip-Hop" | "All Style";
 
 interface Cypher {
-  id: string; title: string; starts_at: string; location: string;
+  id: string; title: string; starts_at: string; ends_at: string | null; location: string;
   genres: GenreKey[]; organizer: { id: string; dancer_name: string; avatar: string };
   participant_count: number; max_members: number | null;
   status: string; description: string; hot: boolean;
@@ -162,7 +162,7 @@ function CypherCard({ cypher, onClick }: { cypher: Cypher; onClick: () => void }
       <div style={{ display:"flex", flexDirection:"column", gap:"5px", marginBottom:"12px" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
           <Clock size={11} color="rgba(0,0,0,0.35)" />
-          <span style={{ fontSize:"11px", color:"rgba(0,0,0,0.6)", fontFamily:"'Space Mono',monospace" }}>{date} {time}</span>
+          <span style={{ fontSize:"11px", color:"rgba(0,0,0,0.6)", fontFamily:"'Space Mono',monospace" }}>{date} {time}{cypher.ends_at ? `〜${formatDate(cypher.ends_at).time}` : ""}</span>
           <span style={{ fontSize:"9px", padding:"1px 6px", background:isEnded?"rgba(0,0,0,0.06)":"rgba(255,61,0,0.08)", borderRadius:"3px", color:isEnded?"rgba(0,0,0,0.4)":"#FF3D00", fontFamily:"'Space Mono',monospace", fontWeight:"bold" }}>{until}</span>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
@@ -642,7 +642,7 @@ function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, user }: {
             {cypher.genres.map(g => <GenreBadge key={g} genre={g} size="md" />)}
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:"8px", marginBottom:"16px" }}>
-            <div style={{ display:"flex", gap:"10px", fontSize:"13px", color:"rgba(0,0,0,0.65)", fontFamily:"'Space Mono',monospace", alignItems:"center" }}><Clock size={14} color="rgba(0,0,0,0.4)" /> {date} {time}</div>
+            <div style={{ display:"flex", gap:"10px", fontSize:"13px", color:"rgba(0,0,0,0.65)", fontFamily:"'Space Mono',monospace", alignItems:"center" }}><Clock size={14} color="rgba(0,0,0,0.4)" /> {date} {time}{cypher.ends_at ? `〜${formatDate(cypher.ends_at).time}` : ""}</div>
             <div style={{ display:"flex", gap:"10px", fontSize:"13px", color:"rgba(0,0,0,0.65)", fontFamily:"'Space Mono',monospace", alignItems:"center" }}><MapPin size={14} color="rgba(0,0,0,0.4)" /> {cypher.location}</div>
             {/* 主催者名クリックでプロフィール画面へ */}
             <button onClick={() => onViewProfile(organizerId)}
@@ -746,7 +746,7 @@ function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, unreadCou
         supabase
           .from("cyphers")
           .select(`
-            id, title, organizer_id, starts_at, location, description, max_members, status,
+            id, title, organizer_id, starts_at, ends_at, location, description, max_members, status,
             profiles:organizer_id ( dancer_name ),
             cypher_genres ( genres:genre_id ( name ) )
           `)
@@ -772,7 +772,7 @@ function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, unreadCou
         const name = row.profiles?.dancer_name ?? "UNKNOWN";
         const genres: GenreKey[] = (row.cypher_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
         const count = countMap[row.id] ?? 0;
-        return { id:row.id, title:row.title, starts_at:row.starts_at, location:row.location, description:row.description??"", max_members:row.max_members, status:row.status, genres, organizer:{ id:row.organizer_id, dancer_name:name, avatar:name[0]?.toUpperCase()??"?" }, participant_count:count, hot:count>=5 };
+        return { id:row.id, title:row.title, starts_at:row.starts_at, ends_at:row.ends_at??null, location:row.location, description:row.description??"", max_members:row.max_members, status:row.status, genres, organizer:{ id:row.organizer_id, dancer_name:name, avatar:name[0]?.toUpperCase()??"?" }, participant_count:count, hot:count>=5 };
       });
 
       // フォロー中のダンサーのサイファーを先頭に表示
@@ -907,13 +907,14 @@ function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: Supabas
     if (!form.date || !form.station) return;
     setLoading(true); setError("");
     const starts_at = form.start_time ? `${form.date}T${form.start_time}:00` : `${form.date}T00:00:00`;
+    const ends_at = form.end_time ? `${form.date}T${form.end_time}:00` : null;
     // station + studio を location カラムに結合して保存
     const location = form.studio ? `${form.station} ${form.studio}` : form.station;
     // イベント名が空の場合は開催場所をタイトルにする
     const title = form.title.trim() || location;
     const { data: cypher, error: cErr } = await supabase
       .from("cyphers")
-      .insert({ title, location, description:form.description, starts_at, max_members:form.max_members?Number(form.max_members):null, organizer_id:user.id })
+      .insert({ title, location, description:form.description, starts_at, ends_at, max_members:form.max_members?Number(form.max_members):null, organizer_id:user.id })
       .select().single();
     if (cErr || !cypher) { console.error("cypher insert error:", cErr); setError(`投稿に失敗しました。エラー: ${cErr?.message ?? "不明"}`); setLoading(false); return; }
     if (form.genres.length > 0) {
