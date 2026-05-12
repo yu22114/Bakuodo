@@ -22,8 +22,10 @@ export function CypherCard({ cypher, onClick }: { cypher: Cypher; onClick: () =>
           <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#111111", fontFamily: "'Bebas Neue',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{cypher.title}</h3>
           <div style={{ fontSize: "10px", color: "rgba(0,0,0,0.4)", marginTop: "2px", fontFamily: "'Space Mono',monospace" }}>by {cypher.organizer.dancer_name}</div>
         </div>
-        <div style={{ width: "36px", height: "36px", borderRadius: "4px", background: `linear-gradient(135deg,${color}22,${color}44)`, border: `1px solid ${color}55`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: "bold", color, fontFamily: "'Bebas Neue',sans-serif", flexShrink: 0 }}>
-          {cypher.organizer.avatar}
+        <div style={{ width: "36px", height: "36px", borderRadius: "4px", background: `linear-gradient(135deg,${color}22,${color}44)`, border: `1px solid ${color}55`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: "bold", color, fontFamily: "'Bebas Neue',sans-serif", flexShrink: 0, overflow: "hidden" }}>
+          {cypher.organizer.avatar_url
+            ? <img src={cypher.organizer.avatar_url} alt={cypher.organizer.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            : cypher.organizer.avatar}
         </div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "5px", marginBottom: "12px" }}>

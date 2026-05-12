@@ -28,7 +28,7 @@ export function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, un
           .from("cyphers")
           .select(`
             id, title, organizer_id, starts_at, ends_at, location, description, max_members, status,
-            profiles:organizer_id ( dancer_name ),
+            profiles:organizer_id ( dancer_name, avatar_url ),
             cypher_genres ( genres:genre_id ( name ) )
           `)
           .gte("starts_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
@@ -49,7 +49,7 @@ export function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, un
         const name = row.profiles?.dancer_name ?? "UNKNOWN";
         const genres: GenreKey[] = (row.cypher_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
         const count = countMap[row.id] ?? 0;
-        return { id: row.id, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, status: row.status, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?" }, participant_count: count, hot: count >= 5 };
+        return { id: row.id, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, status: row.status, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null }, participant_count: count, hot: count >= 5 };
       });
 
       shaped.sort((a, b) => {

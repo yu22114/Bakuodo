@@ -15,7 +15,7 @@ export interface Cypher {
   ends_at: string | null;
   location: string;
   genres: GenreKey[];
-  organizer: { id: string; dancer_name: string; avatar: string };
+  organizer: { id: string; dancer_name: string; avatar: string; avatar_url: string | null };
   participant_count: number;
   max_members: number | null;
   status: string;

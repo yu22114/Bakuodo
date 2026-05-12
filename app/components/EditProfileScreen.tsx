@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Check, Star, LogOut, ChevronLeft } from "lucide-react";
+import { Check, Star, LogOut, ChevronLeft, Camera } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { ProfileState } from "../lib/types";
@@ -12,6 +12,8 @@ export function EditProfileScreen({ user, onDancerNameChange, onBack }: {
   onBack?: () => void;
 }) {
   const [profile, setProfile] = useState<ProfileState>({ dancer_name: "", genres: [], instagram: "", dance_years: "", age_group: "", gender: "" });
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -21,7 +23,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onBack }: {
 
   useEffect(() => {
     async function fetchProfile() {
-      const { data } = await supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender").eq("id", user.id).single();
+      const { data } = await supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, avatar_url").eq("id", user.id).single();
       if (data) {
         setProfile({
           dancer_name: data.dancer_name ?? "",
@@ -31,11 +33,26 @@ export function EditProfileScreen({ user, onDancerNameChange, onBack }: {
           age_group: data.age_group ?? "",
           gender: data.gender ?? "",
         });
+        setAvatarUrl((data as any).avatar_url ?? null);
       }
       setLoading(false);
     }
     fetchProfile();
   }, [user.id]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const path = `${user.id}.${ext}`;
+    const { error: uploadErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    if (uploadErr) { console.error(uploadErr); setAvatarUploading(false); return; }
+    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+    await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("id", user.id);
+    setAvatarUrl(publicUrl);
+    setAvatarUploading(false);
+  };
 
   const handleSave = async () => {
     setSaveError("");
@@ -78,6 +95,24 @@ export function EditProfileScreen({ user, onDancerNameChange, onBack }: {
         <h2 style={{ margin: 0, fontFamily: "'Bebas Neue',sans-serif", fontSize: "32px", color: "#111111" }}>ダンサー設定</h2>
       </div>
       <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: "20px" }}>
+        {/* アバター写真 */}
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <label style={{ position: "relative", cursor: "pointer" }}>
+            <div style={{ width: "84px", height: "84px", borderRadius: "50%", background: "linear-gradient(135deg,#FF3D00,#FF6D00)", border: "3px solid #FFFFFF", boxShadow: "0 2px 10px rgba(0,0,0,0.12)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+              {avatarUrl
+                ? <img src={avatarUrl} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <span style={{ fontSize: "32px", fontFamily: "'Bebas Neue',sans-serif", color: "#fff" }}>{profile.dancer_name[0]?.toUpperCase() || "?"}</span>
+              }
+            </div>
+            <div style={{ position: "absolute", bottom: "2px", right: "2px", width: "28px", height: "28px", borderRadius: "50%", background: avatarUploading ? "rgba(0,0,0,0.4)" : "#111111", border: "2px solid #FAFAFA", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {avatarUploading
+                ? <div style={{ width: "10px", height: "10px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                : <Camera size={13} color="#fff" />
+              }
+            </div>
+            <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: "none" }} disabled={avatarUploading} />
+          </label>
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px" }}>
           {user.user_metadata?.avatar_url && <img src={user.user_metadata.avatar_url} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />}
           <div style={{ flex: 1 }}>

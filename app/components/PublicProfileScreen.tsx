@@ -17,7 +17,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   onEditCypher?: (cypherId: string) => void;
 }) {
   const isOwn = profileId === currentUserId;
-  type ProfileData = { dancer_name: string; genres: GenreKey[]; instagram: string | null; dance_years: number | null; age_group: string | null; gender: string | null };
+  type ProfileData = { dancer_name: string; genres: GenreKey[]; instagram: string | null; dance_years: number | null; age_group: string | null; gender: string | null; avatar_url: string | null };
   type HostedCypher = { id: string; title: string; starts_at: string; location: string; participant_count: number };
   type JoinedCypher = { id: string; title: string; starts_at: string; location: string; organizer_name: string };
 
@@ -40,7 +40,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     async function fetchAll() {
       setLoading(true);
       const [profileRes, hostedRes, allPartsRes, followersRes, followingRes] = await Promise.all([
-        supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender").eq("id", profileId).single(),
+        supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, avatar_url").eq("id", profileId).single(),
         supabase.from("cyphers").select("id, title, starts_at, location").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("participations").select("cypher_id"),
         supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", profileId),
@@ -48,7 +48,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       ]);
       if (profileRes.data) {
         const d = profileRes.data as any;
-        setProfileData({ dancer_name: d.dancer_name ?? "", genres: (d.genres ?? []) as GenreKey[], instagram: d.instagram ?? null, dance_years: d.dance_years ?? null, age_group: d.age_group ?? null, gender: d.gender ?? null });
+        setProfileData({ dancer_name: d.dancer_name ?? "", genres: (d.genres ?? []) as GenreKey[], instagram: d.instagram ?? null, dance_years: d.dance_years ?? null, age_group: d.age_group ?? null, gender: d.gender ?? null, avatar_url: d.avatar_url ?? null });
       }
       setFollowerCount(followersRes.count ?? 0);
       setFollowingCount(followingRes.count ?? 0);
@@ -132,6 +132,15 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
           </button>
         )}
+        {/* アバター */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
+          <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: "linear-gradient(135deg,#FF3D00,#FF6D00)", border: "3px solid #FFFFFF", boxShadow: "0 2px 10px rgba(0,0,0,0.12)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+            {profileData?.avatar_url
+              ? <img src={profileData.avatar_url} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              : <span style={{ fontSize: "30px", fontFamily: "'Bebas Neue',sans-serif", color: "#fff" }}>{name[0]?.toUpperCase() ?? "?"}</span>
+            }
+          </div>
+        </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <div style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ DANCER PROFILE</div>

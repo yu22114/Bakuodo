@@ -74,7 +74,7 @@ export default function BakuOdori() {
   const openCypherDetail = async (cypherId: string) => {
     const { data: row } = await supabase.from("cyphers").select(`
       id, title, organizer_id, starts_at, ends_at, location, description, max_members, status,
-      profiles:organizer_id ( dancer_name ),
+      profiles:organizer_id ( dancer_name, avatar_url ),
       cypher_genres ( genres:genre_id ( name ) )
     `).eq("id", cypherId).single();
     if (!row) return;
@@ -94,7 +94,7 @@ export default function BakuOdori() {
       max_members: (row as any).max_members,
       status: (row as any).status,
       genres,
-      organizer: { id: (row as any).organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?" },
+      organizer: { id: (row as any).organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: (row as any).profiles?.avatar_url ?? null },
       participant_count: partCount ?? 0,
       hot: (partCount ?? 0) >= 5,
     };
@@ -155,6 +155,7 @@ export default function BakuOdori() {
         textarea{font-family:inherit}
         select{appearance:none;-webkit-appearance:none}
         @keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
+        @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
       `}</style>
 
       <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#FAFAFA" }}>

@@ -28,6 +28,10 @@ export function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, us
   const [comments, setComments] = useState<{ id: string; content: string; created_at: string; profile: { id: string; dancer_name: string } }[]>([]);
   const [commentText, setCommentText] = useState("");
   const [posting, setPosting] = useState(false);
+  const [likes, setLikes] = useState(0);
+  const [bads, setBads] = useState(0);
+  const [myReaction, setMyReaction] = useState<"like" | "bad" | null>(null);
+  const [reacting, setReacting] = useState(false);
 
   useEffect(() => {
     async function fetchParticipants() {
@@ -46,6 +50,19 @@ export function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, us
     }
     fetchParticipants();
   }, [cypherId, joined]);
+
+  useEffect(() => {
+    async function fetchReactions() {
+      const { data } = await supabase.from("cypher_reactions").select("reaction, profile_id").eq("cypher_id", cypherId);
+      if (data) {
+        setLikes(data.filter((r: any) => r.reaction === "like").length);
+        setBads(data.filter((r: any) => r.reaction === "bad").length);
+        const mine = data.find((r: any) => r.profile_id === user.id);
+        setMyReaction(mine ? mine.reaction as "like" | "bad" : null);
+      }
+    }
+    fetchReactions();
+  }, [cypherId]);
 
   useEffect(() => {
     async function fetchComments() {
@@ -73,6 +90,27 @@ export function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, us
       setComments(c => [...c, { ...data, profile: (data as any).profile ?? { id: user.id, dancer_name: "YOU" } }]);
       setCommentText("");
     }
+  };
+
+  const handleReact = async (reaction: "like" | "bad") => {
+    if (reacting) return;
+    setReacting(true);
+    if (myReaction === reaction) {
+      await supabase.from("cypher_reactions").delete().eq("cypher_id", cypherId).eq("profile_id", user.id);
+      if (reaction === "like") setLikes(n => n - 1); else setBads(n => n - 1);
+      setMyReaction(null);
+    } else {
+      if (myReaction) {
+        await supabase.from("cypher_reactions").update({ reaction }).eq("cypher_id", cypherId).eq("profile_id", user.id);
+        if (myReaction === "like") setLikes(n => n - 1); else setBads(n => n - 1);
+        if (reaction === "like") setLikes(n => n + 1); else setBads(n => n + 1);
+      } else {
+        await supabase.from("cypher_reactions").insert({ cypher_id: cypherId, profile_id: user.id, reaction });
+        if (reaction === "like") setLikes(n => n + 1); else setBads(n => n + 1);
+      }
+      setMyReaction(reaction);
+    }
+    setReacting(false);
   };
 
   function timeAgo(iso: string) {
@@ -107,6 +145,18 @@ export function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, us
           </div>
           {cypher.description && <p style={{ fontSize: "13px", color: "rgba(0,0,0,0.55)", lineHeight: 1.7, marginBottom: "20px", fontFamily: "'Space Mono',monospace" }}>{cypher.description}</p>}
           <ParticipantBar count={participantsFetched ? participants.length : cypher.participant_count} max={cypher.max_members} />
+
+          {/* いいね・BAD */}
+          <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
+            <button onClick={() => handleReact("like")} disabled={reacting}
+              style={{ flex: 1, padding: "11px", border: myReaction === "like" ? "1px solid #16A34A" : "1px solid rgba(0,0,0,0.12)", borderRadius: "8px", background: myReaction === "like" ? "rgba(22,163,74,0.08)" : "#FFFFFF", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px", fontSize: "15px", fontFamily: "'Space Mono',monospace", color: myReaction === "like" ? "#16A34A" : "rgba(0,0,0,0.5)" }}>
+              👍 <span style={{ fontWeight: "bold", fontSize: "13px" }}>{likes}</span>
+            </button>
+            <button onClick={() => handleReact("bad")} disabled={reacting}
+              style={{ flex: 1, padding: "11px", border: myReaction === "bad" ? "1px solid #EF4444" : "1px solid rgba(0,0,0,0.12)", borderRadius: "8px", background: myReaction === "bad" ? "rgba(239,68,68,0.08)" : "#FFFFFF", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px", fontSize: "15px", fontFamily: "'Space Mono',monospace", color: myReaction === "bad" ? "#EF4444" : "rgba(0,0,0,0.5)" }}>
+              👎 <span style={{ fontWeight: "bold", fontSize: "13px" }}>{bads}</span>
+            </button>
+          </div>
 
           {participants.length > 0 && (
             <div style={{ marginTop: "16px" }}>
