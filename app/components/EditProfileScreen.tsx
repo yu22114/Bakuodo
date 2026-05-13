@@ -56,7 +56,8 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
       return;
     }
     const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-    const { error: updateErr } = await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("id", user.id);
+    // updateだとprofilesの行が存在しない場合にエラーなしでスルーされるためupsertを使う
+    const { error: updateErr } = await supabase.from("profiles").upsert({ id: user.id, avatar_url: publicUrl }, { onConflict: "id" });
     if (updateErr) {
       setAvatarError(`DB更新失敗: ${updateErr.message}`);
       setAvatarUploading(false);

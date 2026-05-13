@@ -31,10 +31,10 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [mainTab, setMainTab] = useState<"profile" | "cyphers">("profile");
   const [cypherTab, setCypherTab] = useState<"joined" | "hosted">("joined");
   const [loading, setLoading] = useState(true);
-  const [participantSheet, setParticipantSheet] = useState<{ title: string; participants: Array<{ profile_id: string; dancer_name: string }> } | null>(null);
+  const [participantSheet, setParticipantSheet] = useState<{ title: string; participants: Array<{ profile_id: string; dancer_name: string; avatar_url: string | null }> } | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [followSheet, setFollowSheet] = useState<{ type: "followers" | "following"; users: { id: string; dancer_name: string }[] } | null>(null);
+  const [followSheet, setFollowSheet] = useState<{ type: "followers" | "following"; users: { id: string; dancer_name: string; avatar_url: string | null }[] } | null>(null);
   const [followSheetLoading, setFollowSheetLoading] = useState(false);
 
   useEffect(() => {
@@ -96,18 +96,18 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     setFollowSheetLoading(true);
     setFollowSheet({ type, users: [] });
     if (type === "followers") {
-      const { data } = await supabase.from("follows").select("follower_id, profiles:follower_id(dancer_name)").eq("following_id", profileId);
-      setFollowSheet({ type, users: (data ?? []).map((r: any) => ({ id: r.follower_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN" })) });
+      const { data } = await supabase.from("follows").select("follower_id, profiles:follower_id(dancer_name, avatar_url)").eq("following_id", profileId);
+      setFollowSheet({ type, users: (data ?? []).map((r: any) => ({ id: r.follower_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN", avatar_url: r.profiles?.avatar_url ?? null })) });
     } else {
-      const { data } = await supabase.from("follows").select("following_id, profiles:following_id(dancer_name)").eq("follower_id", profileId);
-      setFollowSheet({ type, users: (data ?? []).map((r: any) => ({ id: r.following_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN" })) });
+      const { data } = await supabase.from("follows").select("following_id, profiles:following_id(dancer_name, avatar_url)").eq("follower_id", profileId);
+      setFollowSheet({ type, users: (data ?? []).map((r: any) => ({ id: r.following_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN", avatar_url: r.profiles?.avatar_url ?? null })) });
     }
     setFollowSheetLoading(false);
   };
 
   const handleOpenParticipants = async (cypher: HostedCypher) => {
-    const { data } = await supabase.from("participations").select("profile_id, profiles:profile_id(dancer_name)").eq("cypher_id", cypher.id);
-    setParticipantSheet({ title: cypher.title, participants: (data ?? []).map((row: any) => ({ profile_id: row.profile_id, dancer_name: row.profiles?.dancer_name ?? "UNKNOWN" })) });
+    const { data } = await supabase.from("participations").select("profile_id, profiles:profile_id(dancer_name, avatar_url)").eq("cypher_id", cypher.id);
+    setParticipantSheet({ title: cypher.title, participants: (data ?? []).map((row: any) => ({ profile_id: row.profile_id, dancer_name: row.profiles?.dancer_name ?? "UNKNOWN", avatar_url: row.profiles?.avatar_url ?? null })) });
   };
 
   const handleDeleteCypher = async () => {
@@ -326,8 +326,10 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                   {participantSheet.participants.map(p => (
                     <button key={p.profile_id} onClick={() => { setParticipantSheet(null); onViewProfile?.(p.profile_id); }}
                       style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", background: "#F5F7FA", border: "none", borderRadius: "8px", cursor: "pointer", textAlign: "left", width: "100%" }}>
-                      <div style={{ width: "38px", height: "38px", borderRadius: "50%", background: "linear-gradient(135deg,#FF3D00,#FF6D00)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Bebas Neue',sans-serif", color: "#fff", flexShrink: 0 }}>
-                        {p.dancer_name[0]?.toUpperCase() ?? "?"}
+                      <div style={{ width: "38px", height: "38px", borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Bebas Neue',sans-serif", color: "rgba(0,0,0,0.45)", flexShrink: 0 }}>
+                        {p.avatar_url
+                          ? <img src={p.avatar_url} alt={p.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          : p.dancer_name[0]?.toUpperCase() ?? "?"}
                       </div>
                       <div style={{ fontSize: "15px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111" }}>{p.dancer_name}</div>
                     </button>
@@ -361,8 +363,10 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                     {followSheet.users.map(u => (
                       <button key={u.id} onClick={() => { setFollowSheet(null); onViewProfile?.(u.id); }}
                         style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", background: "#F5F7FA", border: "none", borderRadius: "8px", cursor: "pointer", textAlign: "left", width: "100%" }}>
-                        <div style={{ width: "38px", height: "38px", borderRadius: "50%", background: "linear-gradient(135deg,#FF3D00,#FF6D00)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Bebas Neue',sans-serif", color: "#fff", flexShrink: 0 }}>
-                          {u.dancer_name[0]?.toUpperCase() ?? "?"}
+                        <div style={{ width: "38px", height: "38px", borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Bebas Neue',sans-serif", color: "rgba(0,0,0,0.45)", flexShrink: 0 }}>
+                          {u.avatar_url
+                            ? <img src={u.avatar_url} alt={u.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            : u.dancer_name[0]?.toUpperCase() ?? "?"}
                         </div>
                         <div style={{ fontSize: "15px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111" }}>{u.dancer_name}</div>
                       </button>

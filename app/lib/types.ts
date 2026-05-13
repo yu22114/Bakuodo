@@ -48,6 +48,7 @@ export interface ProfileState {
 export interface ParticipantProfile {
   profile_id: string;
   dancer_name: string;
+  avatar_url: string | null;
   genres: GenreKey[];
   instagram: string | null;
   dance_years: number | null;

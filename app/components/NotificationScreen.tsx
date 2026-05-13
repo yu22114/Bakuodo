@@ -26,7 +26,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
     async function fetchAndMarkRead() {
       const { data } = await supabase
         .from("notifications")
-        .select("id, type, read, created_at, actor:actor_id(id,dancer_name), cypher:cypher_id(id,title)")
+        .select("id, type, read, created_at, actor:actor_id(id,dancer_name,avatar_url), cypher:cypher_id(id,title)")
         .eq("user_id", currentUserId)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -64,8 +64,10 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
           return (
             <div key={n.id} style={{ padding: "14px 16px", borderBottom: "1px solid rgba(0,0,0,0.06)", background: n.read ? "transparent" : "rgba(255,61,0,0.03)", display: "flex", alignItems: "center", gap: "12px" }}>
               <button onClick={() => actor?.id && onViewProfile?.(actor.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}>
-                <div style={{ width: "38px", height: "38px", borderRadius: "50%", background: "linear-gradient(135deg,#FF3D00,#FF6D00)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontFamily: "'Bebas Neue',sans-serif", color: "#fff" }}>
-                  {actorName[0]?.toUpperCase() ?? "?"}
+                <div style={{ width: "38px", height: "38px", borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontFamily: "'Bebas Neue',sans-serif", color: "rgba(0,0,0,0.45)" }}>
+                  {actor?.avatar_url
+                    ? <img src={actor.avatar_url} alt={actorName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : actorName[0]?.toUpperCase() ?? "?"}
                 </div>
               </button>
               <div style={{ flex: 1 }}>

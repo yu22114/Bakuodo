@@ -25,7 +25,7 @@ export function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, us
   const isEnded = timeUntil(cypher.starts_at) === "終了";
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
-  const [comments, setComments] = useState<{ id: string; content: string; created_at: string; profile: { id: string; dancer_name: string } }[]>([]);
+  const [comments, setComments] = useState<{ id: string; content: string; created_at: string; profile: { id: string; dancer_name: string; avatar_url: string | null } }[]>([]);
   const [commentText, setCommentText] = useState("");
   const [posting, setPosting] = useState(false);
   const [likes, setLikes] = useState(0);
@@ -37,12 +37,13 @@ export function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, us
     async function fetchParticipants() {
       const { data } = await supabase
         .from("participations")
-        .select("profile_id, profiles:profile_id ( dancer_name )")
+        .select("profile_id, profiles:profile_id ( dancer_name, avatar_url )")
         .eq("cypher_id", cypherId);
       if (data) {
         setParticipants(data.map((row: any) => ({
           profile_id: row.profile_id,
           dancer_name: row.profiles?.dancer_name ?? "UNKNOWN",
+          avatar_url: row.profiles?.avatar_url ?? null,
           genres: [], instagram: null, dance_years: null, age_group: null, gender: null,
         })));
         setParticipantsFetched(true);
@@ -68,10 +69,10 @@ export function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, us
     async function fetchComments() {
       const { data } = await supabase
         .from("comments")
-        .select("id, content, created_at, profile:profile_id(id, dancer_name)")
+        .select("id, content, created_at, profile:profile_id(id, dancer_name, avatar_url)")
         .eq("cypher_id", cypherId)
         .order("created_at", { ascending: true });
-      if (data) setComments(data.map((c: any) => ({ ...c, profile: c.profile ?? { id: "", dancer_name: "UNKNOWN" } })));
+      if (data) setComments(data.map((c: any) => ({ ...c, profile: c.profile ?? { id: "", dancer_name: "UNKNOWN", avatar_url: null } })));
     }
     fetchComments();
   }, [cypherId]);
@@ -83,10 +84,10 @@ export function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, us
     const { data, error } = await supabase
       .from("comments")
       .insert({ cypher_id: cypherId, profile_id: user.id, content: text })
-      .select("id, content, created_at, profile:profile_id(id, dancer_name)")
+      .select("id, content, created_at, profile:profile_id(id, dancer_name, avatar_url)")
       .single();
     if (!error && data) {
-      setComments(c => [...c, { ...data, profile: (data as any).profile ?? { id: user.id, dancer_name: "YOU" } }]);
+      setComments(c => [...c, { ...data, profile: (data as any).profile ?? { id: user.id, dancer_name: "YOU", avatar_url: null } }]);
       setCommentText("");
       // 主催者 + 参加者に通知（自分以外）
       const { data: parts } = await supabase
@@ -174,9 +175,11 @@ export function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, us
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 {participants.map(p => (
                   <button key={p.profile_id} onClick={() => onViewProfile(p.profile_id)}
-                    style={{ width: "40px", height: "40px", borderRadius: "50%", background: "linear-gradient(135deg,#FF3D00,#FF6D00)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Bebas Neue',sans-serif", color: "#fff", flexShrink: 0 }}
+                    style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,0.08)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Bebas Neue',sans-serif", color: "rgba(0,0,0,0.45)", flexShrink: 0 }}
                     title={p.dancer_name}>
-                    {p.dancer_name[0]?.toUpperCase() ?? "?"}
+                    {p.avatar_url
+                      ? <img src={p.avatar_url} alt={p.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : p.dancer_name[0]?.toUpperCase() ?? "?"}
                   </button>
                 ))}
               </div>
@@ -210,8 +213,10 @@ export function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, us
                 {comments.map(c => (
                   <div key={c.id} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
                     <button onClick={() => c.profile.id && onViewProfile(c.profile.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}>
-                      <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "linear-gradient(135deg,#FF3D00,#FF6D00)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontFamily: "'Bebas Neue',sans-serif", color: "#fff" }}>
-                        {c.profile.dancer_name[0]?.toUpperCase() ?? "?"}
+                      <div style={{ width: "30px", height: "30px", borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontFamily: "'Bebas Neue',sans-serif", color: "rgba(0,0,0,0.45)" }}>
+                        {c.profile.avatar_url
+                          ? <img src={c.profile.avatar_url} alt={c.profile.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          : c.profile.dancer_name[0]?.toUpperCase() ?? "?"}
                       </div>
                     </button>
                     <div style={{ flex: 1 }}>
