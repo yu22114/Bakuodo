@@ -211,17 +211,9 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 <a href={`https://instagram.com/${profileData.instagram}`} target="_blank" rel="noopener noreferrer"
                   style={{ display: "flex", alignItems: "center", gap: "10px", padding: "14px 16px", borderBottom: (profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) ? "1px solid rgba(0,0,0,0.07)" : "none", textDecoration: "none", background: "linear-gradient(90deg, rgba(168,85,247,0.05), transparent)" }}>
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <radialGradient id="ig" cx="30%" cy="107%" r="150%">
-                        <stop offset="0%" stopColor="#ffd600"/>
-                        <stop offset="30%" stopColor="#ff6a00"/>
-                        <stop offset="60%" stopColor="#ee0979"/>
-                        <stop offset="90%" stopColor="#7b2ff7"/>
-                      </radialGradient>
-                    </defs>
-                    <rect x="1" y="1" width="22" height="22" rx="6" fill="url(#ig)"/>
-                    <circle cx="12" cy="12" r="4.2" stroke="white" strokeWidth="1.8" fill="none"/>
-                    <circle cx="17.2" cy="6.8" r="1.1" fill="white"/>
+                    <rect x="1" y="1" width="22" height="22" rx="6" stroke="rgba(0,0,0,0.5)" strokeWidth="1.8" fill="none"/>
+                    <circle cx="12" cy="12" r="4.2" stroke="rgba(0,0,0,0.5)" strokeWidth="1.8" fill="none"/>
+                    <circle cx="17.2" cy="6.8" r="1.1" fill="rgba(0,0,0,0.5)"/>
                   </svg>
                   <div>
                     <div style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.12em", marginBottom: "2px" }}>INSTAGRAM</div>
