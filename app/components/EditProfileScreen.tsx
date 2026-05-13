@@ -14,6 +14,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onBack }: {
   const [profile, setProfile] = useState<ProfileState>({ dancer_name: "", genres: [], instagram: "", dance_years: "", age_group: "", gender: "" });
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -44,12 +45,22 @@ export function EditProfileScreen({ user, onDancerNameChange, onBack }: {
     const file = e.target.files?.[0];
     if (!file) return;
     setAvatarUploading(true);
+    setAvatarError("");
     const ext = file.name.split(".").pop() ?? "jpg";
     const path = `${user.id}.${ext}`;
     const { error: uploadErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    if (uploadErr) { console.error(uploadErr); setAvatarUploading(false); return; }
+    if (uploadErr) {
+      setAvatarError(`アップロード失敗: ${uploadErr.message}`);
+      setAvatarUploading(false);
+      return;
+    }
     const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-    await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("id", user.id);
+    const { error: updateErr } = await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("id", user.id);
+    if (updateErr) {
+      setAvatarError(`DB更新失敗: ${updateErr.message}`);
+      setAvatarUploading(false);
+      return;
+    }
     setAvatarUrl(publicUrl);
     setAvatarUploading(false);
   };
@@ -113,6 +124,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onBack }: {
             <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: "none" }} disabled={avatarUploading} />
           </label>
         </div>
+        {avatarError && <div style={{ padding: "8px 12px", background: "rgba(255,61,0,0.06)", border: "1px solid rgba(255,61,0,0.25)", borderRadius: "6px", color: "#FF3D00", fontSize: "11px", fontFamily: "'Space Mono',monospace", textAlign: "center" }}>{avatarError}</div>}
         <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px" }}>
           {user.user_metadata?.avatar_url && <img src={user.user_metadata.avatar_url} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />}
           <div style={{ flex: 1 }}>
