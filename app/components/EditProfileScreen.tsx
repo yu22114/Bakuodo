@@ -6,9 +6,10 @@ import { supabase } from "../../lib/supabase";
 import type { ProfileState } from "../lib/types";
 import { GENRES, GENRE_COLORS } from "../lib/constants";
 
-export function EditProfileScreen({ user, onDancerNameChange, onBack }: {
+export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, onBack }: {
   user: SupabaseUser;
   onDancerNameChange?: (name: string) => void;
+  onAvatarChange?: (url: string) => void;
   onBack?: () => void;
 }) {
   const [profile, setProfile] = useState<ProfileState>({ dancer_name: "", genres: [], instagram: "", dance_years: "", age_group: "", gender: "" });
@@ -62,6 +63,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onBack }: {
       return;
     }
     setAvatarUrl(publicUrl);
+    onAvatarChange?.(publicUrl);
     setAvatarUploading(false);
   };
 

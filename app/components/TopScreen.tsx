@@ -7,12 +7,13 @@ import type { Cypher, GenreKey } from "../lib/types";
 import { GENRES, GENRE_COLORS, timeUntil } from "../lib/constants";
 import { CypherCard } from "./CypherCard";
 
-export function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, unreadCount, onBell }: {
+export function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell }: {
   onNav: (s: string) => void;
   onCardClick: (c: Cypher) => void;
   user: SupabaseUser;
   refreshKey: number;
   dancerName: string;
+  myAvatarUrl: string | null;
   unreadCount: number;
   onBell: () => void;
 }) {
@@ -113,8 +114,10 @@ export function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, un
               )}
             </button>
             <button onClick={() => onNav("profile")} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-              <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "linear-gradient(135deg,#FF3D00,#FF6D00)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontFamily: "'Bebas Neue',sans-serif", color: "#fff", border: "2px solid rgba(0,0,0,0.08)" }}>
-                {dancerName ? dancerName[0].toUpperCase() : <User size={16} color="#fff" />}
+              <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "linear-gradient(135deg,#FF3D00,#FF6D00)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontFamily: "'Bebas Neue',sans-serif", color: "#fff", border: "2px solid rgba(0,0,0,0.08)", overflow: "hidden" }}>
+                {myAvatarUrl
+                  ? <img src={myAvatarUrl} alt={dancerName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  : dancerName ? dancerName[0].toUpperCase() : <User size={16} color="#fff" />}
               </div>
               {dancerName && <span style={{ fontSize: "8px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.4)", maxWidth: "48px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dancerName}</span>}
             </button>

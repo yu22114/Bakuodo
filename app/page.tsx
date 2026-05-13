@@ -26,6 +26,7 @@ export default function BakuOdori() {
   const [refreshKey, setRefreshKey] = useState(0);
   // ダンサーネーム（ヘッダー表示用）
   const [dancerName, setDancerName] = useState("");
+  const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null);
   // プロフィール遷移スタック（Instagram風の重ねて表示）
   const [profileStack, setProfileStack] = useState<string[]>([]);
   // 通知関連
@@ -45,12 +46,13 @@ export default function BakuOdori() {
   // ログイン後にダンサーネームと参加済みサイファー一覧・未読通知数をDBから取得
   const fetchUserData = async (u: SupabaseUser) => {
     const [profileRes, partsRes, notifRes] = await Promise.all([
-      supabase.from("profiles").select("dancer_name").eq("id", u.id).single(),
+      supabase.from("profiles").select("dancer_name, avatar_url").eq("id", u.id).single(),
       supabase.from("participations").select("cypher_id").eq("profile_id", u.id),
       supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", u.id).eq("read", false),
     ]);
     const name = profileRes.data?.dancer_name || u.user_metadata?.full_name || "";
     if (name) setDancerName(name);
+    setMyAvatarUrl((profileRes.data as any)?.avatar_url ?? null);
     if (partsRes.data) setJoined(partsRes.data.map((p: any) => p.cypher_id));
     setUnreadCount(notifRes.count ?? 0);
   };
@@ -167,10 +169,10 @@ export default function BakuOdori() {
           <LoginScreen />
         ) : (
           <>
-            {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} user={user} refreshKey={refreshKey} dancerName={dancerName} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} />}
+            {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} />}
             {screen === "post"    && <PostScreen onNav={setScreen} user={user} />}
             {screen === "profile" && <PublicProfileScreen profileId={user.id} currentUserId={user.id} onEdit={() => setScreen("edit")} onLogout={() => supabase.auth.signOut()} onViewProfile={id => setProfileStack(s => [...s, id])} onCypherClick={openCypherDetail} onEditCypher={id => setEditCypherId(id)} />}
-            {screen === "edit"    && <EditProfileScreen user={user} onDancerNameChange={setDancerName} onBack={() => setScreen("profile")} />}
+            {screen === "edit"    && <EditProfileScreen user={user} onDancerNameChange={setDancerName} onAvatarChange={setMyAvatarUrl} onBack={() => setScreen("profile")} />}
             <BottomNav current={screen} onNav={s => { setScreen(s); setProfileStack([]); }} />
             {detail && <DetailModal cypher={detail} onClose={() => setDetail(null)} joined={joined.includes(detail.id)} onJoin={handleJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} />}
             {confirmId && <ConfirmModal onConfirm={handleConfirmCancel} onCancel={() => setConfirmId(null)} />}
