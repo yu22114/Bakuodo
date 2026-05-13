@@ -85,11 +85,21 @@ export function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, us
       .insert({ cypher_id: cypherId, profile_id: user.id, content: text })
       .select("id, content, created_at, profile:profile_id(id, dancer_name)")
       .single();
-    setPosting(false);
     if (!error && data) {
       setComments(c => [...c, { ...data, profile: (data as any).profile ?? { id: user.id, dancer_name: "YOU" } }]);
       setCommentText("");
+      // 主催者 + 参加者に通知（自分以外）
+      const { data: parts } = await supabase
+        .from("participations").select("profile_id").eq("cypher_id", cypherId);
+      const targets = new Set<string>([organizerId, ...(parts ?? []).map((p: any) => p.profile_id)]);
+      targets.delete(user.id);
+      if (targets.size > 0) {
+        await supabase.from("notifications").insert(
+          Array.from(targets).map(uid => ({ user_id: uid, cypher_id: cypherId, actor_id: user.id, type: "comment" }))
+        );
+      }
     }
+    setPosting(false);
   };
 
   const handleReact = async (reaction: "like" | "bad") => {

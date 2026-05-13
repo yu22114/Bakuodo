@@ -16,7 +16,10 @@ export function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, un
   unreadCount: number;
   onBell: () => void;
 }) {
-  const [filter, setFilter] = useState<GenreKey | "ALL">("ALL");
+  const [sortMode, setSortMode] = useState<"genre" | "date" | "area">("genre");
+  const [genreFilter, setGenreFilter] = useState<GenreKey | "ALL">("ALL");
+  const [dateFilter, setDateFilter] = useState<"today" | "tomorrow" | "week" | "ALL">("ALL");
+  const [areaFilter, setAreaFilter] = useState<string>("ALL");
   const [cyphers, setCyphers] = useState<Cypher[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -64,7 +67,30 @@ export function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, un
     fetchCyphers();
   }, [refreshKey]);
 
-  const filtered = filter === "ALL" ? cyphers : cyphers.filter(c => c.genres.includes(filter));
+  // エリア一覧（location の先頭エリア名を抽出）
+  const areas = Array.from(new Set(cyphers.map(c => c.location.split(/[\s　]/)[0]).filter(Boolean)));
+
+  // 日程フィルター用ヘルパー
+  const toDay = (iso: string) => new Date(iso).toDateString();
+  const now = new Date();
+  const todayStr = now.toDateString();
+  const tomorrowStr = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toDateString();
+  const weekEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
+
+  const filtered = cyphers.filter(c => {
+    if (sortMode === "genre") return genreFilter === "ALL" || c.genres.includes(genreFilter);
+    if (sortMode === "date") {
+      if (dateFilter === "ALL") return true;
+      const d = toDay(c.starts_at);
+      if (dateFilter === "today") return d === todayStr;
+      if (dateFilter === "tomorrow") return d === tomorrowStr;
+      if (dateFilter === "week") return new Date(c.starts_at) <= weekEnd;
+      return true;
+    }
+    if (sortMode === "area") return areaFilter === "ALL" || c.location.startsWith(areaFilter);
+    return true;
+  });
+
   const activeCount = filtered.filter(c => timeUntil(c.starts_at) !== "終了").length;
   const dancerCount = filtered.reduce((a, c) => a + c.participant_count, 0);
 
@@ -96,11 +122,34 @@ export function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, un
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: "6px", padding: "12px 16px", overflowX: "auto", scrollbarWidth: "none", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
-        {(["ALL", ...GENRES] as (GenreKey | "ALL")[]).map(g => (
-          <button key={g} onClick={() => setFilter(g)}
-            style={{ flexShrink: 0, padding: "5px 12px", border: filter === g ? `1px solid ${g === "ALL" ? "#FF3D00" : GENRE_COLORS[g as GenreKey]}` : "1px solid rgba(0,0,0,0.12)", borderRadius: "20px", background: filter === g ? `${g === "ALL" ? "#FF3D00" : GENRE_COLORS[g as GenreKey]}15` : "transparent", color: filter === g ? (g === "ALL" ? "#FF3D00" : GENRE_COLORS[g as GenreKey]) : "rgba(0,0,0,0.45)", fontSize: "10px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: filter === g ? "bold" : "normal" }}>
+      {/* ソートモード切り替え */}
+      <div style={{ display: "flex", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
+        {(["genre", "date", "area"] as const).map(m => (
+          <button key={m} onClick={() => setSortMode(m)}
+            style={{ flex: 1, padding: "10px", border: "none", background: "transparent", borderBottom: `2px solid ${sortMode === m ? "#FF3D00" : "transparent"}`, color: sortMode === m ? "#FF3D00" : "rgba(0,0,0,0.4)", fontSize: "10px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: sortMode === m ? "bold" : "normal", letterSpacing: "0.05em" }}>
+            {m === "genre" ? "ジャンル" : m === "date" ? "日程" : "エリア"}
+          </button>
+        ))}
+      </div>
+
+      {/* フィルターチップ */}
+      <div style={{ display: "flex", gap: "6px", padding: "10px 16px", overflowX: "auto", scrollbarWidth: "none", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
+        {sortMode === "genre" && (["ALL", ...GENRES] as (GenreKey | "ALL")[]).map(g => (
+          <button key={g} onClick={() => setGenreFilter(g)}
+            style={{ flexShrink: 0, padding: "5px 12px", border: genreFilter === g ? `1px solid ${g === "ALL" ? "#FF3D00" : GENRE_COLORS[g as GenreKey]}` : "1px solid rgba(0,0,0,0.12)", borderRadius: "20px", background: genreFilter === g ? `${g === "ALL" ? "#FF3D00" : GENRE_COLORS[g as GenreKey]}18` : "transparent", color: genreFilter === g ? (g === "ALL" ? "#FF3D00" : GENRE_COLORS[g as GenreKey]) : "rgba(0,0,0,0.45)", fontSize: "10px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: genreFilter === g ? "bold" : "normal" }}>
             {g}
+          </button>
+        ))}
+        {sortMode === "date" && (["ALL", "today", "tomorrow", "week"] as const).map(d => (
+          <button key={d} onClick={() => setDateFilter(d)}
+            style={{ flexShrink: 0, padding: "5px 12px", border: dateFilter === d ? "1px solid #FF3D00" : "1px solid rgba(0,0,0,0.12)", borderRadius: "20px", background: dateFilter === d ? "rgba(255,61,0,0.08)" : "transparent", color: dateFilter === d ? "#FF3D00" : "rgba(0,0,0,0.45)", fontSize: "10px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: dateFilter === d ? "bold" : "normal" }}>
+            {d === "ALL" ? "すべて" : d === "today" ? "今日" : d === "tomorrow" ? "明日" : "今週"}
+          </button>
+        ))}
+        {sortMode === "area" && (["ALL", ...areas] as string[]).map(a => (
+          <button key={a} onClick={() => setAreaFilter(a)}
+            style={{ flexShrink: 0, padding: "5px 12px", border: areaFilter === a ? "1px solid #FF3D00" : "1px solid rgba(0,0,0,0.12)", borderRadius: "20px", background: areaFilter === a ? "rgba(255,61,0,0.08)" : "transparent", color: areaFilter === a ? "#FF3D00" : "rgba(0,0,0,0.45)", fontSize: "10px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: areaFilter === a ? "bold" : "normal" }}>
+            {a === "ALL" ? "すべて" : a}
           </button>
         ))}
       </div>

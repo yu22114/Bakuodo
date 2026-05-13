@@ -52,7 +52,7 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
     <div style={{ paddingBottom: "80px", background: "#FAFAFA" }}>
       <div style={{ padding: "24px 16px 16px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
         <div style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ NEW SESSION</div>
-        <h2 style={{ margin: 0, fontFamily: "'Bebas Neue',sans-serif", fontSize: "32px", color: "#111111" }}>サイファーを作る</h2>
+        <h2 style={{ margin: 0, fontFamily: "'Bebas Neue',sans-serif", fontSize: "32px", color: "#111111" }}>サイファーを作成</h2>
       </div>
       <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: "16px" }}>
         {error && <div style={{ padding: "10px 12px", background: "rgba(255,61,0,0.06)", border: "1px solid rgba(255,61,0,0.25)", borderRadius: "6px", color: "#FF3D00", fontSize: "12px", fontFamily: "'Space Mono',monospace" }}>{error}</div>}

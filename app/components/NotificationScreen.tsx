@@ -70,7 +70,12 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
               </button>
               <div style={{ flex: 1 }}>
                 <p style={{ margin: 0, fontSize: "13px", color: "#111", lineHeight: 1.5 }}>
-                  <strong>{actorName}</strong>さんが{n.type === "follow" ? "あなたをフォローしました👋" : `「${cypherTitle}」に${n.type === "join" ? "参加しました🎉" : "キャンセルしました"}`}
+                  <strong>{actorName}</strong>さんが{
+                    n.type === "follow"   ? "あなたをフォローしました👋" :
+                    n.type === "comment"  ? `「${cypherTitle}」にコメントしました💬` :
+                    n.type === "join"     ? `「${cypherTitle}」に参加しました🎉` :
+                                           `「${cypherTitle}」をキャンセルしました`
+                  }
                 </p>
                 <p style={{ margin: "3px 0 0", fontSize: "10px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace" }}>{timeAgo(n.created_at)}</p>
               </div>

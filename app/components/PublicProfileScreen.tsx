@@ -28,7 +28,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [followLoading, setFollowLoading] = useState(false);
   const [hostedCyphers, setHostedCyphers] = useState<HostedCypher[]>([]);
   const [joinedCyphers, setJoinedCyphers] = useState<JoinedCypher[]>([]);
-  const [tab, setTab] = useState<"joined" | "hosted">("joined");
+  const [mainTab, setMainTab] = useState<"profile" | "cyphers">("profile");
+  const [cypherTab, setCypherTab] = useState<"joined" | "hosted">("joined");
   const [loading, setLoading] = useState(true);
   const [participantSheet, setParticipantSheet] = useState<{ title: string; participants: Array<{ profile_id: string; dancer_name: string }> } | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -196,11 +197,21 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         </div>
       </div>
 
+      {/* メインタブ切り替え */}
+      <div style={{ display: "flex", background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
+        {(["profile", "cyphers"] as const).map(t => (
+          <button key={t} onClick={() => setMainTab(t)}
+            style={{ flex: 1, padding: "13px", border: "none", background: "transparent", borderBottom: `2px solid ${mainTab === t ? "#FF3D00" : "transparent"}`, color: mainTab === t ? "#FF3D00" : "rgba(0,0,0,0.4)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: mainTab === t ? "bold" : "normal", letterSpacing: "0.08em" }}>
+            {t === "profile" ? "PROFILE" : "CYPHER"}
+          </button>
+        ))}
+      </div>
+
       <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "10px" }}>
         {loading ? (
           <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>LOADING...</div>
-        ) : (<>
-          {profileData && (profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
+        ) : mainTab === "profile" ? (
+          profileData && (profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) ? (
             <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "10px", padding: "14px 16px" }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: profileData.genres.length > 0 ? "10px" : "0" }}>
                 {profileData.age_group && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", color: "rgba(0,0,0,0.6)", fontFamily: "'Space Mono',monospace" }}>{profileData.age_group}</span>}
@@ -209,70 +220,78 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
               </div>
               {profileData.genres.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>{profileData.genres.map(g => <GenreBadge key={g} genre={g} />)}</div>}
             </div>
-          )}
-
-          {isOwn && (<>
+          ) : (
+            <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>プロフィール情報がありません</div>
+          )
+        ) : (<>
+          {/* CYPHERタブ：自分なら参加/主催の2タブ（過去はグレー）、他人なら主催のみ */}
+          {isOwn ? (<>
             <div style={{ display: "flex", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "10px 10px 0 0", overflow: "hidden" }}>
               {(["joined", "hosted"] as const).map(t => (
-                <button key={t} onClick={() => setTab(t)}
-                  style={{ flex: 1, padding: "13px", border: "none", background: "transparent", borderBottom: `2px solid ${tab === t ? "#FF3D00" : "transparent"}`, color: tab === t ? "#FF3D00" : "rgba(0,0,0,0.4)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: tab === t ? "bold" : "normal" }}>
-                  {t === "joined" ? "参加中" : "主催"}
+                <button key={t} onClick={() => setCypherTab(t)}
+                  style={{ flex: 1, padding: "13px", border: "none", background: "transparent", borderBottom: `2px solid ${cypherTab === t ? "#FF3D00" : "transparent"}`, color: cypherTab === t ? "#FF3D00" : "rgba(0,0,0,0.4)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: cypherTab === t ? "bold" : "normal" }}>
+                  {t === "joined" ? "参加" : "主催"}
                 </button>
               ))}
             </div>
             <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderTop: "none", borderRadius: "0 0 10px 10px", marginTop: "-10px" }}>
-              {tab === "joined" ? (
+              {cypherTab === "joined" ? (
                 joinedCyphers.length === 0
                   ? <div style={{ textAlign: "center", padding: "32px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>まだ参加しているサイファーはありません</div>
-                  : joinedCyphers.map(c => { const { date, time } = formatDate(c.starts_at); const until = timeUntil(c.starts_at); return (
-                    <div key={c.id} style={{ padding: "12px 14px", borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
-                      <div style={{ fontSize: "14px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111" }}>{c.title}</div>
-                      <div style={{ fontSize: "10px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace", marginBottom: "3px" }}>by {c.organizer_name}</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "10px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace" }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Clock size={9} />{date} {time}</span>
-                        <span style={{ padding: "1px 5px", background: until === "終了" ? "rgba(0,0,0,0.06)" : "rgba(255,61,0,0.08)", borderRadius: "3px", color: until === "終了" ? "rgba(0,0,0,0.4)" : "#FF3D00", fontWeight: "bold", fontSize: "9px" }}>{until}</span>
-                      </div>
-                    </div>
-                  );})
+                  : joinedCyphers.map(c => {
+                      const { date, time } = formatDate(c.starts_at);
+                      const isPast = new Date(c.starts_at) < new Date();
+                      return (
+                        <div key={c.id} style={{ padding: "12px 14px", borderBottom: "1px solid rgba(0,0,0,0.05)", opacity: isPast ? 0.45 : 1 }}>
+                          <div style={{ fontSize: "14px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111" }}>{c.title}</div>
+                          <div style={{ fontSize: "10px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace", marginBottom: "3px" }}>by {c.organizer_name}</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace" }}>
+                            <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Clock size={9} />{date} {time}</span>
+                            {isPast && <span style={{ fontSize: "9px", padding: "1px 5px", background: "rgba(0,0,0,0.05)", borderRadius: "3px", color: "rgba(0,0,0,0.35)" }}>終了</span>}
+                          </div>
+                        </div>
+                      );})
               ) : (
                 hostedCyphers.length === 0
                   ? <div style={{ textAlign: "center", padding: "32px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>まだサイファーを主催していません</div>
-                  : hostedCyphers.map(c => { const { date, time } = formatDate(c.starts_at); const until = timeUntil(c.starts_at); return (
-                    <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding: "12px 14px", borderBottom: "1px solid rgba(0,0,0,0.05)", cursor: onCypherClick ? "pointer" : "default" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                        <div style={{ fontSize: "14px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111", flex: 1 }}>{c.title}</div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, marginLeft: "8px" }}>
-                          <span style={{ fontSize: "12px", fontFamily: "'Space Mono',monospace", color: "#FF3D00", fontWeight: "bold" }}>{c.participant_count}人</span>
-                          <button onClick={e => { e.stopPropagation(); onEditCypher?.(c.id); }} title="編集" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "rgba(0,0,0,0.3)", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Pencil size={13} /></button>
-                          <button onClick={e => { e.stopPropagation(); setDeleteConfirmId(c.id); }} title="削除" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "rgba(0,0,0,0.25)", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
+                  : hostedCyphers.map(c => {
+                      const { date, time } = formatDate(c.starts_at);
+                      const isPast = new Date(c.starts_at) < new Date();
+                      return (
+                        <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding: "12px 14px", borderBottom: "1px solid rgba(0,0,0,0.05)", cursor: onCypherClick ? "pointer" : "default", opacity: isPast ? 0.45 : 1 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                            <div style={{ fontSize: "14px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111", flex: 1 }}>{c.title}</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, marginLeft: "8px" }}>
+                              <span style={{ fontSize: "12px", fontFamily: "'Space Mono',monospace", color: isPast ? "rgba(0,0,0,0.3)" : "#FF3D00", fontWeight: "bold" }}>{c.participant_count}人</span>
+                              {!isPast && <>
+                                <button onClick={e => { e.stopPropagation(); onEditCypher?.(c.id); }} title="編集" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "rgba(0,0,0,0.3)", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Pencil size={13} /></button>
+                                <button onClick={e => { e.stopPropagation(); setDeleteConfirmId(c.id); }} title="削除" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "rgba(0,0,0,0.25)", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
+                              </>}
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace", marginTop: "3px" }}>
+                            <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Clock size={9} />{date} {time}</span>
+                            {isPast && <span style={{ fontSize: "9px", padding: "1px 5px", background: "rgba(0,0,0,0.05)", borderRadius: "3px", color: "rgba(0,0,0,0.35)" }}>終了</span>}
+                          </div>
                         </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "10px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace", marginTop: "3px" }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Clock size={9} />{date} {time}</span>
-                        <span style={{ padding: "1px 5px", background: until === "終了" ? "rgba(0,0,0,0.06)" : "rgba(255,61,0,0.08)", borderRadius: "3px", color: until === "終了" ? "rgba(0,0,0,0.4)" : "#FF3D00", fontWeight: "bold", fontSize: "9px" }}>{until}</span>
-                      </div>
-                    </div>
-                  );})
+                      );})
               )}
             </div>
-          </>)}
-
-          {!isOwn && hostedCyphers.length > 0 && (
-            <div>
-              <div style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", letterSpacing: "0.15em", color: "rgba(0,0,0,0.35)", marginBottom: "8px", textTransform: "uppercase" as const }}>▶ HOSTED CYPHERS</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                {hostedCyphers.map(c => { const { date, time } = formatDate(c.starts_at); const ended = timeUntil(c.starts_at) === "終了"; return (
-                  <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding: "10px 14px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: onCypherClick ? "pointer" : "default" }}>
-                    <div>
-                      <div style={{ fontSize: "14px", fontFamily: "'Bebas Neue',sans-serif", color: ended ? "rgba(0,0,0,0.4)" : "#111111" }}>{c.title}</div>
-                      <div style={{ fontSize: "10px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace", marginTop: "2px", display: "flex", alignItems: "center", gap: "6px" }}><Clock size={9} color="rgba(0,0,0,0.3)" />{date} {time}</div>
+          </>) : (
+            hostedCyphers.length === 0
+              ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>まだサイファーを主催していません</div>
+              : <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  {hostedCyphers.map(c => { const { date, time } = formatDate(c.starts_at); const ended = timeUntil(c.starts_at) === "終了"; return (
+                    <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding: "10px 14px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: onCypherClick ? "pointer" : "default" }}>
+                      <div>
+                        <div style={{ fontSize: "14px", fontFamily: "'Bebas Neue',sans-serif", color: ended ? "rgba(0,0,0,0.4)" : "#111111" }}>{c.title}</div>
+                        <div style={{ fontSize: "10px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace", marginTop: "2px", display: "flex", alignItems: "center", gap: "6px" }}><Clock size={9} color="rgba(0,0,0,0.3)" />{date} {time}</div>
+                      </div>
+                      {ended ? <span style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.3)", padding: "2px 7px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "3px" }}>終了</span>
+                             : <span style={{ fontSize: "11px", fontFamily: "'Space Mono',monospace", color: "#FF3D00", fontWeight: "bold" }}>{c.participant_count}人</span>}
                     </div>
-                    {ended ? <span style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.3)", padding: "2px 7px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "3px" }}>終了</span>
-                           : <span style={{ fontSize: "11px", fontFamily: "'Space Mono',monospace", color: "#FF3D00", fontWeight: "bold" }}>{c.participant_count}人</span>}
-                  </div>
-                );})}
-              </div>
-            </div>
+                  );})}
+                </div>
           )}
         </>)}
       </div>
