@@ -146,12 +146,6 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           <div>
             <div style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ DANCER PROFILE</div>
             <h2 style={{ margin: 0, fontFamily: "'Bebas Neue',sans-serif", fontSize: "32px", color: "#111111" }}>{name}</h2>
-            {profileData?.instagram && (
-              <a href={`https://instagram.com/${profileData.instagram}`} target="_blank" rel="noopener noreferrer"
-                style={{ fontSize: "12px", color: "#A855F7", fontFamily: "'Space Mono',monospace", marginTop: "4px", textDecoration: "none", display: "inline-block" }}>
-                @{profileData.instagram} ↗
-              </a>
-            )}
             <div style={{ display: "flex", gap: "16px", marginTop: "8px" }}>
               <button onClick={() => openFollowSheet("followers")} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}>
                 <span style={{ fontSize: "11px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.5)" }}>
@@ -211,14 +205,29 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         {loading ? (
           <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>LOADING...</div>
         ) : mainTab === "profile" ? (
-          profileData && (profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) ? (
-            <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "10px", padding: "14px 16px" }}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: profileData.genres.length > 0 ? "10px" : "0" }}>
-                {profileData.age_group && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", color: "rgba(0,0,0,0.6)", fontFamily: "'Space Mono',monospace" }}>{profileData.age_group}</span>}
-                {profileData.dance_years != null && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", color: "rgba(0,0,0,0.6)", fontFamily: "'Space Mono',monospace" }}>歴{profileData.dance_years}年</span>}
-                {profileData.gender && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", color: "rgba(0,0,0,0.6)", fontFamily: "'Space Mono',monospace" }}>{profileData.gender}</span>}
-              </div>
-              {profileData.genres.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>{profileData.genres.map(g => <GenreBadge key={g} genre={g} />)}</div>}
+          profileData && (profileData.instagram || profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) ? (
+            <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "10px", overflow: "hidden" }}>
+              {profileData.instagram && (
+                <a href={`https://instagram.com/${profileData.instagram}`} target="_blank" rel="noopener noreferrer"
+                  style={{ display: "flex", alignItems: "center", gap: "10px", padding: "14px 16px", borderBottom: (profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) ? "1px solid rgba(0,0,0,0.07)" : "none", textDecoration: "none", background: "linear-gradient(90deg, rgba(168,85,247,0.05), transparent)" }}>
+                  <span style={{ fontSize: "16px" }}>📸</span>
+                  <div>
+                    <div style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.12em", marginBottom: "2px" }}>INSTAGRAM</div>
+                    <div style={{ fontSize: "15px", fontFamily: "'Space Mono',monospace", color: "#A855F7", fontWeight: "bold" }}>@{profileData.instagram}</div>
+                  </div>
+                  <span style={{ marginLeft: "auto", fontSize: "14px", color: "#A855F7" }}>↗</span>
+                </a>
+              )}
+              {(profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
+                <div style={{ padding: "14px 16px" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: profileData.genres.length > 0 ? "10px" : "0" }}>
+                    {profileData.age_group && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", color: "rgba(0,0,0,0.6)", fontFamily: "'Space Mono',monospace" }}>{profileData.age_group}</span>}
+                    {profileData.dance_years != null && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", color: "rgba(0,0,0,0.6)", fontFamily: "'Space Mono',monospace" }}>歴{profileData.dance_years}年</span>}
+                    {profileData.gender && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", color: "rgba(0,0,0,0.6)", fontFamily: "'Space Mono',monospace" }}>{profileData.gender}</span>}
+                  </div>
+                  {profileData.genres.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>{profileData.genres.map(g => <GenreBadge key={g} genre={g} />)}</div>}
+                </div>
+              )}
             </div>
           ) : (
             <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>プロフィール情報がありません</div>
