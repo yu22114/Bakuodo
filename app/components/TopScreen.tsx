@@ -1,10 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Radio, Users, Bell, User, Search, X, SlidersHorizontal } from "lucide-react";
+import { Radio, Users, Bell, User, Search, X, SlidersHorizontal, Navigation, Loader } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, PrivateLesson, GenreKey } from "../lib/types";
-import { GENRES, GENRE_COLORS, timeUntil, formatDate, formatEndTime } from "../lib/constants";
+import { GENRES, GENRE_COLORS, timeUntil, formatDate, formatEndTime, calcDistanceM } from "../lib/constants";
 import { CypherCard } from "./CypherCard";
 import { PLCard } from "./PLCard";
 import { SpotCard } from "./SpotCard";
@@ -22,7 +22,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   onBell: () => void;
 }) {
   const [section, setSection] = useState<"cypher" | "pl" | "spots">("cypher");
-  const [spots, setSpots] = useState<{ id: string; name: string; location: string; description: string | null }[]>([]);
+  const [spots, setSpots] = useState<{ id: string; name: string; location: string; description: string | null; latitude: number | null; longitude: number | null }[]>([]);
   const [cyphers, setCyphers] = useState<Cypher[]>([]);
   const [lessons, setLessons] = useState<PrivateLesson[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +31,9 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   const [selectedGenres, setSelectedGenres] = useState<GenreKey[]>([]);
   const [dateFilter, setDateFilter] = useState<"ALL" | "today" | "tomorrow" | "week">("ALL");
   const [areaText, setAreaText] = useState("");
+  // 現在地
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locating, setLocating] = useState(false);
 
   useEffect(() => {
     async function fetchCyphers() {
@@ -100,7 +103,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     fetchCyphers();
 
     // スポット一覧は変わらないので一度だけ取得
-    supabase.from("spots").select("id, name, location, description").order("created_at").then(({ data }) => {
+    supabase.from("spots").select("id, name, location, description, latitude, longitude").order("created_at").then(({ data }) => {
       if (data) setSpots(data);
     });
   }, [refreshKey]);
@@ -127,6 +130,37 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   });
 
   const activeFilterCount = (selectedGenres.length > 0 ? 1 : 0) + (dateFilter !== "ALL" ? 1 : 0) + (areaText.trim() ? 1 : 0);
+
+  // 現在地取得 → 逆ジオコードでエリア名をareaTextに反映
+  const handleUseLocation = async () => {
+    if (!navigator.geolocation) { alert("この端末では位置情報が使えません"); return; }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const { latitude: lat, longitude: lng } = pos.coords;
+      setUserLocation({ lat, lng });
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=ja`);
+        const data = await res.json();
+        const addr = data.address;
+        // 市区町村レベルの名前を取得（suburb > city_district > neighbourhood > city > town）
+        const area = addr.suburb ?? addr.city_district ?? addr.neighbourhood ?? addr.city ?? addr.town ?? addr.county ?? "";
+        if (area) setAreaText(area);
+      } catch { /* 逆ジオコード失敗しても位置情報はセット済み */ }
+      setLocating(false);
+    }, () => {
+      alert("位置情報の取得に失敗しました。ブラウザの設定を確認してください。");
+      setLocating(false);
+    });
+  };
+
+  // スポットを距離順にソート
+  const sortedSpots = userLocation
+    ? [...spots].sort((a, b) => {
+        const dA = (a.latitude && a.longitude) ? calcDistanceM(userLocation.lat, userLocation.lng, a.latitude, a.longitude) : Infinity;
+        const dB = (b.latitude && b.longitude) ? calcDistanceM(userLocation.lat, userLocation.lng, b.latitude, b.longitude) : Infinity;
+        return dA - dB;
+      })
+    : spots;
   const activeCount = filtered.filter(c => timeUntil(c.starts_at) !== "終了").length;
   const dancerCount = filtered.reduce((a, c) => a + c.participant_count, 0);
 
@@ -186,9 +220,9 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
           <div style={{ padding: "8px 12px", background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.15)", borderRadius: "6px", fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.5)", lineHeight: 1.6 }}>
             📍 ダンサーの聖地です。今そこにいる人はチェックインを！<span style={{ color: "rgba(0,0,0,0.35)" }}> (チェックインは3時間で自動退場)</span>
           </div>
-          {spots.length === 0
+          {sortedSpots.length === 0
             ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>スポット情報はまだありません</div>
-            : spots.map(s => <SpotCard key={s.id} spot={s} user={user} onViewProfile={id => onViewProfile?.(id)} />)}
+            : sortedSpots.map(s => <SpotCard key={s.id} spot={s} user={user} userLocation={userLocation} onViewProfile={id => onViewProfile?.(id)} />)}
         </div>
       ) : section === "pl" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px", background: "#F5F7FA" }}>
@@ -241,7 +275,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             {/* エリア */}
             <div style={{ marginBottom: "24px" }}>
               <div style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.45)", letterSpacing: "0.15em", marginBottom: "8px" }}>AREA</div>
-              <div style={{ position: "relative" }}>
+              <div style={{ position: "relative", marginBottom: "8px" }}>
                 <Search size={14} color="rgba(0,0,0,0.3)" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)" }} />
                 <input
                   value={areaText}
@@ -251,6 +285,11 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
                 />
                 {areaText && <button onClick={() => setAreaText("")} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "rgba(0,0,0,0.3)", padding: "2px" }}><X size={14} /></button>}
               </div>
+              <button onClick={handleUseLocation} disabled={locating}
+                style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", background: userLocation ? "rgba(22,163,74,0.08)" : "#F5F7FA", border: `1px solid ${userLocation ? "rgba(22,163,74,0.3)" : "rgba(0,0,0,0.1)"}`, borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontFamily: "'Space Mono',monospace", color: userLocation ? "#16A34A" : "rgba(0,0,0,0.5)", opacity: locating ? 0.6 : 1 }}>
+                {locating ? <Loader size={13} style={{ animation: "spin 0.7s linear infinite" }} /> : <Navigation size={13} />}
+                {locating ? "取得中..." : userLocation ? "現在地を使用中" : "現在地から検索"}
+              </button>
             </div>
 
             {/* 日程 */}
