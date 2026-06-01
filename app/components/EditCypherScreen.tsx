@@ -15,6 +15,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
 }) {
   const [form, setForm] = useState<FormState>({ title: "", date: "", start_time: "", end_time: "", station: "", studio: "", genres: [], description: "", max_members: "", payment: [] });
   const [isPrivate, setIsPrivate] = useState(false);
+  const [requiresApproval, setRequiresApproval] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -24,7 +25,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
   useEffect(() => {
     async function fetchCypher() {
       const { data } = await supabase.from("cyphers")
-        .select("id, title, starts_at, ends_at, location, description, max_members, visibility, cypher_genres(genres:genre_id(name))")
+        .select("id, title, starts_at, ends_at, location, description, max_members, visibility, requires_approval, cypher_genres(genres:genre_id(name))")
         .eq("id", cypherId).single();
       if (data) {
         const starts = new Date((data as any).starts_at);
@@ -38,6 +39,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
         const genres = ((data as any).cypher_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
         setForm({ title: (data as any).title ?? "", date: dateStr, start_time: startTime, end_time: endTime, station, studio, genres, description: (data as any).description ?? "", max_members: (data as any).max_members ? String((data as any).max_members) : "", payment: [] });
         setIsPrivate((data as any).visibility === "private");
+        setRequiresApproval((data as any).requires_approval ?? false);
       }
       setLoading(false);
     }
@@ -53,7 +55,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
     const ends_at = form.end_time ? `${endDate}T${form.end_time}:00+09:00` : null;
     const location = form.studio ? `${form.station} ${form.studio}` : form.station;
     const title = form.title.trim() || location;
-    const { error: uErr } = await supabase.from("cyphers").update({ title, location, description: form.description, starts_at, ends_at, max_members: form.max_members ? Number(form.max_members) : null, visibility: isPrivate ? "private" : "public" }).eq("id", cypherId).eq("organizer_id", user.id);
+    const { error: uErr } = await supabase.from("cyphers").update({ title, location, description: form.description, starts_at, ends_at, max_members: form.max_members ? Number(form.max_members) : null, visibility: isPrivate ? "private" : "public", requires_approval: requiresApproval }).eq("id", cypherId).eq("organizer_id", user.id);
     if (uErr) { setError(`保存に失敗しました: ${uErr.message}`); setSaving(false); return; }
     await supabase.from("cypher_genres").delete().eq("cypher_id", cypherId);
     if (form.genres.length > 0) {
@@ -130,6 +132,20 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
           </div>
           <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: isPrivate ? "#FF3D00" : "rgba(0,0,0,0.15)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}>
             <div style={{ position: "absolute", top: "3px", left: isPrivate ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" }} />
+          </div>
+        </button>
+        <button onClick={() => setRequiresApproval(v => !v)}
+          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
+          <div>
+            <div style={{ fontSize: "13px", fontFamily: "'Space Mono',monospace", color: "#111", fontWeight: "bold" }}>
+              📋 参加承認制
+            </div>
+            <div style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.4)", marginTop: "3px" }}>
+              ONにすると参加に主催者の承認が必要になります
+            </div>
+          </div>
+          <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: requiresApproval ? "#FF3D00" : "rgba(0,0,0,0.15)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}>
+            <div style={{ position: "absolute", top: "3px", left: requiresApproval ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" }} />
           </div>
         </button>
         <button onClick={handleSave} disabled={saving}

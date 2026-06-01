@@ -8,10 +8,11 @@ import { formatDate, timeUntil, formatEndTime } from "../lib/constants";
 import { GenreBadge } from "./GenreBadge";
 import { ParticipantBar } from "./ParticipantBar";
 
-export function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, user }: {
+export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewProfile, user }: {
   cypher: Cypher | null;
   onClose: () => void;
   joined: boolean;
+  pending?: boolean;
   onJoin: (id: string) => void;
   onViewProfile: (id: string) => void;
   user: SupabaseUser;
@@ -38,7 +39,8 @@ export function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, us
       const { data } = await supabase
         .from("participations")
         .select("profile_id, profiles:profile_id ( dancer_name, avatar_url )")
-        .eq("cypher_id", cypherId);
+        .eq("cypher_id", cypherId)
+        .eq("status", "approved");
       if (data) {
         setParticipants(data.map((row: any) => ({
           profile_id: row.profile_id,
@@ -206,9 +208,9 @@ export function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, us
                 定員に達しています（{participants.length}/{cypher.max_members}人）
               </div>
             ) : (
-              <button onClick={() => { onJoin(cypher.id); if (!joined) onClose(); }}
-                style={{ marginTop: "20px", width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: joined ? "rgba(22,163,74,0.1)" : "#FF3D00", color: joined ? "#16A34A" : "#fff", fontSize: "14px", fontFamily: "'Bebas Neue',sans-serif", letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-                {joined ? <><Check size={16} /> 参加済み — キャンセルする</> : <><Zap size={16} /> このサイファーに参加する</>}
+              <button onClick={() => { onJoin(cypher.id); if (!joined && !pending) onClose(); }}
+                style={{ marginTop: "20px", width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: joined ? "rgba(22,163,74,0.1)" : pending ? "rgba(0,0,0,0.06)" : "#FF3D00", color: joined ? "#16A34A" : pending ? "rgba(0,0,0,0.45)" : "#fff", fontSize: "14px", fontFamily: "'Bebas Neue',sans-serif", letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                {joined ? <><Check size={16} /> 参加済み — キャンセルする</> : pending ? <>申請中... — キャンセルする</> : cypher.requires_approval ? <>📋 参加を申請する</> : <><Zap size={16} /> このサイファーに参加する</>}
               </button>
             );
           })()}

@@ -18,6 +18,7 @@ import { BottomNav } from "./components/BottomNav";
 export default function BakuOdori() {
   const [screen, setScreen] = useState("top");
   const [joined, setJoined] = useState<string[]>([]);
+  const [pendingJoins, setPendingJoins] = useState<string[]>([]);
   const [detail, setDetail] = useState<Cypher | null>(null);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -47,13 +48,16 @@ export default function BakuOdori() {
   const fetchUserData = async (u: SupabaseUser) => {
     const [profileRes, partsRes, notifRes] = await Promise.all([
       supabase.from("profiles").select("dancer_name, avatar_url").eq("id", u.id).single(),
-      supabase.from("participations").select("cypher_id").eq("profile_id", u.id),
+      supabase.from("participations").select("cypher_id, status").eq("profile_id", u.id),
       supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", u.id).eq("read", false),
     ]);
     const name = profileRes.data?.dancer_name || u.user_metadata?.full_name || "";
     if (name) setDancerName(name);
     setMyAvatarUrl((profileRes.data as any)?.avatar_url ?? null);
-    if (partsRes.data) setJoined(partsRes.data.map((p: any) => p.cypher_id));
+    if (partsRes.data) {
+      setJoined(partsRes.data.filter((p: any) => p.status !== "pending").map((p: any) => p.cypher_id));
+      setPendingJoins(partsRes.data.filter((p: any) => p.status === "pending").map((p: any) => p.cypher_id));
+    }
     setUnreadCount(notifRes.count ?? 0);
   };
 
@@ -75,7 +79,7 @@ export default function BakuOdori() {
   // サイファーIDからフルデータを取得してDetailModalを開く
   const openCypherDetail = async (cypherId: string) => {
     const { data: row } = await supabase.from("cyphers").select(`
-      id, title, organizer_id, starts_at, ends_at, location, description, max_members, status,
+      id, title, organizer_id, starts_at, ends_at, location, description, max_members, status, visibility, requires_approval,
       profiles:organizer_id ( dancer_name, avatar_url ),
       cypher_genres ( genres:genre_id ( name ) )
     `).eq("id", cypherId).single();
@@ -95,6 +99,8 @@ export default function BakuOdori() {
       description: (row as any).description ?? "",
       max_members: (row as any).max_members,
       status: (row as any).status,
+      visibility: (row as any).visibility ?? "public",
+      requires_approval: (row as any).requires_approval ?? false,
       genres,
       organizer: { id: (row as any).organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: (row as any).profiles?.avatar_url ?? null },
       participant_count: partCount ?? 0,
@@ -106,26 +112,32 @@ export default function BakuOdori() {
   // 参加ボタン：DBにINSERT → joinedに追加 → カード再フェッチ → 主催者に通知
   const handleJoin = async (id: string) => {
     if (!user) return;
-    if (joined.includes(id)) {
+    if (joined.includes(id) || pendingJoins.includes(id)) {
       setConfirmId(id);
     } else {
-      const { data: cypherCheck } = await supabase.from("cyphers").select("organizer_id, max_members").eq("id", id).single();
+      const { data: cypherCheck } = await supabase.from("cyphers").select("organizer_id, max_members, requires_approval").eq("id", id).single();
       if (cypherCheck?.max_members) {
         const { count: partCount } = await supabase
-          .from("participations").select("id", { count: "exact", head: true }).eq("cypher_id", id);
+          .from("participations").select("id", { count: "exact", head: true }).eq("cypher_id", id).eq("status", "approved");
         if (partCount !== null && partCount >= cypherCheck.max_members) {
           alert("このサイファーは定員に達しています");
           return;
         }
       }
-      const { error } = await supabase.from("participations").insert({ cypher_id: id, profile_id: user.id });
+      const requiresApproval = cypherCheck?.requires_approval ?? false;
+      const status = requiresApproval ? "pending" : "approved";
+      const { error } = await supabase.from("participations").insert({ cypher_id: id, profile_id: user.id, status });
       if (error) { console.error("join error:", error); return; }
-      setJoined(j => [...j, id]);
-      setRefreshKey(k => k + 1);
-      const { data: cypherData } = await supabase.from("cyphers").select("organizer_id").eq("id", id).single();
-      const organizerId = cypherData?.organizer_id;
+      if (requiresApproval) {
+        setPendingJoins(p => [...p, id]);
+      } else {
+        setJoined(j => [...j, id]);
+        setRefreshKey(k => k + 1);
+      }
+      const organizerId = cypherCheck?.organizer_id;
       if (organizerId && organizerId !== user.id) {
-        await supabase.from("notifications").insert({ user_id: organizerId, cypher_id: id, actor_id: user.id, type: "join" });
+        const notifType = requiresApproval ? "join_request" : "join";
+        await supabase.from("notifications").insert({ user_id: organizerId, cypher_id: id, actor_id: user.id, type: notifType });
       }
     }
   };
@@ -137,6 +149,7 @@ export default function BakuOdori() {
         .eq("cypher_id", confirmId).eq("profile_id", user.id);
       if (error) { console.error("cancel error:", error); setConfirmId(null); return; }
       setJoined(j => j.filter(x => x !== confirmId));
+      setPendingJoins(p => p.filter(x => x !== confirmId));
       setRefreshKey(k => k + 1);
       const { data: cypherData } = await supabase.from("cyphers").select("organizer_id").eq("id", confirmId).single();
       const organizerId = cypherData?.organizer_id;
@@ -174,7 +187,7 @@ export default function BakuOdori() {
             {screen === "profile" && <PublicProfileScreen profileId={user.id} currentUserId={user.id} onEdit={() => setScreen("edit")} onLogout={() => supabase.auth.signOut()} onViewProfile={id => setProfileStack(s => [...s, id])} onCypherClick={openCypherDetail} onEditCypher={id => setEditCypherId(id)} />}
             {screen === "edit"    && <EditProfileScreen user={user} onDancerNameChange={setDancerName} onAvatarChange={setMyAvatarUrl} onBack={() => setScreen("profile")} />}
             <BottomNav current={screen} onNav={s => { setScreen(s); setProfileStack([]); }} />
-            {detail && <DetailModal cypher={detail} onClose={() => setDetail(null)} joined={joined.includes(detail.id)} onJoin={handleJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} />}
+            {detail && <DetailModal cypher={detail} onClose={() => setDetail(null)} joined={joined.includes(detail.id)} pending={pendingJoins.includes(detail.id)} onJoin={handleJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} />}
             {confirmId && <ConfirmModal onConfirm={handleConfirmCancel} onCancel={() => setConfirmId(null)} />}
             {editCypherId && (
               <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#FAFAFA", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>

@@ -38,17 +38,26 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
     fetchAndMarkRead();
   }, [currentUserId]);
 
-  const handleApprove = async (notifId: string, actorId: string) => {
+  const handleApprove = async (notifId: string, actorId: string, type: string, cypherId?: string) => {
     setActionLoading(notifId);
-    await supabase.from("follows").update({ status: "accepted" }).eq("follower_id", actorId).eq("following_id", currentUserId);
-    await supabase.from("notifications").insert({ user_id: actorId, actor_id: currentUserId, type: "follow" });
+    if (type === "follow_request") {
+      await supabase.from("follows").update({ status: "accepted" }).eq("follower_id", actorId).eq("following_id", currentUserId);
+      await supabase.from("notifications").insert({ user_id: actorId, actor_id: currentUserId, type: "follow" });
+    } else if (type === "join_request" && cypherId) {
+      await supabase.from("participations").update({ status: "approved" }).eq("cypher_id", cypherId).eq("profile_id", actorId);
+      await supabase.from("notifications").insert({ user_id: actorId, actor_id: currentUserId, cypher_id: cypherId, type: "join_approved" });
+    }
     setItems(prev => prev.filter(n => n.id !== notifId));
     setActionLoading(null);
   };
 
-  const handleReject = async (notifId: string, actorId: string) => {
+  const handleReject = async (notifId: string, actorId: string, type: string, cypherId?: string) => {
     setActionLoading(notifId);
-    await supabase.from("follows").delete().eq("follower_id", actorId).eq("following_id", currentUserId);
+    if (type === "follow_request") {
+      await supabase.from("follows").delete().eq("follower_id", actorId).eq("following_id", currentUserId);
+    } else if (type === "join_request" && cypherId) {
+      await supabase.from("participations").delete().eq("cypher_id", cypherId).eq("profile_id", actorId);
+    }
     setItems(prev => prev.filter(n => n.id !== notifId));
     setActionLoading(null);
   };
@@ -91,26 +100,28 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
                   <strong>{actorName}</strong>さんが{
                     n.type === "follow"          ? "あなたをフォローしました👋" :
                     n.type === "follow_request"  ? "フォローを申請しました🔒" :
+                    n.type === "join_request"    ? `「${cypherTitle}」への参加を申請しました📋` :
+                    n.type === "join_approved"   ? `「${cypherTitle}」への参加を承認しました✅` :
                     n.type === "comment"         ? `「${cypherTitle}」にコメントしました💬` :
                     n.type === "join"            ? `「${cypherTitle}」に参加しました🎉` :
                                                   `「${cypherTitle}」をキャンセルしました`
                   }
                 </p>
                 <p style={{ margin: "3px 0 0", fontSize: "10px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace" }}>{timeAgo(n.created_at)}</p>
-                {n.type === "follow_request" && (
+                {(n.type === "follow_request" || n.type === "join_request") && (
                   <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-                    <button onClick={() => handleApprove(n.id, actor?.id)} disabled={actionLoading === n.id}
+                    <button onClick={() => handleApprove(n.id, actor?.id, n.type, cypher?.id)} disabled={actionLoading === n.id}
                       style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", background: "#FF3D00", border: "none", borderRadius: "6px", color: "#fff", fontSize: "11px", fontFamily: "'Space Mono',monospace", fontWeight: "bold", cursor: "pointer", opacity: actionLoading === n.id ? 0.6 : 1 }}>
                       <Check size={11} /> 承認
                     </button>
-                    <button onClick={() => handleReject(n.id, actor?.id)} disabled={actionLoading === n.id}
+                    <button onClick={() => handleReject(n.id, actor?.id, n.type, cypher?.id)} disabled={actionLoading === n.id}
                       style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", background: "transparent", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "6px", color: "rgba(0,0,0,0.45)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", opacity: actionLoading === n.id ? 0.6 : 1 }}>
                       <X size={11} /> 拒否
                     </button>
                   </div>
                 )}
               </div>
-              {!n.read && n.type !== "follow_request" && <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#FF3D00", flexShrink: 0 }} />}
+              {!n.read && n.type !== "follow_request" && n.type !== "join_request" && <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#FF3D00", flexShrink: 0 }} />}
             </div>
           );
         })}
