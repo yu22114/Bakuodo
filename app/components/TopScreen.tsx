@@ -171,7 +171,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <div style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.2em", marginBottom: "6px" }}>▶ LIVE SESSIONS</div>
-            <h1 style={{ margin: 0, fontSize: "42px", fontFamily: "'Rampart One',sans-serif", letterSpacing: "0.05em", background: "linear-gradient(135deg,#FF3D00 0%,#FF6D00 40%,#FBBF24 80%,#F59E0B 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1, filter: "drop-shadow(0 0 12px rgba(255,61,0,0.18))" }}>爆踊</h1>
+            <h1 style={{ margin: 0, fontSize: "42px", fontFamily: "'Rampart One',sans-serif", letterSpacing: "0.05em", background: "linear-gradient(135deg,#FF3D00 0%,#2563EB 50%,#16A34A 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1, filter: "drop-shadow(0 0 12px rgba(255,61,0,0.15))" }}>爆踊</h1>
             <p style={{ margin: "6px 0 0", fontSize: "11px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace" }}>今日、ここで、踊ろう。</p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "8px" }}>
@@ -206,7 +206,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
 
       {/* セクション切り替え */}
       <div style={{ display: "flex", background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
-        {([["cypher", "CYPHER", "#FF3D00"], ["pl", "📚 PL", "#2563EB"], ["spots", "📍 SPOTS", "#16A34A"]] as const).map(([key, label, color]) => (
+        {([["cypher", "CYPHER", "#FF3D00"], ["pl", "📚 PRIVATE LESSON", "#2563EB"], ["spots", "📍 SPOTS", "#16A34A"]] as const).map(([key, label, color]) => (
           <button key={key} onClick={() => setSection(key)}
             style={{ flex: 1, padding: "12px 4px", border: "none", borderBottom: `2px solid ${section === key ? color : "transparent"}`, background: section === key ? `${color}0f` : "transparent", color: section === key ? color : "rgba(0,0,0,0.4)", fontSize: "10px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
             {label}
