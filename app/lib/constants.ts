@@ -1,5 +1,8 @@
 import type { GenreKey } from "./types";
 
+// スポットのチェックイン有効時間（時間）— ここを変えるだけで全体に反映
+export const SPOT_CHECKIN_HOURS = 3;
+
 export const GENRES: GenreKey[] = [
   "Breaking",
   "Popping",

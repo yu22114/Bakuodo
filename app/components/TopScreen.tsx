@@ -7,11 +7,13 @@ import type { Cypher, PrivateLesson, GenreKey } from "../lib/types";
 import { GENRES, GENRE_COLORS, timeUntil, formatDate, formatEndTime } from "../lib/constants";
 import { CypherCard } from "./CypherCard";
 import { PLCard } from "./PLCard";
+import { SpotCard } from "./SpotCard";
 
-export function TopScreen({ onNav, onCardClick, onPLClick, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell }: {
+export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell }: {
   onNav: (s: string) => void;
   onCardClick: (c: Cypher) => void;
   onPLClick: (l: PrivateLesson) => void;
+  onViewProfile?: (id: string) => void;
   user: SupabaseUser;
   refreshKey: number;
   dancerName: string;
@@ -19,7 +21,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, user, refreshKey, dan
   unreadCount: number;
   onBell: () => void;
 }) {
-  const [section, setSection] = useState<"cypher" | "pl">("cypher");
+  const [section, setSection] = useState<"cypher" | "pl" | "spots">("cypher");
+  const [spots, setSpots] = useState<{ id: string; name: string; location: string; description: string | null }[]>([]);
   const [sortMode, setSortMode] = useState<"genre" | "date" | "area">("genre");
   const [genreFilter, setGenreFilter] = useState<GenreKey | "ALL">("ALL");
   const [dateFilter, setDateFilter] = useState<"today" | "tomorrow" | "week" | "ALL">("ALL");
@@ -94,6 +97,11 @@ export function TopScreen({ onNav, onCardClick, onPLClick, user, refreshKey, dan
       setLoading(false);
     }
     fetchCyphers();
+
+    // スポット一覧は変わらないので一度だけ取得
+    supabase.from("spots").select("id, name, location, description").order("created_at").then(({ data }) => {
+      if (data) setSpots(data);
+    });
   }, [refreshKey]);
 
   // エリア一覧（location の先頭エリア名を抽出）
@@ -157,17 +165,32 @@ export function TopScreen({ onNav, onCardClick, onPLClick, user, refreshKey, dan
         </div>
       </div>
 
-      {/* セクション切り替え：CYPHER / PRIVATE LESSON */}
+      {/* セクション切り替え */}
       <div style={{ display: "flex", background: "#FFFFFF", borderBottom: "2px solid rgba(0,0,0,0.08)" }}>
-        <button onClick={() => setSection("cypher")} style={{ flex: 1, padding: "12px", border: "none", background: "transparent", borderBottom: `2px solid ${section === "cypher" ? "#FF3D00" : "transparent"}`, marginBottom: "-2px", color: section === "cypher" ? "#FF3D00" : "rgba(0,0,0,0.4)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: section === "cypher" ? "bold" : "normal", letterSpacing: "0.08em" }}>
-          CYPHER
-        </button>
-        <button onClick={() => setSection("pl")} style={{ flex: 1, padding: "12px", border: "none", background: "transparent", borderBottom: `2px solid ${section === "pl" ? "#2563EB" : "transparent"}`, marginBottom: "-2px", color: section === "pl" ? "#2563EB" : "rgba(0,0,0,0.4)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: section === "pl" ? "bold" : "normal", letterSpacing: "0.08em" }}>
-          📚 PRIVATE LESSON
-        </button>
+        {([
+          ["cypher", "CYPHER", "#FF3D00"],
+          ["pl", "📚 PL", "#2563EB"],
+          ["spots", "📍 SPOTS", "#16A34A"],
+        ] as const).map(([key, label, color]) => (
+          <button key={key} onClick={() => setSection(key)}
+            style={{ flex: 1, padding: "12px 4px", border: "none", background: "transparent", borderBottom: `2px solid ${section === key ? color : "transparent"}`, marginBottom: "-2px", color: section === key ? color : "rgba(0,0,0,0.4)", fontSize: "10px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em" }}>
+            {label}
+          </button>
+        ))}
       </div>
 
-      {section === "pl" ? (
+      {section === "spots" ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 16px", background: "#F5F7FA" }}>
+          <div style={{ padding: "8px 12px", background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.15)", borderRadius: "6px", fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.5)", lineHeight: 1.6 }}>
+            📍 ダンサーの聖地です。今そこにいる人はチェックインを！{" "}
+            <span style={{ color: "rgba(0,0,0,0.35)" }}>(チェックインは3時間で自動退場)</span>
+          </div>
+          {spots.length === 0
+            ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>スポット情報はまだありません</div>
+            : spots.map(s => <SpotCard key={s.id} spot={s} user={user} onViewProfile={id => onViewProfile?.(id)} />)
+          }
+        </div>
+      ) : section === "pl" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px", background: "#F5F7FA" }}>
           {loading ? (
             <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>LOADING...</div>
