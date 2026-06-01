@@ -17,12 +17,12 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   onEditCypher?: (cypherId: string) => void;
 }) {
   const isOwn = profileId === currentUserId;
-  type ProfileData = { dancer_name: string; genres: GenreKey[]; instagram: string | null; dance_years: number | null; age_group: string | null; gender: string | null; avatar_url: string | null };
+  type ProfileData = { dancer_name: string; genres: GenreKey[]; instagram: string | null; dance_years: number | null; age_group: string | null; gender: string | null; avatar_url: string | null; is_private: boolean };
   type HostedCypher = { id: string; title: string; starts_at: string; location: string; participant_count: number };
   type JoinedCypher = { id: string; title: string; starts_at: string; location: string; organizer_name: string };
 
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  const [isFollowing, setIsFollowing] = useState(false);
+  const [followStatus, setFollowStatus] = useState<"none" | "pending" | "accepted">("none");
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [followLoading, setFollowLoading] = useState(false);
@@ -42,21 +42,21 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     async function fetchAll() {
       setLoading(true);
       const [profileRes, hostedRes, allPartsRes, followersRes, followingRes] = await Promise.all([
-        supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, avatar_url").eq("id", profileId).single(),
+        supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, avatar_url, is_private").eq("id", profileId).single(),
         supabase.from("cyphers").select("id, title, starts_at, location").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("participations").select("cypher_id"),
-        supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", profileId),
+        supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", profileId).eq("status", "accepted"),
         supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", profileId),
       ]);
       if (profileRes.data) {
         const d = profileRes.data as any;
-        setProfileData({ dancer_name: d.dancer_name ?? "", genres: (d.genres ?? []) as GenreKey[], instagram: d.instagram ?? null, dance_years: d.dance_years ?? null, age_group: d.age_group ?? null, gender: d.gender ?? null, avatar_url: d.avatar_url ?? null });
+        setProfileData({ dancer_name: d.dancer_name ?? "", genres: (d.genres ?? []) as GenreKey[], instagram: d.instagram ?? null, dance_years: d.dance_years ?? null, age_group: d.age_group ?? null, gender: d.gender ?? null, avatar_url: d.avatar_url ?? null, is_private: d.is_private ?? false });
       }
       setFollowerCount(followersRes.count ?? 0);
       setFollowingCount(followingRes.count ?? 0);
-      if (!isOwn) {
-        const { data: myFollow } = await supabase.from("follows").select("id").eq("follower_id", currentUserId).eq("following_id", profileId).maybeSingle();
-        setIsFollowing(!!myFollow);
+      if (!isOwn && currentUserId) {
+        const { data: myFollow } = await supabase.from("follows").select("id, status").eq("follower_id", currentUserId).eq("following_id", profileId).maybeSingle();
+        setFollowStatus((myFollow as any)?.status === "accepted" ? "accepted" : (myFollow as any)?.status === "pending" ? "pending" : "none");
       }
       const countMap: Record<string, number> = {};
       (allPartsRes.data ?? []).forEach((p: any) => { countMap[p.cypher_id] = (countMap[p.cypher_id] ?? 0) + 1; });
@@ -78,17 +78,30 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   }, [profileId, currentUserId, isOwn]);
 
   const handleFollow = async () => {
-    if (isOwn || followLoading) return;
+    if (isOwn || followLoading || !currentUserId) return;
     setFollowLoading(true);
-    if (isFollowing) {
+    if (followStatus === "accepted") {
+      // フォロー解除
       await supabase.from("follows").delete().eq("follower_id", currentUserId).eq("following_id", profileId);
-      setIsFollowing(false);
+      setFollowStatus("none");
       setFollowerCount(n => n - 1);
+    } else if (followStatus === "pending") {
+      // 申請キャンセル
+      await supabase.from("follows").delete().eq("follower_id", currentUserId).eq("following_id", profileId);
+      setFollowStatus("none");
     } else {
-      await supabase.from("follows").insert({ follower_id: currentUserId, following_id: profileId });
-      await supabase.from("notifications").insert({ user_id: profileId, actor_id: currentUserId, type: "follow" });
-      setIsFollowing(true);
-      setFollowerCount(n => n + 1);
+      // 新規フォロー or 申請
+      const isPrivate = profileData?.is_private ?? false;
+      const status = isPrivate ? "pending" : "accepted";
+      await supabase.from("follows").insert({ follower_id: currentUserId, following_id: profileId, status });
+      if (isPrivate) {
+        // 承認リクエスト通知
+        await supabase.from("notifications").insert({ user_id: profileId, actor_id: currentUserId, type: "follow_request" });
+      } else {
+        await supabase.from("notifications").insert({ user_id: profileId, actor_id: currentUserId, type: "follow" });
+        setFollowerCount(n => n + 1);
+      }
+      setFollowStatus(status);
     }
     setFollowLoading(false);
   };
@@ -198,8 +211,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             )}
             {!isOwn && currentUserId && (
               <button onClick={handleFollow} disabled={followLoading}
-                style={{ border: isFollowing ? "1px solid rgba(0,0,0,0.15)" : "none", borderRadius: "8px", cursor: "pointer", padding: "9px 18px", background: isFollowing ? "transparent" : "#FF3D00", color: isFollowing ? "rgba(0,0,0,0.5)" : "#fff", fontFamily: "'Space Mono',monospace", fontSize: "11px", fontWeight: "bold", opacity: followLoading ? 0.6 : 1, flexShrink: 0 }}>
-                {isFollowing ? "フォロー中" : "フォローする"}
+                style={{ border: followStatus !== "none" ? "1px solid rgba(0,0,0,0.15)" : "none", borderRadius: "8px", cursor: "pointer", padding: "9px 18px", background: followStatus !== "none" ? "transparent" : "#FF3D00", color: followStatus !== "none" ? "rgba(0,0,0,0.5)" : "#fff", fontFamily: "'Space Mono',monospace", fontSize: "11px", fontWeight: "bold", opacity: followLoading ? 0.6 : 1, flexShrink: 0 }}>
+                {followStatus === "accepted" ? "フォロー中" : followStatus === "pending" ? "申請中..." : (profileData?.is_private ? "🔒 申請する" : "フォローする")}
               </button>
             )}
           </div>

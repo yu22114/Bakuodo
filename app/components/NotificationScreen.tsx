@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Bell, ChevronLeft } from "lucide-react";
+import { Bell, ChevronLeft, Check, X } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
 export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
@@ -10,6 +10,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
 }) {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   function timeAgo(iso: string) {
     const diff = Date.now() - new Date(iso).getTime();
@@ -36,6 +37,21 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
     }
     fetchAndMarkRead();
   }, [currentUserId]);
+
+  const handleApprove = async (notifId: string, actorId: string) => {
+    setActionLoading(notifId);
+    await supabase.from("follows").update({ status: "accepted" }).eq("follower_id", actorId).eq("following_id", currentUserId);
+    await supabase.from("notifications").insert({ user_id: actorId, actor_id: currentUserId, type: "follow" });
+    setItems(prev => prev.filter(n => n.id !== notifId));
+    setActionLoading(null);
+  };
+
+  const handleReject = async (notifId: string, actorId: string) => {
+    setActionLoading(notifId);
+    await supabase.from("follows").delete().eq("follower_id", actorId).eq("following_id", currentUserId);
+    setItems(prev => prev.filter(n => n.id !== notifId));
+    setActionLoading(null);
+  };
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#FAFAFA", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>
@@ -73,15 +89,28 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
               <div style={{ flex: 1 }}>
                 <p style={{ margin: 0, fontSize: "13px", color: "#111", lineHeight: 1.5 }}>
                   <strong>{actorName}</strong>さんが{
-                    n.type === "follow"   ? "あなたをフォローしました👋" :
-                    n.type === "comment"  ? `「${cypherTitle}」にコメントしました💬` :
-                    n.type === "join"     ? `「${cypherTitle}」に参加しました🎉` :
-                                           `「${cypherTitle}」をキャンセルしました`
+                    n.type === "follow"          ? "あなたをフォローしました👋" :
+                    n.type === "follow_request"  ? "フォローを申請しました🔒" :
+                    n.type === "comment"         ? `「${cypherTitle}」にコメントしました💬` :
+                    n.type === "join"            ? `「${cypherTitle}」に参加しました🎉` :
+                                                  `「${cypherTitle}」をキャンセルしました`
                   }
                 </p>
                 <p style={{ margin: "3px 0 0", fontSize: "10px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace" }}>{timeAgo(n.created_at)}</p>
+                {n.type === "follow_request" && (
+                  <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                    <button onClick={() => handleApprove(n.id, actor?.id)} disabled={actionLoading === n.id}
+                      style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", background: "#FF3D00", border: "none", borderRadius: "6px", color: "#fff", fontSize: "11px", fontFamily: "'Space Mono',monospace", fontWeight: "bold", cursor: "pointer", opacity: actionLoading === n.id ? 0.6 : 1 }}>
+                      <Check size={11} /> 承認
+                    </button>
+                    <button onClick={() => handleReject(n.id, actor?.id)} disabled={actionLoading === n.id}
+                      style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", background: "transparent", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "6px", color: "rgba(0,0,0,0.45)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", opacity: actionLoading === n.id ? 0.6 : 1 }}>
+                      <X size={11} /> 拒否
+                    </button>
+                  </div>
+                )}
               </div>
-              {!n.read && <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#FF3D00", flexShrink: 0 }} />}
+              {!n.read && n.type !== "follow_request" && <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#FF3D00", flexShrink: 0 }} />}
             </div>
           );
         })}

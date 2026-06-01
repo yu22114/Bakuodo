@@ -13,6 +13,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
   onBack?: () => void;
 }) {
   const [profile, setProfile] = useState<ProfileState>({ dancer_name: "", genres: [], instagram: "", dance_years: "", age_group: "", gender: "" });
+  const [isPrivate, setIsPrivate] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState("");
@@ -25,7 +26,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
 
   useEffect(() => {
     async function fetchProfile() {
-      const { data } = await supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, avatar_url").eq("id", user.id).single();
+      const { data } = await supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, avatar_url, is_private").eq("id", user.id).single();
       if (data) {
         setProfile({
           dancer_name: data.dancer_name ?? "",
@@ -36,6 +37,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
           gender: data.gender ?? "",
         });
         setAvatarUrl((data as any).avatar_url ?? null);
+        setIsPrivate((data as any).is_private ?? false);
       }
       setLoading(false);
     }
@@ -78,6 +80,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
       dance_years: profile.dance_years ? Number(profile.dance_years) : null,
       age_group: profile.age_group || null,
       gender: profile.gender || null,
+      is_private: isPrivate,
     }, { onConflict: "id" });
     if (error) {
       console.error("profile save error:", error);
@@ -181,6 +184,21 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
             ); })}
           </div>
         </div>
+        {/* 鍵アカ設定 */}
+        <button onClick={() => { setIsPrivate(v => !v); setSaved(false); }}
+          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
+          <div>
+            <div style={{ fontSize: "13px", fontFamily: "'Space Mono',monospace", color: "#111", fontWeight: "bold", display: "flex", alignItems: "center", gap: "6px" }}>
+              🔒 鍵アカウント
+            </div>
+            <div style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.4)", marginTop: "3px" }}>
+              ONにするとフォローに承認が必要になります
+            </div>
+          </div>
+          <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: isPrivate ? "#FF3D00" : "rgba(0,0,0,0.15)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}>
+            <div style={{ position: "absolute", top: "3px", left: isPrivate ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" }} />
+          </div>
+        </button>
         {saveError && <div style={{ padding: "10px 12px", background: "rgba(255,61,0,0.06)", border: "1px solid rgba(255,61,0,0.25)", borderRadius: "6px", color: "#FF3D00", fontSize: "12px", fontFamily: "'Space Mono',monospace" }}>{saveError}</div>}
         <button onClick={handleSave} style={{ width: "100%", padding: "13px", border: "none", borderRadius: "6px", background: saved ? "rgba(22,163,74,0.1)" : "#FF3D00", color: saved ? "#16A34A" : "#fff", fontSize: "14px", fontFamily: "'Bebas Neue',sans-serif", letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
           {saved ? <><Check size={15} />SAVED!</> : <><Star size={15} />プロフィールを保存する</>}
