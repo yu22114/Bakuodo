@@ -103,7 +103,7 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
         <div>
           <label style={lbl}>支払い方法（複数選択可）</label>
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-            {["現金", "PayPay", "LINE Pay", "無料"].map(p => {
+            {["現金", "PayPay", "無料"].map(p => {
               const sel = form.payment.includes(p);
               return (
                 <button key={p} onClick={() => togglePayment(p)}
