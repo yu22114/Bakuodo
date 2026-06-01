@@ -90,7 +90,7 @@ export function SpotCard({ spot, user, userLocation, onViewProfile }: {
   };
 
   return (
-    <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "10px", overflow: "hidden" }}>
+    <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderLeft: `3px solid ${checkins.length > 0 ? "#16A34A" : "rgba(0,0,0,0.1)"}`, borderRadius: "10px", overflow: "hidden", transition: "border-left-color 0.3s" }}>
       <div style={{ padding: "14px 16px 12px", borderBottom: checkins.length > 0 ? "1px solid rgba(0,0,0,0.06)" : "none" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
           <div style={{ flex: 1 }}>
