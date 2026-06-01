@@ -21,6 +21,7 @@ export interface Cypher {
   status: string;
   description: string;
   hot: boolean;
+  visibility: "public" | "private";
 }
 
 export interface FormState {

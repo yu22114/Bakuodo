@@ -31,14 +31,14 @@ export function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, my
         supabase
           .from("cyphers")
           .select(`
-            id, title, organizer_id, starts_at, ends_at, location, description, max_members, status,
+            id, title, organizer_id, starts_at, ends_at, location, description, max_members, status, visibility,
             profiles:organizer_id ( dancer_name, avatar_url ),
             cypher_genres ( genres:genre_id ( name ) )
           `)
           .gte("starts_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
           .order("starts_at"),
         supabase.from("participations").select("cypher_id"),
-        supabase.from("follows").select("following_id").eq("follower_id", user.id),
+        supabase.from("follows").select("following_id").eq("follower_id", user.id).eq("status", "accepted"),
       ]);
       if (cypherRes.error) { console.error(cypherRes.error); setLoading(false); return; }
 
@@ -53,8 +53,11 @@ export function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, my
         const name = row.profiles?.dancer_name ?? "UNKNOWN";
         const genres: GenreKey[] = (row.cypher_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
         const count = countMap[row.id] ?? 0;
-        return { id: row.id, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, status: row.status, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null }, participant_count: count, hot: count >= 5 };
-      });
+        return { id: row.id, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, status: row.status, visibility: row.visibility ?? "public", genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null }, participant_count: count, hot: count >= 5 };
+      }).filter((c: any) =>
+        // プライベートサイファーは自分が主催 or フォロワーのみ表示
+        c.visibility === "public" || c.organizer.id === user.id || followingIds.has(c.organizer.id)
+      );
 
       shaped.sort((a, b) => {
         const aF = followingIds.has(a.organizer.id) ? 0 : 1;
