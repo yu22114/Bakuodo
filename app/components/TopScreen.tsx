@@ -3,13 +3,15 @@ import { useState, useEffect } from "react";
 import { Radio, Users, Bell, User } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
-import type { Cypher, GenreKey } from "../lib/types";
-import { GENRES, GENRE_COLORS, timeUntil } from "../lib/constants";
+import type { Cypher, PrivateLesson, GenreKey } from "../lib/types";
+import { GENRES, GENRE_COLORS, timeUntil, formatDate, formatEndTime } from "../lib/constants";
 import { CypherCard } from "./CypherCard";
+import { PLCard } from "./PLCard";
 
-export function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell }: {
+export function TopScreen({ onNav, onCardClick, onPLClick, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell }: {
   onNav: (s: string) => void;
   onCardClick: (c: Cypher) => void;
+  onPLClick: (l: PrivateLesson) => void;
   user: SupabaseUser;
   refreshKey: number;
   dancerName: string;
@@ -17,11 +19,13 @@ export function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, my
   unreadCount: number;
   onBell: () => void;
 }) {
+  const [section, setSection] = useState<"cypher" | "pl">("cypher");
   const [sortMode, setSortMode] = useState<"genre" | "date" | "area">("genre");
   const [genreFilter, setGenreFilter] = useState<GenreKey | "ALL">("ALL");
   const [dateFilter, setDateFilter] = useState<"today" | "tomorrow" | "week" | "ALL">("ALL");
   const [areaFilter, setAreaFilter] = useState<string>("ALL");
   const [cyphers, setCyphers] = useState<Cypher[]>([]);
+  const [lessons, setLessons] = useState<PrivateLesson[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,6 +70,27 @@ export function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, my
         return new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime();
       });
       setCyphers(shaped);
+
+      // PLフェッチ
+      const [plRes, plPartRes] = await Promise.all([
+        supabase.from("private_lessons").select(`
+          id, title, organizer_id, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval,
+          profiles:organizer_id ( dancer_name, avatar_url ),
+          pl_genres ( genres:genre_id ( name ) )
+        `).gte("starts_at", new Date(Date.now() - 60 * 60 * 1000).toISOString()).order("starts_at"),
+        supabase.from("pl_participations").select("lesson_id").eq("status", "approved"),
+      ]);
+      if (plRes.data) {
+        const plCountMap: Record<string, number> = {};
+        (plPartRes.data ?? []).forEach((p: any) => { plCountMap[p.lesson_id] = (plCountMap[p.lesson_id] ?? 0) + 1; });
+        const shapedPL: PrivateLesson[] = (plRes.data ?? []).map((row: any) => {
+          const name = row.profiles?.dancer_name ?? "UNKNOWN";
+          const genres: GenreKey[] = (row.pl_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
+          return { id: row.id, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, price: row.price ?? null, target_level: row.target_level ?? "all", visibility: row.visibility ?? "public", requires_approval: row.requires_approval ?? false, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null }, participant_count: plCountMap[row.id] ?? 0 };
+        }).filter((l: PrivateLesson) => l.visibility === "public" || l.organizer.id === user.id || followingIds.has(l.organizer.id));
+        setLessons(shapedPL);
+      }
+
       setLoading(false);
     }
     fetchCyphers();
@@ -132,6 +157,27 @@ export function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, my
         </div>
       </div>
 
+      {/* セクション切り替え：CYPHER / PRIVATE LESSON */}
+      <div style={{ display: "flex", background: "#FFFFFF", borderBottom: "2px solid rgba(0,0,0,0.08)" }}>
+        <button onClick={() => setSection("cypher")} style={{ flex: 1, padding: "12px", border: "none", background: "transparent", borderBottom: `2px solid ${section === "cypher" ? "#FF3D00" : "transparent"}`, marginBottom: "-2px", color: section === "cypher" ? "#FF3D00" : "rgba(0,0,0,0.4)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: section === "cypher" ? "bold" : "normal", letterSpacing: "0.08em" }}>
+          CYPHER
+        </button>
+        <button onClick={() => setSection("pl")} style={{ flex: 1, padding: "12px", border: "none", background: "transparent", borderBottom: `2px solid ${section === "pl" ? "#2563EB" : "transparent"}`, marginBottom: "-2px", color: section === "pl" ? "#2563EB" : "rgba(0,0,0,0.4)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: section === "pl" ? "bold" : "normal", letterSpacing: "0.08em" }}>
+          📚 PRIVATE LESSON
+        </button>
+      </div>
+
+      {section === "pl" ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px", background: "#F5F7FA" }}>
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>LOADING...</div>
+          ) : lessons.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>まだプライベートレッスンがありません</div>
+          ) : (
+            lessons.map(l => <PLCard key={l.id} lesson={l} onClick={() => onPLClick(l)} />)
+          )}
+        </div>
+      ) : (<>
       {/* ソートモード切り替え */}
       <div style={{ display: "flex", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
         {(["genre", "date", "area"] as const).map(m => (
@@ -186,6 +232,7 @@ export function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, my
           filtered.map(c => <CypherCard key={c.id} cypher={c} onClick={() => onCardClick(c)} />)
         )}
       </div>
+      </>)}
     </div>
   );
 }

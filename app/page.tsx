@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
-import type { Cypher } from "./lib/types";
+import type { Cypher, PrivateLesson } from "./lib/types";
 import { LoginScreen } from "./components/LoginScreen";
 import { TopScreen } from "./components/TopScreen";
 import { PostScreen } from "./components/PostScreen";
@@ -10,6 +10,7 @@ import { PublicProfileScreen } from "./components/PublicProfileScreen";
 import { EditProfileScreen } from "./components/EditProfileScreen";
 import { EditCypherScreen } from "./components/EditCypherScreen";
 import { DetailModal } from "./components/DetailModal";
+import { PLDetailModal } from "./components/PLDetailModal";
 import { ConfirmModal } from "./components/ConfirmModal";
 import { NotificationScreen } from "./components/NotificationScreen";
 import { BottomNav } from "./components/BottomNav";
@@ -19,6 +20,9 @@ export default function BakuOdori() {
   const [screen, setScreen] = useState("top");
   const [joined, setJoined] = useState<string[]>([]);
   const [pendingJoins, setPendingJoins] = useState<string[]>([]);
+  const [plDetail, setPlDetail] = useState<PrivateLesson | null>(null);
+  const [plJoined, setPlJoined] = useState<string[]>([]);
+  const [plPending, setPlPending] = useState<string[]>([]);
   const [detail, setDetail] = useState<Cypher | null>(null);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -142,6 +146,37 @@ export default function BakuOdori() {
     }
   };
 
+  const handlePLJoin = async (id: string) => {
+    if (!user) return;
+    if (plJoined.includes(id) || plPending.includes(id)) {
+      await supabase.from("pl_participations").delete().eq("lesson_id", id).eq("profile_id", user.id);
+      setPlJoined(j => j.filter(x => x !== id));
+      setPlPending(p => p.filter(x => x !== id));
+      setRefreshKey(k => k + 1);
+    } else {
+      const { data: lessonCheck } = await supabase.from("private_lessons").select("organizer_id, max_members, requires_approval").eq("id", id).single();
+      if (lessonCheck?.max_members) {
+        const { count } = await supabase.from("pl_participations").select("id", { count: "exact", head: true }).eq("lesson_id", id).eq("status", "approved");
+        if (count !== null && count >= lessonCheck.max_members) { alert("このレッスンは定員に達しています"); return; }
+      }
+      const requiresApproval = lessonCheck?.requires_approval ?? false;
+      const status = requiresApproval ? "pending" : "approved";
+      const { error } = await supabase.from("pl_participations").insert({ lesson_id: id, profile_id: user.id, status });
+      if (error) { console.error("pl join error:", error); return; }
+      if (requiresApproval) {
+        setPlPending(p => [...p, id]);
+      } else {
+        setPlJoined(j => [...j, id]);
+        setRefreshKey(k => k + 1);
+      }
+      const organizerId = lessonCheck?.organizer_id;
+      if (organizerId && organizerId !== user.id) {
+        const notifType = requiresApproval ? "join_request" : "join";
+        await supabase.from("notifications").insert({ user_id: organizerId, actor_id: user.id, type: notifType });
+      }
+    }
+  };
+
   // キャンセル確定：DBからDELETE → joinedから除去 → カード再フェッチ → 主催者に通知
   const handleConfirmCancel = async () => {
     if (confirmId && user) {
@@ -182,12 +217,13 @@ export default function BakuOdori() {
           <LoginScreen />
         ) : (
           <>
-            {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} />}
+            {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} onPLClick={setPlDetail} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} />}
             {screen === "post"    && <PostScreen onNav={setScreen} user={user} />}
             {screen === "profile" && <PublicProfileScreen profileId={user.id} currentUserId={user.id} onEdit={() => setScreen("edit")} onLogout={() => supabase.auth.signOut()} onViewProfile={id => setProfileStack(s => [...s, id])} onCypherClick={openCypherDetail} onEditCypher={id => setEditCypherId(id)} />}
             {screen === "edit"    && <EditProfileScreen user={user} onDancerNameChange={setDancerName} onAvatarChange={setMyAvatarUrl} onBack={() => setScreen("profile")} />}
             <BottomNav current={screen} onNav={s => { setScreen(s); setProfileStack([]); }} />
             {detail && <DetailModal cypher={detail} onClose={() => setDetail(null)} joined={joined.includes(detail.id)} pending={pendingJoins.includes(detail.id)} onJoin={handleJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} />}
+            {plDetail && <PLDetailModal lesson={plDetail} onClose={() => setPlDetail(null)} joined={plJoined.includes(plDetail.id)} pending={plPending.includes(plDetail.id)} onJoin={handlePLJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} />}
             {confirmId && <ConfirmModal onConfirm={handleConfirmCancel} onCancel={() => setConfirmId(null)} />}
             {editCypherId && (
               <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#FAFAFA", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>

@@ -25,6 +25,23 @@ export interface Cypher {
   requires_approval: boolean;
 }
 
+export interface PrivateLesson {
+  id: string;
+  title: string;
+  starts_at: string;
+  ends_at: string | null;
+  location: string;
+  genres: GenreKey[];
+  organizer: { id: string; dancer_name: string; avatar: string; avatar_url: string | null };
+  participant_count: number;
+  max_members: number | null;
+  description: string;
+  price: number | null;
+  target_level: "all" | "beginner" | "intermediate" | "advanced";
+  visibility: "public" | "private";
+  requires_approval: boolean;
+}
+
 export interface FormState {
   title: string;
   date: string;
