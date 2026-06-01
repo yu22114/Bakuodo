@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Radio, Users, Bell, User } from "lucide-react";
+import { Radio, Users, Bell, User, Search, X, SlidersHorizontal } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, PrivateLesson, GenreKey } from "../lib/types";
@@ -23,13 +23,14 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
 }) {
   const [section, setSection] = useState<"cypher" | "pl" | "spots">("cypher");
   const [spots, setSpots] = useState<{ id: string; name: string; location: string; description: string | null }[]>([]);
-  const [sortMode, setSortMode] = useState<"genre" | "date" | "area">("genre");
-  const [genreFilter, setGenreFilter] = useState<GenreKey | "ALL">("ALL");
-  const [dateFilter, setDateFilter] = useState<"today" | "tomorrow" | "week" | "ALL">("ALL");
-  const [areaFilter, setAreaFilter] = useState<string>("ALL");
   const [cyphers, setCyphers] = useState<Cypher[]>([]);
   const [lessons, setLessons] = useState<PrivateLesson[]>([]);
   const [loading, setLoading] = useState(true);
+  // 検索・フィルター
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [selectedGenres, setSelectedGenres] = useState<GenreKey[]>([]);
+  const [dateFilter, setDateFilter] = useState<"ALL" | "today" | "tomorrow" | "week">("ALL");
+  const [areaText, setAreaText] = useState("");
 
   useEffect(() => {
     async function fetchCyphers() {
@@ -104,39 +105,34 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     });
   }, [refreshKey]);
 
-  // エリア一覧（location の先頭エリア名を抽出）
-  const areas = Array.from(new Set(cyphers.map(c => c.location.split(/[\s　]/)[0]).filter(Boolean)));
-  const areaCount = (a: string) => cyphers.filter(c => c.location.split(/[\s　]/)[0] === a).length;
-
-  // 日程フィルター用ヘルパー
-  const toDay = (iso: string) => new Date(iso).toDateString();
+  // 日程フィルター用
   const now = new Date();
   const todayStr = now.toDateString();
   const tomorrowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   const tomorrowStr = tomorrowDate.toDateString();
   const weekEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
-  const todayLabel = `今日 ${now.getMonth() + 1}/${now.getDate()}`;
-  const tomorrowLabel = `明日 ${tomorrowDate.getMonth() + 1}/${tomorrowDate.getDate()}`;
 
   const filtered = cyphers.filter(c => {
-    if (sortMode === "genre") return genreFilter === "ALL" || c.genres.includes(genreFilter);
-    if (sortMode === "date") {
-      if (dateFilter === "ALL") return true;
-      const d = toDay(c.starts_at);
-      if (dateFilter === "today") return d === todayStr;
-      if (dateFilter === "tomorrow") return d === tomorrowStr;
-      if (dateFilter === "week") return new Date(c.starts_at) <= weekEnd;
-      return true;
+    if (selectedGenres.length > 0 && !selectedGenres.some(g => c.genres.includes(g))) return false;
+    if (dateFilter !== "ALL") {
+      const d = new Date(c.starts_at).toDateString();
+      if (dateFilter === "today" && d !== todayStr) return false;
+      if (dateFilter === "tomorrow" && d !== tomorrowStr) return false;
+      if (dateFilter === "week" && new Date(c.starts_at) > weekEnd) return false;
     }
-    if (sortMode === "area") return areaFilter === "ALL" || c.location.startsWith(areaFilter);
+    if (areaText.trim()) {
+      if (!c.location.toLowerCase().includes(areaText.trim().toLowerCase())) return false;
+    }
     return true;
   });
 
+  const activeFilterCount = (selectedGenres.length > 0 ? 1 : 0) + (dateFilter !== "ALL" ? 1 : 0) + (areaText.trim() ? 1 : 0);
   const activeCount = filtered.filter(c => timeUntil(c.starts_at) !== "終了").length;
   const dancerCount = filtered.reduce((a, c) => a + c.participant_count, 0);
 
   return (
     <div style={{ paddingBottom: "80px" }}>
+      {/* ヘッダー */}
       <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
@@ -144,7 +140,16 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             <h1 style={{ margin: 0, fontSize: "42px", fontFamily: "'Rampart One',sans-serif", letterSpacing: "0.05em", background: "linear-gradient(135deg,#FF3D00,#FF6D00,#D97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1 }}>爆踊</h1>
             <p style={{ margin: "6px 0 0", fontSize: "11px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace" }}>今日、ここで、踊ろう。</p>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "8px" }}>
+            {/* 検索ボタン */}
+            <button onClick={() => setSearchOpen(true)} style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "6px" }}>
+              <Search size={22} color={activeFilterCount > 0 ? "#FF3D00" : "rgba(0,0,0,0.45)"} />
+              {activeFilterCount > 0 && (
+                <span style={{ position: "absolute", top: "2px", right: "2px", background: "#FF3D00", color: "#fff", fontSize: "9px", fontFamily: "'Space Mono',monospace", fontWeight: "bold", minWidth: "16px", height: "16px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", transform: "translate(4px,-4px)", lineHeight: 1 }}>
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
             <button onClick={onBell} style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "6px" }}>
               <Bell size={22} color="rgba(0,0,0,0.45)" />
               {unreadCount > 0 && (
@@ -167,11 +172,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
 
       {/* セクション切り替え */}
       <div style={{ display: "flex", background: "#FFFFFF", borderBottom: "2px solid rgba(0,0,0,0.08)" }}>
-        {([
-          ["cypher", "CYPHER", "#FF3D00"],
-          ["pl", "📚 PL", "#2563EB"],
-          ["spots", "📍 SPOTS", "#16A34A"],
-        ] as const).map(([key, label, color]) => (
+        {([["cypher", "CYPHER", "#FF3D00"], ["pl", "📚 PL", "#2563EB"], ["spots", "📍 SPOTS", "#16A34A"]] as const).map(([key, label, color]) => (
           <button key={key} onClick={() => setSection(key)}
             style={{ flex: 1, padding: "12px 4px", border: "none", background: "transparent", borderBottom: `2px solid ${section === key ? color : "transparent"}`, marginBottom: "-2px", color: section === key ? color : "rgba(0,0,0,0.4)", fontSize: "10px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em" }}>
             {label}
@@ -179,83 +180,122 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         ))}
       </div>
 
+      {/* コンテンツ */}
       {section === "spots" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 16px", background: "#F5F7FA" }}>
           <div style={{ padding: "8px 12px", background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.15)", borderRadius: "6px", fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.5)", lineHeight: 1.6 }}>
-            📍 ダンサーの聖地です。今そこにいる人はチェックインを！{" "}
-            <span style={{ color: "rgba(0,0,0,0.35)" }}>(チェックインは3時間で自動退場)</span>
+            📍 ダンサーの聖地です。今そこにいる人はチェックインを！<span style={{ color: "rgba(0,0,0,0.35)" }}> (チェックインは3時間で自動退場)</span>
           </div>
           {spots.length === 0
             ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>スポット情報はまだありません</div>
-            : spots.map(s => <SpotCard key={s.id} spot={s} user={user} onViewProfile={id => onViewProfile?.(id)} />)
-          }
+            : spots.map(s => <SpotCard key={s.id} spot={s} user={user} onViewProfile={id => onViewProfile?.(id)} />)}
         </div>
       ) : section === "pl" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px", background: "#F5F7FA" }}>
-          {loading ? (
-            <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>LOADING...</div>
-          ) : lessons.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>まだプライベートレッスンがありません</div>
-          ) : (
-            lessons.map(l => <PLCard key={l.id} lesson={l} onClick={() => onPLClick(l)} />)
-          )}
+          {loading
+            ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>LOADING...</div>
+            : lessons.length === 0
+              ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>まだプライベートレッスンがありません</div>
+              : lessons.map(l => <PLCard key={l.id} lesson={l} onClick={() => onPLClick(l)} />)}
         </div>
-      ) : (<>
-      {/* ソートモード切り替え */}
-      <div style={{ display: "flex", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
-        {(["genre", "date", "area"] as const).map(m => (
-          <button key={m} onClick={() => setSortMode(m)}
-            style={{ flex: 1, padding: "10px", border: "none", background: "transparent", borderBottom: `2px solid ${sortMode === m ? "#FF3D00" : "transparent"}`, color: sortMode === m ? "#FF3D00" : "rgba(0,0,0,0.4)", fontSize: "10px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: sortMode === m ? "bold" : "normal", letterSpacing: "0.05em" }}>
-            {m === "genre" ? "ジャンル" : m === "date" ? "日程" : "エリア"}
-          </button>
-        ))}
-      </div>
-
-      {/* フィルターチップ */}
-      <div style={{ display: "flex", gap: "6px", padding: "10px 16px", overflowX: "auto", scrollbarWidth: "none", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
-        {sortMode === "genre" && (["ALL", ...GENRES] as (GenreKey | "ALL")[]).map(g => (
-          <button key={g} onClick={() => setGenreFilter(g)}
-            style={{ flexShrink: 0, padding: "5px 12px", border: genreFilter === g ? `1px solid ${g === "ALL" ? "#FF3D00" : GENRE_COLORS[g as GenreKey]}` : "1px solid rgba(0,0,0,0.12)", borderRadius: "20px", background: genreFilter === g ? `${g === "ALL" ? "#FF3D00" : GENRE_COLORS[g as GenreKey]}18` : "transparent", color: genreFilter === g ? (g === "ALL" ? "#FF3D00" : GENRE_COLORS[g as GenreKey]) : "rgba(0,0,0,0.45)", fontSize: "10px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: genreFilter === g ? "bold" : "normal" }}>
-            {g}
-          </button>
-        ))}
-        {sortMode === "date" && (["ALL", "today", "tomorrow", "week"] as const).map(d => (
-          <button key={d} onClick={() => setDateFilter(d)}
-            style={{ flexShrink: 0, padding: "5px 12px", border: dateFilter === d ? "1px solid #FF3D00" : "1px solid rgba(0,0,0,0.12)", borderRadius: "20px", background: dateFilter === d ? "rgba(255,61,0,0.08)" : "transparent", color: dateFilter === d ? "#FF3D00" : "rgba(0,0,0,0.45)", fontSize: "10px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: dateFilter === d ? "bold" : "normal" }}>
-            {d === "ALL" ? "すべて" : d === "today" ? todayLabel : d === "tomorrow" ? tomorrowLabel : "今週"}
-          </button>
-        ))}
-        {sortMode === "area" && (["ALL", ...areas] as string[]).map(a => (
-          <button key={a} onClick={() => setAreaFilter(a)}
-            style={{ flexShrink: 0, padding: "5px 12px", border: areaFilter === a ? "1px solid #FF3D00" : "1px solid rgba(0,0,0,0.12)", borderRadius: "20px", background: areaFilter === a ? "rgba(255,61,0,0.08)" : "transparent", color: areaFilter === a ? "#FF3D00" : "rgba(0,0,0,0.45)", fontSize: "10px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: areaFilter === a ? "bold" : "normal" }}>
-            {a === "ALL" ? "すべて" : `${a} (${areaCount(a)})`}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ display: "flex", padding: "10px 16px", gap: "20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
-        {[
-          { label: "ACTIVE", value: activeCount, icon: <Radio size={10} /> },
-          { label: "DANCERS", value: dancerCount, icon: <Users size={10} /> },
-        ].map(s => (
-          <div key={s.label} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ color: "#FF3D00" }}>{s.icon}</span>
-            <span style={{ fontSize: "18px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111" }}>{s.value}</span>
-            <span style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)" }}>{s.label}</span>
+      ) : (
+        <>
+          {/* ACTIVE/DANCERS */}
+          <div style={{ display: "flex", padding: "10px 16px", gap: "20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", alignItems: "center" }}>
+            {[{ label: "ACTIVE", value: activeCount, icon: <Radio size={10} /> }, { label: "DANCERS", value: dancerCount, icon: <Users size={10} /> }].map(s => (
+              <div key={s.label} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ color: "#FF3D00" }}>{s.icon}</span>
+                <span style={{ fontSize: "18px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111" }}>{s.value}</span>
+                <span style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)" }}>{s.label}</span>
+              </div>
+            ))}
+            {activeFilterCount > 0 && (
+              <button onClick={() => { setSelectedGenres([]); setDateFilter("ALL"); setAreaText(""); }}
+                style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px", background: "rgba(255,61,0,0.08)", border: "1px solid rgba(255,61,0,0.2)", borderRadius: "12px", padding: "3px 10px", fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "#FF3D00", cursor: "pointer" }}>
+                <X size={10} /> フィルター解除
+              </button>
+            )}
           </div>
-        ))}
-      </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px", background: "#F5F7FA" }}>
+            {loading
+              ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>LOADING...</div>
+              : filtered.length === 0
+                ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>条件に合うサイファーがありません</div>
+                : filtered.map(c => <CypherCard key={c.id} cypher={c} onClick={() => onCardClick(c)} />)}
+          </div>
+        </>
+      )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px", background: "#F5F7FA" }}>
-        {loading ? (
-          <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>LOADING...</div>
-        ) : filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>まだサイファーがありません。最初に作ろう！</div>
-        ) : (
-          filtered.map(c => <CypherCard key={c.id} cypher={c} onClick={() => onCardClick(c)} />)
-        )}
-      </div>
-      </>)}
+      {/* 検索ドロワー */}
+      {searchOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setSearchOpen(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "#FFFFFF", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px", maxHeight: "85vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <SlidersHorizontal size={18} color="#111" />
+                <span style={{ fontSize: "18px", fontFamily: "'Bebas Neue',sans-serif", color: "#111", letterSpacing: "0.05em" }}>サイファーを検索</span>
+              </div>
+              <button onClick={() => setSearchOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(0,0,0,0.4)", padding: "4px" }}><X size={20} /></button>
+            </div>
+
+            {/* エリア */}
+            <div style={{ marginBottom: "24px" }}>
+              <div style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.45)", letterSpacing: "0.15em", marginBottom: "8px" }}>AREA</div>
+              <div style={{ position: "relative" }}>
+                <Search size={14} color="rgba(0,0,0,0.3)" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)" }} />
+                <input
+                  value={areaText}
+                  onChange={e => setAreaText(e.target.value)}
+                  placeholder="例: 新宿、渋谷、横浜（部分一致）"
+                  style={{ width: "100%", padding: "10px 12px 10px 36px", background: "#F5F7FA", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+                />
+                {areaText && <button onClick={() => setAreaText("")} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "rgba(0,0,0,0.3)", padding: "2px" }}><X size={14} /></button>}
+              </div>
+            </div>
+
+            {/* 日程 */}
+            <div style={{ marginBottom: "24px" }}>
+              <div style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.45)", letterSpacing: "0.15em", marginBottom: "8px" }}>DATE</div>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                {([["ALL", "すべて"], ["today", `今日 ${now.getMonth()+1}/${now.getDate()}`], ["tomorrow", `明日 ${tomorrowDate.getMonth()+1}/${tomorrowDate.getDate()}`], ["week", "今週"]] as const).map(([val, label]) => (
+                  <button key={val} onClick={() => setDateFilter(val)}
+                    style={{ padding: "8px 16px", border: dateFilter === val ? "1px solid #FF3D00" : "1px solid rgba(0,0,0,0.1)", borderRadius: "20px", background: dateFilter === val ? "rgba(255,61,0,0.08)" : "transparent", color: dateFilter === val ? "#FF3D00" : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: dateFilter === val ? "bold" : "normal" }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* ジャンル */}
+            <div style={{ marginBottom: "28px" }}>
+              <div style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.45)", letterSpacing: "0.15em", marginBottom: "8px" }}>GENRE <span style={{ color: "rgba(0,0,0,0.3)", fontSize: "8px" }}>複数選択可</span></div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "7px" }}>
+                {GENRES.map(g => {
+                  const sel = selectedGenres.includes(g);
+                  const col = GENRE_COLORS[g];
+                  return (
+                    <button key={g} onClick={() => setSelectedGenres(prev => sel ? prev.filter(x => x !== g) : [...prev, g])}
+                      style={{ padding: "7px 14px", border: sel ? `1px solid ${col}` : "1px solid rgba(0,0,0,0.1)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(0,0,0,0.45)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: sel ? "bold" : "normal" }}>
+                      {g}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button onClick={() => setSearchOpen(false)}
+              style={{ width: "100%", padding: "14px", border: "none", borderRadius: "8px", background: "#FF3D00", color: "#fff", fontSize: "14px", fontFamily: "'Bebas Neue',sans-serif", letterSpacing: "0.15em", cursor: "pointer" }}>
+              {filtered.length}件 表示する
+            </button>
+            {activeFilterCount > 0 && (
+              <button onClick={() => { setSelectedGenres([]); setDateFilter("ALL"); setAreaText(""); setSearchOpen(false); }}
+                style={{ width: "100%", marginTop: "10px", padding: "12px", border: "1px solid rgba(0,0,0,0.12)", borderRadius: "8px", background: "transparent", color: "rgba(0,0,0,0.45)", fontSize: "12px", fontFamily: "'Space Mono',monospace", cursor: "pointer" }}>
+                フィルターをリセット
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
