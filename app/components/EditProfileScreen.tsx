@@ -185,10 +185,6 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
         <button onClick={handleSave} style={{ width: "100%", padding: "13px", border: "none", borderRadius: "6px", background: saved ? "rgba(22,163,74,0.1)" : "#FF3D00", color: saved ? "#16A34A" : "#fff", fontSize: "14px", fontFamily: "'Bebas Neue',sans-serif", letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
           {saved ? <><Check size={15} />SAVED!</> : <><Star size={15} />プロフィールを保存する</>}
         </button>
-        <div style={{ textAlign: "center", paddingTop: "8px" }}>
-          <a href="/help" style={{ fontSize: "11px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", textDecoration: "underline", marginRight: "16px" }}>使い方ガイド</a>
-          <a href="/terms" style={{ fontSize: "11px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", textDecoration: "underline" }}>利用規約</a>
-        </div>
       </div>
     </div>
   );

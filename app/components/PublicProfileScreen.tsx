@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link } from "lucide-react";
+import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import type { GenreKey } from "../lib/types";
 import { formatDate, timeUntil } from "../lib/constants";
@@ -182,6 +182,12 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                       style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Space Mono',monospace", color: linkCopied ? "#16A34A" : "#111", textAlign: "left", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
                       <Link size={13} /> {linkCopied ? "コピーしました！" : "プロフィールリンクをコピー"}
                     </button>
+                    <a href="/help" style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Space Mono',monospace", color: "#111", textDecoration: "none", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+                      <BookOpen size={13} /> 使い方ガイド
+                    </a>
+                    <a href="/terms" style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Space Mono',monospace", color: "#111", textDecoration: "none", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+                      <FileText size={13} /> 利用規約
+                    </a>
                     <button onClick={() => { setMenuOpen(false); onLogout?.(); }}
                       style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Space Mono',monospace", color: "#FF3D00", textAlign: "left" }}>
                       <LogOut size={13} /> ログアウト
