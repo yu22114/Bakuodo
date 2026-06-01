@@ -44,6 +44,9 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
       await supabase.from("follows").update({ status: "accepted" }).eq("follower_id", actorId).eq("following_id", currentUserId);
       await supabase.from("notifications").insert({ user_id: actorId, actor_id: currentUserId, type: "follow" });
     } else if (type === "join_request" && cypherId) {
+      // 自分がそのサイファーの主催者であることをDBで確認してから承認
+      const { data: cypher } = await supabase.from("cyphers").select("organizer_id").eq("id", cypherId).single();
+      if (!cypher || cypher.organizer_id !== currentUserId) { setActionLoading(null); return; }
       await supabase.from("participations").update({ status: "approved" }).eq("cypher_id", cypherId).eq("profile_id", actorId);
       await supabase.from("notifications").insert({ user_id: actorId, actor_id: currentUserId, cypher_id: cypherId, type: "join_approved" });
     }

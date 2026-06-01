@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 // HeartRails Express API（無料・認証不要）で駅名を検索するプロキシ
 export async function GET(req: NextRequest) {
-  const q = req.nextUrl.searchParams.get("q") ?? "";
+  const q = (req.nextUrl.searchParams.get("q") ?? "").slice(0, 50);
   if (!q.trim()) return NextResponse.json([]);
   try {
     const res = await fetch(

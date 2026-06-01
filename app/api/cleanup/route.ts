@@ -4,8 +4,10 @@ import { createClient } from "@supabase/supabase-js";
 // 終了したサイファーを自動削除するCronジョブ用エンドポイント
 export async function GET(request: Request) {
   // Vercel CronからのリクエストかどうかをAuthorizationヘッダーで確認
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 500 });
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

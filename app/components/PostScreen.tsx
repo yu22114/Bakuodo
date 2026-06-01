@@ -26,6 +26,9 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
 
   const handleSubmit = async () => {
     if (!form.date || !form.station) return;
+    if (form.station.length > 50 || form.title.length > 100 || form.description.length > 1000) {
+      setError("入力が長すぎます"); return;
+    }
     setLoading(true); setError("");
     // +09:00を付けてJSTとして保存（省略するとUTC扱いになり9時間ずれる）
     const starts_at = form.start_time ? `${form.date}T${form.start_time}:00+09:00` : `${form.date}T00:00:00+09:00`;
@@ -52,6 +55,9 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
 
   const handleSubmitPL = async () => {
     if (!plForm.date || !plForm.station) return;
+    if (plForm.station.length > 50 || plForm.title.length > 100 || plForm.description.length > 1000) {
+      setError("入力が長すぎます"); return;
+    }
     setLoading(true); setError("");
     const starts_at = plForm.start_time ? `${plForm.date}T${plForm.start_time}:00+09:00` : `${plForm.date}T00:00:00+09:00`;
     const endDate = plForm.end_time && isNextDayTime(plForm.end_time) ? getNextDate(plForm.date) : plForm.date;
