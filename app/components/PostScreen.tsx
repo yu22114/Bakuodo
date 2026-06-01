@@ -4,7 +4,7 @@ import { Check, Zap } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { FormState } from "../lib/types";
-import { GENRES, GENRE_COLORS, TIME_OPTIONS, isNextDayTime, endTimeLabel, getNextDate } from "../lib/constants";
+import { GENRES, GENRE_COLORS, TIME_OPTIONS, START_TIME_OPTIONS, isNextDayTime, endTimeLabel, getNextDate } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
 
 export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: SupabaseUser }) {
@@ -19,9 +19,10 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
   const handleSubmit = async () => {
     if (!form.date || !form.station) return;
     setLoading(true); setError("");
-    const starts_at = form.start_time ? `${form.date}T${form.start_time}:00` : `${form.date}T00:00:00`;
+    // +09:00を付けてJSTとして保存（省略するとUTC扱いになり9時間ずれる）
+    const starts_at = form.start_time ? `${form.date}T${form.start_time}:00+09:00` : `${form.date}T00:00:00+09:00`;
     const endDate = form.end_time && isNextDayTime(form.end_time) ? getNextDate(form.date) : form.date;
-    const ends_at = form.end_time ? `${endDate}T${form.end_time}:00` : null;
+    const ends_at = form.end_time ? `${endDate}T${form.end_time}:00+09:00` : null;
     const location = form.studio ? `${form.station} ${form.studio}` : form.station;
     const title = form.title.trim() || location;
     const { data: cypher, error: cErr } = await supabase
@@ -69,7 +70,7 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
             <label style={lbl}>開始時間</label>
             <select style={inp} value={form.start_time} onChange={e => { const v = e.target.value; setForm(f => ({ ...f, start_time: v, end_time: f.end_time && v && !isNextDayTime(f.end_time) && f.end_time <= v ? "" : f.end_time })); }}>
               <option value="">未設定</option>
-              {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+              {START_TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div>

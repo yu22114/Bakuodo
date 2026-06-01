@@ -43,6 +43,9 @@ export function isNextDayTime(t: string): boolean {
   return t < "06:00";
 }
 
+// 開始時間用（9:00〜23:30のみ）
+export const START_TIME_OPTIONS = TIME_OPTIONS.filter(t => !isNextDayTime(t) && t >= "09:00");
+
 // 終了時間セレクトのラベル
 export function endTimeLabel(t: string): string {
   return isNextDayTime(t) ? `翌${t}` : t;
