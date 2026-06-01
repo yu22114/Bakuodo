@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft } from "lucide-react";
+import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import type { GenreKey } from "../lib/types";
 import { formatDate, timeUntil } from "../lib/constants";
@@ -34,6 +34,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [participantSheet, setParticipantSheet] = useState<{ title: string; participants: Array<{ profile_id: string; dancer_name: string; avatar_url: string | null }> } | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [followSheet, setFollowSheet] = useState<{ type: "followers" | "following"; users: { id: string; dancer_name: string; avatar_url: string | null }[] } | null>(null);
   const [followSheetLoading, setFollowSheetLoading] = useState(false);
 
@@ -173,6 +174,14 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                       style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Space Mono',monospace", color: "#111", textAlign: "left", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
                       <Pencil size={13} /> 編集
                     </button>
+                    <button onClick={() => {
+                        setMenuOpen(false);
+                        const url = `${window.location.origin}/u/${profileId}`;
+                        navigator.clipboard.writeText(url).then(() => { setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); });
+                      }}
+                      style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Space Mono',monospace", color: linkCopied ? "#16A34A" : "#111", textAlign: "left", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+                      <Link size={13} /> {linkCopied ? "コピーしました！" : "プロフィールリンクをコピー"}
+                    </button>
                     <button onClick={() => { setMenuOpen(false); onLogout?.(); }}
                       style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Space Mono',monospace", color: "#FF3D00", textAlign: "left" }}>
                       <LogOut size={13} /> ログアウト
@@ -181,7 +190,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 </>)}
               </div>
             )}
-            {!isOwn && (
+            {!isOwn && currentUserId && (
               <button onClick={handleFollow} disabled={followLoading}
                 style={{ border: isFollowing ? "1px solid rgba(0,0,0,0.15)" : "none", borderRadius: "8px", cursor: "pointer", padding: "9px 18px", background: isFollowing ? "transparent" : "#FF3D00", color: isFollowing ? "rgba(0,0,0,0.5)" : "#fff", fontFamily: "'Space Mono',monospace", fontSize: "11px", fontWeight: "bold", opacity: followLoading ? 0.6 : 1, flexShrink: 0 }}>
                 {isFollowing ? "フォロー中" : "フォローする"}
