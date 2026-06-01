@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Clock, MapPin } from "lucide-react";
 import type { Cypher } from "../lib/types";
-import { GENRE_COLORS, formatDate, timeUntil } from "../lib/constants";
+import { GENRE_COLORS, formatDate, timeUntil, formatEndTime } from "../lib/constants";
 import { GenreBadge } from "./GenreBadge";
 import { ParticipantBar } from "./ParticipantBar";
 
@@ -31,13 +31,19 @@ export function CypherCard({ cypher, onClick }: { cypher: Cypher; onClick: () =>
       <div style={{ display: "flex", flexDirection: "column", gap: "5px", marginBottom: "12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <Clock size={11} color="rgba(0,0,0,0.35)" />
-          <span style={{ fontSize: "11px", color: "rgba(0,0,0,0.6)", fontFamily: "'Space Mono',monospace" }}>{date} {time}{cypher.ends_at ? `〜${formatDate(cypher.ends_at).time}` : ""}</span>
+          <span style={{ fontSize: "11px", color: "rgba(0,0,0,0.6)", fontFamily: "'Space Mono',monospace" }}>{date} {time}{cypher.ends_at ? `〜${formatEndTime(cypher.starts_at, cypher.ends_at)}` : ""}</span>
           <span style={{ fontSize: "9px", padding: "1px 6px", background: isEnded ? "rgba(0,0,0,0.06)" : "rgba(255,61,0,0.08)", borderRadius: "3px", color: isEnded ? "rgba(0,0,0,0.4)" : "#FF3D00", fontFamily: "'Space Mono',monospace", fontWeight: "bold" }}>{until}</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cypher.location)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={e => e.stopPropagation()}
+          style={{ display: "flex", alignItems: "center", gap: "6px", textDecoration: "none" }}
+        >
           <MapPin size={11} color="rgba(0,0,0,0.35)" />
-          <span style={{ fontSize: "11px", color: "rgba(0,0,0,0.6)", fontFamily: "'Space Mono',monospace" }}>{cypher.location}</span>
-        </div>
+          <span style={{ fontSize: "11px", color: "rgba(0,0,0,0.6)", fontFamily: "'Space Mono',monospace", textDecoration: "underline dotted", textUnderlineOffset: "2px" }}>{cypher.location}</span>
+        </a>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginBottom: "12px" }}>
         {cypher.genres.map(g => <GenreBadge key={g} genre={g} />)}

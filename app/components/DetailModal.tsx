@@ -4,7 +4,7 @@ import { Clock, MapPin, User, X, Check, Zap } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, ParticipantProfile } from "../lib/types";
-import { formatDate, timeUntil } from "../lib/constants";
+import { formatDate, timeUntil, formatEndTime } from "../lib/constants";
 import { GenreBadge } from "./GenreBadge";
 import { ParticipantBar } from "./ParticipantBar";
 
@@ -147,8 +147,17 @@ export function DetailModal({ cypher, onClose, joined, onJoin, onViewProfile, us
             {cypher.genres.map(g => <GenreBadge key={g} genre={g} size="md" />)}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
-            <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Space Mono',monospace", alignItems: "center" }}><Clock size={14} color="rgba(0,0,0,0.4)" /> {date} {time}{cypher.ends_at ? `〜${formatDate(cypher.ends_at).time}` : ""}</div>
-            <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Space Mono',monospace", alignItems: "center" }}><MapPin size={14} color="rgba(0,0,0,0.4)" /> {cypher.location}</div>
+            <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Space Mono',monospace", alignItems: "center" }}><Clock size={14} color="rgba(0,0,0,0.4)" /> {date} {time}{cypher.ends_at ? `〜${formatEndTime(cypher.starts_at, cypher.ends_at)}` : ""}</div>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cypher.location)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Space Mono',monospace", alignItems: "center", textDecoration: "none" }}
+            >
+              <MapPin size={14} color="rgba(0,0,0,0.4)" />
+              <span style={{ textDecoration: "underline dotted", textUnderlineOffset: "2px" }}>{cypher.location}</span>
+              <span style={{ fontSize: "9px", color: "#2563EB", letterSpacing: "0.05em" }}>MAP →</span>
+            </a>
             <button onClick={() => onViewProfile(organizerId)}
               style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Space Mono',monospace", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
               <User size={14} color="rgba(0,0,0,0.4)" /> 主催: {cypher.organizer.dancer_name}

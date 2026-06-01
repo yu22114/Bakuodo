@@ -4,7 +4,7 @@ import { Check, Zap } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { FormState } from "../lib/types";
-import { GENRES, GENRE_COLORS, TIME_OPTIONS } from "../lib/constants";
+import { GENRES, GENRE_COLORS, TIME_OPTIONS, isNextDayTime, endTimeLabel, getNextDate } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
 
 export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: SupabaseUser }) {
@@ -20,7 +20,8 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
     if (!form.date || !form.station) return;
     setLoading(true); setError("");
     const starts_at = form.start_time ? `${form.date}T${form.start_time}:00` : `${form.date}T00:00:00`;
-    const ends_at = form.end_time ? `${form.date}T${form.end_time}:00` : null;
+    const endDate = form.end_time && isNextDayTime(form.end_time) ? getNextDate(form.date) : form.date;
+    const ends_at = form.end_time ? `${endDate}T${form.end_time}:00` : null;
     const location = form.studio ? `${form.station} ${form.studio}` : form.station;
     const title = form.title.trim() || location;
     const { data: cypher, error: cErr } = await supabase
@@ -34,6 +35,8 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
         await supabase.from("cypher_genres").insert(genreRows.map((g: any) => ({ cypher_id: cypher.id, genre_id: g.id })));
       }
     }
+    // 主催者を自動で参加者に追加
+    await supabase.from("participations").insert({ cypher_id: cypher.id, profile_id: user.id });
     setLoading(false); setSubmitted(true);
     setTimeout(() => onNav("top"), 1800);
   };
@@ -64,7 +67,7 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <div>
             <label style={lbl}>開始時間</label>
-            <select style={inp} value={form.start_time} onChange={e => { const v = e.target.value; setForm(f => ({ ...f, start_time: v, end_time: f.end_time && v && f.end_time <= v ? "" : f.end_time })); }}>
+            <select style={inp} value={form.start_time} onChange={e => { const v = e.target.value; setForm(f => ({ ...f, start_time: v, end_time: f.end_time && v && !isNextDayTime(f.end_time) && f.end_time <= v ? "" : f.end_time })); }}>
               <option value="">未設定</option>
               {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
@@ -73,7 +76,9 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
             <label style={lbl}>終了時間</label>
             <select style={inp} value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))}>
               <option value="">未設定</option>
-              {TIME_OPTIONS.filter(t => !form.start_time || t > form.start_time).map(t => <option key={t} value={t}>{t}</option>)}
+              {TIME_OPTIONS
+                .filter(t => !form.start_time || isNextDayTime(t) || t > form.start_time)
+                .map(t => <option key={t} value={t}>{endTimeLabel(t)}</option>)}
             </select>
           </div>
         </div>

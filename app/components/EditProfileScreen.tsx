@@ -138,7 +138,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
           </button>
         </div>
         <div><label style={lbl}>ダンサーネーム</label>
-          <input style={{ ...inp, fontSize: "16px", fontFamily: "'Bebas Neue',sans-serif" }} placeholder="DANCER NAME" value={profile.dancer_name} onChange={e => { setProfile(p => ({ ...p, dancer_name: e.target.value })); setSaved(false); }} />
+          <input style={{ ...inp, fontSize: "15px" }} placeholder="例: taro / 太郎" value={profile.dancer_name} onChange={e => { setProfile(p => ({ ...p, dancer_name: e.target.value })); setSaved(false); }} />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <div><label style={lbl}>ダンス歴（年）</label>
@@ -185,6 +185,10 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
         <button onClick={handleSave} style={{ width: "100%", padding: "13px", border: "none", borderRadius: "6px", background: saved ? "rgba(22,163,74,0.1)" : "#FF3D00", color: saved ? "#16A34A" : "#fff", fontSize: "14px", fontFamily: "'Bebas Neue',sans-serif", letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
           {saved ? <><Check size={15} />SAVED!</> : <><Star size={15} />プロフィールを保存する</>}
         </button>
+        <div style={{ textAlign: "center", paddingTop: "8px" }}>
+          <a href="/help" style={{ fontSize: "11px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", textDecoration: "underline", marginRight: "16px" }}>使い方ガイド</a>
+          <a href="/terms" style={{ fontSize: "11px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", textDecoration: "underline" }}>利用規約</a>
+        </div>
       </div>
     </div>
   );

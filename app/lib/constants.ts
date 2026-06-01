@@ -38,6 +38,33 @@ export function formatDate(iso: string) {
   };
 }
 
+// 00:00〜05:30は翌日扱い
+export function isNextDayTime(t: string): boolean {
+  return t < "06:00";
+}
+
+// 終了時間セレクトのラベル
+export function endTimeLabel(t: string): string {
+  return isNextDayTime(t) ? `翌${t}` : t;
+}
+
+// 日付文字列(YYYY-MM-DD)の翌日を返す
+export function getNextDate(date: string): string {
+  const [y, m, d] = date.split("-").map(Number);
+  const next = new Date(y, m - 1, d + 1);
+  return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-${String(next.getDate()).padStart(2, "0")}`;
+}
+
+// 翌日またぎの終了時刻表示（カード・詳細モーダル用）
+export function formatEndTime(startsAt: string, endsAt: string): string {
+  const start = new Date(startsAt);
+  const end = new Date(endsAt);
+  const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+  const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+  const timeStr = `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`;
+  return endDay > startDay ? `翌${timeStr}` : timeStr;
+}
+
 // 開催日を過ぎていたら「終了」を返す
 export function timeUntil(iso: string) {
   const diff = new Date(iso).getTime() - new Date().getTime();

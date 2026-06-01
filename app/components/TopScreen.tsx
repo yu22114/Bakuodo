@@ -70,13 +70,17 @@ export function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, my
 
   // エリア一覧（location の先頭エリア名を抽出）
   const areas = Array.from(new Set(cyphers.map(c => c.location.split(/[\s　]/)[0]).filter(Boolean)));
+  const areaCount = (a: string) => cyphers.filter(c => c.location.split(/[\s　]/)[0] === a).length;
 
   // 日程フィルター用ヘルパー
   const toDay = (iso: string) => new Date(iso).toDateString();
   const now = new Date();
   const todayStr = now.toDateString();
-  const tomorrowStr = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toDateString();
+  const tomorrowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const tomorrowStr = tomorrowDate.toDateString();
   const weekEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
+  const todayLabel = `今日 ${now.getMonth() + 1}/${now.getDate()}`;
+  const tomorrowLabel = `明日 ${tomorrowDate.getMonth() + 1}/${tomorrowDate.getDate()}`;
 
   const filtered = cyphers.filter(c => {
     if (sortMode === "genre") return genreFilter === "ALL" || c.genres.includes(genreFilter);
@@ -146,13 +150,13 @@ export function TopScreen({ onNav, onCardClick, user, refreshKey, dancerName, my
         {sortMode === "date" && (["ALL", "today", "tomorrow", "week"] as const).map(d => (
           <button key={d} onClick={() => setDateFilter(d)}
             style={{ flexShrink: 0, padding: "5px 12px", border: dateFilter === d ? "1px solid #FF3D00" : "1px solid rgba(0,0,0,0.12)", borderRadius: "20px", background: dateFilter === d ? "rgba(255,61,0,0.08)" : "transparent", color: dateFilter === d ? "#FF3D00" : "rgba(0,0,0,0.45)", fontSize: "10px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: dateFilter === d ? "bold" : "normal" }}>
-            {d === "ALL" ? "すべて" : d === "today" ? "今日" : d === "tomorrow" ? "明日" : "今週"}
+            {d === "ALL" ? "すべて" : d === "today" ? todayLabel : d === "tomorrow" ? tomorrowLabel : "今週"}
           </button>
         ))}
         {sortMode === "area" && (["ALL", ...areas] as string[]).map(a => (
           <button key={a} onClick={() => setAreaFilter(a)}
             style={{ flexShrink: 0, padding: "5px 12px", border: areaFilter === a ? "1px solid #FF3D00" : "1px solid rgba(0,0,0,0.12)", borderRadius: "20px", background: areaFilter === a ? "rgba(255,61,0,0.08)" : "transparent", color: areaFilter === a ? "#FF3D00" : "rgba(0,0,0,0.45)", fontSize: "10px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: areaFilter === a ? "bold" : "normal" }}>
-            {a === "ALL" ? "すべて" : a}
+            {a === "ALL" ? "すべて" : `${a} (${areaCount(a)})`}
           </button>
         ))}
       </div>
