@@ -283,7 +283,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                       const { date, time } = formatDate(c.starts_at);
                       const isPast = new Date(c.starts_at) < new Date();
                       return (
-                        <div key={c.id} style={{ padding: "12px 14px", borderBottom: "1px solid rgba(0,0,0,0.05)", opacity: isPast ? 0.45 : 1 }}>
+                        <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding: "12px 14px", borderBottom: "1px solid rgba(0,0,0,0.05)", opacity: isPast ? 0.45 : 1, cursor: onCypherClick ? "pointer" : "default" }}>
                           <div style={{ fontSize: "14px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111" }}>{c.title}</div>
                           <div style={{ fontSize: "10px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace", marginBottom: "3px" }}>by {c.organizer_name}</div>
                           <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace" }}>
