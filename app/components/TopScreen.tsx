@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Radio, Users, Bell, User, Search, X, SlidersHorizontal, Navigation, Loader } from "lucide-react";
+import { Radio, Users, Bell, Search, X, SlidersHorizontal, Navigation, Loader } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, PrivateLesson, GenreKey } from "../lib/types";
@@ -189,14 +189,6 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
-            </button>
-            <button onClick={() => onNav("profile")} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-              <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "linear-gradient(135deg,#FF3D00,#FF6D00)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontFamily: "'Bebas Neue',sans-serif", color: "#fff", border: "2px solid rgba(0,0,0,0.08)", overflow: "hidden" }}>
-                {myAvatarUrl
-                  ? <img src={myAvatarUrl} alt={dancerName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  : dancerName ? dancerName[0].toUpperCase() : <User size={16} color="#fff" />}
-              </div>
-              {dancerName && <span style={{ fontSize: "8px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.4)", maxWidth: "48px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dancerName}</span>}
             </button>
           </div>
         </div>
