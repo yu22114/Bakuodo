@@ -167,12 +167,11 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   return (
     <div style={{ paddingBottom: "80px" }}>
       {/* ヘッダー */}
-      <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: "42px", fontFamily: "'Rampart One',sans-serif", letterSpacing: "0.05em", background: "linear-gradient(135deg,#FF3D00 0%,#2563EB 50%,#16A34A 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1, filter: "drop-shadow(0 0 12px rgba(255,61,0,0.15))" }}>爆踊</h1>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "8px" }}>
+      <div style={{ padding: "20px 16px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
+          <div />
+          <h1 style={{ margin: 0, fontSize: "42px", fontFamily: "'Rampart One',sans-serif", letterSpacing: "0.05em", background: "linear-gradient(135deg,#FF3D00 0%,#2563EB 50%,#16A34A 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1, filter: "drop-shadow(0 0 12px rgba(255,61,0,0.15))", textAlign: "center" }}>爆踊</h1>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "4px" }}>
             {/* 検索ボタン */}
             <button onClick={() => setSearchOpen(true)} style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "6px" }}>
               <Search size={22} color={activeFilterCount > 0 ? "#FF3D00" : "rgba(0,0,0,0.45)"} />
@@ -203,6 +202,22 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
           </button>
         ))}
       </div>
+
+      {/* ジャンルチップ（横スクロール） */}
+      {section === "cypher" && (
+        <div style={{ display: "flex", gap: "6px", padding: "10px 16px", overflowX: "auto", scrollbarWidth: "none", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
+          {(["ALL", ...GENRES] as (GenreKey | "ALL")[]).map(g => {
+            const sel = g === "ALL" ? selectedGenres.length === 0 : selectedGenres.includes(g as GenreKey);
+            const col = g === "ALL" ? "#FF3D00" : GENRE_COLORS[g as GenreKey];
+            return (
+              <button key={g} onClick={() => setSelectedGenres(prev => g === "ALL" ? [] : prev.includes(g as GenreKey) ? prev.filter(x => x !== g) : [...prev, g as GenreKey])}
+                style={{ flexShrink: 0, padding: "5px 12px", border: sel ? `1px solid ${col}` : "1px solid rgba(0,0,0,0.12)", borderRadius: "20px", background: sel ? `${col}18` : "transparent", color: sel ? col : "rgba(0,0,0,0.45)", fontSize: "10px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: sel ? "bold" : "normal" }}>
+                {g}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* コンテンツ */}
       {section === "spots" ? (
@@ -292,23 +307,6 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
                     {label}
                   </button>
                 ))}
-              </div>
-            </div>
-
-            {/* ジャンル */}
-            <div style={{ marginBottom: "28px" }}>
-              <div style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.45)", letterSpacing: "0.15em", marginBottom: "8px" }}>GENRE <span style={{ color: "rgba(0,0,0,0.3)", fontSize: "8px" }}>複数選択可</span></div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "7px" }}>
-                {GENRES.map(g => {
-                  const sel = selectedGenres.includes(g);
-                  const col = GENRE_COLORS[g];
-                  return (
-                    <button key={g} onClick={() => setSelectedGenres(prev => sel ? prev.filter(x => x !== g) : [...prev, g])}
-                      style={{ padding: "7px 14px", border: sel ? `1px solid ${col}` : "1px solid rgba(0,0,0,0.1)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(0,0,0,0.45)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: sel ? "bold" : "normal" }}>
-                      {g}
-                    </button>
-                  );
-                })}
               </div>
             </div>
 
