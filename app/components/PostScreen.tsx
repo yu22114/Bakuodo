@@ -95,10 +95,10 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
         <div style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ NEW SESSION</div>
         <h2 style={{ margin: "0 0 16px", fontFamily: "'Bebas Neue',sans-serif", fontSize: "32px", color: "#111111" }}>投稿する</h2>
         <div style={{ display: "flex" }}>
-          {([["cypher", "CYPHER"], ["pl", "PRIVATE LESSON"]] as const).map(([key, label]) => (
+          {([["cypher", "CYPHER"], ["pl", "LESSON"]] as const).map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)}
               style={{ flex: 1, padding: "10px", border: "none", background: "transparent", borderBottom: `2px solid ${tab === key ? (key === "pl" ? "#2563EB" : "#FF3D00") : "transparent"}`, color: tab === key ? (key === "pl" ? "#2563EB" : "#FF3D00") : "rgba(0,0,0,0.4)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal", letterSpacing: "0.08em" }}>
-              {key === "pl" ? "📚 " : ""}{label}
+              {label}
             </button>
           ))}
         </div>

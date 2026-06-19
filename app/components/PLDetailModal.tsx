@@ -63,7 +63,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
         <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0 }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: "5px", background: "#2563EB", borderRadius: "4px", padding: "2px 8px", marginBottom: "6px" }}>
-              <span style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "#fff", fontWeight: "bold" }}>📚 PRIVATE LESSON</span>
+              <span style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "#fff", fontWeight: "bold" }}>LESSON</span>
             </div>
             <h2 style={{ margin: 0, fontSize: "24px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111", lineHeight: 1.1 }}>{lesson.title}</h2>
           </div>

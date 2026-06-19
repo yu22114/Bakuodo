@@ -95,7 +95,7 @@ export function SpotCard({ spot, user, userLocation, onViewProfile }: {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-              <span style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.15em" }}>📍 SPOT</span>
+              <span style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.15em" }}>SPOT</span>
               {distance !== null && (
                 <span style={{ display: "flex", alignItems: "center", gap: "2px", fontSize: "9px", fontFamily: "'Space Mono',monospace", color: tooFar ? "rgba(0,0,0,0.3)" : "#16A34A", background: tooFar ? "rgba(0,0,0,0.05)" : "rgba(22,163,74,0.08)", padding: "1px 6px", borderRadius: "8px" }}>
                   <Navigation size={8} /> {formatDistance(distance)}

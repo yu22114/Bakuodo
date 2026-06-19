@@ -24,7 +24,7 @@ export function PLCard({ lesson, onClick }: { lesson: PrivateLesson; onClick: ()
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{ background: "#FFFFFF", border: `1px solid ${hover ? "rgba(37,99,235,0.3)" : "rgba(0,0,0,0.08)"}`, borderLeft: `3px solid ${isEnded ? "rgba(0,0,0,0.1)" : "#2563EB"}`, borderRadius: "8px", padding: "16px", cursor: "pointer", transition: "all 0.2s ease", transform: hover ? "translateY(-1px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? "0 4px 16px rgba(37,99,235,0.12)" : "0 1px 4px rgba(0,0,0,0.04)", opacity: isEnded ? 0.55 : 1 }}>
       {/* PLバッジ */}
-      <div style={{ position: "absolute", top: 0, left: 0, background: "#2563EB", padding: "3px 10px", fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "#fff", fontWeight: "bold", borderBottomRightRadius: "4px" }}>📚 PL</div>
+      <div style={{ position: "absolute", top: 0, left: 0, background: "#2563EB", padding: "3px 10px", fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "#fff", fontWeight: "bold", borderBottomRightRadius: "4px" }}>PL</div>
       {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(0,0,0,0.1)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.45)", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", marginTop: "14px" }}>
