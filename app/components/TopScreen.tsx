@@ -170,9 +170,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
-            <div style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.2em", marginBottom: "6px" }}>▶ LIVE SESSIONS</div>
             <h1 style={{ margin: 0, fontSize: "42px", fontFamily: "'Rampart One',sans-serif", letterSpacing: "0.05em", background: "linear-gradient(135deg,#FF3D00 0%,#2563EB 50%,#16A34A 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1, filter: "drop-shadow(0 0 12px rgba(255,61,0,0.15))" }}>爆踊</h1>
-            <p style={{ margin: "6px 0 0", fontSize: "11px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace" }}>今日、ここで、踊ろう。</p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "8px" }}>
             {/* 検索ボタン */}
