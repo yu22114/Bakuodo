@@ -30,7 +30,12 @@ export function PLCard({ lesson, onClick }: { lesson: PrivateLesson; onClick: ()
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", marginTop: "14px" }}>
         <div style={{ flex: 1, paddingRight: "44px" }}>
           <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#111111", fontFamily: "'Bebas Neue',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{lesson.title}</h3>
-          <div style={{ fontSize: "10px", color: "rgba(0,0,0,0.4)", marginTop: "2px", fontFamily: "'Space Mono',monospace" }}>by {lesson.organizer.dancer_name}</div>
+          <div style={{ fontSize: "10px", color: "rgba(0,0,0,0.4)", marginTop: "2px", fontFamily: "'Space Mono',monospace", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+            <span>by {lesson.organizer.dancer_name}</span>
+            {lesson.organizer.instagram && (
+              <a href={`https://instagram.com/${lesson.organizer.instagram}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ color: "#A855F7", textDecoration: "none" }}>@{lesson.organizer.instagram}</a>
+            )}
+          </div>
         </div>
         <div style={{ width: "36px", height: "36px", borderRadius: "4px", background: `linear-gradient(135deg,${color}22,${color}44)`, border: `1px solid ${color}55`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: "bold", color, fontFamily: "'Bebas Neue',sans-serif", flexShrink: 0, overflow: "hidden" }}>
           {lesson.organizer.avatar_url

@@ -39,9 +39,9 @@ export const GENRE_COLORS: Record<GenreKey, string> = {
   "All Style": "#6B7280",
 };
 
-// 6時始まりで30分刻み（6:00〜5:30）
+// 8時始まりで30分刻み（8:00〜翌7:30）
 export const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
-  const h = (Math.floor(i / 2) + 6) % 24;
+  const h = (Math.floor(i / 2) + 8) % 24;
   const m = i % 2 === 0 ? "00" : "30";
   return `${String(h).padStart(2, "0")}:${m}`;
 });
@@ -55,12 +55,12 @@ export function formatDate(iso: string) {
   };
 }
 
-// 00:00〜05:30は翌日扱い
+// 00:00〜07:30は翌日扱い
 export function isNextDayTime(t: string): boolean {
-  return t < "06:00";
+  return t < "08:00";
 }
 
-// 開始時間用（6:00スタート、翌深夜帯も含む全時間）
+// 開始時間用（8:00スタート、翌深夜帯も含む全時間）
 export const START_TIME_OPTIONS = TIME_OPTIONS;
 
 // 終了時間セレクトのラベル

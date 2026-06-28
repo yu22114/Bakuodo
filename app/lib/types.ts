@@ -15,7 +15,7 @@ export interface Cypher {
   ends_at: string | null;
   location: string;
   genres: GenreKey[];
-  organizer: { id: string; dancer_name: string; avatar: string; avatar_url: string | null };
+  organizer: { id: string; dancer_name: string; avatar: string; avatar_url: string | null; instagram: string | null };
   participant_count: number;
   max_members: number | null;
   status: string;
@@ -32,7 +32,7 @@ export interface PrivateLesson {
   ends_at: string | null;
   location: string;
   genres: GenreKey[];
-  organizer: { id: string; dancer_name: string; avatar: string; avatar_url: string | null };
+  organizer: { id: string; dancer_name: string; avatar: string; avatar_url: string | null; instagram: string | null };
   participant_count: number;
   max_members: number | null;
   description: string;

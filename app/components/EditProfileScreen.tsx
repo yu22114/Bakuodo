@@ -149,7 +149,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
           </button>
         </div>
         <div><label style={lbl}>ダンサーネーム</label>
-          <input style={{ ...inp, fontSize: "15px" }} placeholder="例: taro / 太郎" value={profile.dancer_name} onChange={e => { setProfile(p => ({ ...p, dancer_name: e.target.value })); setSaved(false); }} />
+          <input style={{ ...inp, fontSize: "15px" }} autoCapitalize="none" autoCorrect="off" placeholder="例: taro / 太郎" value={profile.dancer_name} onChange={e => { setProfile(p => ({ ...p, dancer_name: e.target.value })); setSaved(false); }} />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <div><label style={lbl}>ダンス歴（年）</label>

@@ -1,12 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText } from "lucide-react";
+import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText, MessageCircle } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import type { GenreKey } from "../lib/types";
 import { formatDate, timeUntil } from "../lib/constants";
 import { GenreBadge } from "./GenreBadge";
 
-export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogout, onViewProfile, onCypherClick, onEditCypher }: {
+export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogout, onViewProfile, onCypherClick, onLessonClick, onEditCypher }: {
   profileId: string;
   currentUserId: string;
   onBack?: () => void;
@@ -14,12 +14,14 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   onLogout?: () => void;
   onViewProfile?: (id: string) => void;
   onCypherClick?: (cypherId: string) => void;
+  onLessonClick?: (lessonId: string) => void;
   onEditCypher?: (cypherId: string) => void;
 }) {
   const isOwn = profileId === currentUserId;
   type ProfileData = { dancer_name: string; genres: GenreKey[]; instagram: string | null; dance_years: number | null; age_group: string | null; gender: string | null; avatar_url: string | null; is_private: boolean };
   type HostedCypher = { id: string; title: string; starts_at: string; location: string; participant_count: number };
   type JoinedCypher = { id: string; title: string; starts_at: string; location: string; organizer_name: string };
+  type HostedLesson = { id: string; title: string; starts_at: string; location: string };
 
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [followStatus, setFollowStatus] = useState<"none" | "pending" | "accepted">("none");
@@ -27,6 +29,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [followingCount, setFollowingCount] = useState(0);
   const [followLoading, setFollowLoading] = useState(false);
   const [hostedCyphers, setHostedCyphers] = useState<HostedCypher[]>([]);
+  const [hostedLessons, setHostedLessons] = useState<HostedLesson[]>([]);
   const [joinedCyphers, setJoinedCyphers] = useState<JoinedCypher[]>([]);
   const [mainTab, setMainTab] = useState<"profile" | "cyphers">("profile");
   const [cypherTab, setCypherTab] = useState<"joined" | "hosted">("joined");
@@ -41,9 +44,10 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   useEffect(() => {
     async function fetchAll() {
       setLoading(true);
-      const [profileRes, hostedRes, allPartsRes, followersRes, followingRes] = await Promise.all([
+      const [profileRes, hostedRes, hostedLessonsRes, allPartsRes, followersRes, followingRes] = await Promise.all([
         supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, avatar_url, is_private").eq("id", profileId).single(),
         supabase.from("cyphers").select("id, title, starts_at, location").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
+        supabase.from("private_lessons").select("id, title, starts_at, location").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("participations").select("cypher_id"),
         supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", profileId).eq("status", "accepted"),
         supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", profileId),
@@ -62,6 +66,9 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       (allPartsRes.data ?? []).forEach((p: any) => { countMap[p.cypher_id] = (countMap[p.cypher_id] ?? 0) + 1; });
       if (hostedRes.data) {
         setHostedCyphers((hostedRes.data as any[]).map(c => ({ id: c.id, title: c.title, starts_at: c.starts_at, location: c.location, participant_count: countMap[c.id] ?? 0 })));
+      }
+      if (hostedLessonsRes.data) {
+        setHostedLessons((hostedLessonsRes.data as any[]).map(l => ({ id: l.id, title: l.title, starts_at: l.starts_at, location: l.location })));
       }
       if (isOwn) {
         const { data: joinedData } = await supabase.from("participations")
@@ -135,6 +142,26 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
   const name = profileData?.dancer_name || "DANCER";
 
+  // 主催レッスン一覧（CYPHERタブ内に表示）
+  const lessonRows = hostedLessons.length > 0 && (
+    <div style={{ marginTop: "12px" }}>
+      <div style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>LESSON / レッスン</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        {hostedLessons.map(l => { const { date, time } = formatDate(l.starts_at); const ended = timeUntil(l.starts_at) === "終了"; return (
+          <div key={l.id} onClick={() => onLessonClick?.(l.id)} style={{ padding: "10px 14px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderLeft: "3px solid #2563EB", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: onLessonClick ? "pointer" : "default", opacity: ended ? 0.5 : 1 }}>
+            <div>
+              <div style={{ fontSize: "14px", fontFamily: "'Bebas Neue',sans-serif", color: ended ? "rgba(0,0,0,0.4)" : "#111111" }}>{l.title}</div>
+              <div style={{ fontSize: "10px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace", marginTop: "2px", display: "flex", alignItems: "center", gap: "6px" }}><Clock size={9} color="rgba(0,0,0,0.3)" />{date} {time}</div>
+            </div>
+            {ended
+              ? <span style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.3)", padding: "2px 7px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "3px" }}>終了</span>
+              : <span style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "#2563EB", fontWeight: "bold", padding: "2px 7px", background: "rgba(37,99,235,0.08)", borderRadius: "3px" }}>LESSON</span>}
+          </div>
+        );})}
+      </div>
+    </div>
+  );
+
   return (
     <div style={onBack
       ? { position: "fixed", inset: 0, zIndex: 150, background: "#FAFAFA", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }
@@ -159,7 +186,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <div style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ DANCER PROFILE</div>
-            <h2 style={{ margin: 0, fontFamily: "'Bebas Neue',sans-serif", fontSize: "32px", color: "#111111" }}>{name}</h2>
+            <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "24px", color: "#111111" }}>{name}</h2>
             <div style={{ display: "flex", gap: "16px", marginTop: "8px" }}>
               <button onClick={() => openFollowSheet("followers")} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}>
                 <span style={{ fontSize: "11px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.5)" }}>
@@ -200,6 +227,9 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                     </a>
                     <a href="/terms" style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Space Mono',monospace", color: "#111", textDecoration: "none", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
                       <FileText size={13} /> 利用規約
+                    </a>
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSfjsNLIVlcwH85XS1H_Xl2pyEZqBKhkDIWrku57JpzUhGmBFQ/viewform" target="_blank" rel="noopener noreferrer" style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Space Mono',monospace", color: "#111", textDecoration: "none", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+                      <MessageCircle size={13} /> 問い合わせ
                     </a>
                     <button onClick={() => { setMenuOpen(false); onLogout?.(); }}
                       style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Space Mono',monospace", color: "#FF3D00", textAlign: "left" }}>
@@ -319,9 +349,9 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
               )}
             </div>
           </>) : (
-            hostedCyphers.length === 0
-              ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>まだサイファーを主催していません</div>
-              : <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            hostedCyphers.length === 0 && hostedLessons.length === 0
+              ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>まだ主催しているサイファー・レッスンはありません</div>
+              : hostedCyphers.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   {hostedCyphers.map(c => { const { date, time } = formatDate(c.starts_at); const ended = timeUntil(c.starts_at) === "終了"; return (
                     <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding: "10px 14px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: onCypherClick ? "pointer" : "default" }}>
                       <div>
@@ -334,6 +364,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                   );})}
                 </div>
           )}
+          {(!isOwn || cypherTab === "hosted") && lessonRows}
         </>)}
       </div>
 
@@ -359,7 +390,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                           ? <img src={p.avatar_url} alt={p.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                           : p.dancer_name[0]?.toUpperCase() ?? "?"}
                       </div>
-                      <div style={{ fontSize: "15px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111" }}>{p.dancer_name}</div>
+                      <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 600, color: "#111111" }}>{p.dancer_name}</div>
                     </button>
                   ))}
                 </div>
@@ -396,7 +427,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                             ? <img src={u.avatar_url} alt={u.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                             : u.dancer_name[0]?.toUpperCase() ?? "?"}
                         </div>
-                        <div style={{ fontSize: "15px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111" }}>{u.dancer_name}</div>
+                        <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 600, color: "#111111" }}>{u.dancer_name}</div>
                       </button>
                     ))}
                   </div>

@@ -84,7 +84,7 @@ export default function BakuOdori() {
   const openCypherDetail = async (cypherId: string) => {
     const { data: row } = await supabase.from("cyphers").select(`
       id, title, organizer_id, starts_at, ends_at, location, description, max_members, status, visibility, requires_approval,
-      profiles:organizer_id ( dancer_name, avatar_url ),
+      profiles:organizer_id ( dancer_name, avatar_url, instagram ),
       cypher_genres ( genres:genre_id ( name ) )
     `).eq("id", cypherId).single();
     if (!row) return;
@@ -106,11 +106,44 @@ export default function BakuOdori() {
       visibility: (row as any).visibility ?? "public",
       requires_approval: (row as any).requires_approval ?? false,
       genres,
-      organizer: { id: (row as any).organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: (row as any).profiles?.avatar_url ?? null },
+      organizer: { id: (row as any).organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: (row as any).profiles?.avatar_url ?? null, instagram: (row as any).profiles?.instagram ?? null },
       participant_count: partCount ?? 0,
       hot: (partCount ?? 0) >= 5,
     };
     setDetail(cypher);
+  };
+
+  // レッスンIDからフルデータを取得してPLDetailModalを開く（プロフィールのレッスン一覧用）
+  const openLessonDetail = async (lessonId: string) => {
+    const { data: row } = await supabase.from("private_lessons").select(`
+      id, title, organizer_id, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval,
+      profiles:organizer_id ( dancer_name, avatar_url, instagram ),
+      pl_genres ( genres:genre_id ( name ) )
+    `).eq("id", lessonId).single();
+    if (!row) return;
+    const name = (row as any).profiles?.dancer_name ?? "UNKNOWN";
+    const genres: import("./lib/types").GenreKey[] = ((row as any).pl_genres ?? [])
+      .map((cg: any) => cg.genres?.name as import("./lib/types").GenreKey)
+      .filter(Boolean);
+    const { count } = await supabase
+      .from("pl_participations").select("id", { count: "exact", head: true }).eq("lesson_id", lessonId).eq("status", "approved");
+    const lesson: PrivateLesson = {
+      id: (row as any).id,
+      title: (row as any).title,
+      starts_at: (row as any).starts_at,
+      ends_at: (row as any).ends_at ?? null,
+      location: (row as any).location,
+      description: (row as any).description ?? "",
+      max_members: (row as any).max_members,
+      price: (row as any).price ?? null,
+      target_level: (row as any).target_level ?? "all",
+      visibility: (row as any).visibility ?? "public",
+      requires_approval: (row as any).requires_approval ?? false,
+      genres,
+      organizer: { id: (row as any).organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: (row as any).profiles?.avatar_url ?? null, instagram: (row as any).profiles?.instagram ?? null },
+      participant_count: count ?? 0,
+    };
+    setPlDetail(lesson);
   };
 
   // 参加ボタン：DBにINSERT → joinedに追加 → カード再フェッチ → 主催者に通知
@@ -219,7 +252,7 @@ export default function BakuOdori() {
           <>
             {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} onPLClick={setPlDetail} onViewProfile={id => setProfileStack(s => [...s, id])} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} />}
             {screen === "post"    && <PostScreen onNav={setScreen} user={user} />}
-            {screen === "profile" && <PublicProfileScreen profileId={user.id} currentUserId={user.id} onEdit={() => setScreen("edit")} onLogout={() => supabase.auth.signOut()} onViewProfile={id => setProfileStack(s => [...s, id])} onCypherClick={openCypherDetail} onEditCypher={id => setEditCypherId(id)} />}
+            {screen === "profile" && <PublicProfileScreen profileId={user.id} currentUserId={user.id} onEdit={() => setScreen("edit")} onLogout={() => supabase.auth.signOut()} onViewProfile={id => setProfileStack(s => [...s, id])} onCypherClick={openCypherDetail} onLessonClick={openLessonDetail} onEditCypher={id => setEditCypherId(id)} />}
             {screen === "edit"    && <EditProfileScreen user={user} onDancerNameChange={setDancerName} onAvatarChange={setMyAvatarUrl} onBack={() => setScreen("profile")} />}
             <BottomNav current={screen} onNav={s => { setScreen(s); setProfileStack([]); }} />
             {detail && <DetailModal cypher={detail} onClose={() => setDetail(null)} joined={joined.includes(detail.id)} pending={pendingJoins.includes(detail.id)} onJoin={handleJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} />}
@@ -249,6 +282,7 @@ export default function BakuOdori() {
                 onBack={() => setProfileStack(s => s.slice(0, -1))}
                 onViewProfile={id => setProfileStack(s => [...s, id])}
                 onCypherClick={openCypherDetail}
+                onLessonClick={openLessonDetail}
               />
             )}
           </>

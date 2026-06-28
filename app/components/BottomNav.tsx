@@ -1,9 +1,9 @@
 "use client";
-import { Flame, Plus, User } from "lucide-react";
+import { Home, Plus, User } from "lucide-react";
 
 export function BottomNav({ current, onNav }: { current: string; onNav: (s: string) => void }) {
   const items = [
-    { id: "top", icon: <Flame size={20} />, label: "CYPHER" },
+    { id: "top", icon: <Home size={20} />, label: "ホーム" },
     { id: "post", icon: <Plus size={20} />, label: "POST" },
     { id: "profile", icon: <User size={20} />, label: "MY" },
   ];

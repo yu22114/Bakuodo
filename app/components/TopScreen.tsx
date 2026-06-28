@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Radio, Users, Bell, Search, X, SlidersHorizontal, Navigation, Loader } from "lucide-react";
+import { Radio, Bell, Search, X, SlidersHorizontal, Navigation, Loader } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, PrivateLesson, GenreKey } from "../lib/types";
@@ -43,7 +43,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
           .from("cyphers")
           .select(`
             id, title, organizer_id, starts_at, ends_at, location, description, max_members, status, visibility, requires_approval,
-            profiles:organizer_id ( dancer_name, avatar_url ),
+            profiles:organizer_id ( dancer_name, avatar_url, instagram ),
             cypher_genres ( genres:genre_id ( name ) )
           `)
           .gte("starts_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
@@ -64,7 +64,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         const name = row.profiles?.dancer_name ?? "UNKNOWN";
         const genres: GenreKey[] = (row.cypher_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
         const count = countMap[row.id] ?? 0;
-        return { id: row.id, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, status: row.status, visibility: row.visibility ?? "public", requires_approval: row.requires_approval ?? false, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null }, participant_count: count, hot: count >= 5 };
+        return { id: row.id, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, status: row.status, visibility: row.visibility ?? "public", requires_approval: row.requires_approval ?? false, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null, instagram: row.profiles?.instagram ?? null }, participant_count: count, hot: count >= 5 };
       }).filter((c: any) =>
         // プライベートサイファーは自分が主催 or フォロワーのみ表示
         c.visibility === "public" || c.organizer.id === user.id || followingIds.has(c.organizer.id)
@@ -82,7 +82,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       const [plRes, plPartRes] = await Promise.all([
         supabase.from("private_lessons").select(`
           id, title, organizer_id, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval,
-          profiles:organizer_id ( dancer_name, avatar_url ),
+          profiles:organizer_id ( dancer_name, avatar_url, instagram ),
           pl_genres ( genres:genre_id ( name ) )
         `).gte("starts_at", new Date(Date.now() - 60 * 60 * 1000).toISOString()).order("starts_at"),
         supabase.from("pl_participations").select("lesson_id").eq("status", "approved"),
@@ -93,7 +93,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         const shapedPL: PrivateLesson[] = (plRes.data ?? []).map((row: any) => {
           const name = row.profiles?.dancer_name ?? "UNKNOWN";
           const genres: GenreKey[] = (row.pl_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
-          return { id: row.id, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, price: row.price ?? null, target_level: row.target_level ?? "all", visibility: row.visibility ?? "public", requires_approval: row.requires_approval ?? false, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null }, participant_count: plCountMap[row.id] ?? 0 };
+          return { id: row.id, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, price: row.price ?? null, target_level: row.target_level ?? "all", visibility: row.visibility ?? "public", requires_approval: row.requires_approval ?? false, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null, instagram: row.profiles?.instagram ?? null }, participant_count: plCountMap[row.id] ?? 0 };
         }).filter((l: PrivateLesson) => l.visibility === "public" || l.organizer.id === user.id || followingIds.has(l.organizer.id));
         setLessons(shapedPL);
       }
@@ -161,8 +161,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         return dA - dB;
       })
     : spots;
-  const activeCount = filtered.filter(c => timeUntil(c.starts_at) !== "終了").length;
-  const dancerCount = filtered.reduce((a, c) => a + c.participant_count, 0);
+  const postCount = filtered.length;
 
   return (
     <div style={{ paddingBottom: "80px" }}>
@@ -239,9 +238,9 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         </div>
       ) : (
         <>
-          {/* ACTIVE/DANCERS */}
+          {/* POSTS */}
           <div style={{ display: "flex", padding: "10px 16px", gap: "20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", alignItems: "center" }}>
-            {[{ label: "ACTIVE", value: activeCount, icon: <Radio size={10} /> }, { label: "DANCERS", value: dancerCount, icon: <Users size={10} /> }].map(s => (
+            {[{ label: "POSTS", value: postCount, icon: <Radio size={10} /> }].map(s => (
               <div key={s.label} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ color: "#FF3D00" }}>{s.icon}</span>
                 <span style={{ fontSize: "18px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111" }}>{s.value}</span>
