@@ -228,7 +228,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                     <a href="/terms" style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Space Mono',monospace", color: "#111", textDecoration: "none", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
                       <FileText size={13} /> 利用規約
                     </a>
-                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSfjsNLIVlcwH85XS1H_Xl2pyEZqBKhkDIWrku57JpzUhGmBFQ/viewform" target="_blank" rel="noopener noreferrer" style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Space Mono',monospace", color: "#111", textDecoration: "none", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSdtORTcN86YUDCwq_v8f300PtwnmUENTAvGXs8AYvVS50IyGA/viewform" target="_blank" rel="noopener noreferrer" style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Space Mono',monospace", color: "#111", textDecoration: "none", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
                       <MessageCircle size={13} /> 問い合わせ
                     </a>
                     <button onClick={() => { setMenuOpen(false); onLogout?.(); }}
