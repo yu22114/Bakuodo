@@ -4,7 +4,7 @@ import { Check, ChevronLeft } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { FormState, GenreKey } from "../lib/types";
-import { GENRES, GENRE_COLORS, TIME_OPTIONS, START_TIME_OPTIONS, isNextDayTime, endTimeLabel, getNextDate } from "../lib/constants";
+import { GENRES, GENRE_COLORS, START_TIME_OPTIONS, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
 
 export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
@@ -51,7 +51,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
     setSaving(true); setError("");
     // +09:00を付けてJSTとして保存（省略するとUTC扱いになり9時間ずれる）
     const starts_at = form.start_time ? `${form.date}T${form.start_time}:00+09:00` : `${form.date}T00:00:00+09:00`;
-    const endDate = form.end_time && isNextDayTime(form.end_time) ? getNextDate(form.date) : form.date;
+    const endDate = form.end_time && isNextDayEnd(form.end_time, form.start_time) ? getNextDate(form.date) : form.date;
     const ends_at = form.end_time ? `${endDate}T${form.end_time}:00+09:00` : null;
     const location = form.studio ? `${form.station} ${form.studio}` : form.station;
     const title = form.title.trim() || location;
@@ -94,8 +94,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <div>
             <label style={lbl}>開始時間</label>
-            <select style={inp} value={form.start_time} onChange={e => { const v = e.target.value; setForm(f => ({ ...f, start_time: v, end_time: f.end_time && v && !isNextDayTime(f.end_time) && f.end_time <= v ? "" : f.end_time })); }}>
-              <option value="">未設定</option>
+            <select style={inp} value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))}>
               {START_TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
@@ -103,9 +102,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
             <label style={lbl}>終了時間</label>
             <select style={inp} value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))}>
               <option value="">未設定</option>
-              {TIME_OPTIONS
-                .filter(t => !form.start_time || isNextDayTime(t) || t > form.start_time)
-                .map(t => <option key={t} value={t}>{endTimeLabel(t)}</option>)}
+              {endTimeOptions(form.start_time).map(t => <option key={t} value={t}>{endTimeLabel(t, form.start_time)}</option>)}
             </select>
           </div>
         </div>

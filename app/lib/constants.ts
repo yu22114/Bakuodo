@@ -39,9 +39,9 @@ export const GENRE_COLORS: Record<GenreKey, string> = {
   "All Style": "#6B7280",
 };
 
-// 8時始まりで30分刻み（8:00〜翌7:30）
+// 30分刻みの全時間（00:00〜23:30）
 export const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
-  const h = (Math.floor(i / 2) + 8) % 24;
+  const h = Math.floor(i / 2);
   const m = i % 2 === 0 ? "00" : "30";
   return `${String(h).padStart(2, "0")}:${m}`;
 });
@@ -55,17 +55,29 @@ export function formatDate(iso: string) {
   };
 }
 
-// 00:00〜07:30は翌日扱い
-export function isNextDayTime(t: string): boolean {
-  return t < "08:00";
-}
-
-// 開始時間用（8:00スタート、翌深夜帯も含む全時間）
+// 開始時間の選択肢（00:00〜23:30。表示はフォーム側で初期値9:00から始める）
 export const START_TIME_OPTIONS = TIME_OPTIONS;
 
-// 終了時間セレクトのラベル
-export function endTimeLabel(t: string): string {
-  return isNextDayTime(t) ? `翌${t}` : t;
+// 開始時刻の初期値（開くと9:00が見える。上スクロールで早朝、下スクロールで以降も選べる）
+export const DEFAULT_START_TIME = "09:00";
+
+// 終了が「翌日」かどうかを開始時刻基準で判定（開始以下の時刻＝翌日。最大24時間）
+export function isNextDayEnd(end: string, start: string): boolean {
+  if (!end || !start) return false;
+  return end <= start;
+}
+
+// 終了時間の選択肢を開始時刻基準で並べる（当日＝開始より後 → 翌日＝00:00〜開始まで＝最大24h）
+export function endTimeOptions(start: string): string[] {
+  if (!start) return TIME_OPTIONS;
+  const sameDay = TIME_OPTIONS.filter(t => t > start);
+  const nextDay = TIME_OPTIONS.filter(t => t <= start);
+  return [...sameDay, ...nextDay];
+}
+
+// 終了時間セレクトのラベル（翌日なら「翌」を付ける）
+export function endTimeLabel(t: string, start: string): string {
+  return isNextDayEnd(t, start) ? `翌${t}` : t;
 }
 
 // 日付文字列(YYYY-MM-DD)の翌日を返す

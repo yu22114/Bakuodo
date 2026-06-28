@@ -4,16 +4,16 @@ import { Check, Zap, BookOpen } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { FormState } from "../lib/types";
-import { GENRES, GENRE_COLORS, TIME_OPTIONS, START_TIME_OPTIONS, isNextDayTime, endTimeLabel, getNextDate } from "../lib/constants";
+import { GENRES, GENRE_COLORS, START_TIME_OPTIONS, DEFAULT_START_TIME, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
 
 export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: SupabaseUser }) {
   const [tab, setTab] = useState<"cypher" | "pl">("cypher");
-  const [form, setForm] = useState<FormState>({ title: "", date: "", start_time: "", end_time: "", station: "", studio: "", genres: [], description: "", max_members: "", payment: [] });
+  const [form, setForm] = useState<FormState>({ title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [], description: "", max_members: "", payment: [] });
   const [isPrivate, setIsPrivate] = useState(false);
   const [requiresApproval, setRequiresApproval] = useState(false);
   // PLフォーム用
-  const [plForm, setPlForm] = useState({ title: "", date: "", start_time: "", end_time: "", station: "", studio: "", genres: [] as string[], description: "", max_members: "", price: "", target_level: "all" });
+  const [plForm, setPlForm] = useState({ title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [] as string[], description: "", max_members: "", price: "", target_level: "all" });
   const [plIsPrivate, setPlIsPrivate] = useState(false);
   const [plRequiresApproval, setPlRequiresApproval] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -32,7 +32,7 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
     setLoading(true); setError("");
     // +09:00を付けてJSTとして保存（省略するとUTC扱いになり9時間ずれる）
     const starts_at = form.start_time ? `${form.date}T${form.start_time}:00+09:00` : `${form.date}T00:00:00+09:00`;
-    const endDate = form.end_time && isNextDayTime(form.end_time) ? getNextDate(form.date) : form.date;
+    const endDate = form.end_time && isNextDayEnd(form.end_time, form.start_time) ? getNextDate(form.date) : form.date;
     const ends_at = form.end_time ? `${endDate}T${form.end_time}:00+09:00` : null;
     const location = form.studio ? `${form.station} ${form.studio}` : form.station;
     const title = form.title.trim() || location;
@@ -60,7 +60,7 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
     }
     setLoading(true); setError("");
     const starts_at = plForm.start_time ? `${plForm.date}T${plForm.start_time}:00+09:00` : `${plForm.date}T00:00:00+09:00`;
-    const endDate = plForm.end_time && isNextDayTime(plForm.end_time) ? getNextDate(plForm.date) : plForm.date;
+    const endDate = plForm.end_time && isNextDayEnd(plForm.end_time, plForm.start_time) ? getNextDate(plForm.date) : plForm.date;
     const ends_at = plForm.end_time ? `${endDate}T${plForm.end_time}:00+09:00` : null;
     const location = plForm.studio ? `${plForm.station} ${plForm.studio}` : plForm.station;
     const title = plForm.title.trim() || location;
@@ -112,15 +112,14 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
           <div><label style={lbl}>日付 <span style={{ color: "#FF3D00" }}>*</span></label><input type="date" style={inp} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <div><label style={lbl}>開始時間</label>
-              <select style={inp} value={form.start_time} onChange={e => { const v = e.target.value; setForm(f => ({ ...f, start_time: v, end_time: f.end_time && v && !isNextDayTime(f.end_time) && f.end_time <= v ? "" : f.end_time })); }}>
-                <option value="">未設定</option>
+              <select style={inp} value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))}>
                 {START_TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div><label style={lbl}>終了時間</label>
               <select style={inp} value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))}>
                 <option value="">未設定</option>
-                {TIME_OPTIONS.filter(t => !form.start_time || isNextDayTime(t) || t > form.start_time).map(t => <option key={t} value={t}>{endTimeLabel(t)}</option>)}
+                {endTimeOptions(form.start_time).map(t => <option key={t} value={t}>{endTimeLabel(t, form.start_time)}</option>)}
               </select>
             </div>
           </div>
@@ -155,15 +154,14 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
           <div><label style={lbl}>日付 <span style={{ color: "#2563EB" }}>*</span></label><input type="date" style={inp} value={plForm.date} onChange={e => setPlForm(f => ({ ...f, date: e.target.value }))} /></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <div><label style={lbl}>開始時間</label>
-              <select style={inp} value={plForm.start_time} onChange={e => { const v = e.target.value; setPlForm(f => ({ ...f, start_time: v, end_time: f.end_time && v && !isNextDayTime(f.end_time) && f.end_time <= v ? "" : f.end_time })); }}>
-                <option value="">未設定</option>
+              <select style={inp} value={plForm.start_time} onChange={e => setPlForm(f => ({ ...f, start_time: e.target.value }))}>
                 {START_TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div><label style={lbl}>終了時間</label>
               <select style={inp} value={plForm.end_time} onChange={e => setPlForm(f => ({ ...f, end_time: e.target.value }))}>
                 <option value="">未設定</option>
-                {TIME_OPTIONS.filter(t => !plForm.start_time || isNextDayTime(t) || t > plForm.start_time).map(t => <option key={t} value={t}>{endTimeLabel(t)}</option>)}
+                {endTimeOptions(plForm.start_time).map(t => <option key={t} value={t}>{endTimeLabel(t, plForm.start_time)}</option>)}
               </select>
             </div>
           </div>
