@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 爆踊（BakuOdori）
 
-## Getting Started
+サイファーを開催したい人と参加したい人をつなぐ、ダンスイベント管理サービス。
 
-First, run the development server:
+## 技術スタック
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Next.js 16 (App Router) / TypeScript / Tailwind CSS v4
+- Supabase（Google OAuth・DB・Storage）
+- Vercel（デプロイ・Cron）
+
+## セットアップ
+
+1. `.env.local` に以下を設定:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxx...
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Vercel側には追加で `SUPABASE_SERVICE_ROLE_KEY`（Cron用）と `CRON_SECRET` を設定する。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2. `sql/` 配下のSQLを日付順にSupabaseのSQL Editorで実行する（RLS・トリガー・ビュー）。
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. 起動:
 
-## Learn More
+```bash
+npm install
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 画面構成
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| パス | 内容 |
+|------|------|
+| `/` | アプリ本体（ログイン→サイファー/レッスン/スポット一覧・投稿・プロフィール） |
+| `/c/[id]` | サイファー共有ページ（OGP付き・未ログイン閲覧可） |
+| `/u/[id]` | 公開プロフィール |
+| `/help` `/terms` | 使い方ガイド・利用規約 |
+| `/api/cleanup` | 終了サイファーの掃除（Vercel Cron・毎日3:00 UTC） |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## アーキテクチャの約束事
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- クライアントは **anonキーで直接Supabaseに読み書き**する。書き込みの整合性
+  （参加status・定員・なりすまし防止）は**DBトリガーとRLS**が守る。
+- **通知（notifications）はDBトリガーだけが作成する**。クライアントからの
+  INSERTはRLSで禁止されている。通知を増やしたいときは `sql/` にトリガーを足す。
+- 詳細は `sql/2026-07-07_security.sql` のコメント参照。

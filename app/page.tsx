@@ -1,8 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import type { Cypher, PrivateLesson } from "./lib/types";
+import { fetchCypherById, fetchLessonById } from "./lib/fetchDetail";
+import { joinCypher, cancelCypher, joinLesson, cancelLesson } from "./lib/participation";
+import { showToast } from "./components/Toast";
 import { LoginScreen } from "./components/LoginScreen";
 import { TopScreen } from "./components/TopScreen";
 import { PostScreen } from "./components/PostScreen";
@@ -48,11 +51,12 @@ export default function BakuOdori() {
     );
   };
 
-  // ログイン後にダンサーネームと参加済みサイファー一覧・未読通知数をDBから取得
+  // ログイン後にダンサーネームと参加済みサイファー・レッスン一覧・未読通知数をDBから取得
   const fetchUserData = async (u: SupabaseUser) => {
-    const [profileRes, partsRes, notifRes] = await Promise.all([
+    const [profileRes, partsRes, plPartsRes, notifRes] = await Promise.all([
       supabase.from("profiles").select("dancer_name, avatar_url").eq("id", u.id).single(),
       supabase.from("participations").select("cypher_id, status").eq("profile_id", u.id),
+      supabase.from("pl_participations").select("lesson_id, status").eq("profile_id", u.id),
       supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", u.id).eq("read", false),
     ]);
     const name = profileRes.data?.dancer_name || u.user_metadata?.full_name || "";
@@ -61,6 +65,10 @@ export default function BakuOdori() {
     if (partsRes.data) {
       setJoined(partsRes.data.filter((p: any) => p.status !== "pending").map((p: any) => p.cypher_id));
       setPendingJoins(partsRes.data.filter((p: any) => p.status === "pending").map((p: any) => p.cypher_id));
+    }
+    if (plPartsRes.data) {
+      setPlJoined(plPartsRes.data.filter((p: any) => p.status !== "pending").map((p: any) => p.lesson_id));
+      setPlPending(plPartsRes.data.filter((p: any) => p.status === "pending").map((p: any) => p.lesson_id));
     }
     setUnreadCount(notifRes.count ?? 0);
   };
@@ -82,151 +90,106 @@ export default function BakuOdori() {
 
   // サイファーIDからフルデータを取得してDetailModalを開く
   const openCypherDetail = async (cypherId: string) => {
-    const { data: row } = await supabase.from("cyphers").select(`
-      id, title, organizer_id, starts_at, ends_at, location, description, max_members, status, visibility, requires_approval,
-      profiles:organizer_id ( dancer_name, avatar_url, instagram ),
-      cypher_genres ( genres:genre_id ( name ) )
-    `).eq("id", cypherId).single();
-    if (!row) return;
-    const name = (row as any).profiles?.dancer_name ?? "UNKNOWN";
-    const genres: import("./lib/types").GenreKey[] = ((row as any).cypher_genres ?? [])
-      .map((cg: any) => cg.genres?.name as import("./lib/types").GenreKey)
-      .filter(Boolean);
-    const { count: partCount } = await supabase
-      .from("participations").select("id", { count: "exact", head: true }).eq("cypher_id", cypherId);
-    const cypher: Cypher = {
-      id: (row as any).id,
-      title: (row as any).title,
-      starts_at: (row as any).starts_at,
-      ends_at: (row as any).ends_at ?? null,
-      location: (row as any).location,
-      description: (row as any).description ?? "",
-      max_members: (row as any).max_members,
-      status: (row as any).status,
-      visibility: (row as any).visibility ?? "public",
-      requires_approval: (row as any).requires_approval ?? false,
-      genres,
-      organizer: { id: (row as any).organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: (row as any).profiles?.avatar_url ?? null, instagram: (row as any).profiles?.instagram ?? null },
-      participant_count: partCount ?? 0,
-      hot: (partCount ?? 0) >= 5,
-    };
-    setDetail(cypher);
+    const cypher = await fetchCypherById(cypherId);
+    if (cypher) setDetail(cypher);
   };
 
   // レッスンIDからフルデータを取得してPLDetailModalを開く（プロフィールのレッスン一覧用）
   const openLessonDetail = async (lessonId: string) => {
-    const { data: row } = await supabase.from("private_lessons").select(`
-      id, title, organizer_id, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval,
-      profiles:organizer_id ( dancer_name, avatar_url, instagram ),
-      pl_genres ( genres:genre_id ( name ) )
-    `).eq("id", lessonId).single();
-    if (!row) return;
-    const name = (row as any).profiles?.dancer_name ?? "UNKNOWN";
-    const genres: import("./lib/types").GenreKey[] = ((row as any).pl_genres ?? [])
-      .map((cg: any) => cg.genres?.name as import("./lib/types").GenreKey)
-      .filter(Boolean);
-    const { count } = await supabase
-      .from("pl_participations").select("id", { count: "exact", head: true }).eq("lesson_id", lessonId).eq("status", "approved");
-    const lesson: PrivateLesson = {
-      id: (row as any).id,
-      title: (row as any).title,
-      starts_at: (row as any).starts_at,
-      ends_at: (row as any).ends_at ?? null,
-      location: (row as any).location,
-      description: (row as any).description ?? "",
-      max_members: (row as any).max_members,
-      price: (row as any).price ?? null,
-      target_level: (row as any).target_level ?? "all",
-      visibility: (row as any).visibility ?? "public",
-      requires_approval: (row as any).requires_approval ?? false,
-      genres,
-      organizer: { id: (row as any).organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: (row as any).profiles?.avatar_url ?? null, instagram: (row as any).profiles?.instagram ?? null },
-      participant_count: count ?? 0,
-    };
-    setPlDetail(lesson);
+    const lesson = await fetchLessonById(lessonId);
+    if (lesson) setPlDetail(lesson);
   };
 
-  // 参加ボタン：DBにINSERT → joinedに追加 → カード再フェッチ → 主催者に通知
+  // 参加ボタン。status（承認制）・定員・通知はDBトリガーが処理する
   const handleJoin = async (id: string) => {
     if (!user) return;
     if (joined.includes(id) || pendingJoins.includes(id)) {
       setConfirmId(id);
+      return;
+    }
+    const result = await joinCypher(user.id, id);
+    if ("error" in result) { showToast(result.error); return; }
+    if (result.status === "pending") {
+      setPendingJoins(p => [...p, id]);
     } else {
-      const { data: cypherCheck } = await supabase.from("cyphers").select("organizer_id, max_members, requires_approval").eq("id", id).single();
-      if (cypherCheck?.max_members) {
-        const { count: partCount } = await supabase
-          .from("participations").select("id", { count: "exact", head: true }).eq("cypher_id", id).eq("status", "approved");
-        if (partCount !== null && partCount >= cypherCheck.max_members) {
-          alert("このサイファーは定員に達しています");
-          return;
-        }
-      }
-      const requiresApproval = cypherCheck?.requires_approval ?? false;
-      const status = requiresApproval ? "pending" : "approved";
-      const { error } = await supabase.from("participations").insert({ cypher_id: id, profile_id: user.id, status });
-      if (error) { console.error("join error:", error); return; }
-      if (requiresApproval) {
-        setPendingJoins(p => [...p, id]);
-      } else {
-        setJoined(j => [...j, id]);
-        setRefreshKey(k => k + 1);
-      }
-      const organizerId = cypherCheck?.organizer_id;
-      if (organizerId && organizerId !== user.id) {
-        const notifType = requiresApproval ? "join_request" : "join";
-        await supabase.from("notifications").insert({ user_id: organizerId, cypher_id: id, actor_id: user.id, type: notifType });
-      }
+      setJoined(j => [...j, id]);
+      setRefreshKey(k => k + 1);
     }
   };
 
   const handlePLJoin = async (id: string) => {
     if (!user) return;
     if (plJoined.includes(id) || plPending.includes(id)) {
-      await supabase.from("pl_participations").delete().eq("lesson_id", id).eq("profile_id", user.id);
+      const { error } = await cancelLesson(user.id, id);
+      if (error) { showToast(error); return; }
       setPlJoined(j => j.filter(x => x !== id));
       setPlPending(p => p.filter(x => x !== id));
       setRefreshKey(k => k + 1);
+      return;
+    }
+    const result = await joinLesson(user.id, id);
+    if ("error" in result) { showToast(result.error); return; }
+    if (result.status === "pending") {
+      setPlPending(p => [...p, id]);
     } else {
-      const { data: lessonCheck } = await supabase.from("private_lessons").select("organizer_id, max_members, requires_approval").eq("id", id).single();
-      if (lessonCheck?.max_members) {
-        const { count } = await supabase.from("pl_participations").select("id", { count: "exact", head: true }).eq("lesson_id", id).eq("status", "approved");
-        if (count !== null && count >= lessonCheck.max_members) { alert("このレッスンは定員に達しています"); return; }
-      }
-      const requiresApproval = lessonCheck?.requires_approval ?? false;
-      const status = requiresApproval ? "pending" : "approved";
-      const { error } = await supabase.from("pl_participations").insert({ lesson_id: id, profile_id: user.id, status });
-      if (error) { console.error("pl join error:", error); return; }
-      if (requiresApproval) {
-        setPlPending(p => [...p, id]);
-      } else {
-        setPlJoined(j => [...j, id]);
-        setRefreshKey(k => k + 1);
-      }
-      const organizerId = lessonCheck?.organizer_id;
-      if (organizerId && organizerId !== user.id) {
-        const notifType = requiresApproval ? "join_request" : "join";
-        await supabase.from("notifications").insert({ user_id: organizerId, actor_id: user.id, type: notifType });
-      }
+      setPlJoined(j => [...j, id]);
+      setRefreshKey(k => k + 1);
     }
   };
 
-  // キャンセル確定：DBからDELETE → joinedから除去 → カード再フェッチ → 主催者に通知
+  // キャンセル確定（主催者への通知はDBトリガーが処理する）
   const handleConfirmCancel = async () => {
     if (confirmId && user) {
-      const { error } = await supabase.from("participations").delete()
-        .eq("cypher_id", confirmId).eq("profile_id", user.id);
-      if (error) { console.error("cancel error:", error); setConfirmId(null); return; }
+      const { error } = await cancelCypher(user.id, confirmId);
+      if (error) { showToast(error); setConfirmId(null); return; }
       setJoined(j => j.filter(x => x !== confirmId));
       setPendingJoins(p => p.filter(x => x !== confirmId));
       setRefreshKey(k => k + 1);
-      const { data: cypherData } = await supabase.from("cyphers").select("organizer_id").eq("id", confirmId).single();
-      const organizerId = cypherData?.organizer_id;
-      if (organizerId && organizerId !== user.id) {
-        await supabase.from("notifications").insert({ user_id: organizerId, cypher_id: confirmId, actor_id: user.id, type: "leave" });
-      }
     }
     setConfirmId(null);
   };
+
+  // ─── ブラウザバックでオーバーレイを閉じる ─────────────────────────────
+  // モバイルの戻るジェスチャーでサイトから離脱してしまうのを防ぐ。
+  // オーバーレイが開くたびに履歴を1つ積み、popstateで最前面だけ閉じる。
+  const overlayCount =
+    (detail ? 1 : 0) + (plDetail ? 1 : 0) + (showNotifications ? 1 : 0) +
+    (editCypherId ? 1 : 0) + (confirmId ? 1 : 0) + profileStack.length;
+  const overlayStateRef = useRef({ detail, plDetail, showNotifications, editCypherId, confirmId, profileStack });
+  overlayStateRef.current = { detail, plDetail, showNotifications, editCypherId, confirmId, profileStack };
+  const prevOverlayCountRef = useRef(0);
+  const suppressPopRef = useRef(0);
+
+  useEffect(() => {
+    const prev = prevOverlayCountRef.current;
+    if (overlayCount > prev) {
+      for (let i = prev; i < overlayCount; i++) history.pushState({ bdOverlay: true }, "");
+    } else if (overlayCount < prev) {
+      // UI操作で閉じた分の履歴エントリを消化する（このpopstateは無視）
+      suppressPopRef.current += prev - overlayCount;
+      history.go(overlayCount - prev);
+    }
+    prevOverlayCountRef.current = overlayCount;
+  }, [overlayCount]);
+
+  useEffect(() => {
+    const onPop = () => {
+      if (suppressPopRef.current > 0) { suppressPopRef.current--; return; }
+      const s = overlayStateRef.current;
+      if (s.confirmId || s.editCypherId || s.showNotifications || s.profileStack.length > 0 || s.plDetail || s.detail) {
+        // 履歴エントリはすでに消費されているので、countの差分処理をスキップさせる
+        prevOverlayCountRef.current -= 1;
+        if (s.confirmId) setConfirmId(null);
+        else if (s.editCypherId) setEditCypherId(null);
+        else if (s.showNotifications) { setShowNotifications(false); setUnreadCount(0); }
+        else if (s.profileStack.length > 0) setProfileStack(st => st.slice(0, -1));
+        else if (s.plDetail) setPlDetail(null);
+        else if (s.detail) setDetail(null);
+      }
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   return (
     <>

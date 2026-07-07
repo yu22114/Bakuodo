@@ -47,7 +47,19 @@ npm run start  # 本番起動
 - 不要な抽象化・ヘルパー関数を作らない
 - 頼んでいない機能を追加しない
 
+## セキュリティの約束事（2026-07-07〜）
+
+- 書き込みの整合性（参加status・定員・なりすまし防止・フォロー承認）は
+  **DBトリガーとRLS**が守る。定義は `sql/2026-07-07_security.sql`。
+- **notifications へのINSERTはクライアントから禁止**（RLSにINSERTポリシーなし）。
+  通知はすべてDBトリガーが作成する。新しい通知が必要なら sql/ にトリガーを追加する。
+- クライアントは参加行を INSERT する際に status を送らない。
+  `insert().select("status").single()` でトリガーが決めた結果を読み取る。
+- スキーマ変更・ポリシー変更は `sql/` に日付付きファイルで追加し、
+  SupabaseのSQL Editorで手動適用する運用。
+
 ## 補足
 
-- Supabaseのクライアントは `lib/supabase.ts` に集約
-- 認証フローはSupabase SSR (`@supabase/ssr`) を使用
+- Supabaseのクライアントは `lib/supabase.ts` に集約（anonキー・クライアントサイド認証）
+- `/c/[id]` はサイファー共有ページ（OGPはサーバー側で生成、本体はクライアント）
+- トースト表示は `app/components/Toast.tsx` の `showToast()` を使う（alertは使わない）

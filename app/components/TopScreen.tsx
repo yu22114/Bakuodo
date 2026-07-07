@@ -8,6 +8,7 @@ import { GENRES, GENRE_COLORS, timeUntil, formatDate, formatEndTime, calcDistanc
 import { CypherCard } from "./CypherCard";
 import { PLCard } from "./PLCard";
 import { SpotCard } from "./SpotCard";
+import { showToast } from "./Toast";
 
 export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell }: {
   onNav: (s: string) => void;
@@ -38,7 +39,9 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   useEffect(() => {
     async function fetchCyphers() {
       setLoading(true);
-      const [cypherRes, partRes, followRes] = await Promise.all([
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const now = new Date().toISOString();
+      const [cypherRes, countRes, followRes] = await Promise.all([
         supabase
           .from("cyphers")
           .select(`
@@ -46,16 +49,18 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             profiles:organizer_id ( dancer_name, avatar_url, instagram ),
             cypher_genres ( genres:genre_id ( name ) )
           `)
-          .gte("starts_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
+          // これから始まるもの＋開催中のもの（深夜跨ぎでも終了時刻までは表示する）
+          .or(`starts_at.gte.${oneHourAgo},ends_at.gte.${now}`)
           .order("starts_at"),
-        supabase.from("participations").select("cypher_id").eq("status", "approved"),
+        // 参加者数は集計ビューから取得（participations全件を読まない）
+        supabase.from("cypher_participant_counts").select("cypher_id, approved_count"),
         supabase.from("follows").select("following_id").eq("follower_id", user.id).eq("status", "accepted"),
       ]);
       if (cypherRes.error) { console.error(cypherRes.error); setLoading(false); return; }
 
       const countMap: Record<string, number> = {};
-      (partRes.data ?? []).forEach((p: any) => {
-        countMap[p.cypher_id] = (countMap[p.cypher_id] ?? 0) + 1;
+      (countRes.data ?? []).forEach((p: any) => {
+        countMap[p.cypher_id] = p.approved_count ?? 0;
       });
 
       const followingIds = new Set((followRes.data ?? []).map((f: any) => f.following_id));
@@ -79,17 +84,17 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       setCyphers(shaped);
 
       // PLフェッチ
-      const [plRes, plPartRes] = await Promise.all([
+      const [plRes, plCountRes] = await Promise.all([
         supabase.from("private_lessons").select(`
           id, title, organizer_id, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval,
           profiles:organizer_id ( dancer_name, avatar_url, instagram ),
           pl_genres ( genres:genre_id ( name ) )
-        `).gte("starts_at", new Date(Date.now() - 60 * 60 * 1000).toISOString()).order("starts_at"),
-        supabase.from("pl_participations").select("lesson_id").eq("status", "approved"),
+        `).or(`starts_at.gte.${oneHourAgo},ends_at.gte.${now}`).order("starts_at"),
+        supabase.from("pl_participant_counts").select("lesson_id, approved_count"),
       ]);
       if (plRes.data) {
         const plCountMap: Record<string, number> = {};
-        (plPartRes.data ?? []).forEach((p: any) => { plCountMap[p.lesson_id] = (plCountMap[p.lesson_id] ?? 0) + 1; });
+        (plCountRes.data ?? []).forEach((p: any) => { plCountMap[p.lesson_id] = p.approved_count ?? 0; });
         const shapedPL: PrivateLesson[] = (plRes.data ?? []).map((row: any) => {
           const name = row.profiles?.dancer_name ?? "UNKNOWN";
           const genres: GenreKey[] = (row.pl_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
@@ -133,7 +138,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
 
   // 現在地取得 → 逆ジオコードでエリア名をareaTextに反映
   const handleUseLocation = async () => {
-    if (!navigator.geolocation) { alert("この端末では位置情報が使えません"); return; }
+    if (!navigator.geolocation) { showToast("この端末では位置情報が使えません"); return; }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(async pos => {
       const { latitude: lat, longitude: lng } = pos.coords;
@@ -148,7 +153,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       } catch { /* 逆ジオコード失敗しても位置情報はセット済み */ }
       setLocating(false);
     }, () => {
-      alert("位置情報の取得に失敗しました。ブラウザの設定を確認してください。");
+      showToast("位置情報の取得に失敗しました。ブラウザの設定を確認してください");
       setLocating(false);
     });
   };
@@ -196,7 +201,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       <div style={{ display: "flex", background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
         {([["cypher", "CYPHER", "#FF3D00"], ["pl", "LESSON", "#2563EB"], ["spots", "SPOTS", "#16A34A"]] as const).map(([key, label, color]) => (
           <button key={key} onClick={() => setSection(key)}
-            style={{ flex: 1, padding: "12px 4px", border: "none", borderBottom: `2px solid ${section === key ? color : "transparent"}`, background: section === key ? `${color}0f` : "transparent", color: section === key ? color : "rgba(0,0,0,0.4)", fontSize: "10px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
+            style={{ flex: 1, padding: "12px 4px", border: "none", borderBottom: `2px solid ${section === key ? color : "transparent"}`, background: section === key ? `${color}0f` : "transparent", color: section === key ? color : "rgba(0,0,0,0.55)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
             {label}
           </button>
         ))}
@@ -210,7 +215,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             const col = g === "ALL" ? "#FF3D00" : GENRE_COLORS[g as GenreKey];
             return (
               <button key={g} onClick={() => setSelectedGenres(prev => g === "ALL" ? [] : prev.includes(g as GenreKey) ? prev.filter(x => x !== g) : [...prev, g as GenreKey])}
-                style={{ flexShrink: 0, padding: "5px 12px", border: sel ? `1px solid ${col}` : "1px solid rgba(0,0,0,0.12)", borderRadius: "20px", background: sel ? `${col}18` : "transparent", color: sel ? col : "rgba(0,0,0,0.45)", fontSize: "10px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: sel ? "bold" : "normal" }}>
+                style={{ flexShrink: 0, padding: "5px 12px", border: sel ? `1px solid ${col}` : "1px solid rgba(0,0,0,0.12)", borderRadius: "20px", background: sel ? `${col}18` : "transparent", color: sel ? col : "rgba(0,0,0,0.55)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: sel ? "bold" : "normal" }}>
                 {g}
               </button>
             );
@@ -230,10 +235,10 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         </div>
       ) : section === "pl" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px", background: "linear-gradient(180deg, rgba(37,99,235,0.04) 0%, #F5F7FA 120px)" }}>
-          {loading
-            ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>LOADING...</div>
-            : lessons.length === 0
-              ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>まだプライベートレッスンがありません</div>
+          {loading && lessons.length === 0
+            ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.5)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>LOADING...</div>
+            : !loading && lessons.length === 0
+              ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.5)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>まだプライベートレッスンがありません</div>
               : lessons.map(l => <PLCard key={l.id} lesson={l} onClick={() => onPLClick(l)} />)}
         </div>
       ) : (
@@ -244,7 +249,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
               <div key={s.label} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ color: "#FF3D00" }}>{s.icon}</span>
                 <span style={{ fontSize: "18px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111" }}>{s.value}</span>
-                <span style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)" }}>{s.label}</span>
+                <span style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.5)" }}>{s.label}</span>
               </div>
             ))}
             {activeFilterCount > 0 && (
@@ -255,10 +260,11 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             )}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px", background: "#F5F7FA" }}>
-            {loading
-              ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>LOADING...</div>
-              : filtered.length === 0
-                ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>条件に合うサイファーがありません</div>
+            {/* 再フェッチ中は既存リストを出したままにする（全画面LOADINGのちらつき防止） */}
+            {loading && cyphers.length === 0
+              ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.5)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>LOADING...</div>
+              : !loading && filtered.length === 0
+                ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.5)", fontFamily: "'Space Mono',monospace", fontSize: "12px" }}>条件に合うサイファーがありません</div>
                 : filtered.map(c => <CypherCard key={c.id} cypher={c} onClick={() => onCardClick(c)} />)}
           </div>
         </>

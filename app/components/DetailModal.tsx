@@ -1,21 +1,23 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, MapPin, User, X, Check, Zap } from "lucide-react";
+import { Clock, MapPin, User, X, Check, Zap, Share2 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, ParticipantProfile } from "../lib/types";
 import { formatDate, timeUntil, formatEndTime } from "../lib/constants";
 import { GenreBadge } from "./GenreBadge";
 import { ParticipantBar } from "./ParticipantBar";
+import { showToast } from "./Toast";
 
-export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewProfile, user }: {
+export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewProfile, user, keepOpenOnJoin }: {
   cypher: Cypher | null;
   onClose: () => void;
   joined: boolean;
   pending?: boolean;
   onJoin: (id: string) => void;
   onViewProfile: (id: string) => void;
-  user: SupabaseUser;
+  user: SupabaseUser | null; // 未ログイン閲覧（/c/[id] 共有ページ）でも表示できる
+  keepOpenOnJoin?: boolean; // /c/[id] では参加後も閉じない（onCloseがページ遷移のため）
 }) {
   if (!cypher) return null;
 
@@ -60,7 +62,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
       if (data) {
         setLikes(data.filter((r: any) => r.reaction === "like").length);
         setBads(data.filter((r: any) => r.reaction === "bad").length);
-        const mine = data.find((r: any) => r.profile_id === user.id);
+        const mine = user ? data.find((r: any) => r.profile_id === user.id) : null;
         setMyReaction(mine ? mine.reaction as "like" | "bad" : null);
       }
     }
@@ -81,8 +83,9 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
 
   const handlePostComment = async () => {
     const text = commentText.trim();
-    if (!text || posting) return;
+    if (!text || posting || !user) return;
     setPosting(true);
+    // 主催者・参加者への通知はDBトリガーが作成する（sql/2026-07-07_security.sql）
     const { data, error } = await supabase
       .from("comments")
       .insert({ cypher_id: cypherId, profile_id: user.id, content: text })
@@ -91,22 +94,12 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
     if (!error && data) {
       setComments(c => [...c, { ...data, profile: (data as any).profile ?? { id: user.id, dancer_name: "YOU", avatar_url: null } }]);
       setCommentText("");
-      // 主催者 + 参加者に通知（自分以外）
-      const { data: parts } = await supabase
-        .from("participations").select("profile_id").eq("cypher_id", cypherId);
-      const targets = new Set<string>([organizerId, ...(parts ?? []).map((p: any) => p.profile_id)]);
-      targets.delete(user.id);
-      if (targets.size > 0) {
-        await supabase.from("notifications").insert(
-          Array.from(targets).map(uid => ({ user_id: uid, cypher_id: cypherId, actor_id: user.id, type: "comment" }))
-        );
-      }
     }
     setPosting(false);
   };
 
   const handleReact = async (reaction: "like" | "bad") => {
-    if (reacting) return;
+    if (reacting || !user) return;
     setReacting(true);
     if (myReaction === reaction) {
       await supabase.from("cypher_reactions").delete().eq("cypher_id", cypherId).eq("profile_id", user.id);
@@ -126,6 +119,17 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
     setReacting(false);
   };
 
+  // /c/[id] の共有リンクを配る（対応端末はOSの共有シート、なければコピー）
+  const handleShare = async () => {
+    const url = `${window.location.origin}/c/${cypherId}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: `${cypher.title} | 爆踊`, url }); } catch { /* ユーザーが共有をやめた */ }
+    } else {
+      await navigator.clipboard.writeText(url);
+      showToast("リンクをコピーしました");
+    }
+  };
+
   function timeAgo(iso: string) {
     const diff = Date.now() - new Date(iso).getTime();
     const min = Math.floor(diff / 60000);
@@ -142,7 +146,8 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
       <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderBottom: "none", borderRadius: "12px 12px 0 0", maxHeight: "88vh", display: "flex", flexDirection: "column", boxShadow: "0 -4px 24px rgba(0,0,0,0.1)" }}>
         <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0, borderRadius: "12px 12px 0 0" }}>
           <h2 style={{ margin: 0, fontSize: "24px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111", lineHeight: 1.1, flex: 1 }}>{cypher.title}</h2>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.4)", cursor: "pointer", marginLeft: "12px", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><X size={22} /></button>
+          <button onClick={handleShare} title="共有" style={{ background: "none", border: "none", color: "rgba(0,0,0,0.5)", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Share2 size={19} /></button>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.5)", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><X size={22} /></button>
         </div>
         <div style={{ overflowY: "auto", padding: "8px 20px 0", flex: 1 }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
@@ -165,7 +170,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
               <User size={14} color="rgba(0,0,0,0.4)" /> 主催: {cypher.organizer.dancer_name}
             </button>
           </div>
-          {cypher.description && <p style={{ fontSize: "13px", color: "rgba(0,0,0,0.55)", lineHeight: 1.7, marginBottom: "20px", fontFamily: "'Space Mono',monospace" }}>{cypher.description}</p>}
+          {cypher.description && <p style={{ fontSize: "13px", color: "rgba(0,0,0,0.65)", lineHeight: 1.7, marginBottom: "20px", fontFamily: "'Space Mono',monospace" }}>{cypher.description}</p>}
           <ParticipantBar count={participantsFetched ? participants.length : cypher.participant_count} max={cypher.max_members} />
 
           {/* いいね・BAD */}
@@ -182,7 +187,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
 
           {participants.length > 0 && (
             <div style={{ marginTop: "16px" }}>
-              <div style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.15em", marginBottom: "8px" }}>PARTICIPANTS</div>
+              <div style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.5)", letterSpacing: "0.15em", marginBottom: "8px" }}>PARTICIPANTS</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 {participants.map(p => (
                   <button key={p.profile_id} onClick={() => onViewProfile(p.profile_id)}
@@ -208,7 +213,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
                 定員に達しています（{participants.length}/{cypher.max_members}人）
               </div>
             ) : (
-              <button onClick={() => { onJoin(cypher.id); if (!joined && !pending) onClose(); }}
+              <button onClick={() => { onJoin(cypher.id); if (!joined && !pending && !keepOpenOnJoin) onClose(); }}
                 style={{ marginTop: "20px", width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: joined ? "rgba(22,163,74,0.1)" : pending ? "rgba(0,0,0,0.06)" : "#FF3D00", color: joined ? "#16A34A" : pending ? "rgba(0,0,0,0.45)" : "#fff", fontSize: "14px", fontFamily: "'Bebas Neue',sans-serif", letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
                 {joined ? <><Check size={16} /> 参加済み — キャンセルする</> : pending ? <>申請中... — キャンセルする</> : cypher.requires_approval ? <>📋 参加を申請する</> : <><Zap size={16} /> このサイファーに参加する</>}
               </button>
@@ -216,9 +221,9 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
           })()}
 
           <div style={{ marginTop: "28px", borderTop: "1px solid rgba(0,0,0,0.07)", paddingTop: "20px" }}>
-            <div style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.15em", marginBottom: "14px" }}>COMMENTS{comments.length > 0 ? ` (${comments.length})` : ""}</div>
+            <div style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.5)", letterSpacing: "0.15em", marginBottom: "14px" }}>COMMENTS{comments.length > 0 ? ` (${comments.length})` : ""}</div>
             {comments.length === 0 ? (
-              <p style={{ fontSize: "12px", color: "rgba(0,0,0,0.3)", fontFamily: "'Space Mono',monospace", marginBottom: "16px" }}>まだコメントはありません</p>
+              <p style={{ fontSize: "12px", color: "rgba(0,0,0,0.5)", fontFamily: "'Space Mono',monospace", marginBottom: "16px" }}>まだコメントはありません</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "16px" }}>
                 {comments.map(c => (
@@ -244,6 +249,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
           </div>
         </div>
 
+        {user ? (
         <div style={{ padding: "12px 16px 24px", borderTop: "1px solid rgba(0,0,0,0.07)", background: "#FFFFFF", display: "flex", gap: "8px", alignItems: "flex-end" }}>
           <textarea
             value={commentText}
@@ -261,6 +267,11 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
           </button>
         </div>
+        ) : (
+        <div style={{ padding: "14px 16px 24px", borderTop: "1px solid rgba(0,0,0,0.07)", background: "#FFFFFF", textAlign: "center", fontSize: "12px", color: "rgba(0,0,0,0.5)", fontFamily: "'Space Mono',monospace" }}>
+          コメントや参加にはログインが必要です
+        </div>
+        )}
       </div>
     </div>
   );

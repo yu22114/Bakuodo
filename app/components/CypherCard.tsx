@@ -21,7 +21,7 @@ export function CypherCard({ cypher, onClick }: { cypher: Cypher; onClick: () =>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
         <div style={{ flex: 1, paddingRight: "44px" }}>
           <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#111111", fontFamily: "'Bebas Neue',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{cypher.title}</h3>
-          <div style={{ fontSize: "10px", color: "rgba(0,0,0,0.4)", marginTop: "2px", fontFamily: "'Space Mono',monospace", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+          <div style={{ fontSize: "11px", color: "rgba(0,0,0,0.55)", marginTop: "2px", fontFamily: "'Space Mono',monospace", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
             <span>by {cypher.organizer.dancer_name}</span>
             {cypher.organizer.instagram && (
               <a href={`https://instagram.com/${cypher.organizer.instagram}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ color: "#A855F7", textDecoration: "none" }}>@{cypher.organizer.instagram}</a>

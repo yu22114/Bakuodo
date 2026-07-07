@@ -97,18 +97,16 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       await supabase.from("follows").delete().eq("follower_id", currentUserId).eq("following_id", profileId);
       setFollowStatus("none");
     } else {
-      // 新規フォロー or 申請
-      const isPrivate = profileData?.is_private ?? false;
-      const status = isPrivate ? "pending" : "accepted";
-      await supabase.from("follows").insert({ follower_id: currentUserId, following_id: profileId, status });
-      if (isPrivate) {
-        // 承認リクエスト通知
-        await supabase.from("notifications").insert({ user_id: profileId, actor_id: currentUserId, type: "follow_request" });
-      } else {
-        await supabase.from("notifications").insert({ user_id: profileId, actor_id: currentUserId, type: "follow" });
-        setFollowerCount(n => n + 1);
+      // 新規フォロー or 申請。status（鍵アカならpending）と相手への通知はDBトリガーが決める
+      const { data, error } = await supabase.from("follows")
+        .insert({ follower_id: currentUserId, following_id: profileId })
+        .select("status")
+        .single();
+      if (!error && data) {
+        const status = data.status === "pending" ? "pending" : "accepted";
+        if (status === "accepted") setFollowerCount(n => n + 1);
+        setFollowStatus(status);
       }
-      setFollowStatus(status);
     }
     setFollowLoading(false);
   };

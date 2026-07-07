@@ -17,20 +17,26 @@ export async function GET(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const threshold = new Date(Date.now() - 60 * 60 * 1000).toISOString(); // 終了から1時間後
+  const threshold = Date.now() - 60 * 60 * 1000; // 終了から1時間後
 
-  // 削除対象のcypher_idを先に取得
-  const { data: expired, error: fetchError } = await supabase
+  // 削除候補（開始が閾値より前）を取得し、終了時刻がある場合はそちらで判定する。
+  // starts_at だけで消すと、深夜跨ぎなど長時間のサイファーが開催中に消えてしまう。
+  const { data: candidates, error: fetchError } = await supabase
     .from("cyphers")
-    .select("id")
-    .lt("starts_at", threshold);
+    .select("id, starts_at, ends_at")
+    .lt("starts_at", new Date(threshold).toISOString());
 
   if (fetchError) {
     console.error("cleanup fetch error:", fetchError);
     return NextResponse.json({ error: fetchError.message }, { status: 500 });
   }
 
-  if (!expired || expired.length === 0) {
+  const expired = (candidates ?? []).filter(
+    (c: { starts_at: string; ends_at: string | null }) =>
+      new Date(c.ends_at ?? c.starts_at).getTime() < threshold
+  );
+
+  if (expired.length === 0) {
     return NextResponse.json({ deleted: 0 });
   }
 

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Bell, ChevronLeft, Check, X } from "lucide-react";
 import { supabase } from "../../lib/supabase";
+import { showToast } from "./Toast";
 
 export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
   currentUserId: string;
@@ -27,7 +28,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
     async function fetchAndMarkRead() {
       const { data } = await supabase
         .from("notifications")
-        .select("id, type, read, created_at, actor:actor_id(id,dancer_name,avatar_url), cypher:cypher_id(id,title)")
+        .select("id, type, read, created_at, actor:actor_id(id,dancer_name,avatar_url), cypher:cypher_id(id,title), lesson:lesson_id(id,title)")
         .eq("user_id", currentUserId)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -38,28 +39,43 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
     fetchAndMarkRead();
   }, [currentUserId]);
 
-  const handleApprove = async (notifId: string, actorId: string, type: string, cypherId?: string) => {
+  const handleApprove = async (notifId: string, actorId: string, type: string, cypherId?: string, lessonId?: string) => {
     setActionLoading(notifId);
+    // 申請者への通知はDBトリガーが作成する（sql/2026-07-07_security.sql）
     if (type === "follow_request") {
       await supabase.from("follows").update({ status: "accepted" }).eq("follower_id", actorId).eq("following_id", currentUserId);
-      await supabase.from("notifications").insert({ user_id: actorId, actor_id: currentUserId, type: "follow" });
     } else if (type === "join_request" && cypherId) {
-      // 自分がそのサイファーの主催者であることをDBで確認してから承認
+      // 承認できるのは主催者のみ（DBトリガーでも強制されるが、UI側でも確認）
       const { data: cypher } = await supabase.from("cyphers").select("organizer_id").eq("id", cypherId).single();
       if (!cypher || cypher.organizer_id !== currentUserId) { setActionLoading(null); return; }
-      await supabase.from("participations").update({ status: "approved" }).eq("cypher_id", cypherId).eq("profile_id", actorId);
-      await supabase.from("notifications").insert({ user_id: actorId, actor_id: currentUserId, cypher_id: cypherId, type: "join_approved" });
+      const { error } = await supabase.from("participations").update({ status: "approved" }).eq("cypher_id", cypherId).eq("profile_id", actorId);
+      if (error) {
+        showToast(error.message.includes("CAPACITY_FULL") ? "定員に達しているため承認できません" : "承認に失敗しました");
+        setActionLoading(null);
+        return;
+      }
+    } else if (type === "join_request" && lessonId) {
+      const { data: lesson } = await supabase.from("private_lessons").select("organizer_id").eq("id", lessonId).single();
+      if (!lesson || lesson.organizer_id !== currentUserId) { setActionLoading(null); return; }
+      const { error } = await supabase.from("pl_participations").update({ status: "approved" }).eq("lesson_id", lessonId).eq("profile_id", actorId);
+      if (error) {
+        showToast(error.message.includes("CAPACITY_FULL") ? "定員に達しているため承認できません" : "承認に失敗しました");
+        setActionLoading(null);
+        return;
+      }
     }
     setItems(prev => prev.filter(n => n.id !== notifId));
     setActionLoading(null);
   };
 
-  const handleReject = async (notifId: string, actorId: string, type: string, cypherId?: string) => {
+  const handleReject = async (notifId: string, actorId: string, type: string, cypherId?: string, lessonId?: string) => {
     setActionLoading(notifId);
     if (type === "follow_request") {
       await supabase.from("follows").delete().eq("follower_id", actorId).eq("following_id", currentUserId);
     } else if (type === "join_request" && cypherId) {
       await supabase.from("participations").delete().eq("cypher_id", cypherId).eq("profile_id", actorId);
+    } else if (type === "join_request" && lessonId) {
+      await supabase.from("pl_participations").delete().eq("lesson_id", lessonId).eq("profile_id", actorId);
     }
     setItems(prev => prev.filter(n => n.id !== notifId));
     setActionLoading(null);
@@ -87,8 +103,9 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
         ) : items.map(n => {
           const actor = n.actor as any;
           const cypher = n.cypher as any;
+          const lesson = n.lesson as any;
           const actorName = actor?.dancer_name ?? "UNKNOWN";
-          const cypherTitle = cypher?.title ?? "サイファー";
+          const cypherTitle = cypher?.title ?? lesson?.title ?? "サイファー";
           return (
             <div key={n.id} style={{ padding: "14px 16px", borderBottom: "1px solid rgba(0,0,0,0.06)", background: n.read ? "transparent" : "rgba(255,61,0,0.03)", display: "flex", alignItems: "center", gap: "12px" }}>
               <button onClick={() => actor?.id && onViewProfile?.(actor.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}>
@@ -110,14 +127,14 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
                                                   `「${cypherTitle}」をキャンセルしました`
                   }
                 </p>
-                <p style={{ margin: "3px 0 0", fontSize: "10px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace" }}>{timeAgo(n.created_at)}</p>
+                <p style={{ margin: "3px 0 0", fontSize: "10px", color: "rgba(0,0,0,0.55)", fontFamily: "'Space Mono',monospace" }}>{timeAgo(n.created_at)}</p>
                 {(n.type === "follow_request" || n.type === "join_request") && (
                   <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-                    <button onClick={() => handleApprove(n.id, actor?.id, n.type, cypher?.id)} disabled={actionLoading === n.id}
+                    <button onClick={() => handleApprove(n.id, actor?.id, n.type, cypher?.id, lesson?.id)} disabled={actionLoading === n.id}
                       style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", background: "#FF3D00", border: "none", borderRadius: "6px", color: "#fff", fontSize: "11px", fontFamily: "'Space Mono',monospace", fontWeight: "bold", cursor: "pointer", opacity: actionLoading === n.id ? 0.6 : 1 }}>
                       <Check size={11} /> 承認
                     </button>
-                    <button onClick={() => handleReject(n.id, actor?.id, n.type, cypher?.id)} disabled={actionLoading === n.id}
+                    <button onClick={() => handleReject(n.id, actor?.id, n.type, cypher?.id, lesson?.id)} disabled={actionLoading === n.id}
                       style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", background: "transparent", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "6px", color: "rgba(0,0,0,0.45)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", opacity: actionLoading === n.id ? 0.6 : 1 }}>
                       <X size={11} /> 拒否
                     </button>
