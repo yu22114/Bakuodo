@@ -205,8 +205,10 @@ export default function BakuOdori() {
         @keyframes bdSlideFromRight{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
         @keyframes bdSlideFromLeft{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:translateX(0)}}
         /* 画面を開いた時、ロゴが左から転がってきて中央に止まる。
-           回転量は移動距離÷半径に合わせてあるので、滑らずに転がって見える */
+           回転量は「移動距離÷半径」に合わせると滑らず転がって見えるので、
+           ロゴのサイズごとに角度を変える（同じ距離なら大きい球ほど回転は少ない） */
         @keyframes bdLogoRollIn{from{transform:translateX(-200px) rotate(-440deg)}to{transform:translateX(0) rotate(0deg)}}
+        @keyframes bdLogoRollInLg{from{transform:translateX(-200px) rotate(-174deg)}to{transform:translateX(0) rotate(0deg)}}
       `}</style>
 
       <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#FAFAFA" }}>
