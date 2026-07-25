@@ -204,7 +204,9 @@ export default function BakuOdori() {
         @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
         @keyframes bdSlideFromRight{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
         @keyframes bdSlideFromLeft{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:translateX(0)}}
-        @keyframes bdLogoRoll{from{left:-15%;transform:rotate(0deg)}to{left:115%;transform:rotate(1080deg)}}
+        /* 画面を開いた時、ロゴが左から転がってきて中央に止まる。
+           回転量は移動距離÷半径に合わせてあるので、滑らずに転がって見える */
+        @keyframes bdLogoRollIn{from{transform:translateX(-200px) rotate(-440deg)}to{transform:translateX(0) rotate(0deg)}}
       `}</style>
 
       <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#FAFAFA" }}>
