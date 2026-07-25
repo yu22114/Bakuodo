@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabase";
 import type { FormState, GenreKey } from "../lib/types";
 import { GENRES, GENRE_COLORS, START_TIME_OPTIONS, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
+import { Loading } from "./Loading";
 
 export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
   cypherId: string;
@@ -73,7 +74,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
 
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "50vh" }}>
-      <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", color: "rgba(0,0,0,0.3)" }}>LOADING...</div>
+      <Loading />
     </div>
   );
 

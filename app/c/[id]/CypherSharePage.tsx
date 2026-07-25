@@ -8,6 +8,7 @@ import { joinCypher, cancelCypher } from "../../lib/participation";
 import { showToast } from "../../components/Toast";
 import { DetailModal } from "../../components/DetailModal";
 import { ConfirmModal } from "../../components/ConfirmModal";
+import { Loading } from "../../components/Loading";
 
 // /c/[id] — 共有リンクから開くサイファー詳細。
 // 未ログインでも閲覧でき、参加やコメントはログイン後にトップから行う。
@@ -66,8 +67,8 @@ export function CypherSharePage({ cypherId }: { cypherId: string }) {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", color: "rgba(0,0,0,0.5)" }}>
-        LOADING...
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <Loading size={56} />
       </div>
     );
   }

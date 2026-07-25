@@ -10,8 +10,11 @@ import { PLCard } from "./PLCard";
 import { SpotCard } from "./SpotCard";
 import { Logo } from "./Logo";
 import { showToast } from "./Toast";
+import { Loading } from "./Loading";
 
-export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell }: {
+export type TopSection = "cypher" | "pl" | "spots";
+
+export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell, section, onSectionChange }: {
   onNav: (s: string) => void;
   onCardClick: (c: Cypher) => void;
   onPLClick: (l: PrivateLesson) => void;
@@ -22,18 +25,21 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   myAvatarUrl: string | null;
   unreadCount: number;
   onBell: () => void;
+  // 表示中のセクションはpage.tsxが持つ。投稿画面を開いた時にどちらの
+  // 作成フォームを出すか決めるのに使うため、画面を離れても覚えておきたい
+  section: TopSection;
+  onSectionChange: (s: TopSection) => void;
 }) {
   const SECTION_ORDER = ["cypher", "pl", "spots"] as const;
-  const [section, setSection] = useState<"cypher" | "pl" | "spots">("cypher");
   const [slideDir, setSlideDir] = useState<1 | -1>(1);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  const goToSection = (next: "cypher" | "pl" | "spots") => {
+  const goToSection = (next: TopSection) => {
     const curIdx = SECTION_ORDER.indexOf(section);
     const nextIdx = SECTION_ORDER.indexOf(next);
     if (nextIdx === curIdx) return;
     setSlideDir(nextIdx > curIdx ? 1 : -1);
-    setSection(next);
+    onSectionChange(next);
   };
 
   const handleContentTouchStart = (e: React.TouchEvent) => {
@@ -294,10 +300,10 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       ) : section === "pl" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px", background: "linear-gradient(180deg, rgba(37,99,235,0.04) 0%, #F5F7FA 120px)" }}>
           {loading && lessons.length === 0
-            ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.5)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>LOADING...</div>
+            ? <Loading />
             : !loading && lessons.length === 0
               ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.5)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだプライベートレッスンがありません</div>
-              : lessons.map(l => <PLCard key={l.id} lesson={l} onClick={() => onPLClick(l)} />)}
+              : lessons.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => onPLClick(l)} />)}
         </div>
       ) : (
         <>
@@ -320,10 +326,10 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px", background: "#F5F7FA" }}>
             {/* 再フェッチ中は既存リストを出したままにする（全画面LOADINGのちらつき防止） */}
             {loading && cyphers.length === 0
-              ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.5)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>LOADING...</div>
+              ? <Loading />
               : !loading && filtered.length === 0
                 ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.5)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>条件に合うサイファーがありません</div>
-                : filtered.map(c => <CypherCard key={c.id} cypher={c} onClick={() => onCardClick(c)} />)}
+                : filtered.map((c, i) => <CypherCard key={c.id} cypher={c} index={i} onClick={() => onCardClick(c)} />)}
           </div>
         </>
       )}

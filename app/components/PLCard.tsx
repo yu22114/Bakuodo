@@ -13,16 +13,18 @@ const LEVEL_LABELS: Record<string, string> = {
   advanced: "上級者",
 };
 
-export function PLCard({ lesson, onClick }: { lesson: PrivateLesson; onClick: () => void }) {
+export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; onClick: () => void; index?: number }) {
   const { date, time } = formatDate(lesson.starts_at);
   const until = timeUntil(lesson.starts_at);
   const [hover, setHover] = useState(false);
   const color = GENRE_COLORS[lesson.genres[0]] ?? "#2563EB";
   const isEnded = until === "終了";
 
+  // 登場アニメは外側、ホバーの動きは内側（CypherCardと同じ理由）
   return (
+    <div style={{ animation: `bdCardFloatIn 0.45s ease-out ${Math.min(index * 60, 400)}ms both` }}>
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-      style={{ background: "#FFFFFF", border: `1px solid ${hover ? "rgba(37,99,235,0.3)" : "rgba(0,0,0,0.08)"}`, borderLeft: `4px solid ${isEnded ? "rgba(0,0,0,0.1)" : "#2563EB"}`, borderRadius: "10px", padding: "18px", cursor: "pointer", transition: "all 0.2s ease", transform: hover ? "translateY(-1px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? "0 4px 16px rgba(37,99,235,0.12)" : "0 1px 5px rgba(0,0,0,0.06)", opacity: isEnded ? 0.55 : 1 }}>
+      style={{ background: "#FFFFFF", border: `1px solid ${hover ? "rgba(37,99,235,0.3)" : "rgba(0,0,0,0.08)"}`, borderLeft: `4px solid ${isEnded ? "rgba(0,0,0,0.1)" : "#2563EB"}`, borderRadius: "10px", padding: "18px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? "0 6px 12px rgba(0,0,0,0.05), 0 18px 36px rgba(37,99,235,0.18)" : "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(0,0,0,0.06)", opacity: isEnded ? 0.55 : 1 }}>
       {/* PLバッジ */}
       <div style={{ position: "absolute", top: 0, left: 0, background: "#2563EB", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold", borderBottomRightRadius: "4px" }}>PL</div>
       {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(0,0,0,0.1)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.45)", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
@@ -33,7 +35,7 @@ export function PLCard({ lesson, onClick }: { lesson: PrivateLesson; onClick: ()
           <div style={{ fontSize: "12px", color: "rgba(0,0,0,0.55)", marginTop: "3px", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
             <span>by {lesson.organizer.dancer_name}</span>
             {lesson.organizer.instagram && (
-              <a href={`https://instagram.com/${lesson.organizer.instagram}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ color: "#A855F7", textDecoration: "none" }}>@{lesson.organizer.instagram}</a>
+              <span style={{ color: "#A855F7" }}>@{lesson.organizer.instagram}</span>
             )}
           </div>
         </div>
@@ -50,10 +52,11 @@ export function PLCard({ lesson, onClick }: { lesson: PrivateLesson; onClick: ()
           <span style={{ fontSize: "11px", color: "rgba(0,0,0,0.6)", fontFamily: "'Noto Sans JP',sans-serif" }}>{date} {time}{lesson.ends_at ? `〜${formatEndTime(lesson.starts_at, lesson.ends_at)}` : ""}</span>
           <span style={{ fontSize: "9px", padding: "1px 6px", background: isEnded ? "rgba(0,0,0,0.06)" : "rgba(37,99,235,0.08)", borderRadius: "3px", color: isEnded ? "rgba(0,0,0,0.4)" : "#2563EB", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold" }}>{until}</span>
         </div>
-        <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lesson.location)}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: "6px", textDecoration: "none" }}>
+        {/* カード上では地図リンクにしない（CypherCardと同じ理由） */}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <MapPin size={11} color="rgba(0,0,0,0.35)" />
-          <span style={{ fontSize: "11px", color: "rgba(0,0,0,0.6)", fontFamily: "'Noto Sans JP',sans-serif", textDecoration: "underline dotted", textUnderlineOffset: "2px" }}>{lesson.location}</span>
-        </a>
+          <span style={{ fontSize: "11px", color: "rgba(0,0,0,0.6)", fontFamily: "'Noto Sans JP',sans-serif" }}>{lesson.location}</span>
+        </div>
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginBottom: "10px" }}>
@@ -69,6 +72,7 @@ export function PLCard({ lesson, onClick }: { lesson: PrivateLesson; onClick: ()
       </div>
 
       <ParticipantBar count={lesson.participant_count} max={lesson.max_members} />
+    </div>
     </div>
   );
 }

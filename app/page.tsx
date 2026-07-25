@@ -7,7 +7,7 @@ import { fetchCypherById, fetchLessonById } from "./lib/fetchDetail";
 import { joinCypher, cancelCypher, joinLesson, cancelLesson } from "./lib/participation";
 import { showToast } from "./components/Toast";
 import { LoginScreen } from "./components/LoginScreen";
-import { TopScreen } from "./components/TopScreen";
+import { TopScreen, type TopSection } from "./components/TopScreen";
 import { PostScreen } from "./components/PostScreen";
 import { PublicProfileScreen } from "./components/PublicProfileScreen";
 import { EditProfileScreen } from "./components/EditProfileScreen";
@@ -17,6 +17,7 @@ import { PLDetailModal } from "./components/PLDetailModal";
 import { ConfirmModal } from "./components/ConfirmModal";
 import { NotificationScreen } from "./components/NotificationScreen";
 import { BottomNav } from "./components/BottomNav";
+import { Loading } from "./components/Loading";
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
 export default function BakuOdori() {
@@ -42,6 +43,9 @@ export default function BakuOdori() {
   const [showNotifications, setShowNotifications] = useState(false);
   // サイファー編集
   const [editCypherId, setEditCypherId] = useState<string | null>(null);
+  // トップで開いているセクション。LESSONを見ている時に投稿を押したら
+  // レッスン作成フォームが開くようにするため、画面をまたいで保持する
+  const [topSection, setTopSection] = useState<TopSection>("cypher");
 
   // ログイン時にprofilesレコードを自動作成（存在しない場合のみ）
   const ensureProfile = async (u: SupabaseUser) => {
@@ -209,19 +213,21 @@ export default function BakuOdori() {
            ロゴのサイズごとに角度を変える（同じ距離なら大きい球ほど回転は少ない） */
         @keyframes bdLogoRollIn{from{transform:translateX(-200px) rotate(-440deg)}to{transform:translateX(0) rotate(0deg)}}
         @keyframes bdLogoRollInLg{from{transform:translateX(-200px) rotate(-174deg)}to{transform:translateX(0) rotate(0deg)}}
+        /* カードが下からふわっと浮かび上がってくる。1枚ずつ少しずつ遅らせて出す */
+        @keyframes bdCardFloatIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
       `}</style>
 
       <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#FAFAFA" }}>
         {authLoading ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
-            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "24px", color: "rgba(0,0,0,0.3)", letterSpacing: "0.2em" }}>LOADING...</div>
+            <Loading size={64} />
           </div>
         ) : !user ? (
           <LoginScreen />
         ) : (
           <>
-            {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} onPLClick={setPlDetail} onViewProfile={id => setProfileStack(s => [...s, id])} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} />}
-            {screen === "post"    && <PostScreen onNav={setScreen} user={user} />}
+            {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} onPLClick={setPlDetail} onViewProfile={id => setProfileStack(s => [...s, id])} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} section={topSection} onSectionChange={setTopSection} />}
+            {screen === "post"    && <PostScreen onNav={setScreen} user={user} initialTab={topSection === "pl" ? "pl" : "cypher"} />}
             {screen === "profile" && <PublicProfileScreen profileId={user.id} currentUserId={user.id} onEdit={() => setScreen("edit")} onLogout={() => supabase.auth.signOut()} onViewProfile={id => setProfileStack(s => [...s, id])} onCypherClick={openCypherDetail} onLessonClick={openLessonDetail} onEditCypher={id => setEditCypherId(id)} />}
             {screen === "edit"    && <EditProfileScreen user={user} onDancerNameChange={setDancerName} onAvatarChange={setMyAvatarUrl} onBack={() => setScreen("profile")} />}
             <BottomNav current={screen} onNav={s => { setScreen(s); setProfileStack([]); }} />

@@ -5,6 +5,7 @@ import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { ProfileState } from "../lib/types";
 import { GENRES, GENRE_COLORS } from "../lib/constants";
+import { Loading } from "./Loading";
 
 export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, onBack }: {
   user: SupabaseUser;
@@ -104,7 +105,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
 
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "50vh" }}>
-      <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", color: "rgba(0,0,0,0.3)" }}>LOADING...</div>
+      <Loading />
     </div>
   );
 

@@ -82,10 +82,11 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
             <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center" }}>
               <Clock size={14} color="rgba(0,0,0,0.4)" /> {date} {time}{lesson.ends_at ? `〜${formatEndTime(lesson.starts_at, lesson.ends_at)}` : ""}
             </div>
-            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lesson.location)}`} target="_blank" rel="noopener noreferrer" style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", textDecoration: "none" }}>
+            {/* 地図へ飛べるのはここだけ。押せる場所だと分かるよう枠で囲う（DetailModalと同じ） */}
+            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lesson.location)}`} target="_blank" rel="noopener noreferrer" style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", textDecoration: "none", border: "1px solid rgba(0,0,0,0.12)", borderRadius: "8px", padding: "10px 12px", minHeight: "44px", background: "#FAFAFA" }}>
               <MapPin size={14} color="rgba(0,0,0,0.4)" />
-              <span style={{ textDecoration: "underline dotted", textUnderlineOffset: "2px" }}>{lesson.location}</span>
-              <span style={{ fontSize: "9px", color: "#2563EB", letterSpacing: "0.05em" }}>MAP →</span>
+              <span style={{ flex: 1 }}>{lesson.location}</span>
+              <span style={{ fontSize: "11px", color: "#2563EB", fontWeight: 700, flexShrink: 0 }}>地図を開く →</span>
             </a>
             <button onClick={() => onViewProfile(lesson.organizer.id)} style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
               <User size={14} color="rgba(0,0,0,0.4)" /> 講師: {lesson.organizer.dancer_name}

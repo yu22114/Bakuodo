@@ -6,15 +6,18 @@ import { GENRE_COLORS, formatDate, timeUntil, formatEndTime } from "../lib/const
 import { GenreBadge } from "./GenreBadge";
 import { ParticipantBar } from "./ParticipantBar";
 
-export function CypherCard({ cypher, onClick }: { cypher: Cypher; onClick: () => void }) {
+export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onClick: () => void; index?: number }) {
   const { date, time } = formatDate(cypher.starts_at);
   const until = timeUntil(cypher.starts_at);
   const [hover, setHover] = useState(false);
   const color = GENRE_COLORS[cypher.genres[0]] ?? "#FF3D00";
   const isEnded = until === "終了";
+  // 浮かび上がる登場は外側のdivに持たせる。内側のカードはホバーで動かすので
+  // 同じ要素にアニメーションを乗せるとtransformが競合してホバーが効かなくなる
   return (
+    <div style={{ animation: `bdCardFloatIn 0.45s ease-out ${Math.min(index * 60, 400)}ms both` }}>
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-      style={{ background: "#FFFFFF", border: `1px solid ${cypher.hot && !isEnded ? "rgba(255,61,0,0.25)" : "rgba(0,0,0,0.08)"}`, borderLeft: `4px solid ${isEnded ? "rgba(0,0,0,0.1)" : color}`, borderRadius: "10px", padding: "18px", cursor: "pointer", transition: "all 0.2s ease", transform: hover ? "translateY(-1px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? `0 4px 16px ${color}20` : "0 1px 5px rgba(0,0,0,0.06)", opacity: isEnded ? 0.55 : 1 }}>
+      style={{ background: "#FFFFFF", border: `1px solid ${cypher.hot && !isEnded ? "rgba(255,61,0,0.25)" : "rgba(0,0,0,0.08)"}`, borderLeft: `4px solid ${isEnded ? "rgba(0,0,0,0.1)" : color}`, borderRadius: "10px", padding: "18px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? `0 6px 12px rgba(0,0,0,0.05), 0 18px 36px ${color}26` : "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(0,0,0,0.06)", opacity: isEnded ? 0.55 : 1 }}>
       {cypher.hot && !isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "#FF3D00", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>🔥 HOT</div>}
       {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(0,0,0,0.1)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.45)", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
       {cypher.visibility === "private" && !isEnded && !cypher.hot && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(0,0,0,0.65)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>🔒 限定</div>}
@@ -24,7 +27,7 @@ export function CypherCard({ cypher, onClick }: { cypher: Cypher; onClick: () =>
           <div style={{ fontSize: "12px", color: "rgba(0,0,0,0.55)", marginTop: "3px", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
             <span>by {cypher.organizer.dancer_name}</span>
             {cypher.organizer.instagram && (
-              <a href={`https://instagram.com/${cypher.organizer.instagram}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ color: "#A855F7", textDecoration: "none" }}>@{cypher.organizer.instagram}</a>
+              <span style={{ color: "#A855F7" }}>@{cypher.organizer.instagram}</span>
             )}
           </div>
         </div>
@@ -40,16 +43,12 @@ export function CypherCard({ cypher, onClick }: { cypher: Cypher; onClick: () =>
           <span style={{ fontSize: "11px", color: "rgba(0,0,0,0.6)", fontFamily: "'Noto Sans JP',sans-serif" }}>{date} {time}{cypher.ends_at ? `〜${formatEndTime(cypher.starts_at, cypher.ends_at)}` : ""}</span>
           <span style={{ fontSize: "9px", padding: "1px 6px", background: isEnded ? "rgba(0,0,0,0.06)" : "rgba(255,61,0,0.08)", borderRadius: "3px", color: isEnded ? "rgba(0,0,0,0.4)" : "#FF3D00", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold" }}>{until}</span>
         </div>
-        <a
-          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cypher.location)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={e => e.stopPropagation()}
-          style={{ display: "flex", alignItems: "center", gap: "6px", textDecoration: "none" }}
-        >
+        {/* カード上では地図リンクにしない。カードのどこを押しても詳細が開くようにして、
+            「カードを押したつもりが地図に飛ぶ」のを防ぐ。地図へは詳細モーダルから飛べる */}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <MapPin size={11} color="rgba(0,0,0,0.35)" />
-          <span style={{ fontSize: "11px", color: "rgba(0,0,0,0.6)", fontFamily: "'Noto Sans JP',sans-serif", textDecoration: "underline dotted", textUnderlineOffset: "2px" }}>{cypher.location}</span>
-        </a>
+          <span style={{ fontSize: "11px", color: "rgba(0,0,0,0.6)", fontFamily: "'Noto Sans JP',sans-serif" }}>{cypher.location}</span>
+        </div>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginBottom: "12px" }}>
         {cypher.genres.map(g => <GenreBadge key={g} genre={g} />)}
@@ -60,6 +59,7 @@ export function CypherCard({ cypher, onClick }: { cypher: Cypher; onClick: () =>
         )}
       </div>
       <ParticipantBar count={cypher.participant_count} max={cypher.max_members} />
+    </div>
     </div>
   );
 }

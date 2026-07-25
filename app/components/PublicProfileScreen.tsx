@@ -5,6 +5,7 @@ import { supabase } from "../../lib/supabase";
 import type { GenreKey } from "../lib/types";
 import { formatDate, timeUntil } from "../lib/constants";
 import { GenreBadge } from "./GenreBadge";
+import { Loading } from "./Loading";
 
 export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogout, onViewProfile, onCypherClick, onLessonClick, onEditCypher }: {
   profileId: string;
@@ -259,7 +260,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
       <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "10px" }}>
         {loading ? (
-          <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>LOADING...</div>
+          <Loading />
         ) : mainTab === "profile" ? (
           profileData && (profileData.instagram || profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) ? (
             <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "10px", overflow: "hidden" }}>

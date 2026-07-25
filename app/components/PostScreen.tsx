@@ -1,24 +1,76 @@
 "use client";
-import { useState } from "react";
-import { Check, Zap, BookOpen } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Check, Zap, BookOpen, RotateCcw } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { FormState } from "../lib/types";
 import { GENRES, GENRE_COLORS, START_TIME_OPTIONS, DEFAULT_START_TIME, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
 
-export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: SupabaseUser }) {
-  const [tab, setTab] = useState<"cypher" | "pl">("cypher");
-  const [form, setForm] = useState<FormState>({ title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [], description: "", max_members: "", payment: [], studio_fee: "" });
+const DRAFT_KEY = "bakuodori:post-draft:v1";
+const EMPTY_FORM: FormState = { title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [], description: "", max_members: "", payment: [], studio_fee: "" };
+const EMPTY_PL = { title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [] as string[], description: "", max_members: "", price: "", target_level: "all" };
+
+export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: string) => void; user: SupabaseUser; initialTab?: "cypher" | "pl" }) {
+  // トップでLESSONを見ていたならレッスン作成から始める
+  const [tab, setTab] = useState<"cypher" | "pl">(initialTab);
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [isPrivate, setIsPrivate] = useState(false);
   const [requiresApproval, setRequiresApproval] = useState(false);
   // PLフォーム用
-  const [plForm, setPlForm] = useState({ title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [] as string[], description: "", max_members: "", price: "", target_level: "all" });
+  const [plForm, setPlForm] = useState(EMPTY_PL);
   const [plIsPrivate, setPlIsPrivate] = useState(false);
   const [plRequiresApproval, setPlRequiresApproval] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [draftRestored, setDraftRestored] = useState(false);
+  // 復元が終わるまで保存しない。refではなくstateにしているのは、refだと
+  // 復元処理と同じ回で保存処理が走ってしまい、まだ空のフォームを見て
+  // 「中身なし」と判定して復元したての下書きを消してしまうため
+  const [draftLoaded, setDraftLoaded] = useState(false);
+
+  // 入力が何かあるか。何も書いていない状態を下書きとして残さないための判定
+  const hasContent = (f: typeof EMPTY_FORM, p: typeof EMPTY_PL) =>
+    !!(f.title || f.date || f.station || f.studio || f.description || f.max_members || f.studio_fee || f.genres.length || f.payment.length ||
+       p.title || p.date || p.station || p.studio || p.description || p.max_members || p.price);
+
+  // 下書きの復元。タブだけは復元しない（トップで見ていたセクションを優先したいため）
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d.form) setForm({ ...EMPTY_FORM, ...d.form });
+        if (d.plForm) setPlForm({ ...EMPTY_PL, ...d.plForm });
+        setIsPrivate(!!d.isPrivate);
+        setRequiresApproval(!!d.requiresApproval);
+        setPlIsPrivate(!!d.plIsPrivate);
+        setPlRequiresApproval(!!d.plRequiresApproval);
+        if (hasContent(d.form ?? EMPTY_FORM, d.plForm ?? EMPTY_PL)) setDraftRestored(true);
+      }
+    } catch { /* 壊れた下書きは無視して空フォームで始める */ }
+    setDraftLoaded(true);
+  }, []);
+
+  // 入力のたびに自動保存
+  useEffect(() => {
+    if (!draftLoaded) return;
+    try {
+      if (!hasContent(form, plForm)) { localStorage.removeItem(DRAFT_KEY); return; }
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval }));
+    } catch { /* 保存できなくても入力は続けられるようにする */ }
+  }, [draftLoaded, form, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval]);
+
+  const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch {} };
+
+  const discardDraft = () => {
+    setForm(EMPTY_FORM); setPlForm(EMPTY_PL);
+    setIsPrivate(false); setRequiresApproval(false);
+    setPlIsPrivate(false); setPlRequiresApproval(false);
+    setDraftRestored(false);
+    clearDraft();
+  };
 
   const toggleGenre = (g: (typeof GENRES)[number]) => setForm(f => ({ ...f, genres: f.genres.includes(g) ? f.genres.filter(x => x !== g) : [...f.genres, g] }));
   const togglePayment = (p: string) => setForm(f => ({ ...f, payment: f.payment.includes(p) ? f.payment.filter(x => x !== p) : [...f.payment, p] }));
@@ -49,6 +101,7 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
     }
     // 主催者を自動で参加者に追加
     await supabase.from("participations").insert({ cypher_id: cypher.id, profile_id: user.id });
+    clearDraft(); // 投稿できたので下書きは残さない
     setLoading(false); setSubmitted(true);
     setTimeout(() => onNav("top"), 1800);
   };
@@ -75,6 +128,7 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
         await supabase.from("pl_genres").insert(genreRows.map((g: any) => ({ lesson_id: lesson.id, genre_id: g.id })));
       }
     }
+    clearDraft(); // 投稿できたので下書きは残さない
     setLoading(false); setSubmitted(true);
     setTimeout(() => onNav("top"), 1800);
   };
@@ -105,6 +159,19 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
       </div>
       <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: "16px" }}>
         {error && <div style={{ padding: "10px 12px", background: "rgba(255,61,0,0.06)", border: "1px solid rgba(255,61,0,0.25)", borderRadius: "6px", color: "#FF3D00", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>{error}</div>}
+
+        {/* 勝手に前回の入力が入っていると驚くので、復元したことを明示して捨てられるようにする */}
+        {draftRestored && (
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", background: "rgba(37,99,235,0.06)", border: "1px solid rgba(37,99,235,0.2)", borderRadius: "8px" }}>
+            <div style={{ flex: 1, fontSize: "12px", color: "rgba(0,0,0,0.6)", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.5 }}>
+              書きかけの内容を復元しました
+            </div>
+            <button onClick={discardDraft}
+              style={{ display: "flex", alignItems: "center", gap: "5px", padding: "8px 12px", minHeight: "40px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "6px", cursor: "pointer", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.55)", flexShrink: 0 }}>
+              <RotateCcw size={12} /> 破棄
+            </button>
+          </div>
+        )}
 
         {tab === "cypher" ? (<>
           <div><label style={lbl}>最寄り駅 <span style={{ color: "#FF3D00" }}>*</span></label><StationSearch value={form.station} onChange={v => setForm(f => ({ ...f, station: v }))} inputStyle={inp} /></div>
