@@ -5,7 +5,7 @@ import type { Cypher, PrivateLesson, GenreKey } from "./types";
 // （page.tsx のトップ画面と /c/[id] の共有ページの両方から使う）
 export async function fetchCypherById(cypherId: string): Promise<Cypher | null> {
   const { data: row } = await supabase.from("cyphers").select(`
-    id, title, organizer_id, starts_at, ends_at, location, description, max_members, status, visibility, requires_approval,
+    id, title, organizer_id, starts_at, ends_at, location, description, max_members, status, visibility, requires_approval, studio_fee,
     profiles:organizer_id ( dancer_name, avatar_url, instagram ),
     cypher_genres ( genres:genre_id ( name ) )
   `).eq("id", cypherId).single();
@@ -28,6 +28,7 @@ export async function fetchCypherById(cypherId: string): Promise<Cypher | null> 
     status: (row as any).status,
     visibility: (row as any).visibility ?? "public",
     requires_approval: (row as any).requires_approval ?? false,
+    studio_fee: (row as any).studio_fee ?? null,
     genres,
     organizer: { id: (row as any).organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: (row as any).profiles?.avatar_url ?? null, instagram: (row as any).profiles?.instagram ?? null },
     participant_count: partCount ?? 0,

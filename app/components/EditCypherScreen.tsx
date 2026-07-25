@@ -13,7 +13,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
   onBack: () => void;
   onSaved: () => void;
 }) {
-  const [form, setForm] = useState<FormState>({ title: "", date: "", start_time: "", end_time: "", station: "", studio: "", genres: [], description: "", max_members: "", payment: [] });
+  const [form, setForm] = useState<FormState>({ title: "", date: "", start_time: "", end_time: "", station: "", studio: "", genres: [], description: "", max_members: "", payment: [], studio_fee: "" });
   const [isPrivate, setIsPrivate] = useState(false);
   const [requiresApproval, setRequiresApproval] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -25,7 +25,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
   useEffect(() => {
     async function fetchCypher() {
       const { data } = await supabase.from("cyphers")
-        .select("id, title, starts_at, ends_at, location, description, max_members, visibility, requires_approval, cypher_genres(genres:genre_id(name))")
+        .select("id, title, starts_at, ends_at, location, description, max_members, visibility, requires_approval, studio_fee, cypher_genres(genres:genre_id(name))")
         .eq("id", cypherId).single();
       if (data) {
         const starts = new Date((data as any).starts_at);
@@ -37,7 +37,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
         const station = locParts[0] ?? "";
         const studio = locParts.slice(1).join(" ");
         const genres = ((data as any).cypher_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
-        setForm({ title: (data as any).title ?? "", date: dateStr, start_time: startTime, end_time: endTime, station, studio, genres, description: (data as any).description ?? "", max_members: (data as any).max_members ? String((data as any).max_members) : "", payment: [] });
+        setForm({ title: (data as any).title ?? "", date: dateStr, start_time: startTime, end_time: endTime, station, studio, genres, description: (data as any).description ?? "", max_members: (data as any).max_members ? String((data as any).max_members) : "", payment: [], studio_fee: (data as any).studio_fee != null ? String((data as any).studio_fee) : "" });
         setIsPrivate((data as any).visibility === "private");
         setRequiresApproval((data as any).requires_approval ?? false);
       }
@@ -55,7 +55,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
     const ends_at = form.end_time ? `${endDate}T${form.end_time}:00+09:00` : null;
     const location = form.studio ? `${form.station} ${form.studio}` : form.station;
     const title = form.title.trim() || location;
-    const { error: uErr } = await supabase.from("cyphers").update({ title, location, description: form.description, starts_at, ends_at, max_members: form.max_members ? Number(form.max_members) : null, visibility: isPrivate ? "private" : "public", requires_approval: requiresApproval }).eq("id", cypherId).eq("organizer_id", user.id);
+    const { error: uErr } = await supabase.from("cyphers").update({ title, location, description: form.description, starts_at, ends_at, max_members: form.max_members ? Number(form.max_members) : null, visibility: isPrivate ? "private" : "public", requires_approval: requiresApproval, studio_fee: form.studio_fee ? Number(form.studio_fee) : null }).eq("id", cypherId).eq("organizer_id", user.id);
     if (uErr) { setError(`保存に失敗しました: ${uErr.message}`); setSaving(false); return; }
     await supabase.from("cypher_genres").delete().eq("cypher_id", cypherId);
     if (form.genres.length > 0) {
@@ -116,7 +116,10 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
           </div>
         </div>
         <div><label style={lbl}>詳細説明</label><textarea style={{ ...inp, minHeight: "80px", resize: "vertical" } as React.CSSProperties} placeholder="参加者へのメッセージ..." value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div>
-        <div><label style={lbl}>参加定員</label><input style={inp} type="number" min="1" placeholder="空欄 = 無制限" value={form.max_members} onChange={e => setForm(f => ({ ...f, max_members: e.target.value }))} /></div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+          <div><label style={lbl}>参加定員</label><input style={inp} type="number" min="1" placeholder="空欄 = 無制限" value={form.max_members} onChange={e => setForm(f => ({ ...f, max_members: e.target.value }))} /></div>
+          <div><label style={lbl}>スタジオ代（円・合計）</label><input style={inp} type="number" min="0" placeholder="例: 6000" value={form.studio_fee} onChange={e => setForm(f => ({ ...f, studio_fee: e.target.value }))} /></div>
+        </div>
         <button onClick={() => setIsPrivate(v => !v)}
           style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
           <div>

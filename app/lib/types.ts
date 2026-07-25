@@ -23,6 +23,7 @@ export interface Cypher {
   hot: boolean;
   visibility: "public" | "private";
   requires_approval: boolean;
+  studio_fee: number | null;
 }
 
 export interface PrivateLesson {
@@ -53,6 +54,7 @@ export interface FormState {
   description: string;
   max_members: string;
   payment: string[];
+  studio_fee: string;
 }
 
 export interface ProfileState {

@@ -22,22 +22,22 @@ export function PLCard({ lesson, onClick }: { lesson: PrivateLesson; onClick: ()
 
   return (
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-      style={{ background: "#FFFFFF", border: `1px solid ${hover ? "rgba(37,99,235,0.3)" : "rgba(0,0,0,0.08)"}`, borderLeft: `3px solid ${isEnded ? "rgba(0,0,0,0.1)" : "#2563EB"}`, borderRadius: "8px", padding: "16px", cursor: "pointer", transition: "all 0.2s ease", transform: hover ? "translateY(-1px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? "0 4px 16px rgba(37,99,235,0.12)" : "0 1px 4px rgba(0,0,0,0.04)", opacity: isEnded ? 0.55 : 1 }}>
+      style={{ background: "#FFFFFF", border: `1px solid ${hover ? "rgba(37,99,235,0.3)" : "rgba(0,0,0,0.08)"}`, borderLeft: `4px solid ${isEnded ? "rgba(0,0,0,0.1)" : "#2563EB"}`, borderRadius: "10px", padding: "18px", cursor: "pointer", transition: "all 0.2s ease", transform: hover ? "translateY(-1px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? "0 4px 16px rgba(37,99,235,0.12)" : "0 1px 5px rgba(0,0,0,0.06)", opacity: isEnded ? 0.55 : 1 }}>
       {/* PLバッジ */}
       <div style={{ position: "absolute", top: 0, left: 0, background: "#2563EB", padding: "3px 10px", fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "#fff", fontWeight: "bold", borderBottomRightRadius: "4px" }}>PL</div>
       {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(0,0,0,0.1)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.45)", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", marginTop: "14px" }}>
-        <div style={{ flex: 1, paddingRight: "44px" }}>
-          <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#111111", fontFamily: "'Bebas Neue',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{lesson.title}</h3>
-          <div style={{ fontSize: "11px", color: "rgba(0,0,0,0.55)", marginTop: "2px", fontFamily: "'Space Mono',monospace", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+        <div style={{ flex: 1, paddingRight: "52px" }}>
+          <h3 style={{ margin: 0, fontSize: "19px", fontWeight: 700, color: "#111111", fontFamily: "'Bebas Neue',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{lesson.title}</h3>
+          <div style={{ fontSize: "12px", color: "rgba(0,0,0,0.55)", marginTop: "3px", fontFamily: "'Space Mono',monospace", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
             <span>by {lesson.organizer.dancer_name}</span>
             {lesson.organizer.instagram && (
               <a href={`https://instagram.com/${lesson.organizer.instagram}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ color: "#A855F7", textDecoration: "none" }}>@{lesson.organizer.instagram}</a>
             )}
           </div>
         </div>
-        <div style={{ width: "36px", height: "36px", borderRadius: "4px", background: `linear-gradient(135deg,${color}22,${color}44)`, border: `1px solid ${color}55`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: "bold", color, fontFamily: "'Bebas Neue',sans-serif", flexShrink: 0, overflow: "hidden" }}>
+        <div style={{ width: "44px", height: "44px", borderRadius: "6px", background: `linear-gradient(135deg,${color}22,${color}44)`, border: `1px solid ${color}55`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px", fontWeight: "bold", color, fontFamily: "'Bebas Neue',sans-serif", flexShrink: 0, overflow: "hidden" }}>
           {lesson.organizer.avatar_url
             ? <img src={lesson.organizer.avatar_url} alt={lesson.organizer.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             : lesson.organizer.avatar}

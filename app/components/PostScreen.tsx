@@ -9,7 +9,7 @@ import { StationSearch } from "./StationSearch";
 
 export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: SupabaseUser }) {
   const [tab, setTab] = useState<"cypher" | "pl">("cypher");
-  const [form, setForm] = useState<FormState>({ title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [], description: "", max_members: "", payment: [] });
+  const [form, setForm] = useState<FormState>({ title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [], description: "", max_members: "", payment: [], studio_fee: "" });
   const [isPrivate, setIsPrivate] = useState(false);
   const [requiresApproval, setRequiresApproval] = useState(false);
   // PLフォーム用
@@ -38,7 +38,7 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
     const title = form.title.trim() || location;
     const { data: cypher, error: cErr } = await supabase
       .from("cyphers")
-      .insert({ title, location, description: form.description, starts_at, ends_at, max_members: form.max_members ? Number(form.max_members) : null, organizer_id: user.id, visibility: isPrivate ? "private" : "public", requires_approval: requiresApproval })
+      .insert({ title, location, description: form.description, starts_at, ends_at, max_members: form.max_members ? Number(form.max_members) : null, organizer_id: user.id, visibility: isPrivate ? "private" : "public", requires_approval: requiresApproval, studio_fee: form.studio_fee ? Number(form.studio_fee) : null })
       .select().single();
     if (cErr || !cypher) { console.error("cypher insert error:", cErr); setError(`投稿に失敗しました。エラー: ${cErr?.message ?? "不明"}`); setLoading(false); return; }
     if (form.genres.length > 0) {
@@ -130,7 +130,10 @@ export function PostScreen({ onNav, user }: { onNav: (s: string) => void; user: 
             </div>
           </div>
           <div><label style={lbl}>詳細説明</label><textarea style={{ ...inp, minHeight: "80px", resize: "vertical" } as React.CSSProperties} placeholder="参加者へのメッセージ..." value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div>
-          <div><label style={lbl}>参加定員</label><input style={inp} type="number" min="1" placeholder="空欄 = 無制限" value={form.max_members} onChange={e => setForm(f => ({ ...f, max_members: e.target.value }))} /></div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <div><label style={lbl}>参加定員</label><input style={inp} type="number" min="1" placeholder="空欄 = 無制限" value={form.max_members} onChange={e => setForm(f => ({ ...f, max_members: e.target.value }))} /></div>
+            <div><label style={lbl}>スタジオ代（円・合計）</label><input style={inp} type="number" min="0" placeholder="例: 6000" value={form.studio_fee} onChange={e => setForm(f => ({ ...f, studio_fee: e.target.value }))} /></div>
+          </div>
           <div><label style={lbl}>支払い方法（複数選択可）</label>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               {["現金", "PayPay", "無料"].map(p => { const sel = form.payment.includes(p); return (<button key={p} onClick={() => togglePayment(p)} style={{ padding: "8px 16px", border: sel ? "1px solid #FF3D00" : "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", background: sel ? "rgba(255,61,0,0.08)" : "transparent", color: sel ? "#FF3D00" : "rgba(0,0,0,0.45)", fontSize: "12px", fontFamily: "'Space Mono',monospace", cursor: "pointer" }}>{p}</button>); })}

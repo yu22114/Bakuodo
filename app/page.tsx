@@ -202,6 +202,9 @@ export default function BakuOdori() {
         select{appearance:none;-webkit-appearance:none}
         @keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
         @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+        @keyframes bdSlideFromRight{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes bdSlideFromLeft{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes bdLogoRoll{from{left:-15%;transform:rotate(0deg)}to{left:115%;transform:rotate(1080deg)}}
       `}</style>
 
       <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#FAFAFA" }}>

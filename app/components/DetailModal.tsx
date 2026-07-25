@@ -31,10 +31,6 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
   const [comments, setComments] = useState<{ id: string; content: string; created_at: string; profile: { id: string; dancer_name: string; avatar_url: string | null } }[]>([]);
   const [commentText, setCommentText] = useState("");
   const [posting, setPosting] = useState(false);
-  const [likes, setLikes] = useState(0);
-  const [bads, setBads] = useState(0);
-  const [myReaction, setMyReaction] = useState<"like" | "bad" | null>(null);
-  const [reacting, setReacting] = useState(false);
 
   useEffect(() => {
     async function fetchParticipants() {
@@ -55,19 +51,6 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
     }
     fetchParticipants();
   }, [cypherId, joined]);
-
-  useEffect(() => {
-    async function fetchReactions() {
-      const { data } = await supabase.from("cypher_reactions").select("reaction, profile_id").eq("cypher_id", cypherId);
-      if (data) {
-        setLikes(data.filter((r: any) => r.reaction === "like").length);
-        setBads(data.filter((r: any) => r.reaction === "bad").length);
-        const mine = user ? data.find((r: any) => r.profile_id === user.id) : null;
-        setMyReaction(mine ? mine.reaction as "like" | "bad" : null);
-      }
-    }
-    fetchReactions();
-  }, [cypherId]);
 
   useEffect(() => {
     async function fetchComments() {
@@ -96,27 +79,6 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
       setCommentText("");
     }
     setPosting(false);
-  };
-
-  const handleReact = async (reaction: "like" | "bad") => {
-    if (reacting || !user) return;
-    setReacting(true);
-    if (myReaction === reaction) {
-      await supabase.from("cypher_reactions").delete().eq("cypher_id", cypherId).eq("profile_id", user.id);
-      if (reaction === "like") setLikes(n => n - 1); else setBads(n => n - 1);
-      setMyReaction(null);
-    } else {
-      if (myReaction) {
-        await supabase.from("cypher_reactions").update({ reaction }).eq("cypher_id", cypherId).eq("profile_id", user.id);
-        if (myReaction === "like") setLikes(n => n - 1); else setBads(n => n - 1);
-        if (reaction === "like") setLikes(n => n + 1); else setBads(n => n + 1);
-      } else {
-        await supabase.from("cypher_reactions").insert({ cypher_id: cypherId, profile_id: user.id, reaction });
-        if (reaction === "like") setLikes(n => n + 1); else setBads(n => n + 1);
-      }
-      setMyReaction(reaction);
-    }
-    setReacting(false);
   };
 
   // /c/[id] の共有リンクを配る（対応端末はOSの共有シート、なければコピー）
@@ -173,17 +135,20 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
           {cypher.description && <p style={{ fontSize: "13px", color: "rgba(0,0,0,0.65)", lineHeight: 1.7, marginBottom: "20px", fontFamily: "'Space Mono',monospace" }}>{cypher.description}</p>}
           <ParticipantBar count={participantsFetched ? participants.length : cypher.participant_count} max={cypher.max_members} />
 
-          {/* いいね・BAD */}
-          <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
-            <button onClick={() => handleReact("like")} disabled={reacting}
-              style={{ flex: 1, padding: "11px", border: myReaction === "like" ? "1px solid #16A34A" : "1px solid rgba(0,0,0,0.12)", borderRadius: "8px", background: myReaction === "like" ? "rgba(22,163,74,0.08)" : "#FFFFFF", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px", fontSize: "15px", fontFamily: "'Space Mono',monospace", color: myReaction === "like" ? "#16A34A" : "rgba(0,0,0,0.5)" }}>
-              👍 <span style={{ fontWeight: "bold", fontSize: "13px" }}>{likes}</span>
-            </button>
-            <button onClick={() => handleReact("bad")} disabled={reacting}
-              style={{ flex: 1, padding: "11px", border: myReaction === "bad" ? "1px solid #EF4444" : "1px solid rgba(0,0,0,0.12)", borderRadius: "8px", background: myReaction === "bad" ? "rgba(239,68,68,0.08)" : "#FFFFFF", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px", fontSize: "15px", fontFamily: "'Space Mono',monospace", color: myReaction === "bad" ? "#EF4444" : "rgba(0,0,0,0.5)" }}>
-              👎 <span style={{ fontWeight: "bold", fontSize: "13px" }}>{bads}</span>
-            </button>
-          </div>
+          {cypher.studio_fee != null && (() => {
+            const count = participantsFetched ? participants.length : cypher.participant_count;
+            const perPerson = count > 0 ? Math.ceil(cypher.studio_fee / count) : null;
+            return (
+              <div style={{ marginTop: "16px", padding: "12px 14px", background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ fontSize: "11px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.5)" }}>💴 スタジオ代（合計 ¥{cypher.studio_fee.toLocaleString()}）</div>
+                <div style={{ fontSize: "15px", fontFamily: "'Bebas Neue',sans-serif", color: "#111" }}>
+                  {perPerson != null
+                    ? <>¥{perPerson.toLocaleString()}<span style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.4)" }}> /人</span></>
+                    : <span style={{ fontSize: "11px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.4)" }}>人数未定</span>}
+                </div>
+              </div>
+            );
+          })()}
 
           {participants.length > 0 && (
             <div style={{ marginTop: "16px" }}>

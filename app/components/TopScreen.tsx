@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Radio, Bell, Search, X, SlidersHorizontal, Navigation, Loader } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
@@ -8,6 +8,7 @@ import { GENRES, GENRE_COLORS, timeUntil, formatDate, formatEndTime, calcDistanc
 import { CypherCard } from "./CypherCard";
 import { PLCard } from "./PLCard";
 import { SpotCard } from "./SpotCard";
+import { Logo } from "./Logo";
 import { showToast } from "./Toast";
 
 export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell }: {
@@ -22,7 +23,62 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   unreadCount: number;
   onBell: () => void;
 }) {
+  const SECTION_ORDER = ["cypher", "pl", "spots"] as const;
   const [section, setSection] = useState<"cypher" | "pl" | "spots">("cypher");
+  const [slideDir, setSlideDir] = useState<1 | -1>(1);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const goToSection = (next: "cypher" | "pl" | "spots") => {
+    const curIdx = SECTION_ORDER.indexOf(section);
+    const nextIdx = SECTION_ORDER.indexOf(next);
+    if (nextIdx === curIdx) return;
+    setSlideDir(nextIdx > curIdx ? 1 : -1);
+    setSection(next);
+  };
+
+  const handleContentTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY };
+  };
+  const handleContentTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    // 横移動が閾値未満、または縦移動の方が大きい場合はスクロール操作とみなして無視
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    slideBy(dx < 0 ? 1 : -1);
+  };
+
+  // トラックパッドの2本指横スワイプはtouchではなくwheel(deltaX)で飛んでくるので別途拾う
+  const wheelAccumRef = useRef(0);
+  const wheelLockRef = useRef(false);
+  const wheelResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const slideBy = (dir: 1 | -1) => {
+    const curIdx = SECTION_ORDER.indexOf(section);
+    const nextIdx = curIdx + dir;
+    if (nextIdx < 0 || nextIdx >= SECTION_ORDER.length) return;
+    goToSection(SECTION_ORDER[nextIdx]);
+  };
+
+  const handleContentWheel = (e: React.WheelEvent) => {
+    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // 縦スクロールは触らない
+    if (wheelLockRef.current) return;
+    wheelAccumRef.current += e.deltaX;
+    // 指を離してしばらく経ったら溜めをリセット（別ジェスチャー扱いにする）
+    if (wheelResetRef.current) clearTimeout(wheelResetRef.current);
+    wheelResetRef.current = setTimeout(() => { wheelAccumRef.current = 0; }, 150);
+    if (Math.abs(wheelAccumRef.current) < 80) return;
+    const dir = wheelAccumRef.current > 0 ? 1 : -1;
+    wheelAccumRef.current = 0;
+    // 1ジェスチャーで2枚も3枚も飛ばないよう、切り替え直後は少し無視する
+    wheelLockRef.current = true;
+    setTimeout(() => { wheelLockRef.current = false; }, 500);
+    slideBy(dir);
+  };
   const [spots, setSpots] = useState<{ id: string; name: string; location: string; description: string | null; latitude: number | null; longitude: number | null }[]>([]);
   const [cyphers, setCyphers] = useState<Cypher[]>([]);
   const [lessons, setLessons] = useState<PrivateLesson[]>([]);
@@ -45,7 +101,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         supabase
           .from("cyphers")
           .select(`
-            id, title, organizer_id, starts_at, ends_at, location, description, max_members, status, visibility, requires_approval,
+            id, title, organizer_id, starts_at, ends_at, location, description, max_members, status, visibility, requires_approval, studio_fee,
             profiles:organizer_id ( dancer_name, avatar_url, instagram ),
             cypher_genres ( genres:genre_id ( name ) )
           `)
@@ -69,7 +125,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         const name = row.profiles?.dancer_name ?? "UNKNOWN";
         const genres: GenreKey[] = (row.cypher_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
         const count = countMap[row.id] ?? 0;
-        return { id: row.id, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, status: row.status, visibility: row.visibility ?? "public", requires_approval: row.requires_approval ?? false, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null, instagram: row.profiles?.instagram ?? null }, participant_count: count, hot: count >= 5 };
+        return { id: row.id, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, status: row.status, visibility: row.visibility ?? "public", requires_approval: row.requires_approval ?? false, studio_fee: row.studio_fee ?? null, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null, instagram: row.profiles?.instagram ?? null }, participant_count: count, hot: count >= 5 };
       }).filter((c: any) =>
         // プライベートサイファーは自分が主催 or フォロワーのみ表示
         c.visibility === "public" || c.organizer.id === user.id || followingIds.has(c.organizer.id)
@@ -170,6 +226,12 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
 
   return (
     <div style={{ paddingBottom: "80px" }}>
+      {/* ロゴが転がる演出（丸いロゴ画像が用意でき次第 Logo に imageSrc を渡す） */}
+      <div style={{ position: "relative", height: "28px", overflow: "hidden", background: "#FAFAFA" }}>
+        <div style={{ position: "absolute", top: "50%", marginTop: "-16px", animation: "bdLogoRoll 7s linear infinite" }}>
+          <Logo />
+        </div>
+      </div>
       {/* ヘッダー */}
       <div style={{ padding: "20px 16px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
@@ -200,7 +262,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       {/* セクション切り替え */}
       <div style={{ display: "flex", background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
         {([["cypher", "CYPHER", "#FF3D00"], ["pl", "LESSON", "#2563EB"], ["spots", "SPOTS", "#16A34A"]] as const).map(([key, label, color]) => (
-          <button key={key} onClick={() => setSection(key)}
+          <button key={key} onClick={() => goToSection(key)}
             style={{ flex: 1, padding: "12px 4px", border: "none", borderBottom: `2px solid ${section === key ? color : "transparent"}`, background: section === key ? `${color}0f` : "transparent", color: section === key ? color : "rgba(0,0,0,0.55)", fontSize: "11px", fontFamily: "'Space Mono',monospace", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
             {label}
           </button>
@@ -223,7 +285,9 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         </div>
       )}
 
-      {/* コンテンツ */}
+      {/* コンテンツ（スワイプでタブ切り替え） */}
+      <div onTouchStart={handleContentTouchStart} onTouchEnd={handleContentTouchEnd} onWheel={handleContentWheel}>
+      <div key={section} style={{ animation: `${slideDir === 1 ? "bdSlideFromRight" : "bdSlideFromLeft"} 0.2s ease-out` }}>
       {section === "spots" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 16px", background: "linear-gradient(180deg, rgba(22,163,74,0.04) 0%, #F5F7FA 120px)" }}>
           <div style={{ padding: "8px 12px", background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.15)", borderRadius: "6px", fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.5)", lineHeight: 1.6 }}>
@@ -269,6 +333,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
           </div>
         </>
       )}
+      </div>
+      </div>
 
       {/* 検索ドロワー */}
       {searchOpen && (
