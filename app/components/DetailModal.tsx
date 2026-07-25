@@ -107,7 +107,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
     <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderBottom: "none", borderRadius: "12px 12px 0 0", maxHeight: "88vh", display: "flex", flexDirection: "column", boxShadow: "0 -4px 24px rgba(0,0,0,0.1)" }}>
         <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0, borderRadius: "12px 12px 0 0" }}>
-          <h2 style={{ margin: 0, fontSize: "24px", fontFamily: "'Bebas Neue',sans-serif", color: "#111111", lineHeight: 1.1, flex: 1 }}>{cypher.title}</h2>
+          <h2 style={{ margin: 0, fontSize: "24px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111", lineHeight: 1.1, flex: 1 }}>{cypher.title}</h2>
           <button onClick={handleShare} title="共有" style={{ background: "none", border: "none", color: "rgba(0,0,0,0.5)", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Share2 size={19} /></button>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.5)", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><X size={22} /></button>
         </div>
@@ -116,23 +116,23 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
             {cypher.genres.map(g => <GenreBadge key={g} genre={g} size="md" />)}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
-            <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Space Mono',monospace", alignItems: "center" }}><Clock size={14} color="rgba(0,0,0,0.4)" /> {date} {time}{cypher.ends_at ? `〜${formatEndTime(cypher.starts_at, cypher.ends_at)}` : ""}</div>
+            <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center" }}><Clock size={14} color="rgba(0,0,0,0.4)" /> {date} {time}{cypher.ends_at ? `〜${formatEndTime(cypher.starts_at, cypher.ends_at)}` : ""}</div>
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cypher.location)}`}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Space Mono',monospace", alignItems: "center", textDecoration: "none" }}
+              style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", textDecoration: "none" }}
             >
               <MapPin size={14} color="rgba(0,0,0,0.4)" />
               <span style={{ textDecoration: "underline dotted", textUnderlineOffset: "2px" }}>{cypher.location}</span>
               <span style={{ fontSize: "9px", color: "#2563EB", letterSpacing: "0.05em" }}>MAP →</span>
             </a>
             <button onClick={() => onViewProfile(organizerId)}
-              style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Space Mono',monospace", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
+              style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
               <User size={14} color="rgba(0,0,0,0.4)" /> 主催: {cypher.organizer.dancer_name}
             </button>
           </div>
-          {cypher.description && <p style={{ fontSize: "13px", color: "rgba(0,0,0,0.65)", lineHeight: 1.7, marginBottom: "20px", fontFamily: "'Space Mono',monospace" }}>{cypher.description}</p>}
+          {cypher.description && <p style={{ fontSize: "13px", color: "rgba(0,0,0,0.65)", lineHeight: 1.7, marginBottom: "20px", fontFamily: "'Noto Sans JP',sans-serif" }}>{cypher.description}</p>}
           <ParticipantBar count={participantsFetched ? participants.length : cypher.participant_count} max={cypher.max_members} />
 
           {cypher.studio_fee != null && (() => {
@@ -140,11 +140,11 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
             const perPerson = count > 0 ? Math.ceil(cypher.studio_fee / count) : null;
             return (
               <div style={{ marginTop: "16px", padding: "12px 14px", background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ fontSize: "11px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.5)" }}>💴 スタジオ代（合計 ¥{cypher.studio_fee.toLocaleString()}）</div>
-                <div style={{ fontSize: "15px", fontFamily: "'Bebas Neue',sans-serif", color: "#111" }}>
+                <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.5)" }}>💴 スタジオ代（合計 ¥{cypher.studio_fee.toLocaleString()}）</div>
+                <div style={{ fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111" }}>
                   {perPerson != null
-                    ? <>¥{perPerson.toLocaleString()}<span style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.4)" }}> /人</span></>
-                    : <span style={{ fontSize: "11px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.4)" }}>人数未定</span>}
+                    ? <>¥{perPerson.toLocaleString()}<span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.4)" }}> /人</span></>
+                    : <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.4)" }}>人数未定</span>}
                 </div>
               </div>
             );
@@ -152,11 +152,11 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
 
           {participants.length > 0 && (
             <div style={{ marginTop: "16px" }}>
-              <div style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.5)", letterSpacing: "0.15em", marginBottom: "8px" }}>PARTICIPANTS</div>
+              <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.5)", letterSpacing: "0.15em", marginBottom: "8px" }}>PARTICIPANTS</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 {participants.map(p => (
                   <button key={p.profile_id} onClick={() => onViewProfile(p.profile_id)}
-                    style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,0.08)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Bebas Neue',sans-serif", color: "rgba(0,0,0,0.45)", flexShrink: 0 }}
+                    style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,0.08)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(0,0,0,0.45)", flexShrink: 0 }}
                     title={p.dancer_name}>
                     {p.avatar_url
                       ? <img src={p.avatar_url} alt={p.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -168,33 +168,33 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
           )}
 
           {isEnded ? (
-            <div style={{ marginTop: "20px", padding: "14px", background: "rgba(0,0,0,0.04)", borderRadius: "6px", textAlign: "center", fontSize: "13px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace" }}>
+            <div style={{ marginTop: "20px", padding: "14px", background: "rgba(0,0,0,0.04)", borderRadius: "6px", textAlign: "center", fontSize: "13px", color: "rgba(0,0,0,0.4)", fontFamily: "'Noto Sans JP',sans-serif" }}>
               このサイファーは終了しました
             </div>
           ) : (() => {
             const isFull = !joined && cypher.max_members !== null && participantsFetched && participants.length >= cypher.max_members;
             return isFull ? (
-              <div style={{ marginTop: "20px", padding: "14px", background: "rgba(255,61,0,0.06)", border: "1px solid rgba(255,61,0,0.2)", borderRadius: "6px", textAlign: "center", fontSize: "13px", color: "#FF3D00", fontFamily: "'Space Mono',monospace" }}>
+              <div style={{ marginTop: "20px", padding: "14px", background: "rgba(255,61,0,0.06)", border: "1px solid rgba(255,61,0,0.2)", borderRadius: "6px", textAlign: "center", fontSize: "13px", color: "#FF3D00", fontFamily: "'Noto Sans JP',sans-serif" }}>
                 定員に達しています（{participants.length}/{cypher.max_members}人）
               </div>
             ) : (
               <button onClick={() => { onJoin(cypher.id); if (!joined && !pending && !keepOpenOnJoin) onClose(); }}
-                style={{ marginTop: "20px", width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: joined ? "rgba(22,163,74,0.1)" : pending ? "rgba(0,0,0,0.06)" : "#FF3D00", color: joined ? "#16A34A" : pending ? "rgba(0,0,0,0.45)" : "#fff", fontSize: "14px", fontFamily: "'Bebas Neue',sans-serif", letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                style={{ marginTop: "20px", width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: joined ? "rgba(22,163,74,0.1)" : pending ? "rgba(0,0,0,0.06)" : "#FF3D00", color: joined ? "#16A34A" : pending ? "rgba(0,0,0,0.45)" : "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
                 {joined ? <><Check size={16} /> 参加済み — キャンセルする</> : pending ? <>申請中... — キャンセルする</> : cypher.requires_approval ? <>📋 参加を申請する</> : <><Zap size={16} /> このサイファーに参加する</>}
               </button>
             );
           })()}
 
           <div style={{ marginTop: "28px", borderTop: "1px solid rgba(0,0,0,0.07)", paddingTop: "20px" }}>
-            <div style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.5)", letterSpacing: "0.15em", marginBottom: "14px" }}>COMMENTS{comments.length > 0 ? ` (${comments.length})` : ""}</div>
+            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.5)", letterSpacing: "0.15em", marginBottom: "14px" }}>COMMENTS{comments.length > 0 ? ` (${comments.length})` : ""}</div>
             {comments.length === 0 ? (
-              <p style={{ fontSize: "12px", color: "rgba(0,0,0,0.5)", fontFamily: "'Space Mono',monospace", marginBottom: "16px" }}>まだコメントはありません</p>
+              <p style={{ fontSize: "12px", color: "rgba(0,0,0,0.5)", fontFamily: "'Noto Sans JP',sans-serif", marginBottom: "16px" }}>まだコメントはありません</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "16px" }}>
                 {comments.map(c => (
                   <div key={c.id} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
                     <button onClick={() => c.profile.id && onViewProfile(c.profile.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}>
-                      <div style={{ width: "30px", height: "30px", borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontFamily: "'Bebas Neue',sans-serif", color: "rgba(0,0,0,0.45)" }}>
+                      <div style={{ width: "30px", height: "30px", borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(0,0,0,0.45)" }}>
                         {c.profile.avatar_url
                           ? <img src={c.profile.avatar_url} alt={c.profile.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                           : c.profile.dancer_name[0]?.toUpperCase() ?? "?"}
@@ -202,8 +202,8 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
                     </button>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "3px" }}>
-                        <span style={{ fontSize: "12px", fontWeight: "bold", color: "#111", fontFamily: "'Space Mono',monospace" }}>{c.profile.dancer_name}</span>
-                        <span style={{ fontSize: "10px", color: "rgba(0,0,0,0.35)", fontFamily: "'Space Mono',monospace" }}>{timeAgo(c.created_at)}</span>
+                        <span style={{ fontSize: "12px", fontWeight: "bold", color: "#111", fontFamily: "'Noto Sans JP',sans-serif" }}>{c.profile.dancer_name}</span>
+                        <span style={{ fontSize: "10px", color: "rgba(0,0,0,0.35)", fontFamily: "'Noto Sans JP',sans-serif" }}>{timeAgo(c.created_at)}</span>
                       </div>
                       <p style={{ margin: 0, fontSize: "13px", color: "rgba(0,0,0,0.75)", lineHeight: 1.5 }}>{c.content}</p>
                     </div>
@@ -233,7 +233,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
           </button>
         </div>
         ) : (
-        <div style={{ padding: "14px 16px 24px", borderTop: "1px solid rgba(0,0,0,0.07)", background: "#FFFFFF", textAlign: "center", fontSize: "12px", color: "rgba(0,0,0,0.5)", fontFamily: "'Space Mono',monospace" }}>
+        <div style={{ padding: "14px 16px 24px", borderTop: "1px solid rgba(0,0,0,0.07)", background: "#FFFFFF", textAlign: "center", fontSize: "12px", color: "rgba(0,0,0,0.5)", fontFamily: "'Noto Sans JP',sans-serif" }}>
           コメントや参加にはログインが必要です
         </div>
         )}

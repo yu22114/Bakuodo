@@ -4,10 +4,10 @@ export default function TermsPage() {
   return (
     <div style={{ maxWidth: "480px", margin: "0 auto", padding: "32px 20px 80px", fontFamily: "'Noto Sans JP', sans-serif", color: "#111111", background: "#FAFAFA", minHeight: "100vh" }}>
       <div style={{ marginBottom: "28px" }}>
-        <a href="/" style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "rgba(0,0,0,0.06)", borderRadius: "8px", padding: "10px 16px", marginBottom: "20px", fontSize: "13px", fontFamily: "'Space Mono',monospace", fontWeight: "600", color: "#111111", textDecoration: "none" }}>← 戻る</a>
-        <div style={{ fontSize: "10px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.2em", marginBottom: "8px" }}>▶ LEGAL</div>
-        <h1 style={{ margin: 0, fontFamily: "'Bebas Neue',sans-serif", fontSize: "36px", color: "#111111" }}>利用規約</h1>
-        <p style={{ margin: "8px 0 0", fontSize: "12px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace" }}>最終更新: 2026年7月31日</p>
+        <a href="/" style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "rgba(0,0,0,0.06)", borderRadius: "8px", padding: "10px 16px", marginBottom: "20px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "600", color: "#111111", textDecoration: "none" }}>← 戻る</a>
+        <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.35)", letterSpacing: "0.2em", marginBottom: "8px" }}>▶ LEGAL</div>
+        <h1 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "36px", color: "#111111" }}>利用規約</h1>
+        <p style={{ margin: "8px 0 0", fontSize: "12px", color: "rgba(0,0,0,0.4)", fontFamily: "'Noto Sans JP',sans-serif" }}>最終更新: 2026年7月31日</p>
       </div>
 
       {/* 前文 */}
@@ -92,7 +92,7 @@ export default function TermsPage() {
       </div>
 
       <div style={{ marginTop: "40px", paddingTop: "20px", borderTop: "1px solid rgba(0,0,0,0.08)", textAlign: "center" }}>
-        <a href="/" style={{ fontSize: "12px", fontFamily: "'Space Mono',monospace", color: "#FF3D00", textDecoration: "none" }}>← アプリに戻る</a>
+        <a href="/" style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#FF3D00", textDecoration: "none" }}>← アプリに戻る</a>
       </div>
     </div>
   );

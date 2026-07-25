@@ -95,39 +95,39 @@ export function SpotCard({ spot, user, userLocation, onViewProfile }: {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-              <span style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.35)", letterSpacing: "0.15em" }}>SPOT</span>
+              <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.35)", letterSpacing: "0.15em" }}>SPOT</span>
               {distance !== null && (
-                <span style={{ display: "flex", alignItems: "center", gap: "2px", fontSize: "9px", fontFamily: "'Space Mono',monospace", color: tooFar ? "rgba(0,0,0,0.3)" : "#16A34A", background: tooFar ? "rgba(0,0,0,0.05)" : "rgba(22,163,74,0.08)", padding: "1px 6px", borderRadius: "8px" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "2px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: tooFar ? "rgba(0,0,0,0.3)" : "#16A34A", background: tooFar ? "rgba(0,0,0,0.05)" : "rgba(22,163,74,0.08)", padding: "1px 6px", borderRadius: "8px" }}>
                   <Navigation size={8} /> {formatDistance(distance)}
                 </span>
               )}
             </div>
-            <div style={{ fontSize: "18px", fontFamily: "'Bebas Neue',sans-serif", color: "#111", letterSpacing: "0.05em", lineHeight: 1.1 }}>{spot.name}</div>
+            <div style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111", letterSpacing: "0.05em", lineHeight: 1.1 }}>{spot.name}</div>
             <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.location)}`} target="_blank" rel="noopener noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: "4px", marginTop: "4px", textDecoration: "none" }}>
               <MapPin size={10} color="rgba(0,0,0,0.35)" />
-              <span style={{ fontSize: "10px", color: "rgba(0,0,0,0.45)", fontFamily: "'Space Mono',monospace", textDecoration: "underline dotted", textUnderlineOffset: "2px" }}>{spot.location}</span>
+              <span style={{ fontSize: "10px", color: "rgba(0,0,0,0.45)", fontFamily: "'Noto Sans JP',sans-serif", textDecoration: "underline dotted", textUnderlineOffset: "2px" }}>{spot.location}</span>
             </a>
             {spot.description && (
               <div style={{ fontSize: "11px", color: "rgba(0,0,0,0.45)", marginTop: "4px", lineHeight: 1.5 }}>{spot.description}</div>
             )}
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-            <div style={{ fontSize: "28px", fontFamily: "'Bebas Neue',sans-serif", color: checkins.length > 0 ? "#FF3D00" : "rgba(0,0,0,0.2)", lineHeight: 1 }}>
+            <div style={{ fontSize: "28px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: checkins.length > 0 ? "#FF3D00" : "rgba(0,0,0,0.2)", lineHeight: 1 }}>
               {loading ? "-" : checkins.length}
             </div>
-            <div style={{ fontSize: "8px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.3)", letterSpacing: "0.1em" }}>NOW</div>
+            <div style={{ fontSize: "8px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.3)", letterSpacing: "0.1em" }}>NOW</div>
           </div>
         </div>
 
         {locationError && (
-          <div style={{ marginTop: "8px", padding: "8px 10px", background: "rgba(255,61,0,0.06)", border: "1px solid rgba(255,61,0,0.2)", borderRadius: "6px", fontSize: "11px", color: "#FF3D00", fontFamily: "'Space Mono',monospace", lineHeight: 1.5 }}>
+          <div style={{ marginTop: "8px", padding: "8px 10px", background: "rgba(255,61,0,0.06)", border: "1px solid rgba(255,61,0,0.2)", borderRadius: "6px", fontSize: "11px", color: "#FF3D00", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.5 }}>
             {locationError}
           </div>
         )}
 
         <button onClick={handleCheckin} disabled={acting}
-          style={{ marginTop: "12px", width: "100%", padding: "10px", border: "none", borderRadius: "6px", background: isCheckedIn ? "rgba(22,163,74,0.1)" : tooFar ? "rgba(0,0,0,0.06)" : "#FF3D00", color: isCheckedIn ? "#16A34A" : tooFar ? "rgba(0,0,0,0.3)" : "#fff", fontSize: "12px", fontFamily: "'Bebas Neue',sans-serif", letterSpacing: "0.12em", cursor: tooFar && !isCheckedIn ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", opacity: acting ? 0.6 : 1, transition: "all 0.2s" }}>
+          style={{ marginTop: "12px", width: "100%", padding: "10px", border: "none", borderRadius: "6px", background: isCheckedIn ? "rgba(22,163,74,0.1)" : tooFar ? "rgba(0,0,0,0.06)" : "#FF3D00", color: isCheckedIn ? "#16A34A" : tooFar ? "rgba(0,0,0,0.3)" : "#fff", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.12em", cursor: tooFar && !isCheckedIn ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", opacity: acting ? 0.6 : 1, transition: "all 0.2s" }}>
           {isCheckedIn
             ? <><LogOut size={13} /> 帰る（チェックアウト）</>
             : tooFar
@@ -138,7 +138,7 @@ export function SpotCard({ spot, user, userLocation, onViewProfile }: {
 
       {!loading && checkins.length > 0 && (
         <div style={{ padding: "10px 16px 12px" }}>
-          <div style={{ fontSize: "9px", fontFamily: "'Space Mono',monospace", color: "rgba(0,0,0,0.3)", letterSpacing: "0.12em", marginBottom: "8px" }}>
+          <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.3)", letterSpacing: "0.12em", marginBottom: "8px" }}>
             TODAY'S CREW ({checkins.length})
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
@@ -149,12 +149,12 @@ export function SpotCard({ spot, user, userLocation, onViewProfile }: {
               return (
                 <button key={c.id} onClick={() => onViewProfile(c.profile_id)}
                   style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "3px", background: "none", border: "none", cursor: "pointer", padding: "2px" }}>
-                  <div style={{ width: "38px", height: "38px", borderRadius: "50%", overflow: "hidden", background: isMe ? "linear-gradient(135deg,#FF3D00,#FF6D00)" : "rgba(0,0,0,0.08)", border: isMe ? "2px solid #FF3D00" : "2px solid transparent", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontFamily: "'Bebas Neue',sans-serif", color: isMe ? "#fff" : "rgba(0,0,0,0.45)", flexShrink: 0 }}>
+                  <div style={{ width: "38px", height: "38px", borderRadius: "50%", overflow: "hidden", background: isMe ? "linear-gradient(135deg,#FF3D00,#FF6D00)" : "rgba(0,0,0,0.08)", border: isMe ? "2px solid #FF3D00" : "2px solid transparent", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: isMe ? "#fff" : "rgba(0,0,0,0.45)", flexShrink: 0 }}>
                     {avatar
                       ? <img src={avatar} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       : name[0]?.toUpperCase() ?? "?"}
                   </div>
-                  <span style={{ fontSize: "8px", fontFamily: "'Space Mono',monospace", color: isMe ? "#FF3D00" : "rgba(0,0,0,0.45)", maxWidth: "40px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <span style={{ fontSize: "8px", fontFamily: "'Noto Sans JP',sans-serif", color: isMe ? "#FF3D00" : "rgba(0,0,0,0.45)", maxWidth: "40px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {isMe ? "YOU" : name}
                   </span>
                 </button>

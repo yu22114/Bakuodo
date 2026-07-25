@@ -23,7 +23,7 @@ export function StationSearch({ value, onChange, inputStyle }: { value: string; 
         <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid rgba(0,0,0,0.12)", borderRadius: "6px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", zIndex: 50, overflow: "hidden" }}>
           {suggestions.map(s => (
             <button key={s} onMouseDown={() => { onChange(s); setOpen(false); }}
-              style={{ width: "100%", padding: "10px 12px", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontSize: "13px", fontFamily: "'Space Mono',monospace", borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
+              style={{ width: "100%", padding: "10px 12px", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
               {s}駅
             </button>
           ))}

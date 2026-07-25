@@ -17,7 +17,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
 
   if (loading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", fontFamily: "'Space Mono',monospace", fontSize: "12px", color: "rgba(0,0,0,0.35)" }}>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", color: "rgba(0,0,0,0.35)" }}>
         LOADING...
       </div>
     );

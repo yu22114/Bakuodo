@@ -17,12 +17,12 @@ export function LoginScreen() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", background: "#FFFFFF" }}>
       <div style={{ marginBottom: "48px", textAlign: "center" }}>
         <h1 style={{ margin: 0, fontSize: "72px", fontFamily: "'Rampart One',sans-serif", letterSpacing: "0.05em", background: "linear-gradient(135deg,#FF3D00,#FF6D00,#D97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1 }}>爆踊</h1>
-        <p style={{ margin: "8px 0 0", fontSize: "12px", color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono',monospace", letterSpacing: "0.1em" }}>今日、ここで、踊ろう。</p>
+        <p style={{ margin: "8px 0 0", fontSize: "12px", color: "rgba(0,0,0,0.4)", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.1em" }}>今日、ここで、踊ろう。</p>
       </div>
       <button
         onClick={handleGoogleLogin}
         disabled={loading}
-        style={{ display: "flex", alignItems: "center", gap: "12px", padding: "14px 24px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "6px", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, fontSize: "14px", fontFamily: "'Space Mono',monospace", fontWeight: "bold", color: "#111111", width: "100%", maxWidth: "320px", justifyContent: "center", transition: "all 0.2s", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+        style={{ display: "flex", alignItems: "center", gap: "12px", padding: "14px 24px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "6px", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: "#111111", width: "100%", maxWidth: "320px", justifyContent: "center", transition: "all 0.2s", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
         <svg width="18" height="18" viewBox="0 0 18 18">
           <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z" />
           <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z" />
@@ -31,7 +31,7 @@ export function LoginScreen() {
         </svg>
         {loading ? "ログイン中..." : "Googleでログイン"}
       </button>
-      <p style={{ marginTop: "24px", fontSize: "10px", color: "rgba(0,0,0,0.3)", fontFamily: "'Space Mono',monospace", textAlign: "center", lineHeight: 1.8 }}>
+      <p style={{ marginTop: "24px", fontSize: "10px", color: "rgba(0,0,0,0.3)", fontFamily: "'Noto Sans JP',sans-serif", textAlign: "center", lineHeight: 1.8 }}>
         ログインすることで利用規約に<br />同意したものとみなします
       </p>
     </div>

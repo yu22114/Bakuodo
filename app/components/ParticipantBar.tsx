@@ -8,7 +8,7 @@ export function ParticipantBar({ count, max }: { count: number; max: number | nu
       <div style={{ flex: 1, height: "4px", background: "rgba(0,0,0,0.08)", borderRadius: "2px", overflow: "hidden" }}>
         <div style={{ width: `${pct}%`, height: "100%", background: color }} />
       </div>
-      <span style={{ fontSize: "11px", color, fontFamily: "'Space Mono',monospace", minWidth: "60px", textAlign: "right", fontWeight: "bold" }}>
+      <span style={{ fontSize: "11px", color, fontFamily: "'Noto Sans JP',sans-serif", minWidth: "60px", textAlign: "right", fontWeight: "bold" }}>
         {count}{max ? `/${max}` : ""} 人
       </span>
     </div>

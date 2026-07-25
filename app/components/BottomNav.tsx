@@ -16,7 +16,7 @@ export function BottomNav({ current, onNav }: { current: string; onNav: (s: stri
               <Plus size={20} color="#fff" />
             </div>
           ) : item.icon}
-          <span style={{ fontSize: "8px", fontFamily: "'Space Mono',monospace", letterSpacing: "0.1em" }}>{item.label}</span>
+          <span style={{ fontSize: "8px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.1em" }}>{item.label}</span>
         </button>
       ))}
     </div>
