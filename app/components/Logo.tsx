@@ -1,12 +1,13 @@
 "use client";
 
-// 丸いロゴ画像ができたら imageSrc に渡せば自動でそちらに切り替わる（未指定の間はテキストロゴ）
-export function Logo({ imageSrc }: { imageSrc?: string | null }) {
-  return imageSrc ? (
-    <img src={imageSrc} alt="爆踊" style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
-  ) : (
-    <span style={{ fontSize: "20px", fontFamily: "'Rampart One',sans-serif", letterSpacing: "0.05em", background: "linear-gradient(135deg,#FF3D00 0%,#2563EB 50%,#16A34A 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", whiteSpace: "nowrap", flexShrink: 0 }}>
-      爆踊
+export const LOGO_SRC = "/logo.jpg";
+
+// 丸ロゴ。元画像は円のまわりに約6.5%クリーム色の余白があり、透過も無い。
+// そのまま丸く切り抜くと余白が輪っかになって残るので、少し拡大して隠している。
+export function Logo({ size = 32, src = LOGO_SRC }: { size?: number; src?: string }) {
+  return (
+    <span style={{ width: `${size}px`, height: `${size}px`, borderRadius: "50%", overflow: "hidden", display: "inline-block", flexShrink: 0, lineHeight: 0 }}>
+      <img src={src} alt="爆踊" style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scale(1.15)", display: "block" }} />
     </span>
   );
 }

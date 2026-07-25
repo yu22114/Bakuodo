@@ -226,17 +226,17 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
 
   return (
     <div style={{ paddingBottom: "80px" }}>
-      {/* ロゴが転がる演出（丸いロゴ画像が用意でき次第 Logo に imageSrc を渡す） */}
-      <div style={{ position: "relative", height: "28px", overflow: "hidden", background: "#FAFAFA" }}>
-        <div style={{ position: "absolute", top: "50%", marginTop: "-16px", animation: "bdLogoRoll 7s linear infinite" }}>
-          <Logo />
+      {/* ロゴが左から右へ転がっていく演出。帯の高さはロゴが切れないようロゴ径+余白で確保する */}
+      <div style={{ position: "relative", height: "38px", overflow: "hidden", background: "#FAFAFA" }}>
+        <div style={{ position: "absolute", top: "50%", marginTop: "-14px", animation: "bdLogoRoll 7s linear infinite" }}>
+          <Logo size={28} />
         </div>
       </div>
       {/* ヘッダー */}
       <div style={{ padding: "20px 16px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
           <div />
-          <h1 style={{ margin: 0, fontSize: "42px", fontFamily: "'Rampart One',sans-serif", letterSpacing: "0.05em", background: "linear-gradient(135deg,#FF3D00 0%,#2563EB 50%,#16A34A 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1, filter: "drop-shadow(0 0 12px rgba(255,61,0,0.15))", textAlign: "center" }}>爆踊</h1>
+          <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center" }}><Logo size={52} /></h1>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "4px" }}>
             {/* 検索ボタン */}
             <button onClick={() => setSearchOpen(true)} style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "6px" }}>

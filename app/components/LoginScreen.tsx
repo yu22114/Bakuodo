@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { supabase } from "../../lib/supabase";
+import { Logo } from "./Logo";
 
 export function LoginScreen() {
   const [loading, setLoading] = useState(false);
@@ -16,7 +17,7 @@ export function LoginScreen() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", background: "#FFFFFF" }}>
       <div style={{ marginBottom: "48px", textAlign: "center" }}>
-        <h1 style={{ margin: 0, fontSize: "72px", fontFamily: "'Rampart One',sans-serif", letterSpacing: "0.05em", background: "linear-gradient(135deg,#FF3D00,#FF6D00,#D97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1 }}>爆踊</h1>
+        <h1 style={{ margin: 0, lineHeight: 0 }}><Logo size={132} /></h1>
         <p style={{ margin: "8px 0 0", fontSize: "12px", color: "rgba(0,0,0,0.4)", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.1em" }}>今日、ここで、踊ろう。</p>
       </div>
       <button
