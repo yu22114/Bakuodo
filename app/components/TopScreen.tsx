@@ -230,12 +230,17 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     : spots;
   const postCount = filtered.length;
 
+  // ヘッダー左上に出す今日の日付。ロゴだけだと寂しいので添える
+  const today = new Date();
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  const todayLabel = `${today.getMonth() + 1}/${today.getDate()}(${weekdays[today.getDay()]})`;
+
   return (
     <div style={{ paddingBottom: "80px" }}>
       {/* ヘッダー */}
       <div style={{ padding: "20px 16px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
-          <div />
+          <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: "rgba(0,0,0,0.4)", letterSpacing: "0.05em" }}>{todayLabel}</div>
           <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center", animation: "bdLogoRollIn 1.8s cubic-bezier(0.33,1,0.68,1) both" }}><Logo size={52} /></h1>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "4px" }}>
             {/* 検索ボタン */}
@@ -263,7 +268,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       <div style={{ display: "flex", background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
         {([["cypher", "CYPHER", "#FF3D00"], ["pl", "LESSON", "#2563EB"], ["spots", "SPOTS", "#16A34A"]] as const).map(([key, label, color]) => (
           <button key={key} onClick={() => goToSection(key)}
-            style={{ flex: 1, padding: "12px 4px", border: "none", borderBottom: `2px solid ${section === key ? color : "transparent"}`, background: section === key ? `${color}0f` : "transparent", color: section === key ? color : "rgba(0,0,0,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
+            // 未選択でもうっすら色がついているように、背景・文字色ともベースの薄さを持たせておく
+            style={{ flex: 1, padding: "12px 4px", border: "none", borderBottom: `2px solid ${section === key ? color : "transparent"}`, background: section === key ? `${color}1a` : `${color}08`, color: section === key ? color : `${color}99`, fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
             {label}
           </button>
         ))}
