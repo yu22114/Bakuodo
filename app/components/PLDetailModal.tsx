@@ -67,7 +67,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
             </div>
             <h2 style={{ margin: 0, fontSize: "24px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111", lineHeight: 1.1 }}>{lesson.title}</h2>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.4)", cursor: "pointer", marginLeft: "12px", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><X size={22} /></button>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#111111", cursor: "pointer", marginLeft: "12px", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><X size={22} /></button>
         </div>
 
         <div style={{ overflowY: "auto", padding: "8px 20px 0", flex: 1 }}>
@@ -79,36 +79,36 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
-            <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center" }}>
+            <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center" }}>
               <Clock size={14} color="rgba(0,0,0,0.4)" /> {date} {time}{lesson.ends_at ? `〜${formatEndTime(lesson.starts_at, lesson.ends_at)}` : ""}
             </div>
             {/* 地図へ飛べるのはここだけ。押せる場所だと分かるよう枠で囲う（DetailModalと同じ） */}
-            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lesson.location)}`} target="_blank" rel="noopener noreferrer" style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", textDecoration: "none", border: "1px solid rgba(0,0,0,0.12)", borderRadius: "8px", padding: "10px 12px", minHeight: "44px", background: "#FAFAFA" }}>
+            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lesson.location)}`} target="_blank" rel="noopener noreferrer" style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", textDecoration: "none", border: "1px solid rgba(0,0,0,0.12)", borderRadius: "8px", padding: "10px 12px", minHeight: "44px", background: "#FAFAFA" }}>
               <MapPin size={14} color="rgba(0,0,0,0.4)" />
               <span style={{ flex: 1 }}>{lesson.location}</span>
               <span style={{ fontSize: "11px", color: "#2563EB", fontWeight: 700, flexShrink: 0 }}>地図を開く →</span>
             </a>
-            <button onClick={() => onViewProfile(lesson.organizer.id)} style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
+            <button onClick={() => onViewProfile(lesson.organizer.id)} style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
               <User size={14} color="rgba(0,0,0,0.4)" /> 講師: {lesson.organizer.dancer_name}
             </button>
             {lesson.price != null && (
-              <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "rgba(0,0,0,0.65)", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center" }}>
                 <span style={{ fontSize: "14px" }}>💴</span> ¥{lesson.price.toLocaleString()}
               </div>
             )}
           </div>
 
-          {lesson.description && <p style={{ fontSize: "13px", color: "rgba(0,0,0,0.55)", lineHeight: 1.7, marginBottom: "20px", fontFamily: "'Noto Sans JP',sans-serif" }}>{lesson.description}</p>}
+          {lesson.description && <p style={{ fontSize: "13px", color: "#111111", lineHeight: 1.7, marginBottom: "20px", fontFamily: "'Noto Sans JP',sans-serif" }}>{lesson.description}</p>}
 
           <ParticipantBar count={participantsFetched ? participants.length : lesson.participant_count} max={lesson.max_members} />
 
           {participants.length > 0 && (
             <div style={{ marginTop: "16px" }}>
-              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.35)", letterSpacing: "0.15em", marginBottom: "8px" }}>PARTICIPANTS</div>
+              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.15em", marginBottom: "8px" }}>PARTICIPANTS</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 {participants.map(p => (
                   <button key={p.profile_id} onClick={() => onViewProfile(p.profile_id)}
-                    style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,0.08)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(0,0,0,0.45)", flexShrink: 0 }}
+                    style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,0.08)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111", flexShrink: 0 }}
                     title={p.dancer_name}>
                     {p.avatar_url
                       ? <img src={p.avatar_url} alt={p.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -121,7 +121,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
 
           {!isOwn && (
             isEnded ? (
-              <div style={{ marginTop: "20px", padding: "14px", background: "rgba(0,0,0,0.04)", borderRadius: "6px", textAlign: "center", fontSize: "13px", color: "rgba(0,0,0,0.4)", fontFamily: "'Noto Sans JP',sans-serif" }}>
+              <div style={{ marginTop: "20px", padding: "14px", background: "rgba(0,0,0,0.04)", borderRadius: "6px", textAlign: "center", fontSize: "13px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>
                 このレッスンは終了しました
               </div>
             ) : isFull ? (

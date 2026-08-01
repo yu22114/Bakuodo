@@ -101,7 +101,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
   };
 
   const inp: React.CSSProperties = { width: "100%", padding: "10px 12px", background: "#F5F7FA", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", color: "#111111", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" };
-  const lbl: React.CSSProperties = { display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.15em", color: "rgba(0,0,0,0.45)", marginBottom: "6px", textTransform: "uppercase" as const };
+  const lbl: React.CSSProperties = { display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.15em", color: "#111111", marginBottom: "6px", textTransform: "uppercase" as const };
 
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "50vh" }}>
@@ -117,7 +117,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
             <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
           </button>
         )}
-        <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.35)", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ EDIT PROFILE</div>
+        <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ EDIT PROFILE</div>
         <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#111111" }}>ダンサー設定</h2>
       </div>
       <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -145,7 +145,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: "13px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold" }}>{user.user_metadata?.full_name ?? "ダンサー"}</div>
           </div>
-          <button onClick={handleSignOut} style={{ background: "none", border: "1px solid rgba(0,0,0,0.12)", borderRadius: "4px", color: "rgba(0,0,0,0.45)", cursor: "pointer", padding: "6px 10px", display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif" }}>
+          <button onClick={handleSignOut} style={{ background: "none", border: "1px solid rgba(0,0,0,0.12)", borderRadius: "4px", color: "#111111", cursor: "pointer", padding: "6px 10px", display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif" }}>
             <LogOut size={12} /> ログアウト
           </button>
         </div>
@@ -179,7 +179,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
         </div>
         <div><label style={lbl}>Instagram（任意）</label>
           <div style={{ position: "relative" }}>
-            <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "rgba(0,0,0,0.35)", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif" }}>@</span>
+            <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#111111", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif" }}>@</span>
             <input style={{ ...inp, paddingLeft: "28px" }} placeholder="username" value={profile.instagram} onChange={e => { setProfile(p => ({ ...p, instagram: e.target.value })); setSaved(false); }} />
           </div>
         </div>
@@ -200,7 +200,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
             <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", fontWeight: "bold", display: "flex", alignItems: "center", gap: "6px" }}>
               🔒 鍵アカウント
             </div>
-            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.4)", marginTop: "3px" }}>
+            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", marginTop: "3px" }}>
               ONにするとフォローに承認が必要になります
             </div>
           </div>

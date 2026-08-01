@@ -134,7 +134,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
   };
 
   const inp: React.CSSProperties = { width: "100%", padding: "10px 12px", background: "#F5F7FA", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", color: "#111111", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" };
-  const lbl: React.CSSProperties = { display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.15em", color: "rgba(0,0,0,0.45)", marginBottom: "6px", textTransform: "uppercase" };
+  const lbl: React.CSSProperties = { display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.15em", color: "#111111", marginBottom: "6px", textTransform: "uppercase" };
 
   if (submitted) return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "70vh", gap: "16px", background: "#FFFFFF" }}>
@@ -146,7 +146,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
   return (
     <div style={{ paddingBottom: "80px", background: "#FAFAFA" }}>
       <div style={{ padding: "24px 16px 0", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
-        <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.35)", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ NEW SESSION</div>
+        <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ NEW SESSION</div>
         <h2 style={{ margin: "0 0 16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#111111" }}>投稿する</h2>
         <div style={{ display: "flex" }}>
           {([["cypher", "CYPHER"], ["pl", "LESSON"]] as const).map(([key, label]) => (
@@ -163,11 +163,11 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
         {/* 勝手に前回の入力が入っていると驚くので、復元したことを明示して捨てられるようにする */}
         {draftRestored && (
           <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", background: "rgba(37,99,235,0.06)", border: "1px solid rgba(37,99,235,0.2)", borderRadius: "8px" }}>
-            <div style={{ flex: 1, fontSize: "12px", color: "rgba(0,0,0,0.6)", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.5 }}>
+            <div style={{ flex: 1, fontSize: "12px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.5 }}>
               書きかけの内容を復元しました
             </div>
             <button onClick={discardDraft}
-              style={{ display: "flex", alignItems: "center", gap: "5px", padding: "8px 12px", minHeight: "40px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "6px", cursor: "pointer", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.55)", flexShrink: 0 }}>
+              style={{ display: "flex", alignItems: "center", gap: "5px", padding: "8px 12px", minHeight: "40px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "6px", cursor: "pointer", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", flexShrink: 0 }}>
               <RotateCcw size={12} /> 破棄
             </button>
           </div>
@@ -190,7 +190,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
               </select>
             </div>
           </div>
-          <div><label style={lbl}>イベント名 <span style={{ color: "rgba(0,0,0,0.3)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
+          <div><label style={lbl}>イベント名 <span style={{ color: "#111111", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
           <div><label style={lbl}>ジャンル</label>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "7px" }}>
               {GENRES.map(g => { const sel = form.genres.includes(g); const col = GENRE_COLORS[g]; return (<button key={g} onClick={() => toggleGenre(g)} style={{ padding: "6px 12px", border: sel ? `1px solid ${col}` : "1px solid rgba(0,0,0,0.1)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(0,0,0,0.45)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>{g}</button>); })}
@@ -207,11 +207,11 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
             </div>
           </div>
           <button onClick={() => setIsPrivate(v => !v)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
-            <div><div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", fontWeight: "bold" }}>🔒 フォロワー限定</div><div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.4)", marginTop: "3px" }}>ONにするとフォロワーにのみ表示されます</div></div>
+            <div><div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", fontWeight: "bold" }}>🔒 フォロワー限定</div><div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", marginTop: "3px" }}>ONにするとフォロワーにのみ表示されます</div></div>
             <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: isPrivate ? "#FF3D00" : "rgba(0,0,0,0.15)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}><div style={{ position: "absolute", top: "3px", left: isPrivate ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" }} /></div>
           </button>
           <button onClick={() => setRequiresApproval(v => !v)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
-            <div><div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", fontWeight: "bold" }}>📋 参加承認制</div><div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.4)", marginTop: "3px" }}>ONにすると参加に主催者の承認が必要になります</div></div>
+            <div><div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", fontWeight: "bold" }}>📋 参加承認制</div><div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", marginTop: "3px" }}>ONにすると参加に主催者の承認が必要になります</div></div>
             <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: requiresApproval ? "#FF3D00" : "rgba(0,0,0,0.15)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}><div style={{ position: "absolute", top: "3px", left: requiresApproval ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" }} /></div>
           </button>
           <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: form.date && form.station ? "#FF3D00" : "rgba(0,0,0,0.06)", color: form.date && form.station ? "#fff" : "rgba(0,0,0,0.25)", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: form.date && form.station ? "pointer" : "not-allowed", opacity: loading ? 0.6 : 1 }}>
@@ -235,7 +235,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
               </select>
             </div>
           </div>
-          <div><label style={lbl}>レッスン名 <span style={{ color: "rgba(0,0,0,0.3)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={plForm.title} onChange={e => setPlForm(f => ({ ...f, title: e.target.value }))} /></div>
+          <div><label style={lbl}>レッスン名 <span style={{ color: "#111111", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={plForm.title} onChange={e => setPlForm(f => ({ ...f, title: e.target.value }))} /></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <div><label style={lbl}>料金（円）</label><input style={inp} type="number" min="0" placeholder="例: 3000" value={plForm.price} onChange={e => setPlForm(f => ({ ...f, price: e.target.value }))} /></div>
             <div><label style={lbl}>対象レベル</label>
@@ -255,11 +255,11 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
           <div><label style={lbl}>詳細説明</label><textarea style={{ ...inp, minHeight: "80px", resize: "vertical" } as React.CSSProperties} placeholder="レッスン内容、持ち物など..." value={plForm.description} onChange={e => setPlForm(f => ({ ...f, description: e.target.value }))} /></div>
           <div><label style={lbl}>定員</label><input style={inp} type="number" min="1" placeholder="空欄 = 無制限" value={plForm.max_members} onChange={e => setPlForm(f => ({ ...f, max_members: e.target.value }))} /></div>
           <button onClick={() => setPlIsPrivate(v => !v)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
-            <div><div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", fontWeight: "bold" }}>🔒 フォロワー限定</div><div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.4)", marginTop: "3px" }}>ONにするとフォロワーにのみ表示されます</div></div>
+            <div><div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", fontWeight: "bold" }}>🔒 フォロワー限定</div><div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", marginTop: "3px" }}>ONにするとフォロワーにのみ表示されます</div></div>
             <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: plIsPrivate ? "#2563EB" : "rgba(0,0,0,0.15)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}><div style={{ position: "absolute", top: "3px", left: plIsPrivate ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" }} /></div>
           </button>
           <button onClick={() => setPlRequiresApproval(v => !v)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
-            <div><div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", fontWeight: "bold" }}>📋 申込承認制</div><div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.4)", marginTop: "3px" }}>ONにすると申込に講師の承認が必要になります</div></div>
+            <div><div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", fontWeight: "bold" }}>📋 申込承認制</div><div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", marginTop: "3px" }}>ONにすると申込に講師の承認が必要になります</div></div>
             <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: plRequiresApproval ? "#2563EB" : "rgba(0,0,0,0.15)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}><div style={{ position: "absolute", top: "3px", left: plRequiresApproval ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" }} /></div>
           </button>
           <button onClick={handleSubmitPL} disabled={loading} style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: plForm.date && plForm.station ? "#2563EB" : "rgba(0,0,0,0.06)", color: plForm.date && plForm.station ? "#fff" : "rgba(0,0,0,0.25)", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: plForm.date && plForm.station ? "pointer" : "not-allowed", opacity: loading ? 0.6 : 1 }}>

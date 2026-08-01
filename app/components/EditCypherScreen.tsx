@@ -70,7 +70,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
   };
 
   const inp: React.CSSProperties = { width: "100%", padding: "10px 12px", background: "#F5F7FA", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", color: "#111111", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" };
-  const lbl: React.CSSProperties = { display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.15em", color: "rgba(0,0,0,0.45)", marginBottom: "6px", textTransform: "uppercase" as const };
+  const lbl: React.CSSProperties = { display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.15em", color: "#111111", marginBottom: "6px", textTransform: "uppercase" as const };
 
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "50vh" }}>
@@ -84,7 +84,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
         <button onClick={onBack} style={{ background: "rgba(0,0,0,0.06)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", marginBottom: "14px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>
           <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
         </button>
-        <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.35)", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ EDIT SESSION</div>
+        <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ EDIT SESSION</div>
         <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#111111" }}>サイファーを編集</h2>
       </div>
       <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -107,7 +107,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
             </select>
           </div>
         </div>
-        <div><label style={lbl}>イベント名 <span style={{ color: "rgba(0,0,0,0.3)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
+        <div><label style={lbl}>イベント名 <span style={{ color: "#111111", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
         <div>
           <label style={lbl}>ジャンル</label>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "7px" }}>
@@ -127,7 +127,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
             <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", fontWeight: "bold" }}>
               🔒 フォロワー限定
             </div>
-            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.4)", marginTop: "3px" }}>
+            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", marginTop: "3px" }}>
               ONにするとフォロワーにのみ表示されます
             </div>
           </div>
@@ -141,7 +141,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
             <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", fontWeight: "bold" }}>
               📋 参加承認制
             </div>
-            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.4)", marginTop: "3px" }}>
+            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", marginTop: "3px" }}>
               ONにすると参加に主催者の承認が必要になります
             </div>
           </div>

@@ -240,7 +240,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       {/* ヘッダー */}
       <div style={{ padding: "20px 16px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
-          <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: "rgba(0,0,0,0.4)", letterSpacing: "0.05em" }}>{todayLabel}</div>
+          <div style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111", letterSpacing: "0.02em" }}>{todayLabel}</div>
           <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center", animation: "bdLogoRollIn 1.8s cubic-bezier(0.33,1,0.68,1) both" }}><Logo size={52} /></h1>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "4px" }}>
             {/* 検索ボタン */}
@@ -273,7 +273,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             {/* 選んでいるタブだけ、文字を1つずつ左から順に上下させてウェーブっぽく見せる */}
             {section === key
               ? [...label].map((ch, i) => (
-                  <span key={i} style={{ display: "inline-block", animation: `bdLetterWave 0.9s ease-in-out ${i * 0.09}s infinite` }}>{ch}</span>
+                  <span key={i} style={{ display: "inline-block", animation: `bdLetterWave 1.6s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.16}s infinite` }}>{ch}</span>
                 ))
               : label}
           </button>
@@ -301,11 +301,11 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       <div key={section} style={{ animation: `${slideDir === 1 ? "bdSlideFromRight" : "bdSlideFromLeft"} 0.2s ease-out` }}>
       {section === "spots" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 16px", background: "linear-gradient(180deg, rgba(22,163,74,0.04) 0%, #F5F7FA 120px)" }}>
-          <div style={{ padding: "8px 12px", background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.15)", borderRadius: "6px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.5)", lineHeight: 1.6 }}>
-            📍 ダンサーの聖地です。今そこにいる人はチェックインを！<span style={{ color: "rgba(0,0,0,0.35)" }}> (チェックインは3時間で自動退場)</span>
+          <div style={{ padding: "8px 12px", background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.15)", borderRadius: "6px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", lineHeight: 1.6 }}>
+            📍 ダンサーの聖地です。今そこにいる人はチェックインを！<span style={{ color: "#111111" }}> (チェックインは3時間で自動退場)</span>
           </div>
           {sortedSpots.length === 0
-            ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.35)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>スポット情報はまだありません</div>
+            ? <div style={{ textAlign: "center", padding: "40px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>スポット情報はまだありません</div>
             : sortedSpots.map(s => <SpotCard key={s.id} spot={s} user={user} userLocation={userLocation} onViewProfile={id => onViewProfile?.(id)} />)}
         </div>
       ) : section === "pl" ? (
@@ -313,7 +313,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
           {loading && lessons.length === 0
             ? <Loading />
             : !loading && lessons.length === 0
-              ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.5)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだプライベートレッスンがありません</div>
+              ? <div style={{ textAlign: "center", padding: "40px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだプライベートレッスンがありません</div>
               : lessons.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => onPLClick(l)} />)}
         </div>
       ) : (
@@ -324,7 +324,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
               <div key={s.label} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ color: "#FF3D00" }}>{s.icon}</span>
                 <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111" }}>{s.value}</span>
-                <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.5)" }}>{s.label}</span>
+                <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111" }}>{s.label}</span>
               </div>
             ))}
             {activeFilterCount > 0 && (
@@ -339,7 +339,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             {loading && cyphers.length === 0
               ? <Loading />
               : !loading && filtered.length === 0
-                ? <div style={{ textAlign: "center", padding: "40px", color: "rgba(0,0,0,0.5)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>条件に合うサイファーがありません</div>
+                ? <div style={{ textAlign: "center", padding: "40px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>条件に合うサイファーがありません</div>
                 : filtered.map((c, i) => <CypherCard key={c.id} cypher={c} index={i} onClick={() => onCardClick(c)} />)}
           </div>
         </>
@@ -356,12 +356,12 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
                 <SlidersHorizontal size={18} color="#111" />
                 <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111", letterSpacing: "0.05em" }}>サイファーを検索</span>
               </div>
-              <button onClick={() => setSearchOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(0,0,0,0.4)", padding: "4px" }}><X size={20} /></button>
+              <button onClick={() => setSearchOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#111111", padding: "4px" }}><X size={20} /></button>
             </div>
 
             {/* エリア */}
             <div style={{ marginBottom: "24px" }}>
-              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.45)", letterSpacing: "0.15em", marginBottom: "8px" }}>AREA</div>
+              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.15em", marginBottom: "8px" }}>AREA</div>
               <div style={{ position: "relative", marginBottom: "8px" }}>
                 <Search size={14} color="rgba(0,0,0,0.3)" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)" }} />
                 <input
@@ -370,7 +370,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
                   placeholder="例: 新宿、渋谷、横浜（部分一致）"
                   style={{ width: "100%", padding: "10px 12px 10px 36px", background: "#F5F7FA", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
                 />
-                {areaText && <button onClick={() => setAreaText("")} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "rgba(0,0,0,0.3)", padding: "2px" }}><X size={14} /></button>}
+                {areaText && <button onClick={() => setAreaText("")} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#111111", padding: "2px" }}><X size={14} /></button>}
               </div>
               <button onClick={handleUseLocation} disabled={locating}
                 style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", background: userLocation ? "rgba(22,163,74,0.08)" : "#F5F7FA", border: `1px solid ${userLocation ? "rgba(22,163,74,0.3)" : "rgba(0,0,0,0.1)"}`, borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: userLocation ? "#16A34A" : "rgba(0,0,0,0.5)", opacity: locating ? 0.6 : 1 }}>
@@ -381,7 +381,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
 
             {/* 日程 */}
             <div style={{ marginBottom: "24px" }}>
-              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.45)", letterSpacing: "0.15em", marginBottom: "8px" }}>DATE</div>
+              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.15em", marginBottom: "8px" }}>DATE</div>
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                 {([["ALL", "すべて"], ["today", `今日 ${now.getMonth()+1}/${now.getDate()}`], ["tomorrow", `明日 ${tomorrowDate.getMonth()+1}/${tomorrowDate.getDate()}`], ["week", "今週"]] as const).map(([val, label]) => (
                   <button key={val} onClick={() => setDateFilter(val)}
@@ -398,7 +398,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             </button>
             {activeFilterCount > 0 && (
               <button onClick={() => { setSelectedGenres([]); setDateFilter("ALL"); setAreaText(""); setSearchOpen(false); }}
-                style={{ width: "100%", marginTop: "10px", padding: "12px", border: "1px solid rgba(0,0,0,0.12)", borderRadius: "8px", background: "transparent", color: "rgba(0,0,0,0.45)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                style={{ width: "100%", marginTop: "10px", padding: "12px", border: "1px solid rgba(0,0,0,0.12)", borderRadius: "8px", background: "transparent", color: "#111111", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
                 フィルターをリセット
               </button>
             )}

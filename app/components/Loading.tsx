@@ -13,7 +13,7 @@ export function Loading({ size = 40, label }: { size?: number; label?: string })
         borderTopColor: "#FF3D00",
         animation: "bdSpin 0.7s linear infinite",
       }} />
-      {label && <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.35)" }}>{label}</div>}
+      {label && <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111" }}>{label}</div>}
     </div>
   );
 }

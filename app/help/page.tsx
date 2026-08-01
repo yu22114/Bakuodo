@@ -1,12 +1,12 @@
 export default function HelpPage() {
   const section = (title: string, items: { q: string; a: string }[]) => (
     <section style={{ marginBottom: "32px" }}>
-      <h2 style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.2em", color: "rgba(0,0,0,0.35)", marginBottom: "12px", textTransform: "uppercase" as const }}>▶ {title}</h2>
+      <h2 style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.2em", color: "#111111", marginBottom: "12px", textTransform: "uppercase" as const }}>▶ {title}</h2>
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         {items.map(({ q, a }) => (
           <div key={q} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", padding: "14px 16px" }}>
             <p style={{ margin: "0 0 6px", fontSize: "14px", fontWeight: "700", color: "#111111" }}>{q}</p>
-            <p style={{ margin: 0, fontSize: "13px", color: "rgba(0,0,0,0.6)", lineHeight: "1.7", whiteSpace: "pre-line" }}>{a}</p>
+            <p style={{ margin: 0, fontSize: "13px", color: "#111111", lineHeight: "1.7", whiteSpace: "pre-line" }}>{a}</p>
           </div>
         ))}
       </div>
@@ -17,9 +17,9 @@ export default function HelpPage() {
     <div style={{ maxWidth: "480px", margin: "0 auto", padding: "32px 20px 80px", fontFamily: "'Noto Sans JP', sans-serif", color: "#111111", background: "#FAFAFA", minHeight: "100vh" }}>
       <div style={{ marginBottom: "32px" }}>
         <a href="/" style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "rgba(0,0,0,0.06)", borderRadius: "8px", padding: "10px 16px", marginBottom: "20px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "600", color: "#111111", textDecoration: "none" }}>← 戻る</a>
-        <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.35)", letterSpacing: "0.2em", marginBottom: "8px" }}>▶ HELP</div>
+        <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.2em", marginBottom: "8px" }}>▶ HELP</div>
         <h1 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "36px", color: "#111111" }}>使い方ガイド</h1>
-        <p style={{ margin: "8px 0 0", fontSize: "12px", color: "rgba(0,0,0,0.4)", fontFamily: "'Noto Sans JP',sans-serif" }}>爆踊のつかいかた</p>
+        <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>爆踊のつかいかた</p>
       </div>
 
       {section("爆踊とは", [

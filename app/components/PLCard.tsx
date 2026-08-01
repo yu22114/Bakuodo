@@ -27,12 +27,12 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
       style={{ background: "#FFFFFF", border: `1px solid ${hover ? "rgba(37,99,235,0.3)" : "rgba(0,0,0,0.08)"}`, borderLeft: `4px solid ${isEnded ? "rgba(0,0,0,0.1)" : "#2563EB"}`, borderRadius: "10px", padding: "18px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? "0 6px 12px rgba(0,0,0,0.05), 0 18px 36px rgba(37,99,235,0.18)" : "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(0,0,0,0.06)", opacity: isEnded ? 0.55 : 1 }}>
       {/* PLバッジ */}
       <div style={{ position: "absolute", top: 0, left: 0, background: "#2563EB", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold", borderBottomRightRadius: "4px" }}>PL</div>
-      {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(0,0,0,0.1)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.45)", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
+      {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(0,0,0,0.1)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", marginTop: "14px" }}>
         <div style={{ flex: 1, paddingRight: "52px" }}>
           <h3 style={{ margin: 0, fontSize: "19px", fontWeight: 700, color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{lesson.title}</h3>
-          <div style={{ fontSize: "12px", color: "rgba(0,0,0,0.55)", marginTop: "3px", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+          <div style={{ fontSize: "12px", color: "#111111", marginTop: "3px", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
             <span>by {lesson.organizer.dancer_name}</span>
             {lesson.organizer.instagram && (
               <span style={{ color: "#A855F7" }}>@{lesson.organizer.instagram}</span>
@@ -49,13 +49,13 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
       <div style={{ display: "flex", flexDirection: "column", gap: "5px", marginBottom: "12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <Clock size={11} color="rgba(0,0,0,0.35)" />
-          <span style={{ fontSize: "11px", color: "rgba(0,0,0,0.6)", fontFamily: "'Noto Sans JP',sans-serif" }}>{date} {time}{lesson.ends_at ? `〜${formatEndTime(lesson.starts_at, lesson.ends_at)}` : ""}</span>
+          <span style={{ fontSize: "11px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>{date} {time}{lesson.ends_at ? `〜${formatEndTime(lesson.starts_at, lesson.ends_at)}` : ""}</span>
           <span style={{ fontSize: "9px", padding: "1px 6px", background: isEnded ? "rgba(0,0,0,0.06)" : "rgba(37,99,235,0.08)", borderRadius: "3px", color: isEnded ? "rgba(0,0,0,0.4)" : "#2563EB", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold" }}>{until}</span>
         </div>
         {/* カード上では地図リンクにしない（CypherCardと同じ理由） */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <MapPin size={11} color="rgba(0,0,0,0.35)" />
-          <span style={{ fontSize: "11px", color: "rgba(0,0,0,0.6)", fontFamily: "'Noto Sans JP',sans-serif" }}>{lesson.location}</span>
+          <span style={{ fontSize: "11px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>{lesson.location}</span>
         </div>
       </div>
 
@@ -65,7 +65,7 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
           <BookOpen size={9} /> {LEVEL_LABELS[lesson.target_level] ?? "全レベル"}
         </span>
         {lesson.price != null && (
-          <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", color: "rgba(0,0,0,0.55)", fontFamily: "'Noto Sans JP',sans-serif" }}>
+          <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>
             ¥{lesson.price.toLocaleString()}
           </span>
         )}

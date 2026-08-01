@@ -95,7 +95,7 @@ export function SpotCard({ spot, user, userLocation, onViewProfile }: {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-              <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.35)", letterSpacing: "0.15em" }}>SPOT</span>
+              <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.15em" }}>SPOT</span>
               {distance !== null && (
                 <span style={{ display: "flex", alignItems: "center", gap: "2px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: tooFar ? "rgba(0,0,0,0.3)" : "#16A34A", background: tooFar ? "rgba(0,0,0,0.05)" : "rgba(22,163,74,0.08)", padding: "1px 6px", borderRadius: "8px" }}>
                   <Navigation size={8} /> {formatDistance(distance)}
@@ -106,17 +106,17 @@ export function SpotCard({ spot, user, userLocation, onViewProfile }: {
             <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.location)}`} target="_blank" rel="noopener noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: "4px", marginTop: "4px", textDecoration: "none" }}>
               <MapPin size={10} color="rgba(0,0,0,0.35)" />
-              <span style={{ fontSize: "10px", color: "rgba(0,0,0,0.45)", fontFamily: "'Noto Sans JP',sans-serif", textDecoration: "underline dotted", textUnderlineOffset: "2px" }}>{spot.location}</span>
+              <span style={{ fontSize: "10px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", textDecoration: "underline dotted", textUnderlineOffset: "2px" }}>{spot.location}</span>
             </a>
             {spot.description && (
-              <div style={{ fontSize: "11px", color: "rgba(0,0,0,0.45)", marginTop: "4px", lineHeight: 1.5 }}>{spot.description}</div>
+              <div style={{ fontSize: "11px", color: "#111111", marginTop: "4px", lineHeight: 1.5 }}>{spot.description}</div>
             )}
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", flexShrink: 0 }}>
             <div style={{ fontSize: "28px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: checkins.length > 0 ? "#FF3D00" : "rgba(0,0,0,0.2)", lineHeight: 1 }}>
               {loading ? "-" : checkins.length}
             </div>
-            <div style={{ fontSize: "8px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.3)", letterSpacing: "0.1em" }}>NOW</div>
+            <div style={{ fontSize: "8px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.1em" }}>NOW</div>
           </div>
         </div>
 
@@ -138,7 +138,7 @@ export function SpotCard({ spot, user, userLocation, onViewProfile }: {
 
       {!loading && checkins.length > 0 && (
         <div style={{ padding: "10px 16px 12px" }}>
-          <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.3)", letterSpacing: "0.12em", marginBottom: "8px" }}>
+          <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.12em", marginBottom: "8px" }}>
             TODAY'S CREW ({checkins.length})
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>

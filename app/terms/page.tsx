@@ -5,13 +5,13 @@ export default function TermsPage() {
     <div style={{ maxWidth: "480px", margin: "0 auto", padding: "32px 20px 80px", fontFamily: "'Noto Sans JP', sans-serif", color: "#111111", background: "#FAFAFA", minHeight: "100vh" }}>
       <div style={{ marginBottom: "28px" }}>
         <a href="/" style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "rgba(0,0,0,0.06)", borderRadius: "8px", padding: "10px 16px", marginBottom: "20px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "600", color: "#111111", textDecoration: "none" }}>← 戻る</a>
-        <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.35)", letterSpacing: "0.2em", marginBottom: "8px" }}>▶ LEGAL</div>
+        <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.2em", marginBottom: "8px" }}>▶ LEGAL</div>
         <h1 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "36px", color: "#111111" }}>利用規約</h1>
-        <p style={{ margin: "8px 0 0", fontSize: "12px", color: "rgba(0,0,0,0.4)", fontFamily: "'Noto Sans JP',sans-serif" }}>最終更新: 2026年7月31日</p>
+        <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>最終更新: 2026年7月31日</p>
       </div>
 
       {/* 前文 */}
-      <p style={{ fontSize: "13px", lineHeight: "1.8", color: "rgba(0,0,0,0.7)", margin: "0 0 28px", whiteSpace: "pre-line" }}>
+      <p style={{ fontSize: "13px", lineHeight: "1.8", color: "#111111", margin: "0 0 28px", whiteSpace: "pre-line" }}>
         {"本利用規約（以下「本規約」といいます。）は、サイファー募集アプリ「爆踊」（以下「本サービス」といいます。）の利用条件を定めるものです。\nユーザーは、本サービスを利用することにより、本規約に同意したものとみなされます。"}
       </p>
 
@@ -75,7 +75,7 @@ export default function TermsPage() {
       ].map(s => (
         <section key={s.title} style={{ marginBottom: "28px" }}>
           <h2 style={{ fontSize: "14px", fontWeight: "700", marginBottom: "8px", color: "#111111" }}>{s.title}</h2>
-          <p style={{ fontSize: "13px", lineHeight: "1.8", color: "rgba(0,0,0,0.7)", margin: 0, whiteSpace: "pre-line" }}>{s.body}</p>
+          <p style={{ fontSize: "13px", lineHeight: "1.8", color: "#111111", margin: 0, whiteSpace: "pre-line" }}>{s.body}</p>
         </section>
       ))}
 
@@ -83,7 +83,7 @@ export default function TermsPage() {
       <div style={{ marginTop: "8px", padding: "16px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px" }}>
         <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
           <span style={{ fontSize: "12px", fontWeight: "700", color: "#111111", minWidth: "84px" }}>サービス名</span>
-          <span style={{ fontSize: "13px", color: "rgba(0,0,0,0.7)" }}>爆踊</span>
+          <span style={{ fontSize: "13px", color: "#111111" }}>爆踊</span>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
           <span style={{ fontSize: "12px", fontWeight: "700", color: "#111111", minWidth: "84px" }}>問い合わせ先</span>
