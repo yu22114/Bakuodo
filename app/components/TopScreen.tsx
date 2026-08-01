@@ -270,7 +270,12 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
           <button key={key} onClick={() => goToSection(key)}
             // 未選択でもうっすら色がついているように、背景・文字色ともベースの薄さを持たせておく
             style={{ flex: 1, padding: "12px 4px", border: "none", borderBottom: `2px solid ${section === key ? color : "transparent"}`, background: section === key ? `${color}1a` : `${color}08`, color: section === key ? color : `${color}99`, fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
-            {label}
+            {/* 選んでいるタブだけ、文字を1つずつ左から順に上下させてウェーブっぽく見せる */}
+            {section === key
+              ? [...label].map((ch, i) => (
+                  <span key={i} style={{ display: "inline-block", animation: `bdLetterWave 0.9s ease-in-out ${i * 0.09}s infinite` }}>{ch}</span>
+                ))
+              : label}
           </button>
         ))}
       </div>

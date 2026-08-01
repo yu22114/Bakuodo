@@ -215,6 +215,8 @@ export default function BakuOdori() {
         @keyframes bdLogoRollInLg{from{transform:translateX(-200px) rotate(-174deg)}to{transform:translateX(0) rotate(0deg)}}
         /* カードが下からふわっと浮かび上がってくる。1枚ずつ少しずつ遅らせて出す */
         @keyframes bdCardFloatIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+        /* 選択中タブの文字が客席ウェーブみたいに1文字ずつ上下する。各文字の animation-delay をずらして波にする */
+        @keyframes bdLetterWave{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
       `}</style>
 
       <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#FAFAFA" }}>
