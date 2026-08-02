@@ -273,7 +273,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             {/* 選んでいるタブだけ、文字を1つずつ左から順に上下させてウェーブっぽく見せる */}
             {section === key
               ? [...label].map((ch, i) => (
-                  <span key={i} style={{ display: "inline-block", animation: `bdLetterWave 1.6s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.16}s infinite` }}>{ch}</span>
+                  <span key={i} style={{ display: "inline-block", animation: `bdLetterWave 1.6s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.125}s infinite` }}>{ch}</span>
                 ))
               : label}
           </button>

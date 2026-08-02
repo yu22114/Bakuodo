@@ -218,7 +218,7 @@ export default function BakuOdori() {
         /* 選択中タブの文字が客席ウェーブみたいに1文字ずつ上下する。各文字の animation-delay をずらして波にする */
         /* 「ぽこっ」と跳ねてすぐ止まる区間を作り、残りは静止させることで
            滑らかな波ではなく1文字ずつ弾む感じにする */
-        @keyframes bdLetterWave{0%,55%,100%{transform:translateY(0)}25%{transform:translateY(-7px)}40%{transform:translateY(0)}}
+        @keyframes bdLetterWave{0%,55%,100%{transform:translateY(0)}25%{transform:translateY(-3.5px)}40%{transform:translateY(0)}}
       `}</style>
 
       <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#FAFAFA" }}>
