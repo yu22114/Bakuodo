@@ -238,7 +238,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   return (
     <div style={{ paddingBottom: "80px" }}>
       {/* ヘッダー */}
-      <div style={{ padding: "20px 16px", borderBottom: "1px solid #111111", background: "#FFFFFF" }}>
+      <div style={{ padding: "20px 16px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
           <div style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111", letterSpacing: "0.02em" }}>{todayLabel}</div>
           <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center", animation: "bdLogoRollIn 1.8s cubic-bezier(0.33,1,0.68,1) both" }}><Logo size={52} /></h1>
@@ -265,7 +265,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       </div>
 
       {/* セクション切り替え */}
-      <div style={{ display: "flex", background: "#FFFFFF", borderBottom: "1px solid #111111" }}>
+      <div style={{ display: "flex", background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
         {([["cypher", "CYPHER", "#FF3D00"], ["pl", "LESSON", "#2563EB"], ["spots", "SPOTS", "#16A34A"]] as const).map(([key, label, color]) => (
           <button key={key} onClick={() => goToSection(key)}
             // 未選択でもうっすら色がついているように、背景・文字色ともベースの薄さを持たせておく
@@ -282,7 +282,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
 
       {/* ジャンルチップ（横スクロール） */}
       {section === "cypher" && (
-        <div style={{ display: "flex", gap: "6px", padding: "10px 16px", overflowX: "auto", scrollbarWidth: "none", borderBottom: "1px solid #111111", background: "#FFFFFF" }}>
+        <div style={{ display: "flex", gap: "6px", padding: "10px 16px", overflowX: "auto", scrollbarWidth: "none", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
           {(["ALL", ...GENRES] as (GenreKey | "ALL")[]).map(g => {
             const sel = g === "ALL" ? selectedGenres.length === 0 : selectedGenres.includes(g as GenreKey);
             const col = g === "ALL" ? "#FF3D00" : GENRE_COLORS[g as GenreKey];
@@ -319,7 +319,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       ) : (
         <>
           {/* POSTS */}
-          <div style={{ display: "flex", padding: "10px 16px", gap: "20px", borderBottom: "1px solid #111111", background: "#FFFFFF", alignItems: "center" }}>
+          <div style={{ display: "flex", padding: "10px 16px", gap: "20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", alignItems: "center" }}>
             {[{ label: "POSTS", value: postCount, icon: <Radio size={10} /> }].map(s => (
               <div key={s.label} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ color: "#FF3D00" }}>{s.icon}</span>

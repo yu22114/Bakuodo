@@ -219,6 +219,11 @@ export default function BakuOdori() {
         /* 「ぽこっ」と跳ねてすぐ止まる区間を作り、残りは静止させることで
            滑らかな波ではなく1文字ずつ弾む感じにする */
         @keyframes bdLetterWave{0%,55%,100%{transform:translateY(0)}25%{transform:translateY(-3.5px)}40%{transform:translateY(0)}}
+        /* タッチ端末はホバーできないので、PCでホバー時だけ出る色付き影を常時出す */
+        @media (hover: none) {
+          .bd-glow-card { box-shadow: 0 6px 12px rgba(0,0,0,0.05), 0 18px 36px var(--bd-glow, transparent) !important; }
+          .bd-glow-card-blue { box-shadow: 0 6px 12px rgba(0,0,0,0.05), 0 18px 36px rgba(37,99,235,0.18) !important; }
+        }
       `}</style>
 
       <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#FAFAFA" }}>

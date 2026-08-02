@@ -80,7 +80,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
 
   return (
     <div style={{ paddingBottom: "80px", background: "#FAFAFA" }}>
-      <div style={{ padding: "24px 16px 16px", borderBottom: "1px solid #111111", background: "#FFFFFF" }}>
+      <div style={{ padding: "24px 16px 16px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
         <button onClick={onBack} style={{ background: "rgba(0,0,0,0.06)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", marginBottom: "14px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>
           <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
         </button>

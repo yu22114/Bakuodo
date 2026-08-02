@@ -145,7 +145,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
 
   return (
     <div style={{ paddingBottom: "80px", background: "#FAFAFA" }}>
-      <div style={{ padding: "24px 16px 0", borderBottom: "1px solid #111111", background: "#FFFFFF" }}>
+      <div style={{ padding: "24px 16px 0", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
         <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ NEW SESSION</div>
         <h2 style={{ margin: "0 0 16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#111111" }}>投稿する</h2>
         <div style={{ display: "flex" }}>
