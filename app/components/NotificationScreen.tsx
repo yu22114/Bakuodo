@@ -83,7 +83,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#FAFAFA", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>
-      <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", display: "flex", alignItems: "center", gap: "16px" }}>
+      <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid #111111", background: "#FFFFFF", display: "flex", alignItems: "center", gap: "16px" }}>
         <button onClick={onBack} style={{ background: "rgba(0,0,0,0.06)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px", flexShrink: 0 }}>
           <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
         </button>

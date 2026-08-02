@@ -167,7 +167,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       : { paddingBottom: "80px", background: "#FAFAFA" }
     }>
       {/* ヘッダー */}
-      <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
+      <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid #111111", background: "#FFFFFF" }}>
         {onBack && (
           <button onClick={onBack} style={{ background: "rgba(0,0,0,0.06)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", marginBottom: "14px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>
             <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
@@ -249,7 +249,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       </div>
 
       {/* メインタブ切り替え */}
-      <div style={{ display: "flex", background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
+      <div style={{ display: "flex", background: "#FFFFFF", borderBottom: "1px solid #111111" }}>
         {(["profile", "cyphers"] as const).map(t => (
           <button key={t} onClick={() => setMainTab(t)}
             style={{ flex: 1, padding: "13px", border: "none", background: "transparent", borderBottom: `2px solid ${mainTab === t ? "#FF3D00" : "transparent"}`, color: mainTab === t ? "#FF3D00" : "rgba(0,0,0,0.4)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: mainTab === t ? "bold" : "normal", letterSpacing: "0.08em" }}>
