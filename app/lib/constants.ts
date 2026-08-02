@@ -28,14 +28,16 @@ export const GENRES: GenreKey[] = [
   "All Style",
 ];
 
+// CYPHER=#FF3D00 / LESSON=#2563EB / SPOTS=#16A34A（TopScreenのセクションタブ色）とは
+// 意味の異なる塊なので、ジャンル色に同じ色を使わないようにしている
 export const GENRE_COLORS: Record<GenreKey, string> = {
-  Breaking: "#FF3D00",
+  Breaking: "#DB2777",
   Popping: "#0891B2",
   Locking: "#D97706",
   Waacking: "#A855F7",
-  House: "#16A34A",
+  House: "#0D9488",
   Krump: "#EA580C",
-  "Hip-Hop": "#2563EB",
+  "Hip-Hop": "#4338CA",
   "All Style": "#6B7280",
 };
 

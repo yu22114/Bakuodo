@@ -93,6 +93,9 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   const [searchOpen, setSearchOpen] = useState(false);
   const [selectedGenres, setSelectedGenres] = useState<GenreKey[]>([]);
   const [dateFilter, setDateFilter] = useState<"ALL" | "today" | "tomorrow" | "week">("ALL");
+  // カレンダーで選んだ特定の日付（"YYYY-MM-DD"）。空文字なら未指定。
+  // プリセット（今日/明日/今週）とは排他にする — 両方効くと分かりづらいため
+  const [specificDate, setSpecificDate] = useState("");
   const [areaText, setAreaText] = useState("");
   // 現在地
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -184,7 +187,13 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
 
   const filtered = cyphers.filter(c => {
     if (selectedGenres.length > 0 && !selectedGenres.some(g => c.genres.includes(g))) return false;
-    if (dateFilter !== "ALL") {
+    if (specificDate) {
+      // <input type="date">はローカルタイムゾーンでYYYY-MM-DDを返すので、
+      // starts_atも同じくローカルの年月日に直してから文字列比較する
+      const d = new Date(c.starts_at);
+      const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      if (dStr !== specificDate) return false;
+    } else if (dateFilter !== "ALL") {
       const d = new Date(c.starts_at).toDateString();
       if (dateFilter === "today" && d !== todayStr) return false;
       if (dateFilter === "tomorrow" && d !== tomorrowStr) return false;
@@ -196,7 +205,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     return true;
   });
 
-  const activeFilterCount = (selectedGenres.length > 0 ? 1 : 0) + (dateFilter !== "ALL" ? 1 : 0) + (areaText.trim() ? 1 : 0);
+  const activeFilterCount = (selectedGenres.length > 0 ? 1 : 0) + (specificDate ? 1 : dateFilter !== "ALL" ? 1 : 0) + (areaText.trim() ? 1 : 0);
 
   // 現在地取得 → 逆ジオコードでエリア名をareaTextに反映
   const handleUseLocation = async () => {
@@ -285,7 +294,9 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         <div style={{ display: "flex", gap: "6px", padding: "10px 16px", overflowX: "auto", scrollbarWidth: "none", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
           {(["ALL", ...GENRES] as (GenreKey | "ALL")[]).map(g => {
             const sel = g === "ALL" ? selectedGenres.length === 0 : selectedGenres.includes(g as GenreKey);
-            const col = g === "ALL" ? "#FF3D00" : GENRE_COLORS[g as GenreKey];
+            // ALLは「絞り込みなし」であって特定のジャンル/セクションではないので、
+            // CYPHERタブと同じ色を使わず中立な色にする
+            const col = g === "ALL" ? "#111111" : GENRE_COLORS[g as GenreKey];
             return (
               <button key={g} onClick={() => setSelectedGenres(prev => g === "ALL" ? [] : prev.includes(g as GenreKey) ? prev.filter(x => x !== g) : [...prev, g as GenreKey])}
                 style={{ flexShrink: 0, padding: "5px 12px", border: sel ? `1px solid ${col}` : "1px solid rgba(0,0,0,0.12)", borderRadius: "20px", background: sel ? `${col}18` : "transparent", color: sel ? col : "rgba(0,0,0,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: sel ? "bold" : "normal" }}>
@@ -328,7 +339,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
               </div>
             ))}
             {activeFilterCount > 0 && (
-              <button onClick={() => { setSelectedGenres([]); setDateFilter("ALL"); setAreaText(""); }}
+              <button onClick={() => { setSelectedGenres([]); setDateFilter("ALL"); setSpecificDate(""); setAreaText(""); }}
                 style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px", background: "rgba(255,61,0,0.08)", border: "1px solid rgba(255,61,0,0.2)", borderRadius: "12px", padding: "3px 10px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#FF3D00", cursor: "pointer" }}>
                 <X size={10} /> フィルター解除
               </button>
@@ -382,14 +393,21 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             {/* 日程 */}
             <div style={{ marginBottom: "24px" }}>
               <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.15em", marginBottom: "8px" }}>DATE</div>
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "8px" }}>
                 {([["ALL", "すべて"], ["today", `今日 ${now.getMonth()+1}/${now.getDate()}`], ["tomorrow", `明日 ${tomorrowDate.getMonth()+1}/${tomorrowDate.getDate()}`], ["week", "今週"]] as const).map(([val, label]) => (
-                  <button key={val} onClick={() => setDateFilter(val)}
-                    style={{ padding: "8px 16px", border: dateFilter === val ? "1px solid #FF3D00" : "1px solid rgba(0,0,0,0.1)", borderRadius: "20px", background: dateFilter === val ? "rgba(255,61,0,0.08)" : "transparent", color: dateFilter === val ? "#FF3D00" : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: dateFilter === val ? "bold" : "normal" }}>
+                  <button key={val} onClick={() => { setDateFilter(val); setSpecificDate(""); }}
+                    style={{ padding: "8px 16px", border: !specificDate && dateFilter === val ? "1px solid #FF3D00" : "1px solid rgba(0,0,0,0.1)", borderRadius: "20px", background: !specificDate && dateFilter === val ? "rgba(255,61,0,0.08)" : "transparent", color: !specificDate && dateFilter === val ? "#FF3D00" : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: !specificDate && dateFilter === val ? "bold" : "normal" }}>
                     {label}
                   </button>
                 ))}
               </div>
+              {/* カレンダーで特定の日を選ぶ。選ぶと上のプリセットは自動的に解除される */}
+              <input
+                type="date"
+                value={specificDate}
+                onChange={e => { setSpecificDate(e.target.value); setDateFilter("ALL"); }}
+                style={{ width: "100%", padding: "10px 12px", background: specificDate ? "rgba(255,61,0,0.06)" : "#F5F7FA", border: specificDate ? "1px solid #FF3D00" : "1px solid rgba(0,0,0,0.1)", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", color: "#111111", outline: "none", boxSizing: "border-box" }}
+              />
             </div>
 
             <button onClick={() => setSearchOpen(false)}
@@ -397,7 +415,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
               {filtered.length}件 表示する
             </button>
             {activeFilterCount > 0 && (
-              <button onClick={() => { setSelectedGenres([]); setDateFilter("ALL"); setAreaText(""); setSearchOpen(false); }}
+              <button onClick={() => { setSelectedGenres([]); setDateFilter("ALL"); setSpecificDate(""); setAreaText(""); setSearchOpen(false); }}
                 style={{ width: "100%", marginTop: "10px", padding: "12px", border: "1px solid rgba(0,0,0,0.12)", borderRadius: "8px", background: "transparent", color: "#111111", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
                 フィルターをリセット
               </button>
