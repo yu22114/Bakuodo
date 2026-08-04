@@ -191,6 +191,20 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     return true;
   });
 
+  // レッスン側もサイファーと同じ条件で絞り込む（ジャンル/日付/エリア）
+  const filteredLessons = lessons.filter(l => {
+    if (selectedGenres.length > 0 && !selectedGenres.some(g => l.genres.includes(g))) return false;
+    if (specificDate) {
+      const d = new Date(l.starts_at);
+      const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      if (dStr !== specificDate) return false;
+    }
+    if (areaText.trim()) {
+      if (!l.location.toLowerCase().includes(areaText.trim().toLowerCase())) return false;
+    }
+    return true;
+  });
+
   const activeFilterCount = (selectedGenres.length > 0 ? 1 : 0) + (specificDate ? 1 : 0) + (areaText.trim() ? 1 : 0);
 
   // 現在地取得 → 逆ジオコードでエリア名をareaTextに反映
@@ -223,7 +237,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         return dA - dB;
       })
     : spots;
-  const postCount = filtered.length;
+  const postCount = section === "pl" ? filteredLessons.length : filtered.length;
 
   // ヘッダー左上に出す今日の日付。ロゴだけだと寂しいので添える
   const today = new Date();
@@ -280,8 +294,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         </div>
       </div>
 
-      {/* ジャンルチップ（横スクロール） */}
-      {section === "cypher" && (
+      {/* ジャンルチップ（横スクロール）。CYPHER/LESSON共通 */}
+      {(section === "cypher" || section === "pl") && (
         <div style={{ display: "flex", gap: "6px", padding: "10px 16px", overflowX: "auto", scrollbarWidth: "none", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
           {(["ALL", ...GENRES] as (GenreKey | "ALL")[]).map(g => {
             const sel = g === "ALL" ? selectedGenres.length === 0 : selectedGenres.includes(g as GenreKey);
@@ -298,24 +312,27 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         </div>
       )}
 
-      {/* POSTS（CYPHERタブの時だけ）。ここも固定エリアに含める */}
-      {section === "cypher" && (
-        <div style={{ display: "flex", padding: "10px 16px", gap: "20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", alignItems: "center" }}>
-          {[{ label: "POSTS", value: postCount, icon: <Radio size={10} /> }].map(s => (
-            <div key={s.label} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ color: "#FF3D00" }}>{s.icon}</span>
-              <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111" }}>{s.value}</span>
-              <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111" }}>{s.label}</span>
-            </div>
-          ))}
-          {activeFilterCount > 0 && (
-            <button onClick={() => { setSelectedGenres([]); setSpecificDate(""); setAreaText(""); }}
-              style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px", background: "rgba(255,61,0,0.08)", border: "1px solid rgba(255,61,0,0.2)", borderRadius: "12px", padding: "3px 10px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#FF3D00", cursor: "pointer" }}>
-              <X size={10} /> フィルター解除
-            </button>
-          )}
-        </div>
-      )}
+      {/* POSTS（CYPHER/LESSON共通）。ここも固定エリアに含める */}
+      {(section === "cypher" || section === "pl") && (() => {
+        const accent = section === "pl" ? "#2563EB" : "#FF3D00";
+        return (
+          <div style={{ display: "flex", padding: "10px 16px", gap: "20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", alignItems: "center" }}>
+            {[{ label: "POSTS", value: postCount, icon: <Radio size={10} /> }].map(s => (
+              <div key={s.label} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ color: accent }}>{s.icon}</span>
+                <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111" }}>{s.value}</span>
+                <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111" }}>{s.label}</span>
+              </div>
+            ))}
+            {activeFilterCount > 0 && (
+              <button onClick={() => { setSelectedGenres([]); setSpecificDate(""); setAreaText(""); }}
+                style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px", background: `${accent}14`, border: `1px solid ${accent}33`, borderRadius: "12px", padding: "3px 10px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: accent, cursor: "pointer" }}>
+                <X size={10} /> フィルター解除
+              </button>
+            )}
+          </div>
+        );
+      })()}
     </div>
 
     {/* スクロールするのはここだけ。固定ヘッダーの残り高さ分だけ使う */}
@@ -337,7 +354,9 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             ? <Loading />
             : !loading && lessons.length === 0
               ? <div style={{ textAlign: "center", padding: "40px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだプライベートレッスンがありません</div>
-              : lessons.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => onPLClick(l)} />)}
+              : !loading && filteredLessons.length === 0
+                ? <div style={{ textAlign: "center", padding: "40px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>条件に合うレッスンがありません</div>
+                : filteredLessons.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => onPLClick(l)} />)}
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px", background: "#F5F7FA" }}>
@@ -361,7 +380,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <SlidersHorizontal size={18} color="#111" />
-                <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111", letterSpacing: "0.05em" }}>サイファーを検索</span>
+                <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111", letterSpacing: "0.05em" }}>{section === "pl" ? "レッスンを検索" : "サイファーを検索"}</span>
               </div>
               <button onClick={() => setSearchOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#111111", padding: "4px" }}><X size={20} /></button>
             </div>
@@ -408,7 +427,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
 
             <button onClick={() => setSearchOpen(false)}
               style={{ width: "100%", padding: "14px", border: "none", borderRadius: "8px", background: "#FF3D00", color: "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer" }}>
-              {filtered.length}件 表示する
+              {postCount}件 表示する
             </button>
             {activeFilterCount > 0 && (
               <button onClick={() => { setSelectedGenres([]); setSpecificDate(""); setAreaText(""); setSearchOpen(false); }}
