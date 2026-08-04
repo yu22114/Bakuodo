@@ -231,7 +231,11 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   const todayLabel = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}(${weekdays[today.getDay()]})`;
 
   return (
-    <div style={{ paddingBottom: "80px" }}>
+    // 画面全体をビューポート高さで固定し、下の「固定ヘッダー＋スクロール領域」に分ける。
+    // 浮き島の下部ナビは position:fixed で別レイヤーなのでここでは特に気にしなくていい
+    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    {/* ヘッダー〜ジャンルチップ〜POSTSバーはスクロールしない固定エリア */}
+    <div style={{ flexShrink: 0 }}>
       {/* ヘッダー */}
       <div style={{ padding: "20px 16px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
@@ -294,8 +298,29 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         </div>
       )}
 
-      {/* コンテンツ（スワイプでタブ切り替え） */}
-      <div onTouchStart={handleContentTouchStart} onTouchEnd={handleContentTouchEnd} onWheel={handleContentWheel}>
+      {/* POSTS（CYPHERタブの時だけ）。ここも固定エリアに含める */}
+      {section === "cypher" && (
+        <div style={{ display: "flex", padding: "10px 16px", gap: "20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", alignItems: "center" }}>
+          {[{ label: "POSTS", value: postCount, icon: <Radio size={10} /> }].map(s => (
+            <div key={s.label} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ color: "#FF3D00" }}>{s.icon}</span>
+              <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111" }}>{s.value}</span>
+              <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111" }}>{s.label}</span>
+            </div>
+          ))}
+          {activeFilterCount > 0 && (
+            <button onClick={() => { setSelectedGenres([]); setSpecificDate(""); setAreaText(""); }}
+              style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px", background: "rgba(255,61,0,0.08)", border: "1px solid rgba(255,61,0,0.2)", borderRadius: "12px", padding: "3px 10px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#FF3D00", cursor: "pointer" }}>
+              <X size={10} /> フィルター解除
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+
+    {/* スクロールするのはここだけ。固定ヘッダーの残り高さ分だけ使う */}
+    <div onTouchStart={handleContentTouchStart} onTouchEnd={handleContentTouchEnd} onWheel={handleContentWheel}
+      style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any }}>
       <div key={section} style={{ animation: `${slideDir === 1 ? "bdSlideFromRight" : "bdSlideFromLeft"} 0.2s ease-out` }}>
       {section === "spots" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 16px", background: "linear-gradient(180deg, rgba(22,163,74,0.04) 0%, #F5F7FA 120px)" }}>
@@ -315,37 +340,21 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
               : lessons.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => onPLClick(l)} />)}
         </div>
       ) : (
-        <>
-          {/* POSTS */}
-          <div style={{ display: "flex", padding: "10px 16px", gap: "20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", alignItems: "center" }}>
-            {[{ label: "POSTS", value: postCount, icon: <Radio size={10} /> }].map(s => (
-              <div key={s.label} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: "#FF3D00" }}>{s.icon}</span>
-                <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111" }}>{s.value}</span>
-                <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111" }}>{s.label}</span>
-              </div>
-            ))}
-            {activeFilterCount > 0 && (
-              <button onClick={() => { setSelectedGenres([]); setSpecificDate(""); setAreaText(""); }}
-                style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px", background: "rgba(255,61,0,0.08)", border: "1px solid rgba(255,61,0,0.2)", borderRadius: "12px", padding: "3px 10px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#FF3D00", cursor: "pointer" }}>
-                <X size={10} /> フィルター解除
-              </button>
-            )}
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px", background: "#F5F7FA" }}>
-            {/* 再フェッチ中は既存リストを出したままにする（全画面LOADINGのちらつき防止） */}
-            {loading && cyphers.length === 0
-              ? <Loading />
-              : !loading && filtered.length === 0
-                ? <div style={{ textAlign: "center", padding: "40px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>条件に合うサイファーがありません</div>
-                : filtered.map((c, i) => <CypherCard key={c.id} cypher={c} index={i} onClick={() => onCardClick(c)} />)}
-          </div>
-        </>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px", background: "#F5F7FA" }}>
+          {/* 再フェッチ中は既存リストを出したままにする（全画面LOADINGのちらつき防止） */}
+          {loading && cyphers.length === 0
+            ? <Loading />
+            : !loading && filtered.length === 0
+              ? <div style={{ textAlign: "center", padding: "40px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>条件に合うサイファーがありません</div>
+              : filtered.map((c, i) => <CypherCard key={c.id} cypher={c} index={i} onClick={() => onCardClick(c)} />)}
+        </div>
       )}
+      {/* 浮き島の下部ナビに隠れないための余白 */}
+      <div style={{ height: "80px" }} />
       </div>
-      </div>
+    </div>
 
-      {/* 検索ドロワー */}
+    {/* 検索ドロワー */}
       {searchOpen && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setSearchOpen(false)}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "#FFFFFF", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px", maxHeight: "85vh", overflowY: "auto" }}>
