@@ -94,6 +94,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   const [selectedGenres, setSelectedGenres] = useState<GenreKey[]>([]);
   // カレンダーで選んだ特定の日付（"YYYY-MM-DD"）。空文字なら未指定
   const [specificDate, setSpecificDate] = useState("");
+  // ヘッダーのロゴから開くカレンダー（検索ドロワーの日付と同じ値を使う）
+  const dateInputRef = useRef<HTMLInputElement>(null);
   const [areaText, setAreaText] = useState("");
   // 現在地
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -254,7 +256,23 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       <div style={{ padding: "20px 16px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
           <div style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(0,0,0,0.4)", letterSpacing: "0.02em" }}>{todayLabel}</div>
-          <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center", animation: "bdLogoRollIn 1.8s cubic-bezier(0.33,1,0.68,1) both" }}><Logo size={52} /></h1>
+          {/* ロゴをタップするとカレンダーが開いて日付で絞り込める。
+              日付入力は見えない状態でロゴの真下に置き、ネイティブのピッカーをそこに出す */}
+          <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center", position: "relative", animation: "bdLogoRollIn 1.8s cubic-bezier(0.33,1,0.68,1) both" }}>
+            <button onClick={() => dateInputRef.current?.showPicker?.()} aria-label="日付で絞り込む"
+              style={{ background: "none", border: "none", padding: 0, lineHeight: 0, cursor: "pointer" }}>
+              <Logo size={52} />
+            </button>
+            <input
+              ref={dateInputRef}
+              type="date"
+              value={specificDate}
+              onChange={e => setSpecificDate(e.target.value)}
+              tabIndex={-1}
+              aria-hidden
+              style={{ position: "absolute", left: "50%", bottom: 0, width: "1px", height: "1px", opacity: 0, border: "none", padding: 0, pointerEvents: "none" }}
+            />
+          </h1>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "4px" }}>
             {/* 検索ボタン */}
             <button onClick={() => setSearchOpen(true)} style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "6px" }}>
@@ -341,9 +359,6 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       <div key={section} style={{ animation: `${slideDir === 1 ? "bdSlideFromRight" : "bdSlideFromLeft"} 0.2s ease-out` }}>
       {section === "spots" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 16px", background: "linear-gradient(180deg, rgba(22,163,74,0.04) 0%, #F5F7FA 120px)" }}>
-          <div style={{ padding: "8px 12px", background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.15)", borderRadius: "6px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", lineHeight: 1.6 }}>
-            📍 ダンサーの聖地です。今そこにいる人はチェックインを！<span style={{ color: "#111111" }}> (チェックインは3時間で自動退場)</span>
-          </div>
           {sortedSpots.length === 0
             ? <div style={{ textAlign: "center", padding: "40px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>スポット情報はまだありません</div>
             : sortedSpots.map(s => <SpotCard key={s.id} spot={s} user={user} userLocation={userLocation} onViewProfile={id => onViewProfile?.(id)} />)}

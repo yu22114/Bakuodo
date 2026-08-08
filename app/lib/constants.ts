@@ -82,6 +82,12 @@ export function endTimeLabel(t: string, start: string): string {
   return isNextDayEnd(t, start) ? `翌${t}` : t;
 }
 
+// 今日の日付(YYYY-MM-DD、ローカル時間)。<input type="date">のminに渡して過去日を選べなくする
+export function todayStr(): string {
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+}
+
 // 日付文字列(YYYY-MM-DD)の翌日を返す
 export function getNextDate(date: string): string {
   const [y, m, d] = date.split("-").map(Number);

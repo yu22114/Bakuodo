@@ -4,7 +4,7 @@ import { Check, Zap, BookOpen, RotateCcw } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { FormState } from "../lib/types";
-import { GENRES, GENRE_COLORS, START_TIME_OPTIONS, DEFAULT_START_TIME, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate } from "../lib/constants";
+import { GENRES, GENRE_COLORS, START_TIME_OPTIONS, DEFAULT_START_TIME, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
 
 const DRAFT_KEY = "bakuodori:post-draft:v1";
@@ -78,6 +78,8 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
 
   const handleSubmit = async () => {
     if (!form.date || !form.station) return;
+    // minは手打ちを防げないのでここでも弾く
+    if (form.date < todayStr()) { setError("過去の日付は投稿できません"); return; }
     if (form.station.length > 50 || form.title.length > 100 || form.description.length > 1000) {
       setError("入力が長すぎます"); return;
     }
@@ -108,6 +110,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
 
   const handleSubmitPL = async () => {
     if (!plForm.date || !plForm.station) return;
+    if (plForm.date < todayStr()) { setError("過去の日付は投稿できません"); return; }
     if (plForm.station.length > 50 || plForm.title.length > 100 || plForm.description.length > 1000) {
       setError("入力が長すぎます"); return;
     }
@@ -176,7 +179,8 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
         {tab === "cypher" ? (<>
           <div><label style={lbl}>最寄り駅 <span style={{ color: "#FF3D00" }}>*</span></label><StationSearch value={form.station} onChange={v => setForm(f => ({ ...f, station: v }))} inputStyle={inp} /></div>
           <div><label style={lbl}>会場・スタジオ名</label><input style={inp} placeholder="例: 代々木worcle、Buzz渋谷" value={form.studio} onChange={e => setForm(f => ({ ...f, studio: e.target.value }))} /></div>
-          <div><label style={lbl}>日付 <span style={{ color: "#FF3D00" }}>*</span></label><input type="date" style={inp} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
+          {/* 過去のサイファーは掲載できないので今日より前は選べない */}
+          <div><label style={lbl}>日付 <span style={{ color: "#FF3D00" }}>*</span></label><input type="date" style={inp} min={todayStr()} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <div><label style={lbl}>開始時間</label>
               <select style={inp} value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))}>
@@ -221,7 +225,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
         </>) : (<>
           <div><label style={lbl}>最寄り駅 <span style={{ color: "#2563EB" }}>*</span></label><StationSearch value={plForm.station} onChange={v => setPlForm(f => ({ ...f, station: v }))} inputStyle={inp} /></div>
           <div><label style={lbl}>会場・スタジオ名</label><input style={inp} placeholder="例: 代々木worcle、Buzz渋谷" value={plForm.studio} onChange={e => setPlForm(f => ({ ...f, studio: e.target.value }))} /></div>
-          <div><label style={lbl}>日付 <span style={{ color: "#2563EB" }}>*</span></label><input type="date" style={inp} value={plForm.date} onChange={e => setPlForm(f => ({ ...f, date: e.target.value }))} /></div>
+          <div><label style={lbl}>日付 <span style={{ color: "#2563EB" }}>*</span></label><input type="date" style={inp} min={todayStr()} value={plForm.date} onChange={e => setPlForm(f => ({ ...f, date: e.target.value }))} /></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <div><label style={lbl}>開始時間</label>
               <select style={inp} value={plForm.start_time} onChange={e => setPlForm(f => ({ ...f, start_time: e.target.value }))}>
