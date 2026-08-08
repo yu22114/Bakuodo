@@ -94,8 +94,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   const [selectedGenres, setSelectedGenres] = useState<GenreKey[]>([]);
   // カレンダーで選んだ特定の日付（"YYYY-MM-DD"）。空文字なら未指定
   const [specificDate, setSpecificDate] = useState("");
-  // ヘッダーのロゴから開くカレンダー（検索ドロワーの日付と同じ値を使う）
-  const dateInputRef = useRef<HTMLInputElement>(null);
+  // ヘッダー左の今日の日付を出すかどうか（ロゴを押すたびに切り替わる）
+  const [showDate, setShowDate] = useState(false);
   const [areaText, setAreaText] = useState("");
   // 現在地
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -255,23 +255,14 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       {/* ヘッダー */}
       <div style={{ padding: "20px 16px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
-          <div style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(0,0,0,0.4)", letterSpacing: "0.02em" }}>{todayLabel}</div>
-          {/* ロゴをタップするとカレンダーが開いて日付で絞り込める。
-              日付入力は見えない状態でロゴの真下に置き、ネイティブのピッカーをそこに出す */}
-          <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center", position: "relative", animation: "bdLogoRollIn 1.8s cubic-bezier(0.33,1,0.68,1) both" }}>
-            <button onClick={() => dateInputRef.current?.showPicker?.()} aria-label="日付で絞り込む"
+          {/* 今日の日付は普段は隠しておき、ロゴを押した時だけ出す。
+              display:noneではなくopacityで消すのは、出し入れでロゴがずれないようにするため */}
+          <div style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(0,0,0,0.4)", letterSpacing: "0.02em", opacity: showDate ? 1 : 0, transition: "opacity 0.25s" }}>{todayLabel}</div>
+          <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center", animation: "bdLogoRollIn 1.8s cubic-bezier(0.33,1,0.68,1) both" }}>
+            <button onClick={() => setShowDate(v => !v)} aria-label="今日の日付を表示"
               style={{ background: "none", border: "none", padding: 0, lineHeight: 0, cursor: "pointer" }}>
               <Logo size={52} />
             </button>
-            <input
-              ref={dateInputRef}
-              type="date"
-              value={specificDate}
-              onChange={e => setSpecificDate(e.target.value)}
-              tabIndex={-1}
-              aria-hidden
-              style={{ position: "absolute", left: "50%", bottom: 0, width: "1px", height: "1px", opacity: 0, border: "none", padding: 0, pointerEvents: "none" }}
-            />
           </h1>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "4px" }}>
             {/* 検索ボタン */}
