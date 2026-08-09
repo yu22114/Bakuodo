@@ -325,18 +325,17 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       {(section === "cypher" || section === "pl") && (() => {
         const accent = section === "pl" ? "#2563EB" : "#FF3D00";
         return (
-          <div style={{ display: "flex", padding: "10px 16px", gap: "20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", alignItems: "center" }}>
-            {[{ label: "POSTS", value: postCount, icon: <Radio size={10} /> }].map(s => (
-              <div key={s.label} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: accent }}>{s.icon}</span>
-                <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111" }}>{s.value}</span>
-                <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111" }}>{s.label}</span>
-              </div>
-            ))}
+          // 件数しか出さない割に高さを取っていたので、文字を小さくして薄い1行に詰めた
+          <div style={{ display: "flex", padding: "4px 16px", gap: "20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              <span style={{ color: accent, display: "flex" }}><Radio size={9} /></span>
+              <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111" }}>{postCount}</span>
+              <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.45)", letterSpacing: "0.08em" }}>POSTS</span>
+            </div>
             {activeFilterCount > 0 && (
               <button onClick={() => { setSelectedGenres([]); setSpecificDate(""); setAreaText(""); }}
-                style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px", background: `${accent}14`, border: `1px solid ${accent}33`, borderRadius: "12px", padding: "3px 10px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: accent, cursor: "pointer" }}>
-                <X size={10} /> フィルター解除
+                style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px", background: `${accent}14`, border: `1px solid ${accent}33`, borderRadius: "12px", padding: "2px 8px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: accent, cursor: "pointer" }}>
+                <X size={9} /> フィルター解除
               </button>
             )}
           </div>

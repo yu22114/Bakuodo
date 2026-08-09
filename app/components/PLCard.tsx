@@ -39,7 +39,7 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
             )}
           </div>
         </div>
-        <div style={{ width: "44px", height: "44px", borderRadius: "6px", background: `linear-gradient(135deg,${color}22,${color}44)`, border: `1px solid ${color}55`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px", fontWeight: "bold", color, fontFamily: "'Noto Sans JP',sans-serif", flexShrink: 0, overflow: "hidden" }}>
+        <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: `linear-gradient(135deg,${color}22,${color}44)`, border: `1px solid ${color}55`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px", fontWeight: "bold", color, fontFamily: "'Noto Sans JP',sans-serif", flexShrink: 0, overflow: "hidden" }}>
           {lesson.organizer.avatar_url
             ? <img src={lesson.organizer.avatar_url} alt={lesson.organizer.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             : lesson.organizer.avatar}

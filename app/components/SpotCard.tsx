@@ -79,14 +79,13 @@ export function SpotCard({ spot, user, userLocation, onViewProfile }: {
       <div style={{ padding: "14px 16px 12px", borderBottom: checkins.length > 0 ? "1px solid rgba(0,0,0,0.06)" : "none" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
           <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-              <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.15em" }}>SPOT</span>
-              {distance !== null && (
+            {distance !== null && (
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
                 <span style={{ display: "flex", alignItems: "center", gap: "2px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#16A34A", background: "rgba(22,163,74,0.08)", padding: "1px 6px", borderRadius: "8px" }}>
                   <Navigation size={8} /> {formatDistance(distance)}
                 </span>
-              )}
-            </div>
+              </div>
+            )}
             <div style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111", letterSpacing: "0.05em", lineHeight: 1.1 }}>{spot.name}</div>
             <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.location)}`} target="_blank" rel="noopener noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: "4px", marginTop: "4px", textDecoration: "none" }}>

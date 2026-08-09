@@ -76,8 +76,12 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
   const togglePayment = (p: string) => setForm(f => ({ ...f, payment: f.payment.includes(p) ? f.payment.filter(x => x !== p) : [...f.payment, p] }));
   const togglePlGenre = (g: string) => setPlForm(f => ({ ...f, genres: f.genres.includes(g) ? f.genres.filter(x => x !== g) : [...f.genres, g] }));
 
+  // 必須項目（最寄り駅・日付）が埋まっているか
+  const canPost = !!(form.date && form.station);
+  const canPostPL = !!(plForm.date && plForm.station);
+
   const handleSubmit = async () => {
-    if (!form.date || !form.station) return;
+    if (!canPost) return;
     // minは手打ちを防げないのでここでも弾く
     if (form.date < todayStr()) { setError("過去の日付は投稿できません"); return; }
     if (form.station.length > 50 || form.title.length > 100 || form.description.length > 1000) {
@@ -109,7 +113,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
   };
 
   const handleSubmitPL = async () => {
-    if (!plForm.date || !plForm.station) return;
+    if (!canPostPL) return;
     if (plForm.date < todayStr()) { setError("過去の日付は投稿できません"); return; }
     if (plForm.station.length > 50 || plForm.title.length > 100 || plForm.description.length > 1000) {
       setError("入力が長すぎます"); return;
@@ -138,7 +142,6 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
 
   const inp: React.CSSProperties = { width: "100%", padding: "10px 12px", background: "#F5F7FA", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "6px", color: "#111111", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" };
   const lbl: React.CSSProperties = { display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.15em", color: "#111111", marginBottom: "6px", textTransform: "uppercase" };
-
   if (submitted) return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "70vh", gap: "16px", background: "#FFFFFF" }}>
       <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "rgba(22,163,74,0.1)", border: "2px solid #16A34A", display: "flex", alignItems: "center", justifyContent: "center" }}><Check size={32} color="#16A34A" /></div>
@@ -148,13 +151,14 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
 
   return (
     <div style={{ paddingBottom: "80px", background: "#FAFAFA" }}>
-      <div style={{ padding: "24px 16px 0", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
+      <div style={{ padding: "24px 16px 12px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
         <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ NEW SESSION</div>
         <h2 style={{ margin: "0 0 16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#111111" }}>投稿する</h2>
-        <div style={{ display: "flex" }}>
-          {([["cypher", "CYPHER"], ["pl", "LESSON"]] as const).map(([key, label]) => (
+        {/* タブはホーム画面と同じ、丸い枠の中で選択中だけ浮くセグメント風 */}
+        <div style={{ display: "flex", gap: "4px", background: "#F5F7FA", borderRadius: "14px", padding: "4px" }}>
+          {([["cypher", "CYPHER", "#FF3D00"], ["pl", "LESSON", "#2563EB"]] as const).map(([key, label, color]) => (
             <button key={key} onClick={() => setTab(key)}
-              style={{ flex: 1, padding: "10px", border: "none", background: "transparent", borderBottom: `2px solid ${tab === key ? (key === "pl" ? "#2563EB" : "#FF3D00") : "transparent"}`, color: tab === key ? (key === "pl" ? "#2563EB" : "#FF3D00") : "rgba(0,0,0,0.4)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal", letterSpacing: "0.08em" }}>
+              style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: tab === key ? "#FFFFFF" : "transparent", boxShadow: tab === key ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: tab === key ? color : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
               {label}
             </button>
           ))}
@@ -178,7 +182,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
 
         {tab === "cypher" ? (<>
           <div><label style={lbl}>最寄り駅 <span style={{ color: "#FF3D00" }}>*</span></label><StationSearch value={form.station} onChange={v => setForm(f => ({ ...f, station: v }))} inputStyle={inp} /></div>
-          <div><label style={lbl}>会場・スタジオ名</label><input style={inp} placeholder="例: 代々木worcle、Buzz渋谷" value={form.studio} onChange={e => setForm(f => ({ ...f, studio: e.target.value }))} /></div>
+          <div><label style={lbl}>会場・スタジオ名・部屋番号</label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={form.studio} onChange={e => setForm(f => ({ ...f, studio: e.target.value }))} /></div>
           {/* 過去のサイファーは掲載できないので今日より前は選べない */}
           <div><label style={lbl}>日付 <span style={{ color: "#FF3D00" }}>*</span></label><input type="date" style={inp} min={todayStr()} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
@@ -218,13 +222,13 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
             <div><div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", fontWeight: "bold" }}>📋 参加承認制</div><div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", marginTop: "3px" }}>ONにすると参加に主催者の承認が必要になります</div></div>
             <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: requiresApproval ? "#FF3D00" : "rgba(0,0,0,0.15)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}><div style={{ position: "absolute", top: "3px", left: requiresApproval ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" }} /></div>
           </button>
-          <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: form.date && form.station ? "#FF3D00" : "rgba(0,0,0,0.06)", color: form.date && form.station ? "#fff" : "rgba(0,0,0,0.25)", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: form.date && form.station ? "pointer" : "not-allowed", opacity: loading ? 0.6 : 1 }}>
+          <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: canPost ? "#FF3D00" : "rgba(0,0,0,0.06)", color: canPost ? "#fff" : "rgba(0,0,0,0.25)", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: canPost ? "pointer" : "not-allowed", opacity: loading ? 0.6 : 1 }}>
             <Zap size={15} style={{ display: "inline", marginRight: "8px", verticalAlign: "middle" }} />
             {loading ? "投稿中..." : "サイファーを投稿する"}
           </button>
         </>) : (<>
           <div><label style={lbl}>最寄り駅 <span style={{ color: "#2563EB" }}>*</span></label><StationSearch value={plForm.station} onChange={v => setPlForm(f => ({ ...f, station: v }))} inputStyle={inp} /></div>
-          <div><label style={lbl}>会場・スタジオ名</label><input style={inp} placeholder="例: 代々木worcle、Buzz渋谷" value={plForm.studio} onChange={e => setPlForm(f => ({ ...f, studio: e.target.value }))} /></div>
+          <div><label style={lbl}>会場・スタジオ名・部屋番号</label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={plForm.studio} onChange={e => setPlForm(f => ({ ...f, studio: e.target.value }))} /></div>
           <div><label style={lbl}>日付 <span style={{ color: "#2563EB" }}>*</span></label><input type="date" style={inp} min={todayStr()} value={plForm.date} onChange={e => setPlForm(f => ({ ...f, date: e.target.value }))} /></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <div><label style={lbl}>開始時間</label>
@@ -266,7 +270,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
             <div><div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", fontWeight: "bold" }}>📋 申込承認制</div><div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", marginTop: "3px" }}>ONにすると申込に講師の承認が必要になります</div></div>
             <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: plRequiresApproval ? "#2563EB" : "rgba(0,0,0,0.15)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}><div style={{ position: "absolute", top: "3px", left: plRequiresApproval ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" }} /></div>
           </button>
-          <button onClick={handleSubmitPL} disabled={loading} style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: plForm.date && plForm.station ? "#2563EB" : "rgba(0,0,0,0.06)", color: plForm.date && plForm.station ? "#fff" : "rgba(0,0,0,0.25)", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: plForm.date && plForm.station ? "pointer" : "not-allowed", opacity: loading ? 0.6 : 1 }}>
+          <button onClick={handleSubmitPL} disabled={loading} style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: canPostPL ? "#2563EB" : "rgba(0,0,0,0.06)", color: canPostPL ? "#fff" : "rgba(0,0,0,0.25)", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: canPostPL ? "pointer" : "not-allowed", opacity: loading ? 0.6 : 1 }}>
             <BookOpen size={15} style={{ display: "inline", marginRight: "8px", verticalAlign: "middle" }} />
             {loading ? "投稿中..." : "レッスンを投稿する"}
           </button>

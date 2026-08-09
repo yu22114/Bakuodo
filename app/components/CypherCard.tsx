@@ -34,7 +34,7 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
             )}
           </div>
         </div>
-        <div style={{ width: "44px", height: "44px", borderRadius: "6px", background: `linear-gradient(135deg,${color}22,${color}44)`, border: `1px solid ${color}55`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px", fontWeight: "bold", color, fontFamily: "'Noto Sans JP',sans-serif", flexShrink: 0, overflow: "hidden" }}>
+        <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: `linear-gradient(135deg,${color}22,${color}44)`, border: `1px solid ${color}55`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px", fontWeight: "bold", color, fontFamily: "'Noto Sans JP',sans-serif", flexShrink: 0, overflow: "hidden" }}>
           {cypher.organizer.avatar_url
             ? <img src={cypher.organizer.avatar_url} alt={cypher.organizer.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             : cypher.organizer.avatar}

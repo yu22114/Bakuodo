@@ -141,7 +141,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
   const name = profileData?.dancer_name || "DANCER";
 
-  // 主催レッスン一覧（CYPHERタブ内に表示）
+  // 主催レッスン一覧（ACTIVITYタブ内に表示）
   const lessonRows = hostedLessons.length > 0 && (
     <div style={{ marginTop: "12px" }}>
       <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>LESSON / レッスン</div>
@@ -248,14 +248,17 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         </div>
       </div>
 
-      {/* メインタブ切り替え */}
-      <div style={{ display: "flex", background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
-        {(["profile", "cyphers"] as const).map(t => (
-          <button key={t} onClick={() => setMainTab(t)}
-            style={{ flex: 1, padding: "13px", border: "none", background: "transparent", borderBottom: `2px solid ${mainTab === t ? "#FF3D00" : "transparent"}`, color: mainTab === t ? "#FF3D00" : "rgba(0,0,0,0.4)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: mainTab === t ? "bold" : "normal", letterSpacing: "0.08em" }}>
-            {t === "profile" ? "PROFILE" : "CYPHER"}
-          </button>
-        ))}
+      {/* メインタブ切り替え。ホーム画面と同じ角丸セグメント。
+          サイファーだけでなくレッスンも並ぶので「CYPHER」ではなく「ACTIVITY」 */}
+      <div style={{ padding: "10px 16px", background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
+        <div style={{ display: "flex", gap: "4px", background: "#F5F7FA", borderRadius: "14px", padding: "4px" }}>
+          {(["profile", "cyphers"] as const).map(t => (
+            <button key={t} onClick={() => setMainTab(t)}
+              style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: mainTab === t ? "#FFFFFF" : "transparent", boxShadow: mainTab === t ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: mainTab === t ? "#FF3D00" : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: mainTab === t ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
+              {t === "profile" ? "PROFILE" : "ACTIVITY"}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -294,17 +297,18 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             <div style={{ textAlign: "center", padding: "40px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>プロフィール情報がありません</div>
           )
         ) : (<>
-          {/* CYPHERタブ：自分なら参加/主催の2タブ（過去はグレー）、他人なら主催のみ */}
+          {/* ACTIVITYタブ：自分なら参加/主催の2タブ（過去はグレー）、他人なら主催のみ。
+              タブの見た目は上のメインタブと同じ角丸セグメントに揃える */}
           {isOwn ? (<>
-            <div style={{ display: "flex", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "10px 10px 0 0", overflow: "hidden" }}>
+            <div style={{ display: "flex", gap: "4px", background: "#F5F7FA", borderRadius: "14px", padding: "4px" }}>
               {(["joined", "hosted"] as const).map(t => (
                 <button key={t} onClick={() => setCypherTab(t)}
-                  style={{ flex: 1, padding: "13px", border: "none", background: "transparent", borderBottom: `2px solid ${cypherTab === t ? "#FF3D00" : "transparent"}`, color: cypherTab === t ? "#FF3D00" : "rgba(0,0,0,0.4)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: cypherTab === t ? "bold" : "normal" }}>
+                  style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: cypherTab === t ? "#FFFFFF" : "transparent", boxShadow: cypherTab === t ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: cypherTab === t ? "#FF3D00" : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: cypherTab === t ? "bold" : "normal", transition: "all 0.15s" }}>
                   {t === "joined" ? "参加" : "主催"}
                 </button>
               ))}
             </div>
-            <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderTop: "none", borderRadius: "0 0 10px 10px", marginTop: "-10px" }}>
+            <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "10px", overflow: "hidden" }}>
               {cypherTab === "joined" ? (
                 joinedCyphers.length === 0
                   ? <div style={{ textAlign: "center", padding: "32px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ参加しているサイファーはありません</div>
@@ -322,8 +326,9 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                         </div>
                       );})
               ) : (
-                hostedCyphers.length === 0
-                  ? <div style={{ textAlign: "center", padding: "32px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだサイファーを主催していません</div>
+                // レッスンもこの下に並ぶので、両方空の時だけ「ありません」を出す
+                hostedCyphers.length === 0 && hostedLessons.length === 0
+                  ? <div style={{ textAlign: "center", padding: "32px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ主催しているサイファー・レッスンはありません</div>
                   : hostedCyphers.map(c => {
                       const { date, time } = formatDate(c.starts_at);
                       const isPast = new Date(c.starts_at) < new Date();
