@@ -117,7 +117,8 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
               </button>
               <div style={{ flex: 1 }}>
                 <p style={{ margin: 0, fontSize: "13px", color: "#111", lineHeight: 1.5 }}>
-                  <strong>{actorName}</strong>さんが{
+                  {/* 開催リマインドは「誰々さんが」ではなくイベントが主語 */}
+                  {n.type === "reminder" ? <>まもなく<strong>「{cypherTitle}」</strong>が開催されます⏰</> : <><strong>{actorName}</strong>さんが{
                     n.type === "follow"          ? "あなたをフォローしました👋" :
                     n.type === "follow_request"  ? "フォローを申請しました🔒" :
                     n.type === "join_request"    ? `「${cypherTitle}」への参加を申請しました📋` :
@@ -125,7 +126,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
                     n.type === "comment"         ? `「${cypherTitle}」にコメントしました💬` :
                     n.type === "join"            ? `「${cypherTitle}」に参加しました🎉` :
                                                   `「${cypherTitle}」をキャンセルしました`
-                  }
+                  }</>}
                 </p>
                 <p style={{ margin: "3px 0 0", fontSize: "10px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>{timeAgo(n.created_at)}</p>
                 {(n.type === "follow_request" || n.type === "join_request") && (

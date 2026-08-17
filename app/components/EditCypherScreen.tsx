@@ -4,7 +4,7 @@ import { Check, ChevronLeft } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { FormState, GenreKey } from "../lib/types";
-import { GENRES, GENRE_COLORS, START_TIME_OPTIONS, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr } from "../lib/constants";
+import { GENRES, GENRE_COLORS, START_TIME_OPTIONS, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr, toggleGenre as toggleGenreList } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
 import { Loading } from "./Loading";
 
@@ -21,7 +21,8 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const toggleGenre = (g: GenreKey) => setForm(f => ({ ...f, genres: f.genres.includes(g) ? f.genres.filter(x => x !== g) : [...f.genres, g] }));
+  // All Styleと他ジャンルの同時選択はできない（投稿フォームと同じルール）
+  const toggleGenre = (g: GenreKey) => setForm(f => ({ ...f, genres: toggleGenreList(f.genres, g) }));
 
   useEffect(() => {
     async function fetchCypher() {

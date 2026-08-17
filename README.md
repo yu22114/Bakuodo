@@ -36,7 +36,7 @@ npm run dev
 | `/c/[id]` | サイファー共有ページ（OGP付き・未ログイン閲覧可） |
 | `/u/[id]` | 公開プロフィール |
 | `/help` `/terms` | 使い方ガイド・利用規約 |
-| `/api/cleanup` | 終了サイファーの掃除（Vercel Cron・毎日3:00 UTC） |
+| `/api/remind` | まもなく開催のお知らせ作成（Vercel Cron・毎日0:00 UTC = 9時JST） |
 
 ## アーキテクチャの約束事
 

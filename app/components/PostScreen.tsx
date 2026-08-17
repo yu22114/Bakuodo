@@ -4,7 +4,7 @@ import { Check, Zap, BookOpen, RotateCcw } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { FormState } from "../lib/types";
-import { GENRES, GENRE_COLORS, START_TIME_OPTIONS, DEFAULT_START_TIME, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr } from "../lib/constants";
+import { GENRES, GENRE_COLORS, START_TIME_OPTIONS, DEFAULT_START_TIME, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr, toggleGenre as toggleGenreList } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
 
 const DRAFT_KEY = "bakuodori:post-draft:v1";
@@ -72,9 +72,10 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
     clearDraft();
   };
 
-  const toggleGenre = (g: (typeof GENRES)[number]) => setForm(f => ({ ...f, genres: f.genres.includes(g) ? f.genres.filter(x => x !== g) : [...f.genres, g] }));
+  // All Styleと他ジャンルの同時選択はできない（constants.tsのtoggleGenreが担当）
+  const toggleGenre = (g: (typeof GENRES)[number]) => setForm(f => ({ ...f, genres: toggleGenreList(f.genres, g) }));
   const togglePayment = (p: string) => setForm(f => ({ ...f, payment: f.payment.includes(p) ? f.payment.filter(x => x !== p) : [...f.payment, p] }));
-  const togglePlGenre = (g: string) => setPlForm(f => ({ ...f, genres: f.genres.includes(g) ? f.genres.filter(x => x !== g) : [...f.genres, g] }));
+  const togglePlGenre = (g: string) => setPlForm(f => ({ ...f, genres: toggleGenreList(f.genres, g) }));
 
   // 必須項目（最寄り駅・日付）が埋まっているか
   const canPost = !!(form.date && form.station);
@@ -156,7 +157,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
         <h2 style={{ margin: "0 0 16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#111111" }}>投稿する</h2>
         {/* タブはホーム画面と同じ、丸い枠の中で選択中だけ浮くセグメント風 */}
         <div style={{ display: "flex", gap: "4px", background: "#F5F7FA", borderRadius: "14px", padding: "4px" }}>
-          {([["cypher", "CYPHER", "#FF3D00"], ["pl", "LESSON", "#2563EB"]] as const).map(([key, label, color]) => (
+          {([["cypher", "CYPHER", "#FF3D00"], ["pl", "PRIVATE LESSON", "#2563EB"]] as const).map(([key, label, color]) => (
             <button key={key} onClick={() => setTab(key)}
               style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: tab === key ? "#FFFFFF" : "transparent", boxShadow: tab === key ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: tab === key ? color : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
               {label}

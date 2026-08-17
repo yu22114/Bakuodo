@@ -1,10 +1,10 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Radio, Bell, Search, X, SlidersHorizontal, Navigation, Loader } from "lucide-react";
+import { Radio, Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, PrivateLesson, GenreKey } from "../lib/types";
-import { GENRES, GENRE_COLORS, timeUntil, formatDate, formatEndTime, calcDistanceM } from "../lib/constants";
+import { GENRES, GENRE_COLORS, genreLabel, timeUntil, formatDate, formatEndTime, calcDistanceM } from "../lib/constants";
 import { CypherCard } from "./CypherCard";
 import { PLCard } from "./PLCard";
 import { SpotCard } from "./SpotCard";
@@ -100,6 +100,9 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   // 現在地
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
+  // スポット申請フォーム（載っていない練習場所をユーザーが送る）
+  const [spotForm, setSpotForm] = useState<{ name: string; location: string; note: string } | null>(null);
+  const [spotSending, setSpotSending] = useState(false);
 
   useEffect(() => {
     async function fetchCyphers() {
@@ -231,6 +234,22 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     });
   };
 
+  // スポット申請の送信。運営がSupabaseで中身を見てspotsに追加する運用
+  const handleSubmitSpot = async () => {
+    if (!spotForm || !spotForm.name.trim() || !spotForm.location.trim()) return;
+    setSpotSending(true);
+    const { error } = await supabase.from("spot_requests").insert({
+      profile_id: user.id,
+      name: spotForm.name.trim().slice(0, 100),
+      location: spotForm.location.trim().slice(0, 200),
+      note: spotForm.note.trim().slice(0, 500) || null,
+    });
+    setSpotSending(false);
+    if (error) { showToast("送信に失敗しました。時間をおいて試してください"); return; }
+    setSpotForm(null);
+    showToast("スポットを申請しました！確認までしばらくお待ちください");
+  };
+
   // スポットを距離順にソート
   const sortedSpots = userLocation
     ? [...spots].sort((a, b) => {
@@ -289,13 +308,14 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       {/* セクション切り替え：四角い下線タブから、丸い枠の中で選択中だけ浮くセグメント風に */}
       <div style={{ padding: "10px 16px", background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
         <div style={{ display: "flex", gap: "4px", background: "#F5F7FA", borderRadius: "14px", padding: "4px" }}>
-          {([["cypher", "CYPHER", "#FF3D00"], ["pl", "LESSON", "#2563EB"], ["spots", "SPOTS", "#16A34A"]] as const).map(([key, label, color]) => (
+          {([["cypher", "CYPHER", "#FF3D00"], ["pl", "PRIVATE LESSON", "#2563EB"], ["spots", "SPOTS", "#16A34A"]] as const).map(([key, label, color]) => (
             <button key={key} onClick={() => goToSection(key)}
               style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: section === key ? "#FFFFFF" : "transparent", boxShadow: section === key ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: section === key ? color : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
               {/* 選んでいるタブだけ、文字を1つずつ左から順に上下させてウェーブっぽく見せる */}
               {section === key
                 ? [...label].map((ch, i) => (
-                    <span key={i} style={{ display: "inline-block", animation: `bdLetterWave 1.6s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.125}s infinite` }}>{ch}</span>
+                    // inline-blockだと半角スペースが潰れて単語がくっつくので&nbsp;に置き換える
+                    <span key={i} style={{ display: "inline-block", animation: `bdLetterWave 1.6s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.125}s infinite` }}>{ch === " " ? "\u00A0" : ch}</span>
                   ))
                 : label}
             </button>
@@ -314,7 +334,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             return (
               <button key={g} onClick={() => setSelectedGenres(prev => g === "ALL" ? [] : prev.includes(g as GenreKey) ? prev.filter(x => x !== g) : [...prev, g as GenreKey])}
                 style={{ flexShrink: 0, padding: "5px 12px", border: sel ? `1px solid ${col}` : "1px solid rgba(0,0,0,0.12)", borderRadius: "20px", background: sel ? `${col}18` : "transparent", color: sel ? col : "rgba(0,0,0,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: sel ? "bold" : "normal" }}>
-                {g}
+                {genreLabel(g)}
               </button>
             );
           })}
@@ -352,6 +372,11 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
           {sortedSpots.length === 0
             ? <div style={{ textAlign: "center", padding: "40px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>スポット情報はまだありません</div>
             : sortedSpots.map(s => <SpotCard key={s.id} spot={s} user={user} userLocation={userLocation} onViewProfile={id => onViewProfile?.(id)} />)}
+          {/* 載っていない練習場所をユーザーから教えてもらう窓口 */}
+          <button onClick={() => setSpotForm({ name: "", location: "", note: "" })}
+            style={{ padding: "14px", background: "transparent", border: "1px dashed rgba(22,163,74,0.5)", borderRadius: "10px", color: "#16A34A", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+            <Plus size={14} /> このリストにない場所を申請する
+          </button>
         </div>
       ) : section === "pl" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px", background: "linear-gradient(180deg, rgba(37,99,235,0.04) 0%, #F5F7FA 120px)" }}>
@@ -378,6 +403,32 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       </div>
     </div>
 
+    {/* スポット申請フォーム */}
+      {spotForm && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setSpotForm(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "#FFFFFF", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px", maxHeight: "85vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111", letterSpacing: "0.05em" }}>スポットを申請する</span>
+              <button onClick={() => setSpotForm(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#111111", padding: "4px" }}><X size={20} /></button>
+            </div>
+            <div style={{ fontSize: "11px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.6, marginBottom: "16px" }}>
+              いつも踊っている場所を教えてください。運営が確認してからリストに追加します。
+            </div>
+            {([["name", "場所の名前", "例: 渋谷ハチ公前広場"], ["location", "住所・最寄り駅", "例: 渋谷区道玄坂 / 渋谷駅"], ["note", "補足（任意）", "例: 21時以降は静か。鏡あり"]] as const).map(([key, label, ph]) => (
+              <div key={key} style={{ marginBottom: "14px" }}>
+                <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.15em", marginBottom: "6px" }}>{label}</div>
+                <input value={spotForm[key]} onChange={e => setSpotForm(f => f && ({ ...f, [key]: e.target.value }))} placeholder={ph}
+                  style={{ width: "100%", padding: "10px 12px", background: "#F5F7FA", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
+              </div>
+            ))}
+            <button onClick={handleSubmitSpot} disabled={spotSending || !spotForm.name.trim() || !spotForm.location.trim()}
+              style={{ width: "100%", padding: "14px", border: "none", borderRadius: "8px", background: spotForm.name.trim() && spotForm.location.trim() ? "#16A34A" : "rgba(0,0,0,0.06)", color: spotForm.name.trim() && spotForm.location.trim() ? "#fff" : "rgba(0,0,0,0.25)", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", opacity: spotSending ? 0.6 : 1 }}>
+              {spotSending ? "送信中..." : "申請する"}
+            </button>
+          </div>
+        </div>
+      )}
+
     {/* 検索ドロワー */}
       {searchOpen && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setSearchOpen(false)}>
@@ -385,7 +436,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <SlidersHorizontal size={18} color="#111" />
-                <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111", letterSpacing: "0.05em" }}>{section === "pl" ? "レッスンを検索" : "サイファーを検索"}</span>
+                <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111", letterSpacing: "0.05em" }}>{section === "pl" ? "プライベートレッスンを検索" : "サイファーを検索"}</span>
               </div>
               <button onClick={() => setSearchOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#111111", padding: "4px" }}><X size={20} /></button>
             </div>

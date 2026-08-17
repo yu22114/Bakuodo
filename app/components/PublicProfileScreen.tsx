@@ -36,7 +36,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [cypherTab, setCypherTab] = useState<"joined" | "hosted">("joined");
   const [loading, setLoading] = useState(true);
   const [participantSheet, setParticipantSheet] = useState<{ title: string; participants: Array<{ profile_id: string; dancer_name: string; avatar_url: string | null }> } | null>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; kind: "cypher" | "lesson" } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [followSheet, setFollowSheet] = useState<{ type: "followers" | "following"; users: { id: string; dancer_name: string; avatar_url: string | null }[] } | null>(null);
@@ -130,13 +130,22 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     setParticipantSheet({ title: cypher.title, participants: (data ?? []).map((row: any) => ({ profile_id: row.profile_id, dancer_name: row.profiles?.dancer_name ?? "UNKNOWN", avatar_url: row.profiles?.avatar_url ?? null })) });
   };
 
-  const handleDeleteCypher = async () => {
-    if (!deleteConfirmId) return;
-    await supabase.from("participations").delete().eq("cypher_id", deleteConfirmId);
-    await supabase.from("cypher_genres").delete().eq("cypher_id", deleteConfirmId);
-    const { error } = await supabase.from("cyphers").delete().eq("id", deleteConfirmId).eq("organizer_id", currentUserId);
-    if (!error) setHostedCyphers(prev => prev.filter(c => c.id !== deleteConfirmId));
-    setDeleteConfirmId(null);
+  // サイファーもレッスンも、FK制約があるので関連レコードを先に消す
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
+    const { id, kind } = deleteConfirm;
+    if (kind === "cypher") {
+      await supabase.from("participations").delete().eq("cypher_id", id);
+      await supabase.from("cypher_genres").delete().eq("cypher_id", id);
+      const { error } = await supabase.from("cyphers").delete().eq("id", id).eq("organizer_id", currentUserId);
+      if (!error) setHostedCyphers(prev => prev.filter(c => c.id !== id));
+    } else {
+      await supabase.from("pl_participations").delete().eq("lesson_id", id);
+      await supabase.from("pl_genres").delete().eq("lesson_id", id);
+      const { error } = await supabase.from("private_lessons").delete().eq("id", id).eq("organizer_id", currentUserId);
+      if (!error) setHostedLessons(prev => prev.filter(l => l.id !== id));
+    }
+    setDeleteConfirm(null);
   };
 
   const name = profileData?.dancer_name || "DANCER";
@@ -144,7 +153,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   // 主催レッスン一覧（ACTIVITYタブ内に表示）
   const lessonRows = hostedLessons.length > 0 && (
     <div style={{ marginTop: "12px" }}>
-      <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>LESSON / レッスン</div>
+      <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>PRIVATE LESSON / プライベートレッスン</div>
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         {hostedLessons.map(l => { const { date, time } = formatDate(l.starts_at); const ended = timeUntil(l.starts_at) === "終了"; return (
           <div key={l.id} onClick={() => onLessonClick?.(l.id)} style={{ padding: "10px 14px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderLeft: "3px solid #2563EB", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: onLessonClick ? "pointer" : "default", opacity: ended ? 0.5 : 1 }}>
@@ -152,9 +161,16 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
               <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: ended ? "rgba(0,0,0,0.4)" : "#111111" }}>{l.title}</div>
               <div style={{ fontSize: "10px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "2px", display: "flex", alignItems: "center", gap: "6px" }}><Clock size={9} color="rgba(0,0,0,0.3)" />{date} {time}</div>
             </div>
-            {ended
-              ? <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", padding: "2px 7px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "3px" }}>終了</span>
-              : <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#2563EB", fontWeight: "bold", padding: "2px 7px", background: "rgba(37,99,235,0.08)", borderRadius: "3px" }}>LESSON</span>}
+            <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+              {ended
+                ? <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", padding: "2px 7px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "3px" }}>終了</span>
+                : <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#2563EB", fontWeight: "bold", padding: "2px 7px", background: "rgba(37,99,235,0.08)", borderRadius: "3px" }}>PRIVATE</span>}
+              {/* 自分のレッスンには削除ボタン（終了後も消せる） */}
+              {isOwn && (
+                <button onClick={e => { e.stopPropagation(); setDeleteConfirm({ id: l.id, kind: "lesson" }); }} title="削除"
+                  style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#111111", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
+              )}
+            </div>
           </div>
         );})}
       </div>
@@ -166,40 +182,18 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       ? { position: "fixed", inset: 0, zIndex: 150, background: "#FAFAFA", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }
       : { paddingBottom: "80px", background: "#FAFAFA" }
     }>
-      {/* ヘッダー */}
+      {/* ヘッダー。Instagramと同じ並びにする：
+          上段＝アイコンと数字が横並び、その下に名前、いちばん下に横長のボタン */}
       <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
-        {onBack && (
-          <button onClick={onBack} style={{ background: "rgba(0,0,0,0.06)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", marginBottom: "14px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>
-            <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
-          </button>
-        )}
-        {/* アバター */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
-          <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: "linear-gradient(135deg,#FF3D00,#FF6D00)", border: "3px solid #FFFFFF", boxShadow: "0 2px 10px rgba(0,0,0,0.12)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-            {profileData?.avatar_url
-              ? <img src={profileData.avatar_url} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              : <span style={{ fontSize: "30px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#fff" }}>{name[0]?.toUpperCase() ?? "?"}</span>
-            }
-          </div>
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ DANCER PROFILE</div>
-            <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "24px", color: "#111111" }}>{name}</h2>
-            <div style={{ display: "flex", gap: "16px", marginTop: "8px" }}>
-              <button onClick={() => openFollowSheet("followers")} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}>
-                <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111" }}>
-                  <strong style={{ color: "#111", fontSize: "13px" }}>{followerCount}</strong> フォロワー
-                </span>
-              </button>
-              <button onClick={() => openFollowSheet("following")} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}>
-                <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111" }}>
-                  <strong style={{ color: "#111", fontSize: "13px" }}>{followingCount}</strong> フォロー中
-                </span>
-              </button>
-            </div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-end", marginTop: "4px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+          {onBack ? (
+            <button onClick={onBack} style={{ background: "rgba(0,0,0,0.06)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>
+              <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
+            </button>
+          ) : (
+            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.2em" }}>▶ DANCER PROFILE</div>
+          )}
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             {isOwn && (
               <div style={{ position: "relative" }}>
                 <button onClick={() => setMenuOpen(m => !m)}
@@ -209,10 +203,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 {menuOpen && (<>
                   <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 9 }} />
                   <div style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "10px", boxShadow: "0 4px 20px rgba(0,0,0,0.12)", overflow: "hidden", zIndex: 10, minWidth: "140px" }}>
-                    <button onClick={() => { setMenuOpen(false); onEdit?.(); }}
-                      style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", textAlign: "left", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-                      <Pencil size={13} /> 編集
-                    </button>
+                    {/* 「編集」はヘッダーの横長ボタンに移したのでメニューからは外した */}
                     <button onClick={() => {
                         setMenuOpen(false);
                         const url = `${window.location.origin}/u/${profileId}`;
@@ -238,14 +229,46 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 </>)}
               </div>
             )}
-            {!isOwn && currentUserId && (
-              <button onClick={handleFollow} disabled={followLoading}
-                style={{ border: followStatus !== "none" ? "1px solid rgba(0,0,0,0.15)" : "none", borderRadius: "8px", cursor: "pointer", padding: "9px 18px", background: followStatus !== "none" ? "transparent" : "#FF3D00", color: followStatus !== "none" ? "rgba(0,0,0,0.5)" : "#fff", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", fontWeight: "bold", opacity: followLoading ? 0.6 : 1, flexShrink: 0 }}>
-                {followStatus === "accepted" ? "フォロー中" : followStatus === "pending" ? "申請中..." : (profileData?.is_private ? "🔒 申請する" : "フォローする")}
-              </button>
-            )}
           </div>
         </div>
+
+        {/* アイコンと数字を横並び。数字は押すと中身が見られる */}
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div style={{ width: "82px", height: "82px", borderRadius: "50%", background: "linear-gradient(135deg,#FF3D00,#FF6D00)", border: "3px solid #FFFFFF", boxShadow: "0 2px 10px rgba(0,0,0,0.12)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
+            {profileData?.avatar_url
+              ? <img src={profileData.avatar_url} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              : <span style={{ fontSize: "30px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#fff" }}>{name[0]?.toUpperCase() ?? "?"}</span>
+            }
+          </div>
+          <div style={{ flex: 1, display: "flex", justifyContent: "space-around" }}>
+            {([
+              ["開催", hostedCyphers.length + hostedLessons.length, () => setMainTab("cyphers")],
+              ["フォロワー", followerCount, () => openFollowSheet("followers")],
+              ["フォロー中", followingCount, () => openFollowSheet("following")],
+            ] as const).map(([label, count, onClick]) => (
+              <button key={label} onClick={onClick}
+                style={{ background: "none", border: "none", padding: "4px 6px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+                <span style={{ fontSize: "17px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111" }}>{count}</span>
+                <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111" }}>{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <h2 style={{ margin: "12px 0 0", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#111111" }}>{name}</h2>
+
+        {/* 横長のボタン（インスタと同じ位置） */}
+        {isOwn ? (
+          <button onClick={() => onEdit?.()}
+            style={{ width: "100%", marginTop: "14px", padding: "10px", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "8px", background: "transparent", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
+            プロフィールを編集
+          </button>
+        ) : currentUserId && (
+          <button onClick={handleFollow} disabled={followLoading}
+            style={{ width: "100%", marginTop: "14px", padding: "10px", border: followStatus !== "none" ? "1px solid rgba(0,0,0,0.15)" : "none", borderRadius: "8px", background: followStatus !== "none" ? "transparent" : "#FF3D00", color: followStatus !== "none" ? "rgba(0,0,0,0.5)" : "#fff", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer", opacity: followLoading ? 0.6 : 1 }}>
+            {followStatus === "accepted" ? "フォロー中" : followStatus === "pending" ? "申請中..." : (profileData?.is_private ? "🔒 申請する" : "フォローする")}
+          </button>
+        )}
       </div>
 
       {/* メインタブ切り替え。ホーム画面と同じ角丸セグメント。
@@ -338,10 +361,10 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                             <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111", flex: 1 }}>{c.title}</div>
                             <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, marginLeft: "8px" }}>
                               <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: isPast ? "rgba(0,0,0,0.3)" : "#FF3D00", fontWeight: "bold" }}>{c.participant_count}人</span>
-                              {!isPast && <>
-                                <button onClick={e => { e.stopPropagation(); onEditCypher?.(c.id); }} title="編集" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#111111", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Pencil size={13} /></button>
-                                <button onClick={e => { e.stopPropagation(); setDeleteConfirmId(c.id); }} title="削除" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#111111", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
-                              </>}
+                              {/* 編集は開催前だけ。削除は終わったものにも出す
+                                  （テストで作ったサイファーを後片付けできるように） */}
+                              {!isPast && <button onClick={e => { e.stopPropagation(); onEditCypher?.(c.id); }} title="編集" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#111111", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Pencil size={13} /></button>}
+                              <button onClick={e => { e.stopPropagation(); setDeleteConfirm({ id: c.id, kind: "cypher" }); }} title="削除" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#111111", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
                             </div>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "3px" }}>
@@ -440,16 +463,16 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         </div>
       )}
 
-      {/* サイファー削除確認モーダル */}
-      {deleteConfirmId && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setDeleteConfirmId(null)}>
+      {/* 削除確認モーダル（サイファー・レッスン共通） */}
+      {deleteConfirm && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setDeleteConfirm(null)}>
           <div onClick={e => e.stopPropagation()} style={{ background: "#FFFFFF", borderRadius: "12px", padding: "28px 24px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
             <div style={{ fontSize: "28px", marginBottom: "8px" }}>🗑️</div>
-            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "20px", color: "#111111", marginBottom: "8px" }}>サイファーを削除</div>
-            <div style={{ fontSize: "13px", color: "#111111", marginBottom: "24px", lineHeight: "1.6" }}>このサイファーを削除すると、参加者の記録もすべて消えます。本当に削除しますか？</div>
+            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "20px", color: "#111111", marginBottom: "8px" }}>{deleteConfirm.kind === "cypher" ? "サイファーを削除" : "レッスンを削除"}</div>
+            <div style={{ fontSize: "13px", color: "#111111", marginBottom: "24px", lineHeight: "1.6" }}>削除すると{deleteConfirm.kind === "cypher" ? "参加者" : "申込"}の記録もすべて消えます。開催履歴からも消えます。本当に削除しますか？</div>
             <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={() => setDeleteConfirmId(null)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#111111" }}>キャンセル</button>
-              <button onClick={handleDeleteCypher} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "#FF3D00", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>削除する</button>
+              <button onClick={() => setDeleteConfirm(null)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#111111" }}>キャンセル</button>
+              <button onClick={handleDelete} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "#FF3D00", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>削除する</button>
             </div>
           </div>
         </div>
