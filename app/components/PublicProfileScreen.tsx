@@ -36,7 +36,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [cypherTab, setCypherTab] = useState<"joined" | "hosted">("joined");
   const [loading, setLoading] = useState(true);
   const [participantSheet, setParticipantSheet] = useState<{ title: string; participants: Array<{ profile_id: string; dancer_name: string; avatar_url: string | null }> } | null>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; kind: "cypher" | "lesson" } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [followSheet, setFollowSheet] = useState<{ type: "followers" | "following"; users: { id: string; dancer_name: string; avatar_url: string | null }[] } | null>(null);
@@ -130,13 +130,22 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     setParticipantSheet({ title: cypher.title, participants: (data ?? []).map((row: any) => ({ profile_id: row.profile_id, dancer_name: row.profiles?.dancer_name ?? "UNKNOWN", avatar_url: row.profiles?.avatar_url ?? null })) });
   };
 
-  const handleDeleteCypher = async () => {
-    if (!deleteConfirmId) return;
-    await supabase.from("participations").delete().eq("cypher_id", deleteConfirmId);
-    await supabase.from("cypher_genres").delete().eq("cypher_id", deleteConfirmId);
-    const { error } = await supabase.from("cyphers").delete().eq("id", deleteConfirmId).eq("organizer_id", currentUserId);
-    if (!error) setHostedCyphers(prev => prev.filter(c => c.id !== deleteConfirmId));
-    setDeleteConfirmId(null);
+  // サイファーもレッスンも、FK制約があるので関連レコードを先に消す
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
+    const { id, kind } = deleteConfirm;
+    if (kind === "cypher") {
+      await supabase.from("participations").delete().eq("cypher_id", id);
+      await supabase.from("cypher_genres").delete().eq("cypher_id", id);
+      const { error } = await supabase.from("cyphers").delete().eq("id", id).eq("organizer_id", currentUserId);
+      if (!error) setHostedCyphers(prev => prev.filter(c => c.id !== id));
+    } else {
+      await supabase.from("pl_participations").delete().eq("lesson_id", id);
+      await supabase.from("pl_genres").delete().eq("lesson_id", id);
+      const { error } = await supabase.from("private_lessons").delete().eq("id", id).eq("organizer_id", currentUserId);
+      if (!error) setHostedLessons(prev => prev.filter(l => l.id !== id));
+    }
+    setDeleteConfirm(null);
   };
 
   const name = profileData?.dancer_name || "DANCER";
@@ -152,9 +161,16 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
               <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: ended ? "rgba(0,0,0,0.4)" : "#111111" }}>{l.title}</div>
               <div style={{ fontSize: "10px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "2px", display: "flex", alignItems: "center", gap: "6px" }}><Clock size={9} color="rgba(0,0,0,0.3)" />{date} {time}</div>
             </div>
-            {ended
-              ? <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", padding: "2px 7px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "3px" }}>終了</span>
-              : <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#2563EB", fontWeight: "bold", padding: "2px 7px", background: "rgba(37,99,235,0.08)", borderRadius: "3px" }}>PRIVATE</span>}
+            <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+              {ended
+                ? <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", padding: "2px 7px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "3px" }}>終了</span>
+                : <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#2563EB", fontWeight: "bold", padding: "2px 7px", background: "rgba(37,99,235,0.08)", borderRadius: "3px" }}>PRIVATE</span>}
+              {/* 自分のレッスンには削除ボタン（終了後も消せる） */}
+              {isOwn && (
+                <button onClick={e => { e.stopPropagation(); setDeleteConfirm({ id: l.id, kind: "lesson" }); }} title="削除"
+                  style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#111111", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
+              )}
+            </div>
           </div>
         );})}
       </div>
@@ -345,10 +361,10 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                             <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111", flex: 1 }}>{c.title}</div>
                             <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, marginLeft: "8px" }}>
                               <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: isPast ? "rgba(0,0,0,0.3)" : "#FF3D00", fontWeight: "bold" }}>{c.participant_count}人</span>
-                              {!isPast && <>
-                                <button onClick={e => { e.stopPropagation(); onEditCypher?.(c.id); }} title="編集" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#111111", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Pencil size={13} /></button>
-                                <button onClick={e => { e.stopPropagation(); setDeleteConfirmId(c.id); }} title="削除" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#111111", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
-                              </>}
+                              {/* 編集は開催前だけ。削除は終わったものにも出す
+                                  （テストで作ったサイファーを後片付けできるように） */}
+                              {!isPast && <button onClick={e => { e.stopPropagation(); onEditCypher?.(c.id); }} title="編集" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#111111", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Pencil size={13} /></button>}
+                              <button onClick={e => { e.stopPropagation(); setDeleteConfirm({ id: c.id, kind: "cypher" }); }} title="削除" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#111111", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
                             </div>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "3px" }}>
@@ -447,16 +463,16 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         </div>
       )}
 
-      {/* サイファー削除確認モーダル */}
-      {deleteConfirmId && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setDeleteConfirmId(null)}>
+      {/* 削除確認モーダル（サイファー・レッスン共通） */}
+      {deleteConfirm && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setDeleteConfirm(null)}>
           <div onClick={e => e.stopPropagation()} style={{ background: "#FFFFFF", borderRadius: "12px", padding: "28px 24px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
             <div style={{ fontSize: "28px", marginBottom: "8px" }}>🗑️</div>
-            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "20px", color: "#111111", marginBottom: "8px" }}>サイファーを削除</div>
-            <div style={{ fontSize: "13px", color: "#111111", marginBottom: "24px", lineHeight: "1.6" }}>このサイファーを削除すると、参加者の記録もすべて消えます。本当に削除しますか？</div>
+            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "20px", color: "#111111", marginBottom: "8px" }}>{deleteConfirm.kind === "cypher" ? "サイファーを削除" : "レッスンを削除"}</div>
+            <div style={{ fontSize: "13px", color: "#111111", marginBottom: "24px", lineHeight: "1.6" }}>削除すると{deleteConfirm.kind === "cypher" ? "参加者" : "申込"}の記録もすべて消えます。開催履歴からも消えます。本当に削除しますか？</div>
             <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={() => setDeleteConfirmId(null)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#111111" }}>キャンセル</button>
-              <button onClick={handleDeleteCypher} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "#FF3D00", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>削除する</button>
+              <button onClick={() => setDeleteConfirm(null)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#111111" }}>キャンセル</button>
+              <button onClick={handleDelete} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "#FF3D00", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>削除する</button>
             </div>
           </div>
         </div>
