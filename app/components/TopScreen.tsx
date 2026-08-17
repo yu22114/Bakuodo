@@ -14,6 +14,14 @@ import { Loading } from "./Loading";
 
 export type TopSection = "cypher" | "pl" | "spots";
 
+// カード脇の余白の色。セクションのタブ色（#FF3D00 / #2563EB / #16A34A）を
+// カードの白が沈まない程度まで薄めたもの
+const SECTION_BG: Record<TopSection, string> = {
+  cypher: "#FFF4F0",
+  pl: "#EFF3FD",
+  spots: "#EFF8F2",
+};
+
 export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell, section, onSectionChange }: {
   onNav: (s: string) => void;
   onCardClick: (c: Cypher) => void;
@@ -363,12 +371,14 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       })()}
     </div>
 
-    {/* スクロールするのはここだけ。固定ヘッダーの残り高さ分だけ使う */}
+    {/* スクロールするのはここだけ。固定ヘッダーの残り高さ分だけ使う。
+        カード脇の余白の色でセクションを見分けられるようにする（各タブの色の薄いやつ）。
+        リストではなくこの器に色を敷くので、カードが少なくても下まで色が続く */}
     <div onTouchStart={handleContentTouchStart} onTouchEnd={handleContentTouchEnd} onWheel={handleContentWheel}
-      style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any }}>
+      style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any, background: SECTION_BG[section], transition: "background 0.2s" }}>
       <div key={section} style={{ animation: `${slideDir === 1 ? "bdSlideFromRight" : "bdSlideFromLeft"} 0.2s ease-out` }}>
       {section === "spots" ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 16px", background: "linear-gradient(180deg, rgba(22,163,74,0.04) 0%, #F5F7FA 120px)" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 16px" }}>
           {sortedSpots.length === 0
             ? <div style={{ textAlign: "center", padding: "40px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>スポット情報はまだありません</div>
             : sortedSpots.map(s => <SpotCard key={s.id} spot={s} user={user} userLocation={userLocation} onViewProfile={id => onViewProfile?.(id)} />)}
@@ -379,7 +389,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
           </button>
         </div>
       ) : section === "pl" ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px", background: "linear-gradient(180deg, rgba(37,99,235,0.04) 0%, #F5F7FA 120px)" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px" }}>
           {loading && lessons.length === 0
             ? <Loading />
             : !loading && lessons.length === 0
@@ -389,7 +399,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
                 : filteredLessons.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => onPLClick(l)} />)}
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px", background: "#F5F7FA" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px" }}>
           {/* 再フェッチ中は既存リストを出したままにする（全画面LOADINGのちらつき防止） */}
           {loading && cyphers.length === 0
             ? <Loading />
