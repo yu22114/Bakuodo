@@ -28,6 +28,21 @@ export const GENRES: GenreKey[] = [
   "All Style",
 ];
 
+// ジャンル選択のトグル。「All Style」は全ジャンルの意味なので、
+// 他のジャンルと同時には選べないようにする（All Styleを選ぶと他が外れ、
+// 他を選ぶとAll Styleが外れる）。投稿フォーム・編集フォーム共通
+export function toggleGenre<T extends string>(list: T[], g: T): T[] {
+  if (list.includes(g)) return list.filter(x => x !== g);
+  if (g === "All Style") return [g];
+  return [...list.filter(x => x !== "All Style"), g];
+}
+
+// 絞り込みチップ用の短い表示名（Breaking → Break のように ing を落とす）。
+// DBに入っている名前は変えず、見た目だけ短くする
+export function genreLabel(g: string): string {
+  return g.replace(/ing$/, "");
+}
+
 // CYPHER=#FF3D00 / LESSON=#2563EB / SPOTS=#16A34A（TopScreenのセクションタブ色）とは
 // 意味の異なる塊なので、ジャンル色に同じ色を使わないようにしている
 export const GENRE_COLORS: Record<GenreKey, string> = {
@@ -103,6 +118,20 @@ export function formatEndTime(startsAt: string, endsAt: string): string {
   const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
   const timeStr = `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`;
   return endDay > startDay ? `翌${timeStr}` : timeStr;
+}
+
+// カードのタイトル横に出す残り日数バッジ用。時間単位は出さず日数だけにする
+export function daysUntil(iso: string): string {
+  const start = new Date(iso);
+  if (start.getTime() < Date.now()) return "終了";
+  const today = new Date();
+  // 「あと何時間」ではなく「何日後の予定か」を出したいので、カレンダー上の日付差で数える
+  const d0 = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const d1 = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+  const days = Math.round((d1 - d0) / 86400000);
+  if (days <= 0) return "今日";
+  if (days === 1) return "明日";
+  return `${days}日後`;
 }
 
 // 開催日を過ぎていたら「終了」を返す
