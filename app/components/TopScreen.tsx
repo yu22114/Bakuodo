@@ -24,7 +24,7 @@ const SECTION_COLOR: Record<TopSection, string> = {
 };
 const SECTION_LABEL: Record<TopSection, string> = {
   cypher: "CYPHER",
-  pl: "PLesson",
+  pl: "PLESSON",
   event: "EVENT",
   spots: "SPOTS",
 };

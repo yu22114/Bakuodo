@@ -30,7 +30,7 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
         // 長い名前（ALL STYLE など）が右で切れないよう、文字数に応じて小さくする
         const label = genreLabel(cypher.genres[0]).toUpperCase();
         return (
-          <div aria-hidden="true" style={{ position: "absolute", left: "14px", bottom: "-8px", fontSize: `${Math.min(68, Math.round(360 / label.length))}px`, fontStyle: "italic", fontFamily: "'Titan One','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: color + "1F", pointerEvents: "none", userSelect: "none" }}>
+          <div aria-hidden="true" style={{ position: "absolute", right: "14px", top: "58px", fontSize: `${Math.min(68, Math.round(360 / label.length))}px`, fontStyle: "italic", fontFamily: "'Titan One','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: color + "1F", pointerEvents: "none", userSelect: "none" }}>
             {label}
           </div>
         );
