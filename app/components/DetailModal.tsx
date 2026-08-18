@@ -4,10 +4,11 @@ import { Clock, MapPin, User, X, Check, Zap, Share2 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, ParticipantProfile } from "../lib/types";
-import { formatDate, timeUntil, formatEndTime } from "../lib/constants";
+import { formatDate, timeUntil, formatEndTime, timeAgo } from "../lib/constants";
 import { GenreBadge } from "./GenreBadge";
 import { ParticipantBar } from "./ParticipantBar";
 import { showToast } from "./Toast";
+import { useComments } from "../lib/useComments";
 
 export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewProfile, user, keepOpenOnJoin }: {
   cypher: Cypher | null;
@@ -28,9 +29,8 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
   const isEnded = timeUntil(cypher.starts_at) === "終了";
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
-  const [comments, setComments] = useState<{ id: string; content: string; created_at: string; profile: { id: string; dancer_name: string; avatar_url: string | null } }[]>([]);
-  const [commentText, setCommentText] = useState("");
-  const [posting, setPosting] = useState(false);
+  // コメントの取得・投稿はレッスン側と同じ処理を使う
+  const { comments, commentText, setCommentText, posting, postComment } = useComments({ cypherId }, user);
 
   useEffect(() => {
     async function fetchParticipants() {
@@ -52,35 +52,6 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
     fetchParticipants();
   }, [cypherId, joined]);
 
-  useEffect(() => {
-    async function fetchComments() {
-      const { data } = await supabase
-        .from("comments")
-        .select("id, content, created_at, profile:profile_id(id, dancer_name, avatar_url)")
-        .eq("cypher_id", cypherId)
-        .order("created_at", { ascending: true });
-      if (data) setComments(data.map((c: any) => ({ ...c, profile: c.profile ?? { id: "", dancer_name: "UNKNOWN", avatar_url: null } })));
-    }
-    fetchComments();
-  }, [cypherId]);
-
-  const handlePostComment = async () => {
-    const text = commentText.trim();
-    if (!text || posting || !user) return;
-    setPosting(true);
-    // 主催者・参加者への通知はDBトリガーが作成する（sql/2026-07-07_security.sql）
-    const { data, error } = await supabase
-      .from("comments")
-      .insert({ cypher_id: cypherId, profile_id: user.id, content: text })
-      .select("id, content, created_at, profile:profile_id(id, dancer_name, avatar_url)")
-      .single();
-    if (!error && data) {
-      setComments(c => [...c, { ...data, profile: (data as any).profile ?? { id: user.id, dancer_name: "YOU", avatar_url: null } }]);
-      setCommentText("");
-    }
-    setPosting(false);
-  };
-
   // /c/[id] の共有リンクを配る（対応端末はOSの共有シート、なければコピー）
   const handleShare = async () => {
     const url = `${window.location.origin}/c/${cypherId}`;
@@ -91,17 +62,6 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
       showToast("リンクをコピーしました");
     }
   };
-
-  function timeAgo(iso: string) {
-    const diff = Date.now() - new Date(iso).getTime();
-    const min = Math.floor(diff / 60000);
-    const h = Math.floor(min / 60);
-    const d = Math.floor(h / 24);
-    if (d > 0) return `${d}日前`;
-    if (h > 0) return `${h}時間前`;
-    if (min > 0) return `${min}分前`;
-    return "たった今";
-  }
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={onClose}>
@@ -221,14 +181,14 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
           <textarea
             value={commentText}
             onChange={e => setCommentText(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handlePostComment(); } }}
+            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); postComment(); } }}
             placeholder="コメントを入力..."
             rows={1}
             maxLength={200}
             style={{ flex: 1, resize: "none", border: "1px solid rgba(0,0,0,0.12)", borderRadius: "20px", padding: "10px 14px", fontSize: "13px", fontFamily: "inherit", background: "#FAFAFA", outline: "none", lineHeight: 1.5 }}
           />
           <button
-            onClick={handlePostComment}
+            onClick={postComment}
             disabled={!commentText.trim() || posting}
             style={{ width: "38px", height: "38px", borderRadius: "50%", background: commentText.trim() ? "#FF3D00" : "rgba(0,0,0,0.1)", border: "none", cursor: commentText.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.2s" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
