@@ -71,9 +71,11 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginBottom: "8px" }}>
         {lesson.genres.map(g => <GenreBadge key={g} genre={g} />)}
-        <span style={{ fontSize: "9px", padding: "2px 7px", background: accent + "14", borderRadius: "4px", color: accent, fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "3px" }}>
-          <BookOpen size={9} /> {LEVEL_LABELS[lesson.target_level] ?? "全レベル"}
-        </span>
+        {lesson.kind !== "event" && (
+          <span style={{ fontSize: "9px", padding: "2px 7px", background: accent + "14", borderRadius: "4px", color: accent, fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "3px" }}>
+            <BookOpen size={9} /> {LEVEL_LABELS[lesson.target_level] ?? "全レベル"}
+          </span>
+        )}
         {lesson.price != null && (
           <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>
             ¥{lesson.price.toLocaleString()}

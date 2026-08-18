@@ -37,10 +37,11 @@ export function toggleGenre<T extends string>(list: T[], g: T): T[] {
   return [...list.filter(x => x !== "All Style"), g];
 }
 
-// 絞り込みチップ用の短い表示名（Breaking → Break のように ing を落とす）。
-// DBに入っている名前は変えず、見た目だけ短くする
+// 短い表示名（Breaking → Break のように ing を落とす）。絞り込みチップと投稿フォームで使う。
+// DBに入っている名前は変えず、見た目だけ短くする。
+// ing を取ったあとに同じ字が2つ続いたら1つに戻す（Popping → Popp ではなく Pop にするため）
 export function genreLabel(g: string): string {
-  return g.replace(/ing$/, "");
+  return g.replace(/ing$/, "").replace(/(.)\1$/, "$1");
 }
 
 // CYPHER=#FF3D00 / LESSON=#2563EB / SPOTS=#16A34A（TopScreenのセクションタブ色）とは

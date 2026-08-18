@@ -77,9 +77,11 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
         <div style={{ overflowY: "auto", padding: "8px 20px 0", flex: 1 }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
             {lesson.genres.map(g => <GenreBadge key={g} genre={g} size="md" />)}
-            <span style={{ fontSize: "10px", padding: "3px 9px", background: accent + "14", borderRadius: "4px", color: accent, fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "4px" }}>
-              <BookOpen size={10} /> {LEVEL_LABELS[lesson.target_level] ?? "全レベル対象"}
-            </span>
+            {!isEvent && (
+              <span style={{ fontSize: "10px", padding: "3px 9px", background: accent + "14", borderRadius: "4px", color: accent, fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "4px" }}>
+                <BookOpen size={10} /> {LEVEL_LABELS[lesson.target_level] ?? "全レベル対象"}
+              </span>
+            )}
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
