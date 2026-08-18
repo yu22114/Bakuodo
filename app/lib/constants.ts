@@ -36,6 +36,18 @@ export function toggleGenre<T extends string>(list: T[], g: T): T[] {
   return list[0] === g ? [] : [g];
 }
 
+// 「3日前」「2時間前」のような経過時間。コメントの投稿時刻に使う
+export function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diff / 60000);
+  const h = Math.floor(min / 60);
+  const d = Math.floor(h / 24);
+  if (d > 0) return `${d}日前`;
+  if (h > 0) return `${h}時間前`;
+  if (min > 0) return `${min}分前`;
+  return "たった今";
+}
+
 // 短い表示名（Breaking → Break のように ing を落とす）。絞り込みチップと投稿フォームで使う。
 // DBに入っている名前は変えず、見た目だけ短くする。
 // ing を取ったあとに同じ字が2つ続いたら1つに戻す（Popping → Popp ではなく Pop にするため）。

@@ -4,7 +4,8 @@ import { Clock, MapPin, User, X, Check, BookOpen } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { PrivateLesson, ParticipantProfile } from "../lib/types";
-import { formatDate, timeUntil, formatEndTime } from "../lib/constants";
+import { formatDate, timeUntil, formatEndTime, timeAgo } from "../lib/constants";
+import { useComments } from "../lib/useComments";
 import { GenreBadge } from "./GenreBadge";
 import { ParticipantBar } from "./ParticipantBar";
 
@@ -27,6 +28,8 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
   const lessonId = lesson?.id;
+  // コメントの取得・投稿はサイファー側と同じ処理を使う（commentsテーブル共通）
+  const { comments, commentText, setCommentText, posting, postComment } = useComments({ lessonId: lessonId ?? "" }, user);
 
   useEffect(() => {
     if (!lessonId) return;
@@ -141,7 +144,53 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
               </button>
             )
           )}
+          <div style={{ marginTop: "28px", borderTop: "1px solid rgba(0,0,0,0.07)", paddingTop: "20px" }}>
+            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.15em", marginBottom: "14px" }}>COMMENTS{comments.length > 0 ? ` (${comments.length})` : ""}</div>
+            {comments.length === 0 ? (
+              <p style={{ fontSize: "12px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", marginBottom: "16px" }}>まだコメントはありません</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "16px" }}>
+                {comments.map(c => (
+                  <div key={c.id} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                    <button onClick={() => c.profile.id && onViewProfile(c.profile.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}>
+                      <div style={{ width: "30px", height: "30px", borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111" }}>
+                        {c.profile.avatar_url
+                          ? <img src={c.profile.avatar_url} alt={c.profile.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          : c.profile.dancer_name[0]?.toUpperCase() ?? "?"}
+                      </div>
+                    </button>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "3px" }}>
+                        <span style={{ fontSize: "12px", fontWeight: "bold", color: "#111", fontFamily: "'Noto Sans JP',sans-serif" }}>{c.profile.dancer_name}</span>
+                        <span style={{ fontSize: "10px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>{timeAgo(c.created_at)}</span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: "13px", color: "#111111", lineHeight: 1.5 }}>{c.content}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <div style={{ height: "32px" }} />
+        </div>
+
+        {/* 入力欄はDetailModalと同じく下に固定 */}
+        <div style={{ padding: "12px 16px 24px", borderTop: "1px solid rgba(0,0,0,0.07)", background: "#FFFFFF", display: "flex", gap: "8px", alignItems: "flex-end" }}>
+          <textarea
+            value={commentText}
+            onChange={e => setCommentText(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); postComment(); } }}
+            placeholder="コメントを入力..."
+            rows={1}
+            maxLength={200}
+            style={{ flex: 1, resize: "none", border: "1px solid rgba(0,0,0,0.12)", borderRadius: "20px", padding: "10px 14px", fontSize: "13px", fontFamily: "inherit", background: "#FAFAFA", outline: "none", lineHeight: 1.5 }}
+          />
+          <button
+            onClick={postComment}
+            disabled={!commentText.trim() || posting}
+            style={{ width: "38px", height: "38px", borderRadius: "50%", background: commentText.trim() ? accent : "rgba(0,0,0,0.1)", border: "none", cursor: commentText.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.2s" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+          </button>
         </div>
       </div>
     </div>
