@@ -40,8 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# claude worktrees
-.claude/
+# claude（worktreeと個人設定はローカルだけ。共有するのは設定とフックだけ）
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
 
 # UXリサーチ用ドキュメント（ローカルのみ・リポジトリには含めない）
 /research/
