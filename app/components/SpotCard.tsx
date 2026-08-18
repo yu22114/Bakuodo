@@ -21,6 +21,11 @@ type Spot = {
   longitude: number | null;
 };
 
+// スポットの背景写真。public/ に置いた「〇〇.jpg」の〇〇の部分。
+// スポット名にこの文字が含まれていたらその写真を敷く。
+// 一致しないスポット（溝口駅など）は写真なしの白いカードのまま
+const SPOT_PHOTOS = ["安田", "湘南台", "横浜", "中野", "代々木"];
+
 function formatDistance(m: number): string {
   if (m < 1000) return `${Math.round(m)}m`;
   return `${(m / 1000).toFixed(1)}km`;
@@ -32,6 +37,7 @@ export function SpotCard({ spot, user, userLocation, onViewProfile }: {
   userLocation: { lat: number; lng: number } | null;
   onViewProfile: (id: string) => void;
 }) {
+  const photo = SPOT_PHOTOS.find(k => spot.name.includes(k));
   const [checkins, setCheckins] = useState<Checkin[]>([]);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
@@ -75,7 +81,10 @@ export function SpotCard({ spot, user, userLocation, onViewProfile }: {
   };
 
   return (
-    <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderLeft: `3px solid ${checkins.length > 0 ? "#16A34A" : "rgba(0,0,0,0.1)"}`, borderRadius: "10px", overflow: "hidden", transition: "border-left-color 0.3s" }}>
+    // 写真の上に白をかぶせて、文字が読める濃さまで薄めている
+    <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderLeft: `3px solid ${checkins.length > 0 ? "#16A34A" : "rgba(0,0,0,0.1)"}`, borderRadius: "10px", overflow: "hidden", transition: "border-left-color 0.3s",
+      backgroundImage: photo ? `linear-gradient(rgba(255,255,255,0.72), rgba(255,255,255,0.86)), url(/${encodeURIComponent(photo)}.jpg)` : undefined,
+      backgroundSize: "cover", backgroundPosition: "center" }}>
       <div style={{ padding: "14px 16px 12px", borderBottom: checkins.length > 0 ? "1px solid rgba(0,0,0,0.06)" : "none" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
           <div style={{ flex: 1 }}>
