@@ -16,7 +16,9 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
   const { date, time } = formatDate(lesson.starts_at);
   const until = timeUntil(lesson.starts_at);
   const [hover, setHover] = useState(false);
-  const color = GENRE_COLORS[lesson.genres[0]] ?? "#2563EB";
+  // イベントもこのカードを使い回す。青(レッスン)と紫(イベント)だけ切り替える
+  const accent = lesson.kind === "event" ? "#7C3AED" : "#2563EB";
+  const color = GENRE_COLORS[lesson.genres[0]] ?? accent;
   const isEnded = until === "終了";
 
   // 登場アニメは外側、ホバーの動きは内側（CypherCardと同じ理由）
@@ -25,7 +27,7 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       // タッチ端末はホバーできないので、PCのホバー時と同じ色付き影を@media(hover:none)で常時出す
       className="bd-glow-card-blue"
-      style={{ background: "#FFFFFF", border: `1px solid ${hover ? "rgba(37,99,235,0.3)" : "rgba(0,0,0,0.08)"}`, borderRadius: "10px", padding: "14px 18px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? "0 6px 12px rgba(0,0,0,0.05), 0 18px 36px rgba(37,99,235,0.18)" : "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(0,0,0,0.06)", opacity: isEnded ? 0.55 : 1 }}>
+      style={{ background: "#FFFFFF", border: `1px solid ${hover ? accent + "4D" : "rgba(0,0,0,0.08)"}`, borderRadius: "10px", padding: "14px 18px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? "0 6px 12px rgba(0,0,0,0.05), 0 18px 36px " + accent + "2E" : "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(0,0,0,0.06)", opacity: isEnded ? 0.55 : 1 }}>
       {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(0,0,0,0.1)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
@@ -33,7 +35,7 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
           {/* 残り日数はタイトルの真横に（CypherCardと同じ） */}
           <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap" }}>
             <h3 style={{ margin: 0, fontSize: "19px", fontWeight: 700, color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{lesson.title}</h3>
-            <span style={{ fontSize: "9px", padding: "1px 6px", background: isEnded ? "rgba(0,0,0,0.06)" : "rgba(37,99,235,0.08)", borderRadius: "3px", color: isEnded ? "rgba(0,0,0,0.4)" : "#2563EB", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", flexShrink: 0 }}>{daysUntil(lesson.starts_at)}</span>
+            <span style={{ fontSize: "9px", padding: "1px 6px", background: isEnded ? "rgba(0,0,0,0.06)" : accent + "14", borderRadius: "3px", color: isEnded ? "rgba(0,0,0,0.4)" : accent, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", flexShrink: 0 }}>{daysUntil(lesson.starts_at)}</span>
           </div>
           <div style={{ fontSize: "12px", color: "#111111", marginTop: "3px", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
             <span>by {lesson.organizer.dancer_name}</span>
@@ -69,7 +71,7 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginBottom: "8px" }}>
         {lesson.genres.map(g => <GenreBadge key={g} genre={g} />)}
-        <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(37,99,235,0.08)", borderRadius: "4px", color: "#2563EB", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "3px" }}>
+        <span style={{ fontSize: "9px", padding: "2px 7px", background: accent + "14", borderRadius: "4px", color: accent, fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "3px" }}>
           <BookOpen size={9} /> {LEVEL_LABELS[lesson.target_level] ?? "全レベル"}
         </span>
         {lesson.price != null && (

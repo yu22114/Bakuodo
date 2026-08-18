@@ -22,7 +22,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   type ProfileData = { dancer_name: string; genres: GenreKey[]; instagram: string | null; dance_years: number | null; age_group: string | null; gender: string | null; avatar_url: string | null; is_private: boolean };
   type HostedCypher = { id: string; title: string; starts_at: string; location: string; participant_count: number };
   type JoinedCypher = { id: string; title: string; starts_at: string; location: string; organizer_name: string };
-  type HostedLesson = { id: string; title: string; starts_at: string; location: string };
+  type HostedLesson = { id: string; title: string; starts_at: string; location: string; kind: "lesson" | "event" };
 
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [followStatus, setFollowStatus] = useState<"none" | "pending" | "accepted">("none");
@@ -48,7 +48,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       const [profileRes, hostedRes, hostedLessonsRes, allPartsRes, followersRes, followingRes] = await Promise.all([
         supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, avatar_url, is_private").eq("id", profileId).single(),
         supabase.from("cyphers").select("id, title, starts_at, location").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
-        supabase.from("private_lessons").select("id, title, starts_at, location").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
+        supabase.from("private_lessons").select("id, title, starts_at, location, kind").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("participations").select("cypher_id"),
         supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", profileId).eq("status", "accepted"),
         supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", profileId),
@@ -69,7 +69,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         setHostedCyphers((hostedRes.data as any[]).map(c => ({ id: c.id, title: c.title, starts_at: c.starts_at, location: c.location, participant_count: countMap[c.id] ?? 0 })));
       }
       if (hostedLessonsRes.data) {
-        setHostedLessons((hostedLessonsRes.data as any[]).map(l => ({ id: l.id, title: l.title, starts_at: l.starts_at, location: l.location })));
+        setHostedLessons((hostedLessonsRes.data as any[]).map(l => ({ id: l.id, title: l.title, starts_at: l.starts_at, location: l.location, kind: l.kind === "event" ? "event" : "lesson" })));
       }
       if (isOwn) {
         const { data: joinedData } = await supabase.from("participations")
@@ -150,13 +150,13 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
   const name = profileData?.dancer_name || "DANCER";
 
-  // 主催レッスン一覧（ACTIVITYタブ内に表示）
+  // 主催レッスン・イベント一覧（ACTIVITYタブ内に表示。同じテーブルなのでまとめて出す）
   const lessonRows = hostedLessons.length > 0 && (
     <div style={{ marginTop: "12px" }}>
-      <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>PRIVATE LESSON / プライベートレッスン</div>
+      <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>LESSON &amp; EVENT / レッスン・イベント</div>
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-        {hostedLessons.map(l => { const { date, time } = formatDate(l.starts_at); const ended = timeUntil(l.starts_at) === "終了"; return (
-          <div key={l.id} onClick={() => onLessonClick?.(l.id)} style={{ padding: "10px 14px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderLeft: "3px solid #2563EB", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: onLessonClick ? "pointer" : "default", opacity: ended ? 0.5 : 1 }}>
+        {hostedLessons.map(l => { const { date, time } = formatDate(l.starts_at); const ended = timeUntil(l.starts_at) === "終了"; const isEv = l.kind === "event"; const accent = isEv ? "#7C3AED" : "#2563EB"; return (
+          <div key={l.id} onClick={() => onLessonClick?.(l.id)} style={{ padding: "10px 14px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderLeft: "3px solid " + accent, borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: onLessonClick ? "pointer" : "default", opacity: ended ? 0.5 : 1 }}>
             <div>
               <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: ended ? "rgba(0,0,0,0.4)" : "#111111" }}>{l.title}</div>
               <div style={{ fontSize: "10px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "2px", display: "flex", alignItems: "center", gap: "6px" }}><Clock size={9} color="rgba(0,0,0,0.3)" />{date} {time}</div>
@@ -164,7 +164,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
               {ended
                 ? <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", padding: "2px 7px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "3px" }}>終了</span>
-                : <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#2563EB", fontWeight: "bold", padding: "2px 7px", background: "rgba(37,99,235,0.08)", borderRadius: "3px" }}>PRIVATE</span>}
+                : <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: accent, fontWeight: "bold", padding: "2px 7px", background: accent + "14", borderRadius: "3px" }}>{isEv ? "EVENT" : "PRIVATE"}</span>}
               {/* 自分のレッスンには削除ボタン（終了後も消せる） */}
               {isOwn && (
                 <button onClick={e => { e.stopPropagation(); setDeleteConfirm({ id: l.id, kind: "lesson" }); }} title="削除"

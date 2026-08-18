@@ -12,13 +12,30 @@ import { Logo } from "./Logo";
 import { showToast } from "./Toast";
 import { Loading } from "./Loading";
 
-export type TopSection = "cypher" | "pl" | "spots";
+export type TopSection = "cypher" | "pl" | "event" | "spots";
 
-// カード脇の余白の色。セクションのタブ色（#FF3D00 / #2563EB / #16A34A）を
+// タブの並び順・色・ラベル。EVENTはレッスンと同じ仕組みで動く（DBのkind列で見分ける）
+const SECTION_ORDER = ["cypher", "pl", "event", "spots"] as const;
+const SECTION_COLOR: Record<TopSection, string> = {
+  cypher: "#FF3D00",
+  pl: "#2563EB",
+  event: "#7C3AED",
+  spots: "#16A34A",
+};
+// タブが4つになって「PRIVATE LESSON」が入りきらないので、ここだけLESSONに縮めた
+const SECTION_LABEL: Record<TopSection, string> = {
+  cypher: "CYPHER",
+  pl: "LESSON",
+  event: "EVENT",
+  spots: "SPOTS",
+};
+
+// カード脇の余白の色。セクションのタブ色を
 // カードの白が沈まない程度まで薄めたもの
 const SECTION_BG: Record<TopSection, string> = {
   cypher: "#FFF4F0",
   pl: "#EFF3FD",
+  event: "#F6F1FD",
   spots: "#EFF8F2",
 };
 
@@ -38,7 +55,6 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   section: TopSection;
   onSectionChange: (s: TopSection) => void;
 }) {
-  const SECTION_ORDER = ["cypher", "pl", "spots"] as const;
   const [slideDir, setSlideDir] = useState<1 | -1>(1);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -96,6 +112,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   const [spots, setSpots] = useState<{ id: string; name: string; location: string; description: string | null; latitude: number | null; longitude: number | null }[]>([]);
   const [cyphers, setCyphers] = useState<Cypher[]>([]);
   const [lessons, setLessons] = useState<PrivateLesson[]>([]);
+  const [events, setEvents] = useState<PrivateLesson[]>([]);
   const [loading, setLoading] = useState(true);
   // 検索・フィルター
   const [searchOpen, setSearchOpen] = useState(false);
@@ -162,7 +179,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       // PLフェッチ
       const [plRes, plCountRes] = await Promise.all([
         supabase.from("private_lessons").select(`
-          id, title, organizer_id, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval,
+          id, title, organizer_id, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval, kind,
           profiles:organizer_id ( dancer_name, avatar_url, instagram ),
           pl_genres ( genres:genre_id ( name ) )
         `).or(`starts_at.gte.${oneHourAgo},ends_at.gte.${now}`).order("starts_at"),
@@ -174,9 +191,11 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         const shapedPL: PrivateLesson[] = (plRes.data ?? []).map((row: any) => {
           const name = row.profiles?.dancer_name ?? "UNKNOWN";
           const genres: GenreKey[] = (row.pl_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
-          return { id: row.id, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, price: row.price ?? null, target_level: row.target_level ?? "all", visibility: row.visibility ?? "public", requires_approval: row.requires_approval ?? false, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null, instagram: row.profiles?.instagram ?? null }, participant_count: plCountMap[row.id] ?? 0 };
+          return { id: row.id, kind: (row.kind === "event" ? "event" : "lesson") as PrivateLesson["kind"], title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, price: row.price ?? null, target_level: row.target_level ?? "all", visibility: row.visibility ?? "public", requires_approval: row.requires_approval ?? false, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null, instagram: row.profiles?.instagram ?? null }, participant_count: plCountMap[row.id] ?? 0 };
         }).filter((l: PrivateLesson) => l.visibility === "public" || l.organizer.id === user.id || followingIds.has(l.organizer.id));
-        setLessons(shapedPL);
+        // 同じテーブルから取ったものをkindで2つのタブに振り分ける
+        setLessons(shapedPL.filter(l => l.kind === "lesson"));
+        setEvents(shapedPL.filter(l => l.kind === "event"));
       }
 
       setLoading(false);
@@ -204,8 +223,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     return true;
   });
 
-  // レッスン側もサイファーと同じ条件で絞り込む（ジャンル/日付/エリア）
-  const filteredLessons = lessons.filter(l => {
+  // レッスン・イベント側もサイファーと同じ条件で絞り込む（ジャンル/日付/エリア）
+  const matchPL = (l: PrivateLesson) => {
     if (selectedGenres.length > 0 && !selectedGenres.some(g => l.genres.includes(g))) return false;
     if (specificDate) {
       const d = new Date(l.starts_at);
@@ -216,7 +235,9 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       if (!l.location.toLowerCase().includes(areaText.trim().toLowerCase())) return false;
     }
     return true;
-  });
+  };
+  const filteredLessons = lessons.filter(matchPL);
+  const filteredEvents = events.filter(matchPL);
 
   const activeFilterCount = (selectedGenres.length > 0 ? 1 : 0) + (specificDate ? 1 : 0) + (areaText.trim() ? 1 : 0);
 
@@ -266,7 +287,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         return dA - dB;
       })
     : spots;
-  const postCount = section === "pl" ? filteredLessons.length : filtered.length;
+  const postCount = section === "pl" ? filteredLessons.length : section === "event" ? filteredEvents.length : filtered.length;
 
   // ヘッダー左上に出す今日の日付。ロゴだけだと寂しいので添える
   const today = new Date();
@@ -316,7 +337,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       {/* セクション切り替え：四角い下線タブから、丸い枠の中で選択中だけ浮くセグメント風に */}
       <div style={{ padding: "10px 16px", background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
         <div style={{ display: "flex", gap: "4px", background: "#F5F7FA", borderRadius: "14px", padding: "4px" }}>
-          {([["cypher", "CYPHER", "#FF3D00"], ["pl", "PRIVATE LESSON", "#2563EB"], ["spots", "SPOTS", "#16A34A"]] as const).map(([key, label, color]) => (
+          {SECTION_ORDER.map(key => { const label = SECTION_LABEL[key]; const color = SECTION_COLOR[key]; return (
             <button key={key} onClick={() => goToSection(key)}
               style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: section === key ? "#FFFFFF" : "transparent", boxShadow: section === key ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: section === key ? color : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
               {/* 選んでいるタブだけ、文字を1つずつ左から順に上下させてウェーブっぽく見せる */}
@@ -327,12 +348,12 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
                   ))
                 : label}
             </button>
-          ))}
+          ); })}
         </div>
       </div>
 
       {/* ジャンルチップ（横スクロール）。CYPHER/LESSON共通 */}
-      {(section === "cypher" || section === "pl") && (
+      {section !== "spots" && (
         <div style={{ display: "flex", gap: "6px", padding: "10px 16px", overflowX: "auto", scrollbarWidth: "none", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
           {(["ALL", ...GENRES] as (GenreKey | "ALL")[]).map(g => {
             const sel = g === "ALL" ? selectedGenres.length === 0 : selectedGenres.includes(g as GenreKey);
@@ -350,8 +371,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       )}
 
       {/* POSTS（CYPHER/LESSON共通）。ここも固定エリアに含める */}
-      {(section === "cypher" || section === "pl") && (() => {
-        const accent = section === "pl" ? "#2563EB" : "#FF3D00";
+      {section !== "spots" && (() => {
+        const accent = SECTION_COLOR[section];
         return (
           // 件数しか出さない割に高さを取っていたので、文字を小さくして薄い1行に詰めた
           <div style={{ display: "flex", padding: "4px 16px", gap: "20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", alignItems: "center" }}>
@@ -388,17 +409,23 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             <Plus size={14} /> このリストにない場所を申請する
           </button>
         </div>
-      ) : section === "pl" ? (
+      ) : section === "pl" || section === "event" ? (() => {
+        // レッスンとイベントはカードも絞り込みも同じ。出すデータと文言だけ切り替える
+        const all = section === "pl" ? lessons : events;
+        const shown = section === "pl" ? filteredLessons : filteredEvents;
+        const noun = section === "pl" ? "プライベートレッスン" : "イベント";
+        return (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px" }}>
-          {loading && lessons.length === 0
+          {loading && all.length === 0
             ? <Loading />
-            : !loading && lessons.length === 0
-              ? <div style={{ textAlign: "center", padding: "40px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだプライベートレッスンがありません</div>
-              : !loading && filteredLessons.length === 0
-                ? <div style={{ textAlign: "center", padding: "40px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>条件に合うレッスンがありません</div>
-                : filteredLessons.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => onPLClick(l)} />)}
+            : !loading && all.length === 0
+              ? <div style={{ textAlign: "center", padding: "40px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ{noun}がありません</div>
+              : !loading && shown.length === 0
+                ? <div style={{ textAlign: "center", padding: "40px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>条件に合う{noun}がありません</div>
+                : shown.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => onPLClick(l)} />)}
         </div>
-      ) : (
+        );
+      })() : (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px" }}>
           {/* 再フェッチ中は既存リストを出したままにする（全画面LOADINGのちらつき防止） */}
           {loading && cyphers.length === 0
@@ -446,7 +473,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <SlidersHorizontal size={18} color="#111" />
-                <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111", letterSpacing: "0.05em" }}>{section === "pl" ? "プライベートレッスンを検索" : "サイファーを検索"}</span>
+                <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111", letterSpacing: "0.05em" }}>{section === "pl" ? "プライベートレッスンを検索" : section === "event" ? "イベントを検索" : "サイファーを検索"}</span>
               </div>
               <button onClick={() => setSearchOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#111111", padding: "4px" }}><X size={20} /></button>
             </div>
