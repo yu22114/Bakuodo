@@ -34,6 +34,17 @@ npm run build  # ビルド
 npm run start  # 本番起動
 ```
 
+### ブラウザ版Claude Code（claude.ai/code）で作業するとき
+
+`.env.local` が無い環境なので、`.claude/hooks/session-start.sh` がダミーのSupabase接続情報を
+置いてから始まる。**ダミーなので本番DBには繋がらない。**
+
+- 確認は `npm run build` が通ることだけ。`npm run dev` は使わない（画面は何も表示されない）。
+- ビルドが `Error: supabaseUrl is required.` で落ちても `lib/supabase.ts` は書き換えない。
+  フックが走っていないだけなので、`.env.local` があるかを先に疑う。
+- **DBを変えたい時は、SQLを `sql/YYYY-MM-DD_内容.sql` に書いて、
+  Supabaseの SQL Editor で人間が手動で実行する。** ClaudeがDBを直接触ることはない。
+
 ## Claudeへの指示
 
 ### やること
