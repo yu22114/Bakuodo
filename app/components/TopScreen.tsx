@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Radio, Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus } from "lucide-react";
+import { Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, PrivateLesson, GenreKey } from "../lib/types";
@@ -297,7 +297,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     // 画面全体をビューポート高さで固定し、下の「固定ヘッダー＋スクロール領域」に分ける。
     // 浮き島の下部ナビは position:fixed で別レイヤーなのでここでは特に気にしなくていい
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-    {/* ヘッダー〜ジャンルチップ〜POSTSバーはスクロールしない固定エリア */}
+    {/* ヘッダー〜タブ〜ジャンルチップはスクロールしない固定エリア */}
     <div style={{ flexShrink: 0 }}>
       {/* ヘッダー */}
       <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
@@ -370,23 +370,16 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         </div>
       )}
 
-      {/* POSTS（CYPHER/LESSON共通）。ここも固定エリアに含める */}
-      {section !== "spots" && (() => {
+      {/* 件数の表示はやめて、リストに使える高さを増やした。
+          この行は絞り込み中だけ出る（解除ボタンの置き場所として残している） */}
+      {section !== "spots" && activeFilterCount > 0 && (() => {
         const accent = SECTION_COLOR[section];
         return (
-          // 件数しか出さない割に高さを取っていたので、文字を小さくして薄い1行に詰めた
-          <div style={{ display: "flex", padding: "4px 16px", gap: "20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", alignItems: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <span style={{ color: accent, display: "flex" }}><Radio size={9} /></span>
-              <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111" }}>{postCount}</span>
-              <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.45)", letterSpacing: "0.08em" }}>POSTS</span>
-            </div>
-            {activeFilterCount > 0 && (
-              <button onClick={() => { setSelectedGenres([]); setSpecificDate(""); setAreaText(""); }}
-                style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px", background: `${accent}14`, border: `1px solid ${accent}33`, borderRadius: "12px", padding: "2px 8px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: accent, cursor: "pointer" }}>
-                <X size={9} /> フィルター解除
-              </button>
-            )}
+          <div style={{ display: "flex", padding: "4px 16px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", alignItems: "center" }}>
+            <button onClick={() => { setSelectedGenres([]); setSpecificDate(""); setAreaText(""); }}
+              style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px", background: `${accent}14`, border: `1px solid ${accent}33`, borderRadius: "12px", padding: "2px 8px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: accent, cursor: "pointer" }}>
+              <X size={9} /> フィルター解除
+            </button>
           </div>
         );
       })()}
