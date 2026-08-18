@@ -28,13 +28,12 @@ export const GENRES: GenreKey[] = [
   "All Style",
 ];
 
-// ジャンル選択のトグル。「All Style」は全ジャンルの意味なので、
-// 他のジャンルと同時には選べないようにする（All Styleを選ぶと他が外れ、
-// 他を選ぶとAll Styleが外れる）。投稿フォーム・編集フォーム共通
+// ジャンル選択のトグル。カードの背景にジャンル名を大きく出すようになったので、
+// 選べるのは1つだけ。選んでいるものをもう一度押すと解除。
+// 返り値が配列なのは、保存側（cypher_genres / pl_genres）が複数行を入れる作りのまま
+// 触らずに済むため。投稿フォーム・編集フォーム共通
 export function toggleGenre<T extends string>(list: T[], g: T): T[] {
-  if (list.includes(g)) return list.filter(x => x !== g);
-  if (g === "All Style") return [g];
-  return [...list.filter(x => x !== "All Style"), g];
+  return list[0] === g ? [] : [g];
 }
 
 // 短い表示名（Breaking → Break のように ing を落とす）。絞り込みチップと投稿フォームで使う。

@@ -4,7 +4,7 @@ import { Check, ChevronLeft } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { FormState, GenreKey } from "../lib/types";
-import { GENRES, GENRE_COLORS, START_TIME_OPTIONS, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr, toggleGenre as toggleGenreList } from "../lib/constants";
+import { GENRES, GENRE_COLORS, genreLabel, START_TIME_OPTIONS, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr, toggleGenre as toggleGenreList } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
 import { Loading } from "./Loading";
 
@@ -115,7 +115,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
           <label style={lbl}>ジャンル</label>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "7px" }}>
             {GENRES.map(g => { const sel = form.genres.includes(g); const col = GENRE_COLORS[g]; return (
-              <button key={g} onClick={() => toggleGenre(g)} style={{ padding: "6px 12px", border: sel ? `1px solid ${col}` : "1px solid rgba(0,0,0,0.1)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(0,0,0,0.45)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>{g}</button>
+              <button key={g} onClick={() => toggleGenre(g)} style={{ padding: "6px 12px", border: sel ? `1px solid ${col}` : "1px solid rgba(0,0,0,0.1)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(0,0,0,0.45)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>{genreLabel(g)}</button>
             ); })}
           </div>
         </div>
