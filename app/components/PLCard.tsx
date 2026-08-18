@@ -2,8 +2,7 @@
 import { useState } from "react";
 import { Clock, MapPin, BookOpen } from "lucide-react";
 import type { PrivateLesson } from "../lib/types";
-import { GENRE_COLORS, formatDate, timeUntil, daysUntil, formatEndTime } from "../lib/constants";
-import { GenreBadge } from "./GenreBadge";
+import { GENRE_COLORS, genreLabel, formatDate, timeUntil, daysUntil, formatEndTime } from "../lib/constants";
 
 const LEVEL_LABELS: Record<string, string> = {
   all: "全レベル",
@@ -27,10 +26,21 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       // タッチ端末はホバーできないので、PCのホバー時と同じ色付き影を@media(hover:none)で常時出す
       className="bd-glow-card-blue"
-      style={{ background: "#FFFFFF", border: `1px solid ${hover ? accent + "4D" : "rgba(0,0,0,0.08)"}`, borderRadius: "10px", padding: "14px 18px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? "0 6px 12px rgba(0,0,0,0.05), 0 18px 36px " + accent + "2E" : "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(0,0,0,0.06)", opacity: isEnded ? 0.55 : 1 }}>
+      style={{ background: "#FFFFFF", border: `1px solid ${hover ? accent + "4D" : "rgba(0,0,0,0.08)"}`, borderRadius: "10px", padding: "11px 16px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? "0 6px 12px rgba(0,0,0,0.05), 0 18px 36px " + accent + "2E" : "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(0,0,0,0.06)", opacity: isEnded ? 0.55 : 1 }}>
       {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(0,0,0,0.1)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
+      {lesson.genres[0] && (() => {
+        // 背景に敷くジャンル名（CypherCardと同じ作り）
+        const label = genreLabel(lesson.genres[0]).toUpperCase();
+        return (
+          <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", fontSize: `${Math.min(68, Math.round(360 / label.length))}px`, fontStyle: "italic", fontFamily: "'Titan One','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: color + "1F", pointerEvents: "none", userSelect: "none" }}>
+            {label}
+          </div>
+        );
+      })()}
+      {/* 中身は背景文字より上に置く */}
+      <div style={{ position: "relative" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "5px" }}>
         <div style={{ flex: 1, paddingRight: "52px" }}>
           {/* 残り日数はタイトルの真横に（CypherCardと同じ） */}
           <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap" }}>
@@ -57,7 +67,7 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
         </div>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginBottom: "8px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <Clock size={11} color="rgba(0,0,0,0.35)" />
           <span style={{ fontSize: "11px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>{date} {time}{lesson.ends_at ? `〜${formatEndTime(lesson.starts_at, lesson.ends_at)}` : ""}</span>
@@ -69,8 +79,8 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
         </div>
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginBottom: "8px" }}>
-        {lesson.genres.map(g => <GenreBadge key={g} genre={g} />)}
+      {(lesson.kind !== "event" || lesson.price != null) && (
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "5px" }}>
         {lesson.kind !== "event" && (
           <span style={{ fontSize: "9px", padding: "2px 7px", background: accent + "14", borderRadius: "4px", color: accent, fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "3px" }}>
             <BookOpen size={9} /> {LEVEL_LABELS[lesson.target_level] ?? "全レベル"}
@@ -81,6 +91,8 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
             ¥{lesson.price.toLocaleString()}
           </span>
         )}
+      </div>
+      )}
       </div>
     </div>
     </div>
