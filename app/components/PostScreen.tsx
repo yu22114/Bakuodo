@@ -161,9 +161,9 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
         <h2 style={{ margin: "0 0 16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#111111" }}>投稿する</h2>
         {/* タブはホーム画面と同じ、丸い枠の中で選択中だけ浮くセグメント風 */}
         <div style={{ display: "flex", gap: "4px", background: "#F5F7FA", borderRadius: "14px", padding: "4px" }}>
-          {([["cypher", "CYPHER", "#FF3D00"], ["pl", "LESSON", "#2563EB"], ["event", "EVENT", "#7C3AED"]] as const).map(([key, label, color]) => (
+          {([["cypher", "CYPHER", "#FF3D00"], ["pl", "PRIVATE LESSON", "#2563EB"], ["event", "EVENT", "#7C3AED"]] as const).map(([key, label, color]) => (
             <button key={key} onClick={() => setTab(key)}
-              style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: tab === key ? "#FFFFFF" : "transparent", boxShadow: tab === key ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: tab === key ? color : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
+              style={{ flex: label.length, padding: "9px 4px", border: "none", borderRadius: "10px", background: tab === key ? "#FFFFFF" : "transparent", boxShadow: tab === key ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: tab === key ? color : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
               {label}
             </button>
           ))}
