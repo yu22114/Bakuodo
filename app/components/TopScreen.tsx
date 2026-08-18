@@ -339,11 +339,12 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
           {SECTION_ORDER.map(key => { const label = SECTION_LABEL[key]; const color = SECTION_COLOR[key]; return (
             <button key={key} onClick={() => goToSection(key)}
               style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: section === key ? "#FFFFFF" : "transparent", boxShadow: section === key ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: section === key ? color : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
-              {/* 選んでいるタブだけ、文字を1つずつ左から順に上下させてウェーブっぽく見せる */}
+              {/* 選んでいるタブだけ、文字を1つずつ左から順に上下させてウェーブっぽく見せる。
+                  タブを選んだ時に1回だけ流れる（選び直すまで繰り返さない） */}
               {section === key
                 ? [...label].map((ch, i) => (
                     // inline-blockだと半角スペースが潰れて単語がくっつくので&nbsp;に置き換える
-                    <span key={i} style={{ display: "inline-block", animation: `bdLetterWave 1.6s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.125}s infinite` }}>{ch === " " ? "\u00A0" : ch}</span>
+                    <span key={i} style={{ display: "inline-block", animation: `bdLetterWave 1.6s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.125}s 1` }}>{ch === " " ? "\u00A0" : ch}</span>
                   ))
                 : label}
             </button>
