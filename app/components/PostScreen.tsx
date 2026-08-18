@@ -11,9 +11,9 @@ const DRAFT_KEY = "bakuodori:post-draft:v1";
 const EMPTY_FORM: FormState = { title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [], description: "", max_members: "", payment: [], studio_fee: "" };
 const EMPTY_PL = { title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [] as string[], description: "", max_members: "", price: "", target_level: "all" };
 
-export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: string) => void; user: SupabaseUser; initialTab?: "cypher" | "pl" }) {
-  // トップでLESSONを見ていたならレッスン作成から始める
-  const [tab, setTab] = useState<"cypher" | "pl">(initialTab);
+export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: string) => void; user: SupabaseUser; initialTab?: "cypher" | "pl" | "event" }) {
+  // トップでLESSON/EVENTを見ていたならその作成フォームから始める
+  const [tab, setTab] = useState<"cypher" | "pl" | "event">(initialTab);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [isPrivate, setIsPrivate] = useState(false);
   const [requiresApproval, setRequiresApproval] = useState(false);
@@ -80,6 +80,10 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
   // 必須項目（最寄り駅・日付）が埋まっているか
   const canPost = !!(form.date && form.station);
   const canPostPL = !!(plForm.date && plForm.station);
+  // イベントはレッスンと同じフォーム・同じテーブルを使い、kindと文言・色だけ変える
+  const isEvent = tab === "event";
+  const plAccent = isEvent ? "#7C3AED" : "#2563EB";
+  const plNoun = isEvent ? "イベント" : "レッスン";
 
   const handleSubmit = async () => {
     if (!canPost) return;
@@ -127,7 +131,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
     const title = plForm.title.trim() || location;
     const { data: lesson, error: lErr } = await supabase
       .from("private_lessons")
-      .insert({ title, location, description: plForm.description, starts_at, ends_at, max_members: plForm.max_members ? Number(plForm.max_members) : null, price: plForm.price ? Number(plForm.price) : null, target_level: plForm.target_level, organizer_id: user.id, visibility: plIsPrivate ? "private" : "public", requires_approval: plRequiresApproval })
+      .insert({ title, location, description: plForm.description, starts_at, ends_at, max_members: plForm.max_members ? Number(plForm.max_members) : null, price: plForm.price ? Number(plForm.price) : null, target_level: plForm.target_level, organizer_id: user.id, visibility: plIsPrivate ? "private" : "public", requires_approval: plRequiresApproval, kind: isEvent ? "event" : "lesson" })
       .select().single();
     if (lErr || !lesson) { setError(`投稿に失敗しました: ${lErr?.message ?? "不明"}`); setLoading(false); return; }
     if (plForm.genres.length > 0) {
@@ -157,7 +161,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
         <h2 style={{ margin: "0 0 16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#111111" }}>投稿する</h2>
         {/* タブはホーム画面と同じ、丸い枠の中で選択中だけ浮くセグメント風 */}
         <div style={{ display: "flex", gap: "4px", background: "#F5F7FA", borderRadius: "14px", padding: "4px" }}>
-          {([["cypher", "CYPHER", "#FF3D00"], ["pl", "PRIVATE LESSON", "#2563EB"]] as const).map(([key, label, color]) => (
+          {([["cypher", "CYPHER", "#FF3D00"], ["pl", "LESSON", "#2563EB"], ["event", "EVENT", "#7C3AED"]] as const).map(([key, label, color]) => (
             <button key={key} onClick={() => setTab(key)}
               style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: tab === key ? "#FFFFFF" : "transparent", boxShadow: tab === key ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: tab === key ? color : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
               {label}
@@ -228,9 +232,9 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
             {loading ? "投稿中..." : "サイファーを投稿する"}
           </button>
         </>) : (<>
-          <div><label style={lbl}>最寄り駅 <span style={{ color: "#2563EB" }}>*</span></label><StationSearch value={plForm.station} onChange={v => setPlForm(f => ({ ...f, station: v }))} inputStyle={inp} /></div>
+          <div><label style={lbl}>最寄り駅 <span style={{ color: plAccent }}>*</span></label><StationSearch value={plForm.station} onChange={v => setPlForm(f => ({ ...f, station: v }))} inputStyle={inp} /></div>
           <div><label style={lbl}>会場・スタジオ名・部屋番号</label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={plForm.studio} onChange={e => setPlForm(f => ({ ...f, studio: e.target.value }))} /></div>
-          <div><label style={lbl}>日付 <span style={{ color: "#2563EB" }}>*</span></label><input type="date" style={inp} min={todayStr()} value={plForm.date} onChange={e => setPlForm(f => ({ ...f, date: e.target.value }))} /></div>
+          <div><label style={lbl}>日付 <span style={{ color: plAccent }}>*</span></label><input type="date" style={inp} min={todayStr()} value={plForm.date} onChange={e => setPlForm(f => ({ ...f, date: e.target.value }))} /></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <div><label style={lbl}>開始時間</label>
               <select style={inp} value={plForm.start_time} onChange={e => setPlForm(f => ({ ...f, start_time: e.target.value }))}>
@@ -244,9 +248,9 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
               </select>
             </div>
           </div>
-          <div><label style={lbl}>レッスン名 <span style={{ color: "#111111", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={plForm.title} onChange={e => setPlForm(f => ({ ...f, title: e.target.value }))} /></div>
+          <div><label style={lbl}>{plNoun}名 <span style={{ color: "#111111", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={plForm.title} onChange={e => setPlForm(f => ({ ...f, title: e.target.value }))} /></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-            <div><label style={lbl}>料金（円）</label><input style={inp} type="number" min="0" placeholder="例: 3000" value={plForm.price} onChange={e => setPlForm(f => ({ ...f, price: e.target.value }))} /></div>
+            <div><label style={lbl}>{isEvent ? "参加費（円）" : "料金（円）"}</label><input style={inp} type="number" min="0" placeholder="例: 3000" value={plForm.price} onChange={e => setPlForm(f => ({ ...f, price: e.target.value }))} /></div>
             <div><label style={lbl}>対象レベル</label>
               <select style={inp} value={plForm.target_level} onChange={e => setPlForm(f => ({ ...f, target_level: e.target.value }))}>
                 <option value="all">全レベル</option>
@@ -261,19 +265,19 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
               {GENRES.map(g => { const sel = plForm.genres.includes(g); const col = GENRE_COLORS[g]; return (<button key={g} onClick={() => togglePlGenre(g)} style={{ padding: "6px 12px", border: sel ? `1px solid ${col}` : "1px solid rgba(0,0,0,0.1)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(0,0,0,0.45)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>{g}</button>); })}
             </div>
           </div>
-          <div><label style={lbl}>詳細説明</label><textarea style={{ ...inp, minHeight: "80px", resize: "vertical" } as React.CSSProperties} placeholder="レッスン内容、持ち物など..." value={plForm.description} onChange={e => setPlForm(f => ({ ...f, description: e.target.value }))} /></div>
+          <div><label style={lbl}>詳細説明</label><textarea style={{ ...inp, minHeight: "80px", resize: "vertical" } as React.CSSProperties} placeholder={isEvent ? "イベント内容、持ち物など..." : "レッスン内容、持ち物など..."} value={plForm.description} onChange={e => setPlForm(f => ({ ...f, description: e.target.value }))} /></div>
           <div><label style={lbl}>定員</label><input style={inp} type="number" min="1" placeholder="空欄 = 無制限" value={plForm.max_members} onChange={e => setPlForm(f => ({ ...f, max_members: e.target.value }))} /></div>
           <button onClick={() => setPlIsPrivate(v => !v)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
             <div><div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", fontWeight: "bold" }}>🔒 フォロワー限定</div><div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", marginTop: "3px" }}>ONにするとフォロワーにのみ表示されます</div></div>
-            <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: plIsPrivate ? "#2563EB" : "rgba(0,0,0,0.15)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}><div style={{ position: "absolute", top: "3px", left: plIsPrivate ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" }} /></div>
+            <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: plIsPrivate ? plAccent : "rgba(0,0,0,0.15)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}><div style={{ position: "absolute", top: "3px", left: plIsPrivate ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" }} /></div>
           </button>
           <button onClick={() => setPlRequiresApproval(v => !v)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
-            <div><div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", fontWeight: "bold" }}>📋 申込承認制</div><div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", marginTop: "3px" }}>ONにすると申込に講師の承認が必要になります</div></div>
-            <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: plRequiresApproval ? "#2563EB" : "rgba(0,0,0,0.15)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}><div style={{ position: "absolute", top: "3px", left: plRequiresApproval ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" }} /></div>
+            <div><div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", fontWeight: "bold" }}>📋 申込承認制</div><div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", marginTop: "3px" }}>ONにすると申込に{isEvent ? "主催者" : "講師"}の承認が必要になります</div></div>
+            <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: plRequiresApproval ? plAccent : "rgba(0,0,0,0.15)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}><div style={{ position: "absolute", top: "3px", left: plRequiresApproval ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s" }} /></div>
           </button>
-          <button onClick={handleSubmitPL} disabled={loading} style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: canPostPL ? "#2563EB" : "rgba(0,0,0,0.06)", color: canPostPL ? "#fff" : "rgba(0,0,0,0.25)", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: canPostPL ? "pointer" : "not-allowed", opacity: loading ? 0.6 : 1 }}>
+          <button onClick={handleSubmitPL} disabled={loading} style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: canPostPL ? plAccent : "rgba(0,0,0,0.06)", color: canPostPL ? "#fff" : "rgba(0,0,0,0.25)", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: canPostPL ? "pointer" : "not-allowed", opacity: loading ? 0.6 : 1 }}>
             <BookOpen size={15} style={{ display: "inline", marginRight: "8px", verticalAlign: "middle" }} />
-            {loading ? "投稿中..." : "レッスンを投稿する"}
+            {loading ? "投稿中..." : `${plNoun}を投稿する`}
           </button>
         </>)}
       </div>

@@ -28,6 +28,8 @@ export interface Cypher {
 
 export interface PrivateLesson {
   id: string;
+  // レッスンとイベントは同じテーブル・同じ参加まわりを使い、この列だけで見分ける
+  kind: "lesson" | "event";
   title: string;
   starts_at: string;
   ends_at: string | null;

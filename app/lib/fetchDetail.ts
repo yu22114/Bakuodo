@@ -39,7 +39,7 @@ export async function fetchCypherById(cypherId: string): Promise<Cypher | null> 
 // レッスンIDからPLDetailModal用のフルデータを組み立てる
 export async function fetchLessonById(lessonId: string): Promise<PrivateLesson | null> {
   const { data: row } = await supabase.from("private_lessons").select(`
-    id, title, organizer_id, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval,
+    id, title, organizer_id, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval, kind,
     profiles:organizer_id ( dancer_name, avatar_url, instagram ),
     pl_genres ( genres:genre_id ( name ) )
   `).eq("id", lessonId).single();
@@ -53,6 +53,7 @@ export async function fetchLessonById(lessonId: string): Promise<PrivateLesson |
     .eq("lesson_id", lessonId).eq("status", "approved");
   return {
     id: (row as any).id,
+    kind: (row as any).kind === "event" ? "event" : "lesson",
     title: (row as any).title,
     starts_at: (row as any).starts_at,
     ends_at: (row as any).ends_at ?? null,
