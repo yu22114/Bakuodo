@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Clock, MapPin } from "lucide-react";
 import type { Cypher } from "../lib/types";
-import { GENRE_COLORS, formatDate, timeUntil, daysUntil, formatEndTime } from "../lib/constants";
+import { GENRE_COLORS, genreLabel, formatDate, timeUntil, daysUntil, formatEndTime } from "../lib/constants";
 import { GenreBadge } from "./GenreBadge";
 
 export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onClick: () => void; index?: number }) {
@@ -25,12 +25,16 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
       {cypher.visibility === "private" && !isEnded && !cypher.hot && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(0,0,0,0.65)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>🔒 限定</div>}
       {/* 背景に敷くジャンル名。色はそのジャンルの色、薄くして文字の邪魔をしない。
           はみ出た分はカードのoverflow:hiddenで切られる */}
-      {cypher.genres[0] && (
-        // 長いジャンル名（BREAKINGなど）が右で切れないよう、文字数に応じて小さくする
-        <div aria-hidden="true" style={{ position: "absolute", left: "14px", bottom: "-10px", fontSize: `${Math.min(64, Math.round(360 / cypher.genres[0].length))}px`, fontStyle: "italic", fontWeight: 700, fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "-0.04em", lineHeight: 1, whiteSpace: "nowrap", color: color + "1F", pointerEvents: "none", userSelect: "none" }}>
-          {cypher.genres[0].toUpperCase()}
-        </div>
-      )}
+      {cypher.genres[0] && (() => {
+        // 表示は ing を落とした短い名前（BREAKING → BREAK）。
+        // 長い名前（ALL STYLE など）が右で切れないよう、文字数に応じて小さくする
+        const label = genreLabel(cypher.genres[0]).toUpperCase();
+        return (
+          <div aria-hidden="true" style={{ position: "absolute", left: "14px", bottom: "-8px", fontSize: `${Math.min(68, Math.round(360 / label.length))}px`, fontStyle: "italic", fontFamily: "'Titan One','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: color + "1F", pointerEvents: "none", userSelect: "none" }}>
+            {label}
+          </div>
+        );
+      })()}
       {/* 中身は背景文字より上に置く（position指定がないと背景文字の下に隠れる） */}
       <div style={{ position: "relative" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
