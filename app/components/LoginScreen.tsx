@@ -1,10 +1,20 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "../../lib/supabase";
+import { showToast } from "./Toast";
 import { Logo } from "./Logo";
 
 export function LoginScreen() {
   const [loading, setLoading] = useState(false);
+  // 動作確認用のメールログイン欄。URLに ?dev=1 が付いている時だけ出す。
+  // 通常の利用者には見えない（サーバー側で先に描画されるので useEffect で判定する）
+  const [devMode, setDevMode] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    setDevMode(new URLSearchParams(window.location.search).has("dev"));
+  }, []);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -12,6 +22,17 @@ export function LoginScreen() {
       provider: "google",
       options: { redirectTo: typeof window !== "undefined" ? window.location.origin : "" },
     });
+  };
+
+  // 成功した時は page.tsx の onAuthStateChange が画面を切り替えるので、ここでは何もしない
+  const handleDevLogin = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      showToast("ログインできませんでした");
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,6 +53,24 @@ export function LoginScreen() {
         </svg>
         {loading ? "ログイン中..." : "Googleでログイン"}
       </button>
+
+      {devMode && (
+        <form onSubmit={handleDevLogin} style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%", maxWidth: "320px", marginTop: "20px", paddingTop: "20px", borderTop: "1px solid rgba(0,0,0,0.1)" }}>
+          <p style={{ margin: 0, fontSize: "11px", color: "#666666", fontFamily: "'Noto Sans JP',sans-serif" }}>動作確認用</p>
+          <input
+            type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="メールアドレス" autoComplete="username" required
+            style={{ padding: "10px 12px", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "6px", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif" }} />
+          <input
+            type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="パスワード" autoComplete="current-password" required
+            style={{ padding: "10px 12px", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "6px", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif" }} />
+          <button
+            type="submit" disabled={loading}
+            style={{ padding: "10px", background: "#111111", color: "#FFFFFF", border: "none", borderRadius: "6px", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold" }}>
+            {loading ? "ログイン中..." : "ログイン"}
+          </button>
+        </form>
+      )}
+
       <p style={{ marginTop: "24px", fontSize: "12px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", textAlign: "center", lineHeight: 1.8 }}>
         ログインすることで<a href="/terms" style={{ color: "#FF3D00", textDecoration: "underline" }}>利用規約</a>に<br />同意したものとみなします
       </p>
