@@ -23,6 +23,16 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
       {cypher.hot && !isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "#FF3D00", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>🔥 HOT</div>}
       {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(0,0,0,0.1)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
       {cypher.visibility === "private" && !isEnded && !cypher.hot && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(0,0,0,0.65)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>🔒 限定</div>}
+      {/* 背景に敷くジャンル名。色はそのジャンルの色、薄くして文字の邪魔をしない。
+          はみ出た分はカードのoverflow:hiddenで切られる */}
+      {cypher.genres[0] && (
+        // 長いジャンル名（BREAKINGなど）が右で切れないよう、文字数に応じて小さくする
+        <div aria-hidden="true" style={{ position: "absolute", left: "14px", bottom: "-10px", fontSize: `${Math.min(64, Math.round(360 / cypher.genres[0].length))}px`, fontStyle: "italic", fontWeight: 700, fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "-0.04em", lineHeight: 1, whiteSpace: "nowrap", color: color + "1F", pointerEvents: "none", userSelect: "none" }}>
+          {cypher.genres[0].toUpperCase()}
+        </div>
+      )}
+      {/* 中身は背景文字より上に置く（position指定がないと背景文字の下に隠れる） */}
+      <div style={{ position: "relative" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
         <div style={{ flex: 1, paddingRight: "52px" }}>
           {/* 残り日数はタイトルの真横に。日付そのものは下の時計行に出す */}
@@ -68,6 +78,7 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
             💴 {cypher.participant_count > 0 ? `¥${Math.ceil(cypher.studio_fee / cypher.participant_count).toLocaleString()}/人` : `¥${cypher.studio_fee.toLocaleString()}`}
           </span>
         )}
+      </div>
       </div>
     </div>
     </div>
