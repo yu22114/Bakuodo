@@ -24,7 +24,7 @@ const SECTION_COLOR: Record<TopSection, string> = {
 };
 const SECTION_LABEL: Record<TopSection, string> = {
   cypher: "CYPHER",
-  pl: "PRIVATE LESSON",
+  pl: "PLesson",
   event: "EVENT",
   spots: "SPOTS",
 };
@@ -336,11 +336,9 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       {/* セクション切り替え：四角い下線タブから、丸い枠の中で選択中だけ浮くセグメント風に */}
       <div style={{ padding: "10px 16px", background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
         <div style={{ display: "flex", gap: "4px", background: "#F5F7FA", borderRadius: "14px", padding: "4px" }}>
-          {/* 幅は均等ではなく文字数の比。「PRIVATE LESSON」だけ長いので、
-              均等だと入りきらず折り返してしまう */}
           {SECTION_ORDER.map(key => { const label = SECTION_LABEL[key]; const color = SECTION_COLOR[key]; return (
             <button key={key} onClick={() => goToSection(key)}
-              style={{ flex: label.length, padding: "9px 4px", border: "none", borderRadius: "10px", background: section === key ? "#FFFFFF" : "transparent", boxShadow: section === key ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: section === key ? color : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
+              style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: section === key ? "#FFFFFF" : "transparent", boxShadow: section === key ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: section === key ? color : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
               {/* 選んでいるタブだけ、文字を1つずつ左から順に上下させてウェーブっぽく見せる */}
               {section === key
                 ? [...label].map((ch, i) => (
