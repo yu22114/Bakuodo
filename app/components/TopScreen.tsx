@@ -345,16 +345,20 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         <div style={{ display: "flex", gap: "4px", background: "#F5F7FA", borderRadius: "14px", padding: "4px" }}>
           {SECTION_ORDER.map(key => { const label = SECTION_LABEL[key]; const color = SECTION_COLOR[key]; const count = SECTION_COUNT[key]; return (
             <button key={key} onClick={() => goToSection(key)}
-              style={{ flex: 1, padding: "9px 2px", border: "none", borderRadius: "10px", background: section === key ? "#FFFFFF" : "transparent", boxShadow: section === key ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: section === key ? color : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.02em", transition: "all 0.15s", display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
+              style={{ position: "relative", flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: section === key ? "#FFFFFF" : "transparent", boxShadow: section === key ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: section === key ? color : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
               {/* 選んでいるタブだけ、文字を1つずつ左から順に上下させてウェーブっぽく見せる */}
-              <span>{section === key
+              {section === key
                 ? [...label].map((ch, i) => (
                     // inline-blockだと半角スペースが潰れて単語がくっつくので&nbsp;に置き換える
                     <span key={i} style={{ display: "inline-block", animation: `bdLetterWave 1.6s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.125}s infinite` }}>{ch === " " ? "\u00A0" : ch}</span>
                   ))
-                : label}</span>
-              {/* 件数はメールの未読数のように枠の中に出す */}
-              <span style={{ fontSize: "9px", fontWeight: 700, lineHeight: 1, padding: "2px 4px", borderRadius: "7px", letterSpacing: 0, background: section === key ? color + "1A" : "rgba(0,0,0,0.06)", color: section === key ? color : "rgba(0,0,0,0.4)" }}>{count}</span>
+                : label}
+              {/* 件数はiPhoneの通知バッジのように右上に。0件のときは出さない（ベルの数字と同じ作り） */}
+              {count > 0 && (
+                <span style={{ position: "absolute", top: "2px", right: "2px", background: "#FF3D00", color: "#fff", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", minWidth: "15px", height: "15px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", transform: "translate(4px,-4px)", lineHeight: 1, letterSpacing: 0 }}>
+                  {count > 99 ? "99+" : count}
+                </span>
+              )}
             </button>
           ); })}
         </div>
