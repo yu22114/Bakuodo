@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Radio, Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus } from "lucide-react";
+import { Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, PrivateLesson, GenreKey } from "../lib/types";
@@ -286,6 +286,13 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         return dA - dB;
       })
     : spots;
+  // タブの中に出す件数。絞り込みをかけたあとの数
+  const SECTION_COUNT: Record<TopSection, number> = {
+    cypher: filtered.length,
+    pl: filteredLessons.length,
+    event: filteredEvents.length,
+    spots: spots.length,
+  };
   const postCount = section === "pl" ? filteredLessons.length : section === "event" ? filteredEvents.length : filtered.length;
 
   // ヘッダー左上に出す今日の日付。ロゴだけだと寂しいので添える
@@ -297,7 +304,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     // 画面全体をビューポート高さで固定し、下の「固定ヘッダー＋スクロール領域」に分ける。
     // 浮き島の下部ナビは position:fixed で別レイヤーなのでここでは特に気にしなくていい
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-    {/* ヘッダー〜ジャンルチップ〜POSTSバーはスクロールしない固定エリア */}
+    {/* ヘッダー〜タブ〜ジャンルチップはスクロールしない固定エリア */}
     <div style={{ flexShrink: 0 }}>
       {/* ヘッダー */}
       <div style={{ padding: "20px 16px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
@@ -336,16 +343,18 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       {/* セクション切り替え：四角い下線タブから、丸い枠の中で選択中だけ浮くセグメント風に */}
       <div style={{ padding: "10px 16px", background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
         <div style={{ display: "flex", gap: "4px", background: "#F5F7FA", borderRadius: "14px", padding: "4px" }}>
-          {SECTION_ORDER.map(key => { const label = SECTION_LABEL[key]; const color = SECTION_COLOR[key]; return (
+          {SECTION_ORDER.map(key => { const label = SECTION_LABEL[key]; const color = SECTION_COLOR[key]; const count = SECTION_COUNT[key]; return (
             <button key={key} onClick={() => goToSection(key)}
-              style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: section === key ? "#FFFFFF" : "transparent", boxShadow: section === key ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: section === key ? color : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
+              style={{ flex: 1, padding: "9px 2px", border: "none", borderRadius: "10px", background: section === key ? "#FFFFFF" : "transparent", boxShadow: section === key ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: section === key ? color : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.02em", transition: "all 0.15s", display: "flex", alignItems: "center", justifyContent: "center", gap: "3px" }}>
               {/* 選んでいるタブだけ、文字を1つずつ左から順に上下させてウェーブっぽく見せる */}
-              {section === key
+              <span>{section === key
                 ? [...label].map((ch, i) => (
                     // inline-blockだと半角スペースが潰れて単語がくっつくので&nbsp;に置き換える
                     <span key={i} style={{ display: "inline-block", animation: `bdLetterWave 1.6s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.125}s infinite` }}>{ch === " " ? "\u00A0" : ch}</span>
                   ))
-                : label}
+                : label}</span>
+              {/* 件数はメールの未読数のように枠の中に出す */}
+              <span style={{ fontSize: "9px", fontWeight: 700, lineHeight: 1, padding: "2px 4px", borderRadius: "7px", letterSpacing: 0, background: section === key ? color + "1A" : "rgba(0,0,0,0.06)", color: section === key ? color : "rgba(0,0,0,0.4)" }}>{count}</span>
             </button>
           ); })}
         </div>
@@ -369,26 +378,6 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         </div>
       )}
 
-      {/* POSTS（CYPHER/LESSON共通）。ここも固定エリアに含める */}
-      {section !== "spots" && (() => {
-        const accent = SECTION_COLOR[section];
-        return (
-          // 件数しか出さない割に高さを取っていたので、文字を小さくして薄い1行に詰めた
-          <div style={{ display: "flex", padding: "4px 16px", gap: "20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", alignItems: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <span style={{ color: accent, display: "flex" }}><Radio size={9} /></span>
-              <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111" }}>{postCount}</span>
-              <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(0,0,0,0.45)", letterSpacing: "0.08em" }}>POSTS</span>
-            </div>
-            {activeFilterCount > 0 && (
-              <button onClick={() => { setSelectedGenres([]); setSpecificDate(""); setAreaText(""); }}
-                style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px", background: `${accent}14`, border: `1px solid ${accent}33`, borderRadius: "12px", padding: "2px 8px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: accent, cursor: "pointer" }}>
-                <X size={9} /> フィルター解除
-              </button>
-            )}
-          </div>
-        );
-      })()}
     </div>
 
     {/* スクロールするのはここだけ。固定ヘッダーの残り高さ分だけ使う。
