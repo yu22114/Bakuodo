@@ -202,6 +202,12 @@ export default function BakuOdori() {
         *{box-sizing:border-box;margin:0;padding:0}
         body,html{background:#FAFAFA;color:#111111;-webkit-font-smoothing:antialiased}
         ::-webkit-scrollbar{display:none}
+        /* 一覧だけはスクロールバーを出す。中身が多いほどつまみが小さくなるので、
+           今どのへんを見ているかが分かる。太さと色だけ指定して動きは端末任せ */
+        .bd-scroll::-webkit-scrollbar{display:block;width:6px}
+        .bd-scroll::-webkit-scrollbar-track{background:transparent}
+        .bd-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.22);border-radius:3px}
+        .bd-scroll{scrollbar-width:thin;scrollbar-color:rgba(0,0,0,0.22) transparent}
         textarea{font-family:inherit}
         select{appearance:none;-webkit-appearance:none}
         @keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}

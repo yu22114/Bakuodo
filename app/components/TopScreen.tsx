@@ -388,7 +388,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     {/* スクロールするのはここだけ。固定ヘッダーの残り高さ分だけ使う。
         カード脇の余白の色でセクションを見分けられるようにする（各タブの色の薄いやつ）。
         リストではなくこの器に色を敷くので、カードが少なくても下まで色が続く */}
-    <div onTouchStart={handleContentTouchStart} onTouchEnd={handleContentTouchEnd} onWheel={handleContentWheel}
+    <div className="bd-scroll" onTouchStart={handleContentTouchStart} onTouchEnd={handleContentTouchEnd} onWheel={handleContentWheel}
       style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any, background: SECTION_BG[section], transition: "background 0.2s" }}>
       <div key={section} style={{ animation: `${slideDir === 1 ? "bdSlideFromRight" : "bdSlideFromLeft"} 0.2s ease-out` }}>
       {section === "spots" ? (
