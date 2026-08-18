@@ -2,6 +2,8 @@
 
 サイファーを開催したい人と参加したい人をつなぐ、ダンスイベント管理サービス。
 
+本番: https://bakuodo.vercel.app
+
 ## 技術スタック
 
 - Next.js 16 (App Router) / TypeScript / Tailwind CSS v4

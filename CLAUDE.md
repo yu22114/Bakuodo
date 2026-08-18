@@ -45,6 +45,8 @@ npm run start  # 本番起動
   `.env.local` があるかを先に疑う。
 - `npm run dev` は起動してログイン画面まで出る。ただし環境のネットワーク設定で
   `*.supabase.co` を許可していないとDBに繋がらず、ログインから先は動かない。
+- 本番（https://bakuodo.vercel.app）を開いて確認するには `bakuodo.vercel.app` の許可も要る。
+  どちらも塞がれている場合、Claude側でできる確認は `npm run build` までになる。
 
 ## Claudeへの指示
 
