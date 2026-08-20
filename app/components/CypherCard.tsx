@@ -36,15 +36,18 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
           </div>
         );
       })()}
-      {/* 中身は背景文字より上に置く（position指定がないと背景文字の下に隠れる） */}
-      <div style={{ position: "relative", display: "flex", gap: "12px" }}>
-      {/* 開催日時はチケットの半券風に左端へ。月・日・曜日を縦に均等3分割し、文字は左寄せにする */}
-      <div style={{ width: "44px", flexShrink: 0, display: "flex", flexDirection: "column", borderRadius: "8px", overflow: "hidden", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", padding: "0 6px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#fff", background: isEnded ? "rgba(255,255,255,0.15)" : color }}>{month}月</div>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", padding: "0 6px", fontSize: "19px", fontWeight: 700, fontFamily: "'Noto Sans JP',sans-serif", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", lineHeight: 1 }}>{day}</div>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", padding: "0 6px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>{weekday}</div>
+      {/* 開催日時はチケットの半券風にカード左端へ張り付ける。
+          カード自体のpadding(11px 16px)より外側にはみ出させたいので、
+          この2つは中身のラッパーではなくカード直下（position:relativeの基準）に置く。
+          月・日・曜日は縦に均等3分割、文字は中央寄せ */}
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "44px", display: "flex", flexDirection: "column", background: "rgba(255,255,255,0.04)", borderRight: "1px solid rgba(255,255,255,0.1)" }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#fff", background: isEnded ? "rgba(255,255,255,0.15)" : color }}>{month}月</div>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "19px", fontWeight: 700, fontFamily: "'Noto Sans JP',sans-serif", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", lineHeight: 1 }}>{day}</div>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>{weekday}</div>
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
+      {/* 中身は背景文字より上に置く（position指定がないと背景文字の下に隠れる）。
+          日付バッジぶん（44px - カード左paddingの16px = 28px）だけ左に余白を足す */}
+      <div style={{ position: "relative", marginLeft: "28px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "5px" }}>
         <div style={{ flex: 1, paddingRight: "52px" }}>
           {/* 開催日そのものは左の日付バッジに出す */}
@@ -89,7 +92,6 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
           </span>
         </div>
       )}
-      </div>
       </div>
     </div>
     </div>
