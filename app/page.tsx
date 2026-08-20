@@ -230,6 +230,15 @@ export default function BakuOdori() {
           .bd-glow-card { box-shadow: 0 6px 12px rgba(0,0,0,0.05), 0 18px 36px var(--bd-glow, transparent) !important; }
           .bd-glow-card-blue { box-shadow: 0 6px 12px rgba(0,0,0,0.05), 0 18px 36px rgba(37,99,235,0.18) !important; }
         }
+        /* カード裏の光がゆっくり漂うように、大きめに敷いた背景の位置を動かし続ける。
+           background(ショートハンド)を毎回inlineで指定し直すのでposition/sizeは
+           !importantで固定しないと初期値に戻されてしまう */
+        @keyframes bdGlowDrift {
+          0%   { background-position: 15% -10%; }
+          50%  { background-position: 85% 40%; }
+          100% { background-position: 15% -10%; }
+        }
+        .bd-glow-bg { background-size: 220% 220% !important; animation: bdGlowDrift 18s ease-in-out infinite; }
       `}</style>
 
       <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#000000" }}>

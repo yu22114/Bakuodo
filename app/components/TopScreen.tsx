@@ -31,12 +31,14 @@ const SECTION_LABEL: Record<TopSection, string> = {
 };
 
 // カード脇の余白の色。ジャンルではなくセクションそのものの色（SECTION_COLOR）を使い、
-// 画面の上から色付きのライトで照らされているような、後光っぽいグラデーションにする
+// 画面の上から色付きのライトで照らされているような、後光っぽいグラデーションにする。
+// 実際に動かすのは .bd-glow-bg（page.tsx側のkeyframes）で、背景を広めに敷いた上で
+// background-positionをゆっくりループさせている
 const SECTION_BG: Record<TopSection, string> = {
-  cypher: "radial-gradient(ellipse 120% 55% at 50% -10%, rgba(255,61,0,0.28), #000000 70%)",
-  pl: "radial-gradient(ellipse 120% 55% at 50% -10%, rgba(37,99,235,0.28), #000000 70%)",
-  event: "radial-gradient(ellipse 120% 55% at 50% -10%, rgba(124,58,237,0.28), #000000 70%)",
-  spots: "radial-gradient(ellipse 120% 55% at 50% -10%, rgba(22,163,74,0.28), #000000 70%)",
+  cypher: "radial-gradient(circle at center, rgba(255,61,0,0.55), rgba(255,61,0,0.1) 45%, #000000 75%)",
+  pl: "radial-gradient(circle at center, rgba(37,99,235,0.55), rgba(37,99,235,0.1) 45%, #000000 75%)",
+  event: "radial-gradient(circle at center, rgba(124,58,237,0.55), rgba(124,58,237,0.1) 45%, #000000 75%)",
+  spots: "radial-gradient(circle at center, rgba(22,163,74,0.55), rgba(22,163,74,0.1) 45%, #000000 75%)",
 };
 
 export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell, section, onSectionChange }: {
@@ -396,7 +398,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     {/* スクロールするのはここだけ。固定ヘッダーの残り高さ分だけ使う。
         カード脇の余白の色でセクションを見分けられるようにする（各タブの色の薄いやつ）。
         リストではなくこの器に色を敷くので、カードが少なくても下まで色が続く */}
-    <div className="bd-scroll" onTouchStart={handleContentTouchStart} onTouchEnd={handleContentTouchEnd} onWheel={handleContentWheel}
+    <div className="bd-scroll bd-glow-bg" onTouchStart={handleContentTouchStart} onTouchEnd={handleContentTouchEnd} onWheel={handleContentWheel}
       style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any, background: SECTION_BG[section], transition: "background 0.2s" }}>
       <div key={section} style={{ animation: `${slideDir === 1 ? "bdSlideFromRight" : "bdSlideFromLeft"} 0.2s ease-out` }}>
       {section === "spots" ? (
