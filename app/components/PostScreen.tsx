@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Check, Zap, BookOpen, RotateCcw } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
@@ -7,6 +7,8 @@ import type { FormState } from "../lib/types";
 import { GENRES, GENRE_COLORS, genreLabel, START_TIME_OPTIONS, DEFAULT_START_TIME, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr, toggleGenre as toggleGenreList } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
 
+// タブの並び順。ホーム画面と同じ順でスワイプ移動できるようにする
+const TAB_ORDER = ["cypher", "pl", "event"] as const;
 const DRAFT_KEY = "bakuodori:post-draft:v1";
 const EMPTY_FORM: FormState = { title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [], description: "", max_members: "", payment: [], studio_fee: "" };
 const EMPTY_PL = { title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [] as string[], description: "", max_members: "", price: "", target_level: "all" };
@@ -14,6 +16,54 @@ const EMPTY_PL = { title: "", date: "", start_time: DEFAULT_START_TIME, end_time
 export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: string) => void; user: SupabaseUser; initialTab?: "cypher" | "pl" | "event" }) {
   // トップでLESSON/EVENTを見ていたならその作成フォームから始める
   const [tab, setTab] = useState<"cypher" | "pl" | "event">(initialTab);
+  // ホーム画面と同じ左右スワイプでのタブ移動用
+  const [slideDir, setSlideDir] = useState<1 | -1>(1);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const goToTab = (next: "cypher" | "pl" | "event") => {
+    const curIdx = TAB_ORDER.indexOf(tab);
+    const nextIdx = TAB_ORDER.indexOf(next);
+    if (nextIdx === curIdx) return;
+    setSlideDir(nextIdx > curIdx ? 1 : -1);
+    setTab(next);
+  };
+  const slideBy = (dir: 1 | -1) => {
+    const curIdx = TAB_ORDER.indexOf(tab);
+    const nextIdx = curIdx + dir;
+    if (nextIdx < 0 || nextIdx >= TAB_ORDER.length) return;
+    goToTab(TAB_ORDER[nextIdx]);
+  };
+  const handleContentTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY };
+  };
+  const handleContentTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    // 横移動が閾値未満、または縦移動の方が大きい場合はスクロール操作とみなして無視
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    slideBy(dx < 0 ? 1 : -1);
+  };
+  // トラックパッドの2本指横スワイプはtouchではなくwheel(deltaX)で飛んでくるので別途拾う
+  const wheelAccumRef = useRef(0);
+  const wheelLockRef = useRef(false);
+  const wheelResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleContentWheel = (e: React.WheelEvent) => {
+    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // 縦スクロールは触らない
+    if (wheelLockRef.current) return;
+    wheelAccumRef.current += e.deltaX;
+    if (wheelResetRef.current) clearTimeout(wheelResetRef.current);
+    wheelResetRef.current = setTimeout(() => { wheelAccumRef.current = 0; }, 150);
+    if (Math.abs(wheelAccumRef.current) < 80) return;
+    const dir = wheelAccumRef.current > 0 ? 1 : -1;
+    wheelAccumRef.current = 0;
+    wheelLockRef.current = true;
+    setTimeout(() => { wheelLockRef.current = false; }, 500);
+    slideBy(dir);
+  };
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [isPrivate, setIsPrivate] = useState(false);
   const [requiresApproval, setRequiresApproval] = useState(false);
@@ -162,7 +212,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
         {/* タブはホーム画面と同じ、丸い枠の中で選択中だけ浮くセグメント風 */}
         <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "14px", padding: "4px" }}>
           {([["cypher", "CYPHER", "#FF3D00"], ["pl", "P LESSON", "#2563EB"], ["event", "EVENT", "#7C3AED"]] as const).map(([key, label, color]) => (
-            <button key={key} onClick={() => setTab(key)}
+            <button key={key} onClick={() => goToTab(key)}
               style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: tab === key ? "#2A2A2A" : "transparent", boxShadow: tab === key ? "0 1px 4px rgba(255,255,255,0.08)" : "none", color: tab === key ? color : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
               {label}
             </button>
@@ -185,6 +235,9 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
           </div>
         )}
 
+        {/* ホームと同じ左右スワイプでタブ切り替えできるようにする */}
+        <div key={tab} onTouchStart={handleContentTouchStart} onTouchEnd={handleContentTouchEnd} onWheel={handleContentWheel}
+          style={{ display: "flex", flexDirection: "column", gap: "16px", animation: `${slideDir === 1 ? "bdSlideFromRight" : "bdSlideFromLeft"} 0.2s ease-out` }}>
         {tab === "cypher" ? (<>
           <div><label style={lbl}>最寄り駅 <span style={{ color: "#FF3D00" }}>*</span></label><StationSearch value={form.station} onChange={v => setForm(f => ({ ...f, station: v }))} inputStyle={inp} /></div>
           <div><label style={lbl}>会場・スタジオ名・部屋番号</label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={form.studio} onChange={e => setForm(f => ({ ...f, studio: e.target.value }))} /></div>
@@ -280,6 +333,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
             {loading ? "投稿中..." : `${plNoun}を投稿する`}
           </button>
         </>)}
+        </div>
       </div>
     </div>
   );
