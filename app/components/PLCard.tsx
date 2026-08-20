@@ -34,7 +34,7 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
         // 背景に敷くジャンル名（CypherCardと同じ作り）
         const label = genreLabel(lesson.genres[0]).toUpperCase();
         return (
-          <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", fontSize: `${Math.min(68, Math.round(360 / label.length))}px`, fontFamily: "'Yuji Syuku','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: color + "40", pointerEvents: "none", userSelect: "none" }}>
+          <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", fontSize: `${Math.min(68, Math.round(360 / label.length))}px`, fontFamily: "'Yuji Boku','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: color + "40", pointerEvents: "none", userSelect: "none" }}>
             {label}
           </div>
         );

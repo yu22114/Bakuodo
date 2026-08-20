@@ -23,8 +23,8 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* 900は日付バッジの太字表示用、Yuji Syukuはカード背景のジャンル文字（書道の筆風）用に追加 */}
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Yuji+Syuku&display=swap" rel="stylesheet" />
+        {/* 900は日付バッジの太字表示用、Yuji Bokuはカード背景のジャンル文字（太い墨の殴り書き風）用に追加 */}
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Yuji+Boku&display=swap" rel="stylesheet" />
       </head>
       <body>{children}<ToastHost /></body>
     </html>
