@@ -101,9 +101,6 @@ export function SpotCard({ spot, user, userLocation, onViewProfile }: {
               <MapPin size={10} color="rgba(255,255,255,0.4)" />
               <span style={{ fontSize: "10px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", textDecoration: "underline dotted", textUnderlineOffset: "2px" }}>{spot.location}</span>
             </a>
-            {spot.description && (
-              <div style={{ fontSize: "11px", color: "#F0F0F0", marginTop: "4px", lineHeight: 1.5 }}>{spot.description}</div>
-            )}
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", flexShrink: 0 }}>
             <div style={{ fontSize: "28px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: checkins.length > 0 ? "#FF3D00" : "rgba(255,255,255,0.25)", lineHeight: 1 }}>
@@ -114,7 +111,7 @@ export function SpotCard({ spot, user, userLocation, onViewProfile }: {
         </div>
 
         <button onClick={handleCheckin} disabled={acting}
-          style={{ marginTop: "12px", width: "100%", padding: "10px", border: "none", borderRadius: "6px", background: isCheckedIn ? "rgba(22,163,74,0.1)" : "#FF3D00", color: isCheckedIn ? "#16A34A" : "#fff", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.12em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", opacity: acting ? 0.6 : 1, transition: "all 0.2s" }}>
+          style={{ marginTop: "12px", width: "100%", padding: "10px", border: "none", borderRadius: "6px", background: isCheckedIn ? "rgba(22,163,74,0.1)" : "#16A34A", color: isCheckedIn ? "#16A34A" : "#fff", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.12em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", opacity: acting ? 0.6 : 1, transition: "all 0.2s" }}>
           {isCheckedIn
             ? <><LogOut size={13} /> 帰る（チェックアウト）</>
             : <><LogIn size={13} /> ここにいる！（チェックイン）</>}
