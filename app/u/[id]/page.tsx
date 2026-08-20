@@ -25,7 +25,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
   }
 
   return (
-    <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#FAFAFA" }}>
+    <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#000000" }}>
       <PublicProfileScreen
         profileId={id}
         currentUserId={currentUserId ?? ""}

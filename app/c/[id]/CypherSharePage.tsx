@@ -75,9 +75,9 @@ export function CypherSharePage({ cypherId }: { cypherId: string }) {
 
   if (!cypher) {
     return (
-      <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#FAFAFA", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", padding: "24px", textAlign: "center" }}>
+      <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#000000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", padding: "24px", textAlign: "center" }}>
         <div style={{ fontSize: "40px" }}>🕺</div>
-        <p style={{ margin: 0, fontSize: "14px", color: "#111111", lineHeight: 1.7 }}>
+        <p style={{ margin: 0, fontSize: "14px", color: "#F0F0F0", lineHeight: 1.7 }}>
           このサイファーは見つかりませんでした。<br />終了して削除されたか、限定公開の可能性があります。
         </p>
         <a href="/" style={{ padding: "12px 28px", background: "#FF3D00", color: "#fff", borderRadius: "8px", textDecoration: "none", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.12em" }}>
@@ -88,7 +88,7 @@ export function CypherSharePage({ cypherId }: { cypherId: string }) {
   }
 
   return (
-    <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#FAFAFA" }}>
+    <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#000000" }}>
       <DetailModal
         cypher={cypher}
         onClose={() => { window.location.href = "/"; }}

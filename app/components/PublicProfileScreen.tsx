@@ -153,22 +153,22 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   // 主催レッスン・イベント一覧（ACTIVITYタブ内に表示。同じテーブルなのでまとめて出す）
   const lessonRows = hostedLessons.length > 0 && (
     <div style={{ marginTop: "12px" }}>
-      <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>LESSON &amp; EVENT / レッスン・イベント</div>
+      <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>LESSON &amp; EVENT / レッスン・イベント</div>
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         {hostedLessons.map(l => { const { date, time } = formatDate(l.starts_at); const ended = timeUntil(l.starts_at) === "終了"; const isEv = l.kind === "event"; const accent = isEv ? "#7C3AED" : "#2563EB"; return (
-          <div key={l.id} onClick={() => onLessonClick?.(l.id)} style={{ padding: "10px 14px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderLeft: "3px solid " + accent, borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: onLessonClick ? "pointer" : "default", opacity: ended ? 0.5 : 1 }}>
+          <div key={l.id} onClick={() => onLessonClick?.(l.id)} style={{ padding: "10px 14px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderLeft: "3px solid " + accent, borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: onLessonClick ? "pointer" : "default", opacity: ended ? 0.5 : 1 }}>
             <div>
-              <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: ended ? "rgba(0,0,0,0.4)" : "#111111" }}>{l.title}</div>
-              <div style={{ fontSize: "10px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "2px", display: "flex", alignItems: "center", gap: "6px" }}><Clock size={9} color="rgba(0,0,0,0.3)" />{date} {time}</div>
+              <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: ended ? "rgba(255,255,255,0.45)" : "#F0F0F0" }}>{l.title}</div>
+              <div style={{ fontSize: "10px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "2px", display: "flex", alignItems: "center", gap: "6px" }}><Clock size={9} color="rgba(255,255,255,0.35)" />{date} {time}</div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
               {ended
-                ? <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", padding: "2px 7px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "3px" }}>終了</span>
+                ? <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", padding: "2px 7px", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "3px" }}>終了</span>
                 : <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: accent, fontWeight: "bold", padding: "2px 7px", background: accent + "14", borderRadius: "3px" }}>{isEv ? "EVENT" : "PRIVATE"}</span>}
               {/* 自分のレッスンには削除ボタン（終了後も消せる） */}
               {isOwn && (
                 <button onClick={e => { e.stopPropagation(); setDeleteConfirm({ id: l.id, kind: "lesson" }); }} title="削除"
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#111111", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
+                  style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#F0F0F0", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
               )}
             </div>
           </div>
@@ -179,46 +179,46 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
   return (
     <div style={onBack
-      ? { position: "fixed", inset: 0, zIndex: 150, background: "#FAFAFA", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }
-      : { paddingBottom: "80px", background: "#FAFAFA" }
+      ? { position: "fixed", inset: 0, zIndex: 150, background: "#000000", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }
+      : { paddingBottom: "80px", background: "#000000" }
     }>
       {/* ヘッダー。Instagramと同じ並びにする：
           上段＝アイコンと数字が横並び、その下に名前、いちばん下に横長のボタン */}
-      <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF" }}>
+      <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
           {onBack ? (
-            <button onClick={onBack} style={{ background: "rgba(0,0,0,0.06)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>
+            <button onClick={onBack} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>
               <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
             </button>
           ) : (
-            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.2em" }}>▶ DANCER PROFILE</div>
+            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.2em" }}>▶ DANCER PROFILE</div>
           )}
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             {isOwn && (
               <div style={{ position: "relative" }}>
                 <button onClick={() => setMenuOpen(m => !m)}
-                  style={{ background: "none", border: "1px solid rgba(0,0,0,0.12)", borderRadius: "8px", cursor: "pointer", padding: "8px 10px", display: "flex", alignItems: "center", color: "#111111" }}>
+                  style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", cursor: "pointer", padding: "8px 10px", display: "flex", alignItems: "center", color: "#F0F0F0" }}>
                   <Menu size={16} />
                 </button>
                 {menuOpen && (<>
                   <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 9 }} />
-                  <div style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "10px", boxShadow: "0 4px 20px rgba(0,0,0,0.12)", overflow: "hidden", zIndex: 10, minWidth: "140px" }}>
+                  <div style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", background: "#1E1E1E", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", boxShadow: "0 4px 20px rgba(0,0,0,0.4)", overflow: "hidden", zIndex: 10, minWidth: "140px" }}>
                     {/* 「編集」はヘッダーの横長ボタンに移したのでメニューからは外した */}
                     <button onClick={() => {
                         setMenuOpen(false);
                         const url = `${window.location.origin}/u/${profileId}`;
                         navigator.clipboard.writeText(url).then(() => { setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); });
                       }}
-                      style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: linkCopied ? "#16A34A" : "#111", textAlign: "left", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+                      style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: linkCopied ? "#16A34A" : "#F0F0F0", textAlign: "left", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                       <Link size={13} /> {linkCopied ? "コピーしました！" : "プロフィールリンクをコピー"}
                     </button>
-                    <a href="/help" style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", textDecoration: "none", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+                    <a href="/help" style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                       <BookOpen size={13} /> 使い方ガイド
                     </a>
-                    <a href="/terms" style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", textDecoration: "none", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+                    <a href="/terms" style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                       <FileText size={13} /> 利用規約
                     </a>
-                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSdtORTcN86YUDCwq_v8f300PtwnmUENTAvGXs8AYvVS50IyGA/viewform" target="_blank" rel="noopener noreferrer" style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111", textDecoration: "none", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSdtORTcN86YUDCwq_v8f300PtwnmUENTAvGXs8AYvVS50IyGA/viewform" target="_blank" rel="noopener noreferrer" style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                       <MessageCircle size={13} /> 問い合わせ
                     </a>
                     <button onClick={() => { setMenuOpen(false); onLogout?.(); }}
@@ -234,7 +234,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
         {/* アイコンと数字を横並び。数字は押すと中身が見られる */}
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <div style={{ width: "82px", height: "82px", borderRadius: "50%", background: "linear-gradient(135deg,#FF3D00,#FF6D00)", border: "3px solid #FFFFFF", boxShadow: "0 2px 10px rgba(0,0,0,0.12)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
+          <div style={{ width: "82px", height: "82px", borderRadius: "50%", background: "linear-gradient(135deg,#FF3D00,#FF6D00)", border: "3px solid #141414", boxShadow: "0 2px 10px rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
             {profileData?.avatar_url
               ? <img src={profileData.avatar_url} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               : <span style={{ fontSize: "30px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#fff" }}>{name[0]?.toUpperCase() ?? "?"}</span>
@@ -248,24 +248,24 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             ] as const).map(([label, count, onClick]) => (
               <button key={label} onClick={onClick}
                 style={{ background: "none", border: "none", padding: "4px 6px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
-                <span style={{ fontSize: "17px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111" }}>{count}</span>
-                <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111" }}>{label}</span>
+                <span style={{ fontSize: "17px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{count}</span>
+                <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{label}</span>
               </button>
             ))}
           </div>
         </div>
 
-        <h2 style={{ margin: "12px 0 0", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#111111" }}>{name}</h2>
+        <h2 style={{ margin: "12px 0 0", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0" }}>{name}</h2>
 
         {/* 横長のボタン（インスタと同じ位置） */}
         {isOwn ? (
           <button onClick={() => onEdit?.()}
-            style={{ width: "100%", marginTop: "14px", padding: "10px", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "8px", background: "transparent", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
+            style={{ width: "100%", marginTop: "14px", padding: "10px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
             プロフィールを編集
           </button>
         ) : currentUserId && (
           <button onClick={handleFollow} disabled={followLoading}
-            style={{ width: "100%", marginTop: "14px", padding: "10px", border: followStatus !== "none" ? "1px solid rgba(0,0,0,0.15)" : "none", borderRadius: "8px", background: followStatus !== "none" ? "transparent" : "#FF3D00", color: followStatus !== "none" ? "rgba(0,0,0,0.5)" : "#fff", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer", opacity: followLoading ? 0.6 : 1 }}>
+            style={{ width: "100%", marginTop: "14px", padding: "10px", border: followStatus !== "none" ? "1px solid rgba(255,255,255,0.16)" : "none", borderRadius: "8px", background: followStatus !== "none" ? "transparent" : "#FF3D00", color: followStatus !== "none" ? "rgba(255,255,255,0.55)" : "#fff", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer", opacity: followLoading ? 0.6 : 1 }}>
             {followStatus === "accepted" ? "フォロー中" : followStatus === "pending" ? "申請中..." : (profileData?.is_private ? "🔒 申請する" : "フォローする")}
           </button>
         )}
@@ -273,11 +273,11 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
       {/* メインタブ切り替え。ホーム画面と同じ角丸セグメント。
           サイファーだけでなくレッスンも並ぶので「CYPHER」ではなく「ACTIVITY」 */}
-      <div style={{ padding: "10px 16px", background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
-        <div style={{ display: "flex", gap: "4px", background: "#F5F7FA", borderRadius: "14px", padding: "4px" }}>
+      <div style={{ padding: "10px 16px", background: "#0D0D0D", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "14px", padding: "4px" }}>
           {(["profile", "cyphers"] as const).map(t => (
             <button key={t} onClick={() => setMainTab(t)}
-              style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: mainTab === t ? "#FFFFFF" : "transparent", boxShadow: mainTab === t ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: mainTab === t ? "#FF3D00" : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: mainTab === t ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
+              style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: mainTab === t ? "#2A2A2A" : "transparent", boxShadow: mainTab === t ? "0 1px 4px rgba(255,255,255,0.08)" : "none", color: mainTab === t ? "#FF3D00" : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: mainTab === t ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
               {t === "profile" ? "PROFILE" : "ACTIVITY"}
             </button>
           ))}
@@ -289,17 +289,17 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           <Loading />
         ) : mainTab === "profile" ? (
           profileData && (profileData.instagram || profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) ? (
-            <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "10px", overflow: "hidden" }}>
+            <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", overflow: "hidden" }}>
               {profileData.instagram && (
                 <a href={`https://instagram.com/${profileData.instagram}`} target="_blank" rel="noopener noreferrer"
-                  style={{ display: "flex", alignItems: "center", gap: "10px", padding: "14px 16px", borderBottom: (profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) ? "1px solid rgba(0,0,0,0.07)" : "none", textDecoration: "none", background: "linear-gradient(90deg, rgba(168,85,247,0.05), transparent)" }}>
+                  style={{ display: "flex", alignItems: "center", gap: "10px", padding: "14px 16px", borderBottom: (profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) ? "1px solid rgba(255,255,255,0.08)" : "none", textDecoration: "none", background: "linear-gradient(90deg, rgba(168,85,247,0.1), transparent)" }}>
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="1" y="1" width="22" height="22" rx="6" stroke="rgba(0,0,0,0.5)" strokeWidth="1.8" fill="none"/>
-                    <circle cx="12" cy="12" r="4.2" stroke="rgba(0,0,0,0.5)" strokeWidth="1.8" fill="none"/>
-                    <circle cx="17.2" cy="6.8" r="1.1" fill="rgba(0,0,0,0.5)"/>
+                    <rect x="1" y="1" width="22" height="22" rx="6" stroke="rgba(255,255,255,0.55)" strokeWidth="1.8" fill="none"/>
+                    <circle cx="12" cy="12" r="4.2" stroke="rgba(255,255,255,0.55)" strokeWidth="1.8" fill="none"/>
+                    <circle cx="17.2" cy="6.8" r="1.1" fill="rgba(255,255,255,0.55)"/>
                   </svg>
                   <div>
-                    <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.12em", marginBottom: "2px" }}>INSTAGRAM</div>
+                    <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.12em", marginBottom: "2px" }}>INSTAGRAM</div>
                     <div style={{ fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", color: "#A855F7", fontWeight: "bold" }}>@{profileData.instagram}</div>
                   </div>
                   <span style={{ marginLeft: "auto", fontSize: "14px", color: "#A855F7" }}>↗</span>
@@ -308,68 +308,68 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
               {(profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
                 <div style={{ padding: "14px 16px" }}>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: profileData.genres.length > 0 ? "10px" : "0" }}>
-                    {profileData.age_group && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.age_group}</span>}
-                    {profileData.dance_years != null && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>歴{profileData.dance_years}年</span>}
-                    {profileData.gender && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.gender}</span>}
+                    {profileData.age_group && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.age_group}</span>}
+                    {profileData.dance_years != null && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>歴{profileData.dance_years}年</span>}
+                    {profileData.gender && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.gender}</span>}
                   </div>
                   {profileData.genres.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>{profileData.genres.map(g => <GenreBadge key={g} genre={g} />)}</div>}
                 </div>
               )}
             </div>
           ) : (
-            <div style={{ textAlign: "center", padding: "40px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>プロフィール情報がありません</div>
+            <div style={{ textAlign: "center", padding: "40px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>プロフィール情報がありません</div>
           )
         ) : (<>
           {/* ACTIVITYタブ：自分なら参加/主催の2タブ（過去はグレー）、他人なら主催のみ。
               タブの見た目は上のメインタブと同じ角丸セグメントに揃える */}
           {isOwn ? (<>
-            <div style={{ display: "flex", gap: "4px", background: "#F5F7FA", borderRadius: "14px", padding: "4px" }}>
+            <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "14px", padding: "4px" }}>
               {(["joined", "hosted"] as const).map(t => (
                 <button key={t} onClick={() => setCypherTab(t)}
-                  style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: cypherTab === t ? "#FFFFFF" : "transparent", boxShadow: cypherTab === t ? "0 1px 4px rgba(0,0,0,0.12)" : "none", color: cypherTab === t ? "#FF3D00" : "rgba(0,0,0,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: cypherTab === t ? "bold" : "normal", transition: "all 0.15s" }}>
+                  style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: cypherTab === t ? "#2A2A2A" : "transparent", boxShadow: cypherTab === t ? "0 1px 4px rgba(255,255,255,0.08)" : "none", color: cypherTab === t ? "#FF3D00" : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: cypherTab === t ? "bold" : "normal", transition: "all 0.15s" }}>
                   {t === "joined" ? "参加" : "主催"}
                 </button>
               ))}
             </div>
-            <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "10px", overflow: "hidden" }}>
+            <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", overflow: "hidden" }}>
               {cypherTab === "joined" ? (
                 joinedCyphers.length === 0
-                  ? <div style={{ textAlign: "center", padding: "32px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ参加しているサイファーはありません</div>
+                  ? <div style={{ textAlign: "center", padding: "32px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ参加しているサイファーはありません</div>
                   : joinedCyphers.map(c => {
                       const { date, time } = formatDate(c.starts_at);
                       const isPast = new Date(c.starts_at) < new Date();
                       return (
-                        <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding: "12px 14px", borderBottom: "1px solid rgba(0,0,0,0.05)", opacity: isPast ? 0.45 : 1, cursor: onCypherClick ? "pointer" : "default" }}>
-                          <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111" }}>{c.title}</div>
-                          <div style={{ fontSize: "10px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", marginBottom: "3px" }}>by {c.organizer_name}</div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>
+                        <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding: "12px 14px", borderBottom: "1px solid rgba(255,255,255,0.08)", opacity: isPast ? 0.45 : 1, cursor: onCypherClick ? "pointer" : "default" }}>
+                          <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{c.title}</div>
+                          <div style={{ fontSize: "10px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginBottom: "3px" }}>by {c.organizer_name}</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
                             <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Clock size={9} />{date} {time}</span>
-                            {isPast && <span style={{ fontSize: "9px", padding: "1px 5px", background: "rgba(0,0,0,0.05)", borderRadius: "3px", color: "#111111" }}>終了</span>}
+                            {isPast && <span style={{ fontSize: "9px", padding: "1px 5px", background: "rgba(255,255,255,0.08)", borderRadius: "3px", color: "#F0F0F0" }}>終了</span>}
                           </div>
                         </div>
                       );})
               ) : (
                 // レッスンもこの下に並ぶので、両方空の時だけ「ありません」を出す
                 hostedCyphers.length === 0 && hostedLessons.length === 0
-                  ? <div style={{ textAlign: "center", padding: "32px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ主催しているサイファー・レッスンはありません</div>
+                  ? <div style={{ textAlign: "center", padding: "32px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ主催しているサイファー・レッスンはありません</div>
                   : hostedCyphers.map(c => {
                       const { date, time } = formatDate(c.starts_at);
                       const isPast = new Date(c.starts_at) < new Date();
                       return (
-                        <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding: "12px 14px", borderBottom: "1px solid rgba(0,0,0,0.05)", cursor: onCypherClick ? "pointer" : "default", opacity: isPast ? 0.45 : 1 }}>
+                        <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding: "12px 14px", borderBottom: "1px solid rgba(255,255,255,0.08)", cursor: onCypherClick ? "pointer" : "default", opacity: isPast ? 0.45 : 1 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                            <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111", flex: 1 }}>{c.title}</div>
+                            <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flex: 1 }}>{c.title}</div>
                             <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, marginLeft: "8px" }}>
-                              <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: isPast ? "rgba(0,0,0,0.3)" : "#FF3D00", fontWeight: "bold" }}>{c.participant_count}人</span>
+                              <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: isPast ? "rgba(255,255,255,0.35)" : "#FF3D00", fontWeight: "bold" }}>{c.participant_count}人</span>
                               {/* 編集は開催前だけ。削除は終わったものにも出す
                                   （テストで作ったサイファーを後片付けできるように） */}
-                              {!isPast && <button onClick={e => { e.stopPropagation(); onEditCypher?.(c.id); }} title="編集" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#111111", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Pencil size={13} /></button>}
-                              <button onClick={e => { e.stopPropagation(); setDeleteConfirm({ id: c.id, kind: "cypher" }); }} title="削除" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#111111", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
+                              {!isPast && <button onClick={e => { e.stopPropagation(); onEditCypher?.(c.id); }} title="編集" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#F0F0F0", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Pencil size={13} /></button>}
+                              <button onClick={e => { e.stopPropagation(); setDeleteConfirm({ id: c.id, kind: "cypher" }); }} title="削除" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#F0F0F0", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
                             </div>
                           </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "3px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "3px" }}>
                             <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Clock size={9} />{date} {time}</span>
-                            {isPast && <span style={{ fontSize: "9px", padding: "1px 5px", background: "rgba(0,0,0,0.05)", borderRadius: "3px", color: "#111111" }}>終了</span>}
+                            {isPast && <span style={{ fontSize: "9px", padding: "1px 5px", background: "rgba(255,255,255,0.08)", borderRadius: "3px", color: "#F0F0F0" }}>終了</span>}
                           </div>
                         </div>
                       );})
@@ -377,15 +377,15 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             </div>
           </>) : (
             hostedCyphers.length === 0 && hostedLessons.length === 0
-              ? <div style={{ textAlign: "center", padding: "40px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ主催しているサイファー・レッスンはありません</div>
+              ? <div style={{ textAlign: "center", padding: "40px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ主催しているサイファー・レッスンはありません</div>
               : hostedCyphers.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   {hostedCyphers.map(c => { const { date, time } = formatDate(c.starts_at); const ended = timeUntil(c.starts_at) === "終了"; return (
-                    <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding: "10px 14px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: onCypherClick ? "pointer" : "default" }}>
+                    <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding: "10px 14px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: onCypherClick ? "pointer" : "default" }}>
                       <div>
-                        <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: ended ? "rgba(0,0,0,0.4)" : "#111111" }}>{c.title}</div>
-                        <div style={{ fontSize: "10px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "2px", display: "flex", alignItems: "center", gap: "6px" }}><Clock size={9} color="rgba(0,0,0,0.3)" />{date} {time}</div>
+                        <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: ended ? "rgba(255,255,255,0.45)" : "#F0F0F0" }}>{c.title}</div>
+                        <div style={{ fontSize: "10px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "2px", display: "flex", alignItems: "center", gap: "6px" }}><Clock size={9} color="rgba(255,255,255,0.35)" />{date} {time}</div>
                       </div>
-                      {ended ? <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", padding: "2px 7px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "3px" }}>終了</span>
+                      {ended ? <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", padding: "2px 7px", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "3px" }}>終了</span>
                              : <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#FF3D00", fontWeight: "bold" }}>{c.participant_count}人</span>}
                     </div>
                   );})}
@@ -398,26 +398,26 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       {/* 参加者一覧シート */}
       {participantSheet && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setParticipantSheet(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "#FFFFFF", borderRadius: "12px 12px 0 0", padding: "24px 20px 40px", maxHeight: "70vh", overflowY: "auto" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "#141414", borderRadius: "12px 12px 0 0", padding: "24px 20px 40px", maxHeight: "70vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <div>
-                <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.15em", marginBottom: "4px" }}>PARTICIPANTS</div>
-                <div style={{ fontSize: "22px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111" }}>{participantSheet.title}</div>
+                <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "4px" }}>PARTICIPANTS</div>
+                <div style={{ fontSize: "22px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{participantSheet.title}</div>
               </div>
-              <button onClick={() => setParticipantSheet(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#111111", padding: "4px" }}><X size={20} /></button>
+              <button onClick={() => setParticipantSheet(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={20} /></button>
             </div>
             {participantSheet.participants.length === 0
-              ? <div style={{ textAlign: "center", padding: "32px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ参加者はいません</div>
+              ? <div style={{ textAlign: "center", padding: "32px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ参加者はいません</div>
               : <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {participantSheet.participants.map(p => (
                     <button key={p.profile_id} onClick={() => { setParticipantSheet(null); onViewProfile?.(p.profile_id); }}
-                      style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", background: "#F5F7FA", border: "none", borderRadius: "8px", cursor: "pointer", textAlign: "left", width: "100%" }}>
-                      <div style={{ width: "38px", height: "38px", borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111", flexShrink: 0 }}>
+                      style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", background: "#1A1A1A", border: "none", borderRadius: "8px", cursor: "pointer", textAlign: "left", width: "100%" }}>
+                      <div style={{ width: "38px", height: "38px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
                         {p.avatar_url
                           ? <img src={p.avatar_url} alt={p.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                           : p.dancer_name[0]?.toUpperCase() ?? "?"}
                       </div>
-                      <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 600, color: "#111111" }}>{p.dancer_name}</div>
+                      <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 600, color: "#F0F0F0" }}>{p.dancer_name}</div>
                     </button>
                   ))}
                 </div>
@@ -429,32 +429,32 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       {/* フォロワー・フォロー一覧シート */}
       {followSheet && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setFollowSheet(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "360px", background: "#FFFFFF", borderRadius: "16px", padding: "24px 20px", maxHeight: "70vh", overflowY: "auto", boxShadow: "0 8px 40px rgba(0,0,0,0.18)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "360px", background: "#141414", borderRadius: "16px", padding: "24px 20px", maxHeight: "70vh", overflowY: "auto", boxShadow: "0 8px 40px rgba(0,0,0,0.5)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <div>
-                <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.15em", marginBottom: "4px" }}>
+                <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "4px" }}>
                   {followSheet.type === "followers" ? "FOLLOWERS" : "FOLLOWING"}
                 </div>
-                <div style={{ fontSize: "22px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111" }}>
+                <div style={{ fontSize: "22px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
                   {followSheet.type === "followers" ? "フォロワー" : "フォロー中"}
                 </div>
               </div>
-              <button onClick={() => setFollowSheet(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#111111", padding: "4px" }}><X size={20} /></button>
+              <button onClick={() => setFollowSheet(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={20} /></button>
             </div>
             {followSheetLoading
-              ? <div style={{ textAlign: "center", padding: "32px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>読み込み中...</div>
+              ? <div style={{ textAlign: "center", padding: "32px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>読み込み中...</div>
               : followSheet.users.length === 0
-                ? <div style={{ textAlign: "center", padding: "32px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだいません</div>
+                ? <div style={{ textAlign: "center", padding: "32px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだいません</div>
                 : <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                     {followSheet.users.map(u => (
                       <button key={u.id} onClick={() => { setFollowSheet(null); onViewProfile?.(u.id); }}
-                        style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", background: "#F5F7FA", border: "none", borderRadius: "8px", cursor: "pointer", textAlign: "left", width: "100%" }}>
-                        <div style={{ width: "38px", height: "38px", borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111", flexShrink: 0 }}>
+                        style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", background: "#1A1A1A", border: "none", borderRadius: "8px", cursor: "pointer", textAlign: "left", width: "100%" }}>
+                        <div style={{ width: "38px", height: "38px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
                           {u.avatar_url
                             ? <img src={u.avatar_url} alt={u.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                             : u.dancer_name[0]?.toUpperCase() ?? "?"}
                         </div>
-                        <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 600, color: "#111111" }}>{u.dancer_name}</div>
+                        <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 600, color: "#F0F0F0" }}>{u.dancer_name}</div>
                       </button>
                     ))}
                   </div>
@@ -465,13 +465,13 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
       {/* 削除確認モーダル（サイファー・レッスン共通） */}
       {deleteConfirm && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setDeleteConfirm(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#FFFFFF", borderRadius: "12px", padding: "28px 24px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setDeleteConfirm(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "12px", padding: "28px 24px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
             <div style={{ fontSize: "28px", marginBottom: "8px" }}>🗑️</div>
-            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "20px", color: "#111111", marginBottom: "8px" }}>{deleteConfirm.kind === "cypher" ? "サイファーを削除" : "レッスンを削除"}</div>
-            <div style={{ fontSize: "13px", color: "#111111", marginBottom: "24px", lineHeight: "1.6" }}>削除すると{deleteConfirm.kind === "cypher" ? "参加者" : "申込"}の記録もすべて消えます。開催履歴からも消えます。本当に削除しますか？</div>
+            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "20px", color: "#F0F0F0", marginBottom: "8px" }}>{deleteConfirm.kind === "cypher" ? "サイファーを削除" : "レッスンを削除"}</div>
+            <div style={{ fontSize: "13px", color: "#F0F0F0", marginBottom: "24px", lineHeight: "1.6" }}>削除すると{deleteConfirm.kind === "cypher" ? "参加者" : "申込"}の記録もすべて消えます。開催履歴からも消えます。本当に削除しますか？</div>
             <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={() => setDeleteConfirm(null)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#111111" }}>キャンセル</button>
+              <button onClick={() => setDeleteConfirm(null)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#F0F0F0" }}>キャンセル</button>
               <button onClick={handleDelete} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "#FF3D00", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>削除する</button>
             </div>
           </div>

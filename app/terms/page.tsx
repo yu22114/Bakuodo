@@ -2,16 +2,16 @@ export default function TermsPage() {
   const CONTACT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdtORTcN86YUDCwq_v8f300PtwnmUENTAvGXs8AYvVS50IyGA/viewform";
 
   return (
-    <div style={{ maxWidth: "480px", margin: "0 auto", padding: "32px 20px 80px", fontFamily: "'Noto Sans JP', sans-serif", color: "#111111", background: "#FAFAFA", minHeight: "100vh" }}>
+    <div style={{ maxWidth: "480px", margin: "0 auto", padding: "32px 20px 80px", fontFamily: "'Noto Sans JP', sans-serif", color: "#F0F0F0", background: "#000000", minHeight: "100vh" }}>
       <div style={{ marginBottom: "28px" }}>
-        <a href="/" style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "rgba(0,0,0,0.06)", borderRadius: "8px", padding: "10px 16px", marginBottom: "20px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "600", color: "#111111", textDecoration: "none" }}>← 戻る</a>
-        <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.2em", marginBottom: "8px" }}>▶ LEGAL</div>
-        <h1 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "36px", color: "#111111" }}>利用規約</h1>
-        <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>最終更新: 2026年7月31日</p>
+        <a href="/" style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "rgba(255,255,255,0.08)", borderRadius: "8px", padding: "10px 16px", marginBottom: "20px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "600", color: "#F0F0F0", textDecoration: "none" }}>← 戻る</a>
+        <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.2em", marginBottom: "8px" }}>▶ LEGAL</div>
+        <h1 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "36px", color: "#F0F0F0" }}>利用規約</h1>
+        <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>最終更新: 2026年7月31日</p>
       </div>
 
       {/* 前文 */}
-      <p style={{ fontSize: "13px", lineHeight: "1.8", color: "#111111", margin: "0 0 28px", whiteSpace: "pre-line" }}>
+      <p style={{ fontSize: "13px", lineHeight: "1.8", color: "#F0F0F0", margin: "0 0 28px", whiteSpace: "pre-line" }}>
         {"本利用規約（以下「本規約」といいます。）は、サイファー募集アプリ「爆踊」（以下「本サービス」といいます。）の利用条件を定めるものです。\nユーザーは、本サービスを利用することにより、本規約に同意したものとみなされます。"}
       </p>
 
@@ -74,24 +74,24 @@ export default function TermsPage() {
         },
       ].map(s => (
         <section key={s.title} style={{ marginBottom: "28px" }}>
-          <h2 style={{ fontSize: "14px", fontWeight: "700", marginBottom: "8px", color: "#111111" }}>{s.title}</h2>
-          <p style={{ fontSize: "13px", lineHeight: "1.8", color: "#111111", margin: 0, whiteSpace: "pre-line" }}>{s.body}</p>
+          <h2 style={{ fontSize: "14px", fontWeight: "700", marginBottom: "8px", color: "#F0F0F0" }}>{s.title}</h2>
+          <p style={{ fontSize: "13px", lineHeight: "1.8", color: "#F0F0F0", margin: 0, whiteSpace: "pre-line" }}>{s.body}</p>
         </section>
       ))}
 
       {/* サービス情報 */}
-      <div style={{ marginTop: "8px", padding: "16px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "8px" }}>
+      <div style={{ marginTop: "8px", padding: "16px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px" }}>
         <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
-          <span style={{ fontSize: "12px", fontWeight: "700", color: "#111111", minWidth: "84px" }}>サービス名</span>
-          <span style={{ fontSize: "13px", color: "#111111" }}>爆踊</span>
+          <span style={{ fontSize: "12px", fontWeight: "700", color: "#F0F0F0", minWidth: "84px" }}>サービス名</span>
+          <span style={{ fontSize: "13px", color: "#F0F0F0" }}>爆踊</span>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
-          <span style={{ fontSize: "12px", fontWeight: "700", color: "#111111", minWidth: "84px" }}>問い合わせ先</span>
+          <span style={{ fontSize: "12px", fontWeight: "700", color: "#F0F0F0", minWidth: "84px" }}>問い合わせ先</span>
           <a href={CONTACT_URL} target="_blank" rel="noopener noreferrer" style={{ fontSize: "13px", color: "#FF3D00", textDecoration: "underline", wordBreak: "break-all" }}>お問い合わせフォーム</a>
         </div>
       </div>
 
-      <div style={{ marginTop: "40px", paddingTop: "20px", borderTop: "1px solid rgba(0,0,0,0.08)", textAlign: "center" }}>
+      <div style={{ marginTop: "40px", paddingTop: "20px", borderTop: "1px solid rgba(255,255,255,0.1)", textAlign: "center" }}>
         <a href="/" style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#FF3D00", textDecoration: "none" }}>← アプリに戻る</a>
       </div>
     </div>

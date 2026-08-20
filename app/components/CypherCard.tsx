@@ -77,7 +77,7 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
       {cypher.studio_fee != null && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "5px" }}>
           <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
-            💴 {cypher.participant_count > 0 ? `¥${Math.ceil(cypher.studio_fee / cypher.participant_count).toLocaleString()}/人` : `¥${cypher.studio_fee.toLocaleString()}`}
+            {cypher.participant_count > 0 ? `¥${Math.ceil(cypher.studio_fee / cypher.participant_count).toLocaleString()}/人` : `¥${cypher.studio_fee.toLocaleString()}`}
           </span>
         </div>
       )}

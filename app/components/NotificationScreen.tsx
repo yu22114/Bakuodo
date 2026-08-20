@@ -82,23 +82,23 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#FAFAFA", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>
-      <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid rgba(0,0,0,0.08)", background: "#FFFFFF", display: "flex", alignItems: "center", gap: "16px" }}>
-        <button onClick={onBack} style={{ background: "rgba(0,0,0,0.06)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px", flexShrink: 0 }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>
+      <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "center", gap: "16px" }}>
+        <button onClick={onBack} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px", flexShrink: 0 }}>
           <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
         </button>
         <div>
-          <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", letterSpacing: "0.2em" }}>▶ NOTIFICATIONS</div>
-          <h2 style={{ margin: 0, fontSize: "28px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.05em" }}>お知らせ</h2>
+          <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.2em" }}>▶ NOTIFICATIONS</div>
+          <h2 style={{ margin: 0, fontSize: "28px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.05em", color: "#F0F0F0" }}>お知らせ</h2>
         </div>
       </div>
       <div style={{ paddingBottom: "80px" }}>
         {loading ? (
-          <div style={{ padding: "60px 16px", textAlign: "center", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>読み込み中...</div>
+          <div style={{ padding: "60px 16px", textAlign: "center", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>読み込み中...</div>
         ) : items.length === 0 ? (
           <div style={{ padding: "60px 16px", textAlign: "center" }}>
-            <Bell size={32} color="rgba(0,0,0,0.15)" />
-            <p style={{ marginTop: "12px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>お知らせはありません</p>
+            <Bell size={32} color="rgba(255,255,255,0.2)" />
+            <p style={{ marginTop: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>お知らせはありません</p>
           </div>
         ) : items.map(n => {
           const actor = n.actor as any;
@@ -107,16 +107,16 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
           const actorName = actor?.dancer_name ?? "UNKNOWN";
           const cypherTitle = cypher?.title ?? lesson?.title ?? "サイファー";
           return (
-            <div key={n.id} style={{ padding: "14px 16px", borderBottom: "1px solid rgba(0,0,0,0.06)", background: n.read ? "transparent" : "rgba(255,61,0,0.03)", display: "flex", alignItems: "center", gap: "12px" }}>
+            <div key={n.id} style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: n.read ? "transparent" : "rgba(255,61,0,0.06)", display: "flex", alignItems: "center", gap: "12px" }}>
               <button onClick={() => actor?.id && onViewProfile?.(actor.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}>
-                <div style={{ width: "38px", height: "38px", borderRadius: "50%", overflow: "hidden", background: "rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#111111" }}>
+                <div style={{ width: "38px", height: "38px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
                   {actor?.avatar_url
                     ? <img src={actor.avatar_url} alt={actorName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     : actorName[0]?.toUpperCase() ?? "?"}
                 </div>
               </button>
               <div style={{ flex: 1 }}>
-                <p style={{ margin: 0, fontSize: "13px", color: "#111", lineHeight: 1.5 }}>
+                <p style={{ margin: 0, fontSize: "13px", color: "#F0F0F0", lineHeight: 1.5 }}>
                   {/* 開催リマインドは「誰々さんが」ではなくイベントが主語 */}
                   {n.type === "reminder" ? <>まもなく<strong>「{cypherTitle}」</strong>が開催されます⏰</> : <><strong>{actorName}</strong>さんが{
                     n.type === "follow"          ? "あなたをフォローしました👋" :
@@ -128,7 +128,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
                                                   `「${cypherTitle}」をキャンセルしました`
                   }</>}
                 </p>
-                <p style={{ margin: "3px 0 0", fontSize: "10px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>{timeAgo(n.created_at)}</p>
+                <p style={{ margin: "3px 0 0", fontSize: "10px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif" }}>{timeAgo(n.created_at)}</p>
                 {(n.type === "follow_request" || n.type === "join_request") && (
                   <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
                     <button onClick={() => handleApprove(n.id, actor?.id, n.type, cypher?.id, lesson?.id)} disabled={actionLoading === n.id}
@@ -136,7 +136,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
                       <Check size={11} /> 承認
                     </button>
                     <button onClick={() => handleReject(n.id, actor?.id, n.type, cypher?.id, lesson?.id)} disabled={actionLoading === n.id}
-                      style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", background: "transparent", border: "1px solid rgba(0,0,0,0.15)", borderRadius: "6px", color: "#111111", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", opacity: actionLoading === n.id ? 0.6 : 1 }}>
+                      style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", color: "#F0F0F0", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", opacity: actionLoading === n.id ? 0.6 : 1 }}>
                       <X size={11} /> 拒否
                     </button>
                   </div>

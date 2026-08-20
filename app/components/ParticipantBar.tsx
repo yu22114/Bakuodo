@@ -17,7 +17,7 @@ export function ParticipantBar({ count, max }: { count: number; max: number | nu
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", flex: 1 }}>
           {Array.from({ length: dotTotal }, (_, i) => (
-            <span key={i} style={{ width: "8px", height: "8px", borderRadius: "50%", background: i < count ? dotColor : "rgba(0,0,0,0.12)", flexShrink: 0 }} />
+            <span key={i} style={{ width: "8px", height: "8px", borderRadius: "50%", background: i < count ? dotColor : "rgba(255,255,255,0.14)", flexShrink: 0 }} />
           ))}
         </div>
         <span style={{ fontSize: "11px", color, fontFamily: "'Noto Sans JP',sans-serif", minWidth: "60px", textAlign: "right", fontWeight: "bold" }}>
@@ -30,7 +30,7 @@ export function ParticipantBar({ count, max }: { count: number; max: number | nu
   // 定員が多すぎてドットで表現しづらい場合、または参加者が誰もいない場合は今まで通りバーで表示
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-      <div style={{ flex: 1, height: "4px", background: "rgba(0,0,0,0.08)", borderRadius: "2px", overflow: "hidden" }}>
+      <div style={{ flex: 1, height: "4px", background: "rgba(255,255,255,0.1)", borderRadius: "2px", overflow: "hidden" }}>
         <div style={{ width: `${pct}%`, height: "100%", background: color }} />
       </div>
       <span style={{ fontSize: "11px", color, fontFamily: "'Noto Sans JP',sans-serif", minWidth: "60px", textAlign: "right", fontWeight: "bold" }}>

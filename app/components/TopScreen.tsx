@@ -22,9 +22,10 @@ const SECTION_COLOR: Record<TopSection, string> = {
   event: "#7C3AED",
   spots: "#16A34A",
 };
+// pl だけ「P」と「LESSON」の間に少しだけ隙間を空ける（詰まって読みにくいとのフィードバックのため）
 const SECTION_LABEL: Record<TopSection, string> = {
   cypher: "CYPHER",
-  pl: "PLESSON",
+  pl: "P LESSON",
   event: "EVENT",
   spots: "SPOTS",
 };
@@ -118,8 +119,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   const [selectedGenres, setSelectedGenres] = useState<GenreKey[]>([]);
   // カレンダーで選んだ特定の日付（"YYYY-MM-DD"）。空文字なら未指定
   const [specificDate, setSpecificDate] = useState("");
-  // ヘッダー左の今日の日付を出すかどうか（ロゴを押すたびに切り替わる）
-  const [showDate, setShowDate] = useState(false);
+  // ロゴを押すと月間カレンダーを開く（今日が何日かひと目で分かるように）
+  const [showCalendar, setShowCalendar] = useState(false);
   const [areaText, setAreaText] = useState("");
   // 現在地
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -293,6 +294,14 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
   const todayLabel = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}(${weekdays[today.getDay()]})`;
 
+  // ロゴを押した時に出す月間カレンダー用のマス目。月初の曜日ぶんだけ空マスを前に詰める
+  const firstWeekday = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const calendarCells: (number | null)[] = [
+    ...Array(firstWeekday).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+
   return (
     // 画面全体をビューポート高さで固定し、下の「固定ヘッダー＋スクロール領域」に分ける。
     // 浮き島の下部ナビは position:fixed で別レイヤーなのでここでは特に気にしなくていい
@@ -302,11 +311,10 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       {/* ヘッダー */}
       <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
-          {/* 今日の日付は普段は隠しておき、ロゴを押した時だけ出す。
-              display:noneではなくopacityで消すのは、出し入れでロゴがずれないようにするため */}
-          <div style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", letterSpacing: "0.02em", opacity: showDate ? 1 : 0, transition: "opacity 0.25s" }}>{todayLabel}</div>
+          {/* 今日の日付は常に出しておく。ロゴを押すと月間カレンダーが開く */}
+          <div style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", letterSpacing: "0.02em" }}>{todayLabel}</div>
           <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center", animation: "bdLogoRollIn 1.8s cubic-bezier(0.33,1,0.68,1) both" }}>
-            <button onClick={() => setShowDate(v => !v)} aria-label="今日の日付を表示"
+            <button onClick={() => setShowCalendar(true)} aria-label="カレンダーを表示"
               style={{ background: "none", border: "none", padding: 0, lineHeight: 0, cursor: "pointer" }}>
               <Logo size={52} />
             </button>
@@ -521,6 +529,33 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
                 フィルターをリセット
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+    {/* ロゴを押すと開く月間カレンダー。今日が何日かを一目で確認するだけのもの */}
+      {showCalendar && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setShowCalendar(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "#141414", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", letterSpacing: "0.05em" }}>{today.getFullYear()}年{today.getMonth() + 1}月</span>
+              <button onClick={() => setShowCalendar(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={20} /></button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: "4px" }}>
+              {weekdays.map(w => (
+                <div key={w} style={{ textAlign: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.45)", padding: "6px 0" }}>{w}</div>
+              ))}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: "4px" }}>
+              {calendarCells.map((d, i) => {
+                const isToday = d === today.getDate();
+                return (
+                  <div key={i} style={{ aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: isToday ? "#FF3D00" : "transparent", color: d === null ? "transparent" : isToday ? "#fff" : "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: isToday ? 700 : 400 }}>
+                    {d ?? "-"}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
