@@ -32,7 +32,7 @@ export function BottomNav({ current, onNav }: { current: string; onNav: (s: stri
     <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, display: "flex", justifyContent: "center", padding: "0 16px 16px", pointerEvents: "none", transform: hidden ? "translateY(140%)" : "none", transition: "transform 0.25s ease" }}>
       {/* 中身が透けるガラス感を出すため、白の不透明度を下げてぼかしを強めにする。
           後ろのカードが少し見えるよう、背景はかなり薄めにしてある */}
-      <div style={{ width: "100%", maxWidth: "448px", background: "rgba(20,20,20,0.35)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "26px", display: "flex", boxShadow: "0 10px 30px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.12)", pointerEvents: "auto" }}>
+      <div style={{ width: "100%", maxWidth: "448px", background: "rgba(20,20,20,0.1)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "26px", display: "flex", boxShadow: "0 10px 30px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.12)", pointerEvents: "auto" }}>
         {items.map(item => (
           <button key={item.id} onClick={() => onNav(item.id)} aria-label={item.label} style={{ flex: 1, padding: "14px 0", border: "none", background: "transparent", color: current === item.id ? (item.id === "profile" ? "#FF3D00" : "#fff") : "rgba(255,255,255,0.5)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {item.id === "post" ? (

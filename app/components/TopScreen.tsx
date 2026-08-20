@@ -30,13 +30,13 @@ const SECTION_LABEL: Record<TopSection, string> = {
   spots: "SPOTS",
 };
 
-// カード脇の余白の色。セクションのタブ色を
-// カードの白が沈まない程度まで薄めたもの
+// カード脇の余白の色。ジャンルではなくセクションそのものの色（SECTION_COLOR）を使い、
+// 画面の上から色付きのライトで照らされているような、後光っぽいグラデーションにする
 const SECTION_BG: Record<TopSection, string> = {
-  cypher: "#170D08",
-  pl: "#080D18",
-  event: "#100A19",
-  spots: "#071410",
+  cypher: "radial-gradient(ellipse 120% 55% at 50% -10%, rgba(255,61,0,0.28), #000000 70%)",
+  pl: "radial-gradient(ellipse 120% 55% at 50% -10%, rgba(37,99,235,0.28), #000000 70%)",
+  event: "radial-gradient(ellipse 120% 55% at 50% -10%, rgba(124,58,237,0.28), #000000 70%)",
+  spots: "radial-gradient(ellipse 120% 55% at 50% -10%, rgba(22,163,74,0.28), #000000 70%)",
 };
 
 export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell, section, onSectionChange }: {
