@@ -19,7 +19,7 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
       // bd-glow-card: タッチ端末はホバーできないので、PCのホバー時と同じ色付き影を
       // @media(hover:none) で常時出す（globals.css相当のスタイルはpage.tsxのstyleタグ）
       className="bd-glow-card"
-      style={{ background: "#141414", border: `1px solid ${cypher.hot && !isEnded ? "rgba(255,61,0,0.25)" : "rgba(255,255,255,0.1)"}`, borderLeft: "4px solid transparent", borderRadius: "10px", padding: "11px 16px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? `0 6px 12px rgba(0,0,0,0.3), 0 18px 36px ${color}26` : "0 2px 4px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2)", opacity: isEnded ? 0.55 : 1, ["--bd-glow" as any]: `${color}26` } as React.CSSProperties}>
+      style={{ background: "#141414", border: `1px solid ${cypher.hot && !isEnded ? "rgba(255,61,0,0.25)" : "rgba(255,255,255,0.1)"}`, borderRadius: "10px", padding: "11px 16px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? `0 6px 12px rgba(0,0,0,0.3), 0 18px 36px ${color}26` : "0 2px 4px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2)", opacity: isEnded ? 0.55 : 1, ["--bd-glow" as any]: `${color}26` } as React.CSSProperties}>
       {cypher.hot && !isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "#FF3D00", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>🔥 HOT</div>}
       {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.12)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
       {cypher.visibility === "private" && !isEnded && !cypher.hot && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(0,0,0,0.65)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>🔒 限定</div>}
@@ -39,11 +39,11 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
       {/* 開催日時はチケットの半券風にカード左端へ張り付ける。
           カード自体のpadding(11px 16px)より外側にはみ出させたいので、
           この2つは中身のラッパーではなくカード直下（position:relativeの基準）に置く。
-          月・日・曜日は縦に均等3分割、文字は中央寄せ */}
+          月・日・曜日は縦に均等3分割、文字は中央寄せ・同じ太さ/大きさ・無色（ジャンル色は使わない） */}
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "44px", display: "flex", flexDirection: "column", background: "rgba(255,255,255,0.04)", borderRight: "1px solid rgba(255,255,255,0.1)" }}>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#fff", background: isEnded ? "rgba(255,255,255,0.15)" : color }}>{month}月</div>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "19px", fontWeight: 700, fontFamily: "'Noto Sans JP',sans-serif", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", lineHeight: 1 }}>{day}</div>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>{weekday}</div>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", background: "rgba(255,255,255,0.06)" }}>{month}月</div>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, fontFamily: "'Noto Sans JP',sans-serif", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", lineHeight: 1 }}>{day}</div>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, fontFamily: "'Noto Sans JP',sans-serif", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", borderTop: "1px solid rgba(255,255,255,0.08)" }}>{weekday}</div>
       </div>
       {/* 中身は背景文字より上に置く（position指定がないと背景文字の下に隠れる）。
           日付バッジぶん（44px - カード左paddingの16px = 28px）だけ左に余白を足す */}
