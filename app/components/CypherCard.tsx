@@ -2,10 +2,11 @@
 import { useState } from "react";
 import { Clock, MapPin } from "lucide-react";
 import type { Cypher } from "../lib/types";
-import { GENRE_COLORS, genreLabel, formatDate, timeUntil, daysUntil, formatEndTime } from "../lib/constants";
+import { GENRE_COLORS, genreLabel, formatDate, dateBadgeParts, timeUntil, daysUntil, formatEndTime } from "../lib/constants";
 
 export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onClick: () => void; index?: number }) {
-  const { date, time } = formatDate(cypher.starts_at);
+  const { time } = formatDate(cypher.starts_at);
+  const { month, day, weekday } = dateBadgeParts(cypher.starts_at);
   const until = timeUntil(cypher.starts_at);
   const [hover, setHover] = useState(false);
   const color = GENRE_COLORS[cypher.genres[0]] ?? "#FF3D00";
@@ -36,10 +37,17 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
         );
       })()}
       {/* 中身は背景文字より上に置く（position指定がないと背景文字の下に隠れる） */}
-      <div style={{ position: "relative" }}>
+      <div style={{ position: "relative", display: "flex", gap: "12px" }}>
+      {/* 開催日時はチケットの半券風に左端へ。上から月・日・曜日の3段 */}
+      <div style={{ width: "44px", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", borderRadius: "8px", overflow: "hidden", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}>
+        <div style={{ width: "100%", textAlign: "center", padding: "3px 0", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#fff", background: isEnded ? "rgba(255,255,255,0.15)" : color }}>{month}月</div>
+        <div style={{ fontSize: "21px", fontWeight: 700, fontFamily: "'Noto Sans JP',sans-serif", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", padding: "3px 0", lineHeight: 1 }}>{day}</div>
+        <div style={{ width: "100%", textAlign: "center", padding: "3px 0", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>{weekday}</div>
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "5px" }}>
         <div style={{ flex: 1, paddingRight: "52px" }}>
-          {/* 残り日数はタイトルの真横に。日付そのものは下の時計行に出す */}
+          {/* 残り日数はタイトルの真横に。開催日そのものは左の日付バッジに出す */}
           <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap" }}>
             <h3 style={{ margin: 0, fontSize: "19px", fontWeight: 700, color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{cypher.title}</h3>
             <span style={{ fontSize: "9px", padding: "1px 6px", background: isEnded ? "rgba(255,255,255,0.08)" : "rgba(255,61,0,0.08)", borderRadius: "3px", color: isEnded ? "rgba(255,255,255,0.45)" : "#FF3D00", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", flexShrink: 0 }}>{daysUntil(cypher.starts_at)}</span>
@@ -66,7 +74,7 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
       <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <Clock size={11} color="rgba(255,255,255,0.4)" />
-          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{date} {time}{cypher.ends_at ? `〜${formatEndTime(cypher.starts_at, cypher.ends_at)}` : ""}</span>
+          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{time}{cypher.ends_at ? `〜${formatEndTime(cypher.starts_at, cypher.ends_at)}` : ""}</span>
         </div>
         {/* カード上では地図リンクにしない。カードのどこを押しても詳細が開くようにして、
             「カードを押したつもりが地図に飛ぶ」のを防ぐ。地図へは詳細モーダルから飛べる */}
@@ -82,6 +90,7 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
           </span>
         </div>
       )}
+      </div>
       </div>
     </div>
     </div>

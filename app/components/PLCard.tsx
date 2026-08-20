@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Clock, MapPin, BookOpen } from "lucide-react";
 import type { PrivateLesson } from "../lib/types";
-import { GENRE_COLORS, genreLabel, formatDate, timeUntil, daysUntil, formatEndTime } from "../lib/constants";
+import { GENRE_COLORS, genreLabel, formatDate, dateBadgeParts, timeUntil, daysUntil, formatEndTime } from "../lib/constants";
 
 const LEVEL_LABELS: Record<string, string> = {
   all: "全レベル",
@@ -12,7 +12,8 @@ const LEVEL_LABELS: Record<string, string> = {
 };
 
 export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; onClick: () => void; index?: number }) {
-  const { date, time } = formatDate(lesson.starts_at);
+  const { time } = formatDate(lesson.starts_at);
+  const { month, day, weekday } = dateBadgeParts(lesson.starts_at);
   const until = timeUntil(lesson.starts_at);
   const [hover, setHover] = useState(false);
   // イベントもこのカードを使い回す。青(レッスン)と紫(イベント)だけ切り替える
@@ -39,7 +40,14 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
         );
       })()}
       {/* 中身は背景文字より上に置く */}
-      <div style={{ position: "relative" }}>
+      <div style={{ position: "relative", display: "flex", gap: "12px" }}>
+      {/* 開催日時はチケットの半券風に左端へ。上から月・日・曜日の3段（CypherCardと同じ） */}
+      <div style={{ width: "44px", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", borderRadius: "8px", overflow: "hidden", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}>
+        <div style={{ width: "100%", textAlign: "center", padding: "3px 0", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#fff", background: isEnded ? "rgba(255,255,255,0.15)" : accent }}>{month}月</div>
+        <div style={{ fontSize: "21px", fontWeight: 700, fontFamily: "'Noto Sans JP',sans-serif", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", padding: "3px 0", lineHeight: 1 }}>{day}</div>
+        <div style={{ width: "100%", textAlign: "center", padding: "3px 0", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>{weekday}</div>
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "5px" }}>
         <div style={{ flex: 1, paddingRight: "52px" }}>
           {/* 残り日数はタイトルの真横に（CypherCardと同じ） */}
@@ -70,7 +78,7 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
       <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <Clock size={11} color="rgba(255,255,255,0.4)" />
-          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{date} {time}{lesson.ends_at ? `〜${formatEndTime(lesson.starts_at, lesson.ends_at)}` : ""}</span>
+          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{time}{lesson.ends_at ? `〜${formatEndTime(lesson.starts_at, lesson.ends_at)}` : ""}</span>
         </div>
         {/* カード上では地図リンクにしない（CypherCardと同じ理由） */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -93,6 +101,7 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
         )}
       </div>
       )}
+      </div>
       </div>
     </div>
     </div>

@@ -86,6 +86,13 @@ export function formatDate(iso: string) {
   };
 }
 
+// カード左のチケット風日付表示用（月・日・曜日を別々に返す）
+export function dateBadgeParts(iso: string) {
+  const d = new Date(iso);
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  return { month: d.getMonth() + 1, day: d.getDate(), weekday: weekdays[d.getDay()] };
+}
+
 // 開始時間の選択肢（00:00〜23:30。表示はフォーム側で初期値9:00から始める）
 export const START_TIME_OPTIONS = TIME_OPTIONS;
 
