@@ -48,7 +48,7 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
       {/* 中身は背景文字より上に置く（position指定がないと背景文字の下に隠れる）。
           日付バッジぶん（44px - カード左paddingの16px = 28px）に加えて、間隔を空けるため12px余分に取る */}
       <div style={{ position: "relative", marginLeft: "40px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "3px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0px" }}>
         <div style={{ flex: 1, paddingRight: "52px" }}>
           {/* 開催日そのものは左の日付バッジに出す */}
           <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap" }}>
