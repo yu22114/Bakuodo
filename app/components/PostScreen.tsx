@@ -9,6 +9,12 @@ import { StationSearch } from "./StationSearch";
 
 // タブの並び順。ホーム画面と同じ順でスワイプ移動できるようにする
 const TAB_ORDER = ["cypher", "pl", "event"] as const;
+// 背景の光もホーム画面（TopScreen）と同じ考え方。タブの色を上から当たる光として敷く
+const TAB_BG: Record<"cypher" | "pl" | "event", string> = {
+  cypher: "radial-gradient(circle at center, rgba(255,61,0,0.55), rgba(255,61,0,0.1) 45%, #000000 75%)",
+  pl: "radial-gradient(circle at center, rgba(37,99,235,0.55), rgba(37,99,235,0.1) 45%, #000000 75%)",
+  event: "radial-gradient(circle at center, rgba(124,58,237,0.55), rgba(124,58,237,0.1) 45%, #000000 75%)",
+};
 const DRAFT_KEY = "bakuodori:post-draft:v1";
 const EMPTY_FORM: FormState = { title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [], description: "", max_members: "", payment: [], studio_fee: "" };
 const EMPTY_PL = { title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [] as string[], description: "", max_members: "", price: "", target_level: "all" };
@@ -204,8 +210,10 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
     </div>
   );
 
+  // この画面はTopScreenと違って中身ごとページがスクロールするので、グラデーションの位置が
+  // コンテンツの高さに引っ張られないようbackgroundAttachment:fixedでビューポート基準に固定する
   return (
-    <div style={{ paddingBottom: "80px", background: "#000000" }}>
+    <div className="bd-glow-bg" style={{ paddingBottom: "80px", background: TAB_BG[tab], backgroundAttachment: "fixed", transition: "background 0.2s" }}>
       <div style={{ padding: "24px 16px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
         <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ NEW SESSION</div>
         <h2 style={{ margin: "0 0 16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>投稿する</h2>
