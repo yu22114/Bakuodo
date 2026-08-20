@@ -71,6 +71,12 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
           <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", whiteSpace: "nowrap" }}>
             {cypher.participant_count}{cypher.max_members ? `/${cypher.max_members}` : ""}人
           </span>
+          {/* スタジオ代は参加人数表記のすぐ下に出す */}
+          {cypher.studio_fee != null && (
+            <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", whiteSpace: "nowrap" }}>
+              {cypher.participant_count > 0 ? `¥${Math.ceil(cypher.studio_fee / cypher.participant_count).toLocaleString()}/人` : `¥${cypher.studio_fee.toLocaleString()}`}
+            </span>
+          )}
         </div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
@@ -85,13 +91,6 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
           <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{cypher.location}</span>
         </div>
       </div>
-      {cypher.studio_fee != null && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "5px" }}>
-          <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
-            {cypher.participant_count > 0 ? `¥${Math.ceil(cypher.studio_fee / cypher.participant_count).toLocaleString()}/人` : `¥${cypher.studio_fee.toLocaleString()}`}
-          </span>
-        </div>
-      )}
       </div>
     </div>
     </div>

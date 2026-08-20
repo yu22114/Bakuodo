@@ -71,6 +71,12 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
           <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", whiteSpace: "nowrap" }}>
             {lesson.participant_count}{lesson.max_members ? `/${lesson.max_members}` : ""}人
           </span>
+          {/* 料金は参加人数表記のすぐ下に出す */}
+          {lesson.price != null && (
+            <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", whiteSpace: "nowrap" }}>
+              ¥{lesson.price.toLocaleString()}
+            </span>
+          )}
         </div>
       </div>
 
@@ -86,18 +92,11 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
         </div>
       </div>
 
-      {(lesson.kind !== "event" || lesson.price != null) && (
+      {lesson.kind !== "event" && (
       <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "5px" }}>
-        {lesson.kind !== "event" && (
-          <span style={{ fontSize: "9px", padding: "2px 7px", background: accent + "14", borderRadius: "4px", color: accent, fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "3px" }}>
-            <BookOpen size={9} /> {LEVEL_LABELS[lesson.target_level] ?? "全レベル"}
-          </span>
-        )}
-        {lesson.price != null && (
-          <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
-            ¥{lesson.price.toLocaleString()}
-          </span>
-        )}
+        <span style={{ fontSize: "9px", padding: "2px 7px", background: accent + "14", borderRadius: "4px", color: accent, fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "3px" }}>
+          <BookOpen size={9} /> {LEVEL_LABELS[lesson.target_level] ?? "全レベル"}
+        </span>
       </div>
       )}
       </div>
