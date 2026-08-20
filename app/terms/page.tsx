@@ -87,12 +87,12 @@ export default function TermsPage() {
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
           <span style={{ fontSize: "12px", fontWeight: "700", color: "#F0F0F0", minWidth: "84px" }}>問い合わせ先</span>
-          <a href={CONTACT_URL} target="_blank" rel="noopener noreferrer" style={{ fontSize: "13px", color: "#FF3D00", textDecoration: "underline", wordBreak: "break-all" }}>お問い合わせフォーム</a>
+          <a href={CONTACT_URL} target="_blank" rel="noopener noreferrer" style={{ fontSize: "13px", color: "#DC2626", textDecoration: "underline", wordBreak: "break-all" }}>お問い合わせフォーム</a>
         </div>
       </div>
 
       <div style={{ marginTop: "40px", paddingTop: "20px", borderTop: "1px solid rgba(255,255,255,0.1)", textAlign: "center" }}>
-        <a href="/" style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#FF3D00", textDecoration: "none" }}>← アプリに戻る</a>
+        <a href="/" style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#DC2626", textDecoration: "none" }}>← アプリに戻る</a>
       </div>
     </div>
   );

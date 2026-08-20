@@ -33,7 +33,7 @@ export function LoginScreen() {
         {loading ? "ログイン中..." : "Googleでログイン"}
       </button>
       <p style={{ marginTop: "24px", fontSize: "12px", color: "rgba(255,255,255,0.6)", fontFamily: "'Noto Sans JP',sans-serif", textAlign: "center", lineHeight: 1.8 }}>
-        ログインすることで<a href="/terms" style={{ color: "#FF3D00", textDecoration: "underline" }}>利用規約</a>に<br />同意したものとみなします
+        ログインすることで<a href="/terms" style={{ color: "#DC2626", textDecoration: "underline" }}>利用規約</a>に<br />同意したものとみなします
       </p>
     </div>
   );

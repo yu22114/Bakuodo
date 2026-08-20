@@ -59,7 +59,9 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   const isOwn = lesson.organizer.id === user.id;
   // イベントもこのモーダルを使い回す。色と呼び方だけ切り替える
   const isEvent = lesson.kind === "event";
-  const accent = isEvent ? "#7C3AED" : "#2563EB";
+  const accent = isEvent ? "#EAB308" : "#2563EB";
+  // EVENTの黄色は白文字だと読みにくいので、accentを背景に敷く箇所だけ文字色を切り替える
+  const onAccent = isEvent ? "#171717" : "#fff";
   const noun = isEvent ? "イベント" : "レッスン";
 
   const isFull = !joined && !pending && lesson.max_members !== null && participantsFetched && participants.length >= lesson.max_members;
@@ -70,7 +72,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
         <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0 }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: "5px", background: accent, borderRadius: "4px", padding: "2px 8px", marginBottom: "6px" }}>
-              <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold" }}>{isEvent ? "EVENT" : "PRIVATE LESSON"}</span>
+              <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: onAccent, fontWeight: "bold" }}>{isEvent ? "EVENT" : "PRIVATE LESSON"}</span>
             </div>
             <h2 style={{ margin: 0, fontSize: "24px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", lineHeight: 1.1 }}>{lesson.title}</h2>
           </div>
@@ -139,7 +141,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
               </div>
             ) : (
               <button onClick={() => { onJoin(lesson.id); if (!joined && !pending) onClose(); }}
-                style={{ marginTop: "20px", width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: joined ? "rgba(22,163,74,0.12)" : pending ? "rgba(255,255,255,0.08)" : accent, color: joined ? "#16A34A" : pending ? "rgba(255,255,255,0.5)" : "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                style={{ marginTop: "20px", width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: joined ? "rgba(22,163,74,0.12)" : pending ? "rgba(255,255,255,0.08)" : accent, color: joined ? "#16A34A" : pending ? "rgba(255,255,255,0.5)" : onAccent, fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
                 {joined ? <><Check size={16} /> 申込済み — キャンセルする</> : pending ? <>申請中... — キャンセルする</> : lesson.requires_approval ? <>📋 {isEvent ? "参加" : "受講"}を申請する</> : <><BookOpen size={16} /> この{noun}に申し込む</>}
               </button>
             )
@@ -189,7 +191,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
             onClick={postComment}
             disabled={!commentText.trim() || posting}
             style={{ width: "38px", height: "38px", borderRadius: "50%", background: commentText.trim() ? accent : "rgba(255,255,255,0.12)", border: "none", cursor: commentText.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.2s" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={commentText.trim() ? onAccent : "#fff"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
           </button>
         </div>
       </div>

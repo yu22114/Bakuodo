@@ -8,7 +8,7 @@ export function ConfirmModal({ onConfirm, onCancel }: { onConfirm: () => void; o
         <p style={{ margin: "0 0 24px", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.7 }}>参加をキャンセルします。<br />本当によろしいですか？</p>
         <div style={{ display: "flex", gap: "10px" }}>
           <button onClick={onCancel} style={{ flex: 1, padding: "11px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", background: "transparent", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>戻る</button>
-          <button onClick={onConfirm} style={{ flex: 1, padding: "11px", border: "none", borderRadius: "6px", background: "#FF3D00", color: "#fff", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: "bold" }}>キャンセルする</button>
+          <button onClick={onConfirm} style={{ flex: 1, padding: "11px", border: "none", borderRadius: "6px", background: "#DC2626", color: "#fff", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: "bold" }}>キャンセルする</button>
         </div>
       </div>
     </div>

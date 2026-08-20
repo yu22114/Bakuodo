@@ -136,12 +136,12 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
           ) : (() => {
             const isFull = !joined && cypher.max_members !== null && participantsFetched && participants.length >= cypher.max_members;
             return isFull ? (
-              <div style={{ marginTop: "20px", padding: "14px", background: "rgba(255,61,0,0.08)", border: "1px solid rgba(255,61,0,0.25)", borderRadius: "6px", textAlign: "center", fontSize: "13px", color: "#FF3D00", fontFamily: "'Noto Sans JP',sans-serif" }}>
+              <div style={{ marginTop: "20px", padding: "14px", background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.25)", borderRadius: "6px", textAlign: "center", fontSize: "13px", color: "#DC2626", fontFamily: "'Noto Sans JP',sans-serif" }}>
                 定員に達しています（{participants.length}/{cypher.max_members}人）
               </div>
             ) : (
               <button onClick={() => { onJoin(cypher.id); if (!joined && !pending && !keepOpenOnJoin) onClose(); }}
-                style={{ marginTop: "20px", width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: joined ? "rgba(22,163,74,0.12)" : pending ? "rgba(255,255,255,0.08)" : "#FF3D00", color: joined ? "#16A34A" : pending ? "rgba(255,255,255,0.5)" : "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                style={{ marginTop: "20px", width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: joined ? "rgba(22,163,74,0.12)" : pending ? "rgba(255,255,255,0.08)" : "#DC2626", color: joined ? "#16A34A" : pending ? "rgba(255,255,255,0.5)" : "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
                 {joined ? <><Check size={16} /> 参加済み — キャンセルする</> : pending ? <>申請中... — キャンセルする</> : cypher.requires_approval ? <>📋 参加を申請する</> : <><Zap size={16} /> このサイファーに参加する</>}
               </button>
             );
@@ -190,7 +190,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
           <button
             onClick={postComment}
             disabled={!commentText.trim() || posting}
-            style={{ width: "38px", height: "38px", borderRadius: "50%", background: commentText.trim() ? "#FF3D00" : "rgba(255,255,255,0.12)", border: "none", cursor: commentText.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.2s" }}>
+            style={{ width: "38px", height: "38px", borderRadius: "50%", background: commentText.trim() ? "#DC2626" : "rgba(255,255,255,0.12)", border: "none", cursor: commentText.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.2s" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
           </button>
         </div>

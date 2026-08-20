@@ -128,7 +128,7 @@ export default function HelpPage() {
       ])}
 
       <div style={{ marginTop: "40px", paddingTop: "20px", borderTop: "1px solid rgba(255,255,255,0.1)", textAlign: "center" }}>
-        <a href="/" style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#FF3D00", textDecoration: "none" }}>← アプリに戻る</a>
+        <a href="/" style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#DC2626", textDecoration: "none" }}>← アプリに戻る</a>
       </div>
     </div>
   );

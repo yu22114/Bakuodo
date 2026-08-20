@@ -5,7 +5,7 @@ const MAX_DOTS = 20;
 
 export function ParticipantBar({ count, max }: { count: number; max: number | null }) {
   const pct = max ? Math.min((count / max) * 100, 100) : 50;
-  const color = pct > 80 ? "#FF3D00" : pct > 50 ? "#D97706" : "#16A34A";
+  const color = pct > 80 ? "#DC2626" : pct > 50 ? "#D97706" : "#16A34A";
 
   // 定員が決まっていればその分、決まっていなければ今の参加人数の分だけドットを並べる。
   // 実際の投稿はほぼ「定員無制限」なので、無制限でもドットが機能するようにしている

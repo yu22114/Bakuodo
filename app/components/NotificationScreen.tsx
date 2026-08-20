@@ -107,7 +107,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
           const actorName = actor?.dancer_name ?? "UNKNOWN";
           const cypherTitle = cypher?.title ?? lesson?.title ?? "サイファー";
           return (
-            <div key={n.id} style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: n.read ? "transparent" : "rgba(255,61,0,0.06)", display: "flex", alignItems: "center", gap: "12px" }}>
+            <div key={n.id} style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: n.read ? "transparent" : "rgba(220,38,38,0.06)", display: "flex", alignItems: "center", gap: "12px" }}>
               <button onClick={() => actor?.id && onViewProfile?.(actor.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}>
                 <div style={{ width: "38px", height: "38px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
                   {actor?.avatar_url
@@ -132,7 +132,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
                 {(n.type === "follow_request" || n.type === "join_request") && (
                   <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
                     <button onClick={() => handleApprove(n.id, actor?.id, n.type, cypher?.id, lesson?.id)} disabled={actionLoading === n.id}
-                      style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", background: "#FF3D00", border: "none", borderRadius: "6px", color: "#fff", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", cursor: "pointer", opacity: actionLoading === n.id ? 0.6 : 1 }}>
+                      style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", background: "#DC2626", border: "none", borderRadius: "6px", color: "#fff", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", cursor: "pointer", opacity: actionLoading === n.id ? 0.6 : 1 }}>
                       <Check size={11} /> 承認
                     </button>
                     <button onClick={() => handleReject(n.id, actor?.id, n.type, cypher?.id, lesson?.id)} disabled={actionLoading === n.id}
@@ -142,7 +142,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
                   </div>
                 )}
               </div>
-              {!n.read && n.type !== "follow_request" && n.type !== "join_request" && <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#FF3D00", flexShrink: 0 }} />}
+              {!n.read && n.type !== "follow_request" && n.type !== "join_request" && <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#DC2626", flexShrink: 0 }} />}
             </div>
           );
         })}

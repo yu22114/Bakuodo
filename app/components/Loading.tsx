@@ -10,7 +10,7 @@ export function Loading({ size = 40, label }: { size?: number; label?: string })
       <div style={{
         width: `${size}px`, height: `${size}px`, borderRadius: "50%",
         border: `${Math.max(3, Math.round(size / 12))}px solid rgba(255,255,255,0.12)`,
-        borderTopColor: "#FF3D00",
+        borderTopColor: "#DC2626",
         animation: "bdSpin 0.7s linear infinite",
       }} />
       {label && <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{label}</div>}

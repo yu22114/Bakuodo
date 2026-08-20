@@ -17,7 +17,7 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
   const until = timeUntil(lesson.starts_at);
   const [hover, setHover] = useState(false);
   // イベントもこのカードを使い回す。青(レッスン)と紫(イベント)だけ切り替える
-  const accent = lesson.kind === "event" ? "#7C3AED" : "#2563EB";
+  const accent = lesson.kind === "event" ? "#EAB308" : "#2563EB";
   const color = GENRE_COLORS[lesson.genres[0]] ?? accent;
   const isEnded = until === "終了";
 

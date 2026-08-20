@@ -124,7 +124,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
         {/* アバター写真 */}
         <div style={{ display: "flex", justifyContent: "center" }}>
           <label style={{ position: "relative", cursor: "pointer" }}>
-            <div style={{ width: "84px", height: "84px", borderRadius: "50%", background: "linear-gradient(135deg,#FF3D00,#FF6D00)", border: "3px solid #141414", boxShadow: "0 2px 10px rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+            <div style={{ width: "84px", height: "84px", borderRadius: "50%", background: "linear-gradient(135deg,#DC2626,#F87171)", border: "3px solid #141414", boxShadow: "0 2px 10px rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
               {avatarUrl
                 ? <img src={avatarUrl} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 : <span style={{ fontSize: "32px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#fff" }}>{profile.dancer_name[0]?.toUpperCase() || "?"}</span>
@@ -139,7 +139,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
             <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: "none" }} disabled={avatarUploading} />
           </label>
         </div>
-        {avatarError && <div style={{ padding: "8px 12px", background: "rgba(255,61,0,0.08)", border: "1px solid rgba(255,61,0,0.3)", borderRadius: "6px", color: "#FF3D00", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", textAlign: "center" }}>{avatarError}</div>}
+        {avatarError && <div style={{ padding: "8px 12px", background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: "6px", color: "#DC2626", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", textAlign: "center" }}>{avatarError}</div>}
         <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px" }}>
           {user.user_metadata?.avatar_url && <img src={user.user_metadata.avatar_url} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />}
           <div style={{ flex: 1 }}>
@@ -170,7 +170,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
               const sel = profile.gender === g;
               return (
                 <button key={g} onClick={() => { setProfile(p => ({ ...p, gender: p.gender === g ? "" : g })); setSaved(false); }}
-                  style={{ padding: "8px 12px", border: sel ? "1px solid #FF3D00" : "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", background: sel ? "rgba(255,61,0,0.1)" : "transparent", color: sel ? "#FF3D00" : "rgba(255,255,255,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                  style={{ padding: "8px 12px", border: sel ? "1px solid #DC2626" : "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", background: sel ? "rgba(220,38,38,0.1)" : "transparent", color: sel ? "#DC2626" : "rgba(255,255,255,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
                   {g}
                 </button>
               );
@@ -204,12 +204,12 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
               ONにするとフォローに承認が必要になります
             </div>
           </div>
-          <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: isPrivate ? "#FF3D00" : "rgba(255,255,255,0.16)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}>
+          <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: isPrivate ? "#DC2626" : "rgba(255,255,255,0.16)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}>
             <div style={{ position: "absolute", top: "3px", left: isPrivate ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.4)", transition: "left 0.2s" }} />
           </div>
         </button>
-        {saveError && <div style={{ padding: "10px 12px", background: "rgba(255,61,0,0.08)", border: "1px solid rgba(255,61,0,0.3)", borderRadius: "6px", color: "#FF3D00", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>{saveError}</div>}
-        <button onClick={handleSave} style={{ width: "100%", padding: "13px", border: "none", borderRadius: "6px", background: saved ? "rgba(22,163,74,0.12)" : "#FF3D00", color: saved ? "#16A34A" : "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+        {saveError && <div style={{ padding: "10px 12px", background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: "6px", color: "#DC2626", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>{saveError}</div>}
+        <button onClick={handleSave} style={{ width: "100%", padding: "13px", border: "none", borderRadius: "6px", background: saved ? "rgba(22,163,74,0.12)" : "#DC2626", color: saved ? "#16A34A" : "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
           {saved ? <><Check size={15} />SAVED!</> : <><Star size={15} />プロフィールを保存する</>}
         </button>
       </div>

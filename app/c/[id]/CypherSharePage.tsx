@@ -80,7 +80,7 @@ export function CypherSharePage({ cypherId }: { cypherId: string }) {
         <p style={{ margin: 0, fontSize: "14px", color: "#F0F0F0", lineHeight: 1.7 }}>
           このサイファーは見つかりませんでした。<br />終了して削除されたか、限定公開の可能性があります。
         </p>
-        <a href="/" style={{ padding: "12px 28px", background: "#FF3D00", color: "#fff", borderRadius: "8px", textDecoration: "none", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.12em" }}>
+        <a href="/" style={{ padding: "12px 28px", background: "#DC2626", color: "#fff", borderRadius: "8px", textDecoration: "none", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.12em" }}>
           爆踊をひらく
         </a>
       </div>

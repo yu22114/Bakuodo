@@ -17,9 +17,9 @@ export type TopSection = "cypher" | "pl" | "event" | "spots";
 // タブの並び順・色・ラベル。EVENTはレッスンと同じ仕組みで動く（DBのkind列で見分ける）
 const SECTION_ORDER = ["cypher", "pl", "event", "spots"] as const;
 const SECTION_COLOR: Record<TopSection, string> = {
-  cypher: "#FF3D00",
+  cypher: "#DC2626",
   pl: "#2563EB",
-  event: "#7C3AED",
+  event: "#EAB308",
   spots: "#16A34A",
 };
 // pl だけ「P」と「LESSON」の間に少しだけ隙間を空ける（詰まって読みにくいとのフィードバックのため）
@@ -35,9 +35,9 @@ const SECTION_LABEL: Record<TopSection, string> = {
 // 実際に動かすのは .bd-glow-bg（page.tsx側のkeyframes）で、背景を広めに敷いた上で
 // background-positionをゆっくりループさせている
 const SECTION_BG: Record<TopSection, string> = {
-  cypher: "radial-gradient(circle at center, rgba(255,61,0,0.55), rgba(255,61,0,0.1) 45%, #000000 75%)",
+  cypher: "radial-gradient(circle at center, rgba(220,38,38,0.55), rgba(220,38,38,0.1) 45%, #000000 75%)",
   pl: "radial-gradient(circle at center, rgba(37,99,235,0.55), rgba(37,99,235,0.1) 45%, #000000 75%)",
-  event: "radial-gradient(circle at center, rgba(124,58,237,0.55), rgba(124,58,237,0.1) 45%, #000000 75%)",
+  event: "radial-gradient(circle at center, rgba(234,179,8,0.55), rgba(234,179,8,0.1) 45%, #000000 75%)",
   spots: "radial-gradient(circle at center, rgba(22,163,74,0.55), rgba(22,163,74,0.1) 45%, #000000 75%)",
 };
 
@@ -324,9 +324,9 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "4px" }}>
             {/* 検索ボタン */}
             <button onClick={() => setSearchOpen(true)} style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "6px" }}>
-              <Search size={22} color={activeFilterCount > 0 ? "#FF3D00" : "rgba(255,255,255,0.5)"} />
+              <Search size={22} color={activeFilterCount > 0 ? "#DC2626" : "rgba(255,255,255,0.5)"} />
               {activeFilterCount > 0 && (
-                <span style={{ position: "absolute", top: "2px", right: "2px", background: "#FF3D00", color: "#fff", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", minWidth: "16px", height: "16px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", transform: "translate(4px,-4px)", lineHeight: 1 }}>
+                <span style={{ position: "absolute", top: "2px", right: "2px", background: "#DC2626", color: "#fff", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", minWidth: "16px", height: "16px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", transform: "translate(4px,-4px)", lineHeight: 1 }}>
                   {activeFilterCount}
                 </span>
               )}
@@ -334,7 +334,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             <button onClick={onBell} style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "6px" }}>
               <Bell size={22} color="rgba(255,255,255,0.5)" />
               {unreadCount > 0 && (
-                <span style={{ position: "absolute", top: "2px", right: "2px", background: "#FF3D00", color: "#fff", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", minWidth: "16px", height: "16px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", transform: "translate(4px,-4px)", lineHeight: 1 }}>
+                <span style={{ position: "absolute", top: "2px", right: "2px", background: "#DC2626", color: "#fff", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", minWidth: "16px", height: "16px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", transform: "translate(4px,-4px)", lineHeight: 1 }}>
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
@@ -510,7 +510,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
                   type="date"
                   value={specificDate}
                   onChange={e => setSpecificDate(e.target.value)}
-                  style={{ flex: 1, padding: "10px 12px", background: specificDate ? "rgba(255,61,0,0.1)" : "#1A1A1A", border: specificDate ? "1px solid #FF3D00" : "1px solid rgba(255,255,255,0.12)", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", color: "#F0F0F0", colorScheme: "dark", outline: "none", boxSizing: "border-box" }}
+                  style={{ flex: 1, padding: "10px 12px", background: specificDate ? "rgba(220,38,38,0.1)" : "#1A1A1A", border: specificDate ? "1px solid #DC2626" : "1px solid rgba(255,255,255,0.12)", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", color: "#F0F0F0", colorScheme: "dark", outline: "none", boxSizing: "border-box" }}
                 />
                 {specificDate && (
                   <button onClick={() => setSpecificDate("")}
@@ -522,7 +522,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             </div>
 
             <button onClick={() => setSearchOpen(false)}
-              style={{ width: "100%", padding: "14px", border: "none", borderRadius: "8px", background: "#FF3D00", color: "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer" }}>
+              style={{ width: "100%", padding: "14px", border: "none", borderRadius: "8px", background: "#DC2626", color: "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer" }}>
               {postCount}件 表示する
             </button>
             {activeFilterCount > 0 && (
@@ -552,7 +552,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
               {calendarCells.map((d, i) => {
                 const isToday = d === today.getDate();
                 return (
-                  <div key={i} style={{ aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: isToday ? "#FF3D00" : "transparent", color: d === null ? "transparent" : isToday ? "#fff" : "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: isToday ? 700 : 400 }}>
+                  <div key={i} style={{ aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: isToday ? "#DC2626" : "transparent", color: d === null ? "transparent" : isToday ? "#fff" : "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: isToday ? 700 : 400 }}>
                     {d ?? "-"}
                   </div>
                 );
