@@ -23,8 +23,8 @@ type Spot = {
 
 // スポットの背景写真。public/ に置いた「〇〇.jpg」の〇〇の部分。
 // スポット名にこの文字が含まれていたらその写真を敷く。
-// 一致しないスポット（溝口駅など）は写真なしの白いカードのまま
-const SPOT_PHOTOS = ["安田", "湘南台", "横浜", "中野", "代々木"];
+// 一致しないスポットは写真なしの白いカードのまま
+const SPOT_PHOTOS = ["安田", "湘南台", "横浜", "中野", "代々木", "溝口"];
 
 function formatDistance(m: number): string {
   if (m < 1000) return `${Math.round(m)}m`;
