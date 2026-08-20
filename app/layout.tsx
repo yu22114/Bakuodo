@@ -23,7 +23,8 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Titan+One&display=swap" rel="stylesheet" />
+        {/* 900は日付バッジの太字表示用に追加 */}
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Titan+One&display=swap" rel="stylesheet" />
       </head>
       <body>{children}<ToastHost /></body>
     </html>
