@@ -18,9 +18,9 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
       // bd-glow-card: タッチ端末はホバーできないので、PCのホバー時と同じ色付き影を
       // @media(hover:none) で常時出す（globals.css相当のスタイルはpage.tsxのstyleタグ）
       className="bd-glow-card"
-      style={{ background: "#FFFFFF", border: `1px solid ${cypher.hot && !isEnded ? "rgba(255,61,0,0.25)" : "rgba(0,0,0,0.08)"}`, borderLeft: `4px solid ${isEnded ? "rgba(0,0,0,0.1)" : color}`, borderRadius: "10px", padding: "11px 16px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? `0 6px 12px rgba(0,0,0,0.05), 0 18px 36px ${color}26` : "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(0,0,0,0.06)", opacity: isEnded ? 0.55 : 1, ["--bd-glow" as any]: `${color}26` } as React.CSSProperties}>
+      style={{ background: "#141414", border: `1px solid ${cypher.hot && !isEnded ? "rgba(255,61,0,0.25)" : "rgba(255,255,255,0.1)"}`, borderLeft: `4px solid ${isEnded ? "rgba(255,255,255,0.15)" : color}`, borderRadius: "10px", padding: "11px 16px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? `0 6px 12px rgba(0,0,0,0.3), 0 18px 36px ${color}26` : "0 2px 4px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2)", opacity: isEnded ? 0.55 : 1, ["--bd-glow" as any]: `${color}26` } as React.CSSProperties}>
       {cypher.hot && !isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "#FF3D00", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>🔥 HOT</div>}
-      {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(0,0,0,0.1)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
+      {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.12)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
       {cypher.visibility === "private" && !isEnded && !cypher.hot && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(0,0,0,0.65)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>🔒 限定</div>}
       {/* 背景に敷くジャンル名。色はそのジャンルの色、薄くして文字の邪魔をしない。
           はみ出た分はカードのoverflow:hiddenで切られる */}
@@ -40,10 +40,10 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
         <div style={{ flex: 1, paddingRight: "52px" }}>
           {/* 残り日数はタイトルの真横に。日付そのものは下の時計行に出す */}
           <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap" }}>
-            <h3 style={{ margin: 0, fontSize: "19px", fontWeight: 700, color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{cypher.title}</h3>
-            <span style={{ fontSize: "9px", padding: "1px 6px", background: isEnded ? "rgba(0,0,0,0.06)" : "rgba(255,61,0,0.08)", borderRadius: "3px", color: isEnded ? "rgba(0,0,0,0.4)" : "#FF3D00", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", flexShrink: 0 }}>{daysUntil(cypher.starts_at)}</span>
+            <h3 style={{ margin: 0, fontSize: "19px", fontWeight: 700, color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{cypher.title}</h3>
+            <span style={{ fontSize: "9px", padding: "1px 6px", background: isEnded ? "rgba(255,255,255,0.08)" : "rgba(255,61,0,0.08)", borderRadius: "3px", color: isEnded ? "rgba(255,255,255,0.45)" : "#FF3D00", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", flexShrink: 0 }}>{daysUntil(cypher.starts_at)}</span>
           </div>
-          <div style={{ fontSize: "12px", color: "#111111", marginTop: "3px", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+          <div style={{ fontSize: "12px", color: "#F0F0F0", marginTop: "3px", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
             <span>by {cypher.organizer.dancer_name}</span>
             {cypher.organizer.instagram && (
               <span style={{ color: "#A855F7" }}>@{cypher.organizer.instagram}</span>
@@ -57,26 +57,26 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
               ? <img src={cypher.organizer.avatar_url} alt={cypher.organizer.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               : cypher.organizer.avatar}
           </div>
-          <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: isEnded ? "rgba(0,0,0,0.35)" : "#111111", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", whiteSpace: "nowrap" }}>
             {cypher.participant_count}{cypher.max_members ? `/${cypher.max_members}` : ""}人
           </span>
         </div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <Clock size={11} color="rgba(0,0,0,0.35)" />
-          <span style={{ fontSize: "11px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>{date} {time}{cypher.ends_at ? `〜${formatEndTime(cypher.starts_at, cypher.ends_at)}` : ""}</span>
+          <Clock size={11} color="rgba(255,255,255,0.4)" />
+          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{date} {time}{cypher.ends_at ? `〜${formatEndTime(cypher.starts_at, cypher.ends_at)}` : ""}</span>
         </div>
         {/* カード上では地図リンクにしない。カードのどこを押しても詳細が開くようにして、
             「カードを押したつもりが地図に飛ぶ」のを防ぐ。地図へは詳細モーダルから飛べる */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <MapPin size={11} color="rgba(0,0,0,0.35)" />
-          <span style={{ fontSize: "11px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>{cypher.location}</span>
+          <MapPin size={11} color="rgba(255,255,255,0.4)" />
+          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{cypher.location}</span>
         </div>
       </div>
       {cypher.studio_fee != null && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "5px" }}>
-          <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>
+          <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
             💴 {cypher.participant_count > 0 ? `¥${Math.ceil(cypher.studio_fee / cypher.participant_count).toLocaleString()}/人` : `¥${cypher.studio_fee.toLocaleString()}`}
           </span>
         </div>

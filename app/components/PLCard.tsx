@@ -26,8 +26,8 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       // タッチ端末はホバーできないので、PCのホバー時と同じ色付き影を@media(hover:none)で常時出す
       className="bd-glow-card-blue"
-      style={{ background: "#FFFFFF", border: `1px solid ${hover ? accent + "4D" : "rgba(0,0,0,0.08)"}`, borderRadius: "10px", padding: "11px 16px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? "0 6px 12px rgba(0,0,0,0.05), 0 18px 36px " + accent + "2E" : "0 2px 4px rgba(0,0,0,0.04), 0 8px 20px rgba(0,0,0,0.06)", opacity: isEnded ? 0.55 : 1 }}>
-      {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(0,0,0,0.1)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#111111", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
+      style={{ background: "#141414", border: `1px solid ${hover ? accent + "4D" : "rgba(255,255,255,0.1)"}`, borderRadius: "10px", padding: "11px 16px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? "0 6px 12px rgba(0,0,0,0.3), 0 18px 36px " + accent + "2E" : "0 2px 4px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2)", opacity: isEnded ? 0.55 : 1 }}>
+      {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.12)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
 
       {lesson.genres[0] && (() => {
         // 背景に敷くジャンル名（CypherCardと同じ作り）
@@ -44,10 +44,10 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
         <div style={{ flex: 1, paddingRight: "52px" }}>
           {/* 残り日数はタイトルの真横に（CypherCardと同じ） */}
           <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap" }}>
-            <h3 style={{ margin: 0, fontSize: "19px", fontWeight: 700, color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{lesson.title}</h3>
-            <span style={{ fontSize: "9px", padding: "1px 6px", background: isEnded ? "rgba(0,0,0,0.06)" : accent + "14", borderRadius: "3px", color: isEnded ? "rgba(0,0,0,0.4)" : accent, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", flexShrink: 0 }}>{daysUntil(lesson.starts_at)}</span>
+            <h3 style={{ margin: 0, fontSize: "19px", fontWeight: 700, color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{lesson.title}</h3>
+            <span style={{ fontSize: "9px", padding: "1px 6px", background: isEnded ? "rgba(255,255,255,0.08)" : accent + "14", borderRadius: "3px", color: isEnded ? "rgba(255,255,255,0.45)" : accent, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", flexShrink: 0 }}>{daysUntil(lesson.starts_at)}</span>
           </div>
-          <div style={{ fontSize: "12px", color: "#111111", marginTop: "3px", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+          <div style={{ fontSize: "12px", color: "#F0F0F0", marginTop: "3px", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
             <span>by {lesson.organizer.dancer_name}</span>
             {lesson.organizer.instagram && (
               <span style={{ color: "#A855F7" }}>@{lesson.organizer.instagram}</span>
@@ -61,7 +61,7 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
               ? <img src={lesson.organizer.avatar_url} alt={lesson.organizer.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               : lesson.organizer.avatar}
           </div>
-          <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: isEnded ? "rgba(0,0,0,0.35)" : "#111111", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", whiteSpace: "nowrap" }}>
             {lesson.participant_count}{lesson.max_members ? `/${lesson.max_members}` : ""}人
           </span>
         </div>
@@ -69,13 +69,13 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
 
       <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <Clock size={11} color="rgba(0,0,0,0.35)" />
-          <span style={{ fontSize: "11px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>{date} {time}{lesson.ends_at ? `〜${formatEndTime(lesson.starts_at, lesson.ends_at)}` : ""}</span>
+          <Clock size={11} color="rgba(255,255,255,0.4)" />
+          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{date} {time}{lesson.ends_at ? `〜${formatEndTime(lesson.starts_at, lesson.ends_at)}` : ""}</span>
         </div>
         {/* カード上では地図リンクにしない（CypherCardと同じ理由） */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <MapPin size={11} color="rgba(0,0,0,0.35)" />
-          <span style={{ fontSize: "11px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>{lesson.location}</span>
+          <MapPin size={11} color="rgba(255,255,255,0.4)" />
+          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{lesson.location}</span>
         </div>
       </div>
 
@@ -87,7 +87,7 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
           </span>
         )}
         {lesson.price != null && (
-          <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif" }}>
+          <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
             ¥{lesson.price.toLocaleString()}
           </span>
         )}

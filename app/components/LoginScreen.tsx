@@ -15,10 +15,10 @@ export function LoginScreen() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", background: "#FFFFFF" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", background: "#000000" }}>
       <div style={{ marginBottom: "48px", textAlign: "center" }}>
         <h1 style={{ margin: 0, lineHeight: 0, animation: "bdLogoRollInLg 1.8s cubic-bezier(0.33,1,0.68,1) both" }}><Logo size={132} /></h1>
-        <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.1em" }}>今日、ここで、踊ろう。</p>
+        <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.1em" }}>今日、ここで、踊ろう。</p>
       </div>
       <button
         onClick={handleGoogleLogin}
@@ -32,7 +32,7 @@ export function LoginScreen() {
         </svg>
         {loading ? "ログイン中..." : "Googleでログイン"}
       </button>
-      <p style={{ marginTop: "24px", fontSize: "12px", color: "#111111", fontFamily: "'Noto Sans JP',sans-serif", textAlign: "center", lineHeight: 1.8 }}>
+      <p style={{ marginTop: "24px", fontSize: "12px", color: "rgba(255,255,255,0.6)", fontFamily: "'Noto Sans JP',sans-serif", textAlign: "center", lineHeight: 1.8 }}>
         ログインすることで<a href="/terms" style={{ color: "#FF3D00", textDecoration: "underline" }}>利用規約</a>に<br />同意したものとみなします
       </p>
     </div>

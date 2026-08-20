@@ -200,14 +200,14 @@ export default function BakuOdori() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
-        body,html{background:#FAFAFA;color:#111111;-webkit-font-smoothing:antialiased}
+        body,html{background:#000000;color:#F0F0F0;-webkit-font-smoothing:antialiased}
         ::-webkit-scrollbar{display:none}
         /* 一覧だけはスクロールバーを出す。中身が多いほどつまみが小さくなるので、
            今どのへんを見ているかが分かる。太さと色だけ指定して動きは端末任せ */
         .bd-scroll::-webkit-scrollbar{display:block;width:6px}
         .bd-scroll::-webkit-scrollbar-track{background:transparent}
-        .bd-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.22);border-radius:3px}
-        .bd-scroll{scrollbar-width:thin;scrollbar-color:rgba(0,0,0,0.22) transparent}
+        .bd-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.22);border-radius:3px}
+        .bd-scroll{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.22) transparent}
         textarea{font-family:inherit}
         select{appearance:none;-webkit-appearance:none}
         @keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
@@ -232,7 +232,7 @@ export default function BakuOdori() {
         }
       `}</style>
 
-      <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#FAFAFA" }}>
+      <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#000000" }}>
         {authLoading ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
             <Loading size={64} />
@@ -250,7 +250,7 @@ export default function BakuOdori() {
             {plDetail && <PLDetailModal lesson={plDetail} onClose={() => setPlDetail(null)} joined={plJoined.includes(plDetail.id)} pending={plPending.includes(plDetail.id)} onJoin={handlePLJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} />}
             {confirmId && <ConfirmModal onConfirm={handleConfirmCancel} onCancel={() => setConfirmId(null)} />}
             {editCypherId && (
-              <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#FAFAFA", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>
+              <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>
                 <EditCypherScreen
                   cypherId={editCypherId}
                   user={user}
