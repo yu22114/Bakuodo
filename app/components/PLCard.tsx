@@ -71,17 +71,21 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
           <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", whiteSpace: "nowrap" }}>
             {lesson.participant_count}{lesson.max_members ? `/${lesson.max_members}` : ""}人
           </span>
-          {/* 料金は参加人数表記のすぐ下に出す */}
-          {lesson.price != null && (
-            <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", whiteSpace: "nowrap" }}>
-              ¥{lesson.price.toLocaleString()}
-            </span>
-          )}
-          {/* 対象レベルは料金のすぐ下に出す */}
-          {lesson.kind !== "event" && (
-            <span style={{ fontSize: "9px", padding: "2px 7px", background: accent + "14", borderRadius: "4px", color: accent, fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "3px", whiteSpace: "nowrap" }}>
-              <BookOpen size={9} /> {LEVEL_LABELS[lesson.target_level] ?? "全レベル"}
-            </span>
+          {/* 料金・対象レベルは参加人数表記のすぐ下に横並びで1行にまとめる。
+              縦に積むとCypherCard（人数の下は料金だけ）より丈が伸びてしまうため */}
+          {(lesson.price != null || lesson.kind !== "event") && (
+            <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
+              {lesson.price != null && (
+                <span style={{ fontSize: "9px", padding: "2px 6px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", whiteSpace: "nowrap" }}>
+                  ¥{lesson.price.toLocaleString()}
+                </span>
+              )}
+              {lesson.kind !== "event" && (
+                <span style={{ fontSize: "9px", padding: "2px 6px", background: accent + "14", borderRadius: "4px", color: accent, fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "2px", whiteSpace: "nowrap" }}>
+                  <BookOpen size={8} /> {LEVEL_LABELS[lesson.target_level] ?? "全レベル"}
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>
