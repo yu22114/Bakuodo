@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Clock, MapPin, BookOpen } from "lucide-react";
 import type { PrivateLesson } from "../lib/types";
-import { GENRE_COLORS, genreLabel, formatDate, dateBadgeParts, timeUntil, daysUntil, formatEndTime } from "../lib/constants";
+import { GENRE_COLORS, genreLabel, formatDate, dateBadgeParts, timeUntil, formatEndTime } from "../lib/constants";
 
 const LEVEL_LABELS: Record<string, string> = {
   all: "全レベル",
@@ -41,19 +41,18 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
       })()}
       {/* 中身は背景文字より上に置く */}
       <div style={{ position: "relative", display: "flex", gap: "12px" }}>
-      {/* 開催日時はチケットの半券風に左端へ。上から月・日・曜日の3段（CypherCardと同じ） */}
-      <div style={{ width: "44px", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", borderRadius: "8px", overflow: "hidden", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}>
-        <div style={{ width: "100%", textAlign: "center", padding: "3px 0", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#fff", background: isEnded ? "rgba(255,255,255,0.15)" : accent }}>{month}月</div>
-        <div style={{ fontSize: "21px", fontWeight: 700, fontFamily: "'Noto Sans JP',sans-serif", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", padding: "3px 0", lineHeight: 1 }}>{day}</div>
-        <div style={{ width: "100%", textAlign: "center", padding: "3px 0", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>{weekday}</div>
+      {/* 開催日時はチケットの半券風に左端へ。月・日・曜日を縦に均等3分割し、文字は左寄せにする（CypherCardと同じ） */}
+      <div style={{ width: "44px", flexShrink: 0, display: "flex", flexDirection: "column", borderRadius: "8px", overflow: "hidden", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", padding: "0 6px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#fff", background: isEnded ? "rgba(255,255,255,0.15)" : accent }}>{month}月</div>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", padding: "0 6px", fontSize: "19px", fontWeight: 700, fontFamily: "'Noto Sans JP',sans-serif", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", lineHeight: 1 }}>{day}</div>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", padding: "0 6px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>{weekday}</div>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "5px" }}>
         <div style={{ flex: 1, paddingRight: "52px" }}>
-          {/* 残り日数はタイトルの真横に（CypherCardと同じ） */}
+          {/* 開催日そのものは左の日付バッジに出す（CypherCardと同じ） */}
           <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap" }}>
             <h3 style={{ margin: 0, fontSize: "19px", fontWeight: 700, color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{lesson.title}</h3>
-            <span style={{ fontSize: "9px", padding: "1px 6px", background: isEnded ? "rgba(255,255,255,0.08)" : accent + "14", borderRadius: "3px", color: isEnded ? "rgba(255,255,255,0.45)" : accent, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", flexShrink: 0 }}>{daysUntil(lesson.starts_at)}</span>
           </div>
           <div style={{ fontSize: "12px", color: "#F0F0F0", marginTop: "3px", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
             <span>by {lesson.organizer.dancer_name}</span>
