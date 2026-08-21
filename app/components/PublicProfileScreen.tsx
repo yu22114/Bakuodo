@@ -289,12 +289,13 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
   return (
     <div style={onBack
-      ? { position: "fixed", inset: 0, zIndex: 150, background: "#000000", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }
-      : { paddingBottom: "80px", background: "#000000" }
+      ? { position: "fixed", inset: 0, zIndex: 150, background: "#000000", overflow: "hidden", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }
+      : { height: "100dvh", overflow: "hidden", display: "flex", flexDirection: "column", background: "#000000" }
     }>
       {/* ヘッダー。Instagramと同じ並びにする：
-          上段＝アイコンと数字が横並び、その下に名前、いちばん下に横長のボタン */}
-      <div style={{ padding: "16px 16px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
+          上段＝アイコンと数字が横並び、その下に名前、いちばん下に横長のボタン
+          「参加/主催」より下のカード一覧だけがスクロールするよう、ここは固定（flexShrink:0） */}
+      <div style={{ padding: "16px 16px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", flexShrink: 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
           {onBack ? (
             <button onClick={onBack} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>
@@ -435,20 +436,27 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         )}
       </div>
 
-      <div style={{ padding: "6px 16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+      {/* 参加/主催 切り替えタブ。ここは固定し、下のカード一覧だけがスクロールする */}
+      {!loading && isOwn && (
+        <div style={{ padding: "6px 16px 0", flexShrink: 0 }}>
+          <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "12px", padding: "3px" }}>
+            {(["joined", "hosted"] as const).map(t => (
+              <button key={t} onClick={() => setCypherTab(t)}
+                style={{ flex: 1, padding: "5px 4px", border: "none", borderRadius: "9px", background: cypherTab === t ? "#2A2A2A" : "transparent", boxShadow: cypherTab === t ? "0 1px 4px rgba(255,255,255,0.08)" : "none", color: cypherTab === t ? "#DC2626" : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: cypherTab === t ? "bold" : "normal", transition: "all 0.15s" }}>
+                {t === "joined" ? "参加" : "主催"}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* カード一覧。ここだけ上下スクロールできる */}
+      <div className="bd-scroll" style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any, padding: "6px 16px", display: "flex", flexDirection: "column", gap: "8px" }}>
         {loading ? (
           <Loading />
         ) : (<>
           {/* 開催・参加した記録：自分なら参加/主催の2タブ（過去はグレー）、他人なら主催のみ */}
-          {isOwn ? (<>
-            <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "12px", padding: "3px" }}>
-              {(["joined", "hosted"] as const).map(t => (
-                <button key={t} onClick={() => setCypherTab(t)}
-                  style={{ flex: 1, padding: "5px 4px", border: "none", borderRadius: "9px", background: cypherTab === t ? "#2A2A2A" : "transparent", boxShadow: cypherTab === t ? "0 1px 4px rgba(255,255,255,0.08)" : "none", color: cypherTab === t ? "#DC2626" : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: cypherTab === t ? "bold" : "normal", transition: "all 0.15s" }}>
-                  {t === "joined" ? "参加" : "主催"}
-                </button>
-              ))}
-            </div>
+          {isOwn ? (
             <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", overflow: "hidden" }}>
               {cypherTab === "joined" ? (
                 joinedCyphers.length === 0
@@ -493,7 +501,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                       );})
               )}
             </div>
-          </>) : (
+          ) : (
             hostedCyphers.length === 0 && hostedLessons.length === 0
               ? <div style={{ textAlign: "center", padding: "40px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ主催しているサイファー・レッスンはありません</div>
               : hostedCyphers.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -510,6 +518,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 </div>
           )}
           {(!isOwn || cypherTab === "hosted") && lessonRows}
+          {/* 下の固定ナビに隠れないための余白（自分のプロフィールタブ表示時のみ） */}
+          {!onBack && <div style={{ height: "80px", flexShrink: 0 }} />}
         </>)}
       </div>
 
