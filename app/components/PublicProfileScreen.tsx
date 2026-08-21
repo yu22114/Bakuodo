@@ -280,22 +280,28 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 INSTAGRAM/SPOTIFYなどのラベル文字は出さない */}
             {profileData.instagram && (
               <a href={`https://instagram.com/${profileData.instagram}`} target="_blank" rel="noopener noreferrer"
-                style={{ flex: "0 1 calc(50% - 4px)", minWidth: "130px", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "6px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.16)", textDecoration: "none", background: "transparent" }}>
+                style={{ flex: "0 1 calc(50% - 4px)", minWidth: "130px", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "6px 10px", borderRadius: "8px", border: "1px solid rgba(168,85,247,0.35)", textDecoration: "none", background: "rgba(168,85,247,0.1)" }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="1" y="1" width="22" height="22" rx="6" stroke="rgba(255,255,255,0.55)" strokeWidth="1.8" fill="none"/>
-                  <circle cx="12" cy="12" r="4.2" stroke="rgba(255,255,255,0.55)" strokeWidth="1.8" fill="none"/>
-                  <circle cx="17.2" cy="6.8" r="1.1" fill="rgba(255,255,255,0.55)"/>
+                  <rect x="1" y="1" width="22" height="22" rx="6" stroke="#A855F7" strokeWidth="1.8" fill="none"/>
+                  <circle cx="12" cy="12" r="4.2" stroke="#A855F7" strokeWidth="1.8" fill="none"/>
+                  <circle cx="17.2" cy="6.8" r="1.1" fill="#A855F7"/>
                 </svg>
-                <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>@{profileData.instagram}</span>
+                <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#A855F7", fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>@{profileData.instagram}</span>
               </a>
             )}
-            {profileData.playlist_url && (
-              <a href={profileData.playlist_url} target="_blank" rel="noopener noreferrer"
-                style={{ flex: "0 1 calc(50% - 4px)", minWidth: "130px", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "6px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.16)", textDecoration: "none", background: "transparent" }}>
-                <Music size={14} color="#F0F0F0" />
-                <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>プレイリストを聴く</span>
-              </a>
-            )}
+            {profileData.playlist_url && (() => {
+              // URLからApple Music / Spotifyを見分けて色を変える
+              const color = profileData.playlist_url.includes("spotify.com") ? "#1DB954"
+                : profileData.playlist_url.includes("music.apple.com") ? "#FA243C"
+                : "#F0F0F0";
+              return (
+                <a href={profileData.playlist_url} target="_blank" rel="noopener noreferrer"
+                  style={{ flex: "0 1 calc(50% - 4px)", minWidth: "130px", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "6px 10px", borderRadius: "8px", border: `1px solid ${color}59`, textDecoration: "none", background: `${color}1A` }}>
+                  <Music size={14} color={color} />
+                  <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color, fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>プレイリストを聴く</span>
+                </a>
+              );
+            })()}
           </div>
         )}
 
