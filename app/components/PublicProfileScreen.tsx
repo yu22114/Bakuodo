@@ -332,16 +332,16 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         )}
       </div>
 
-      <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+      <div style={{ padding: "6px 16px", display: "flex", flexDirection: "column", gap: "8px" }}>
         {loading ? (
           <Loading />
         ) : (<>
           {/* 開催・参加した記録：自分なら参加/主催の2タブ（過去はグレー）、他人なら主催のみ */}
           {isOwn ? (<>
-            <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "14px", padding: "4px" }}>
+            <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "12px", padding: "3px" }}>
               {(["joined", "hosted"] as const).map(t => (
                 <button key={t} onClick={() => setCypherTab(t)}
-                  style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: cypherTab === t ? "#2A2A2A" : "transparent", boxShadow: cypherTab === t ? "0 1px 4px rgba(255,255,255,0.08)" : "none", color: cypherTab === t ? "#DC2626" : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: cypherTab === t ? "bold" : "normal", transition: "all 0.15s" }}>
+                  style={{ flex: 1, padding: "5px 4px", border: "none", borderRadius: "9px", background: cypherTab === t ? "#2A2A2A" : "transparent", boxShadow: cypherTab === t ? "0 1px 4px rgba(255,255,255,0.08)" : "none", color: cypherTab === t ? "#DC2626" : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: cypherTab === t ? "bold" : "normal", transition: "all 0.15s" }}>
                   {t === "joined" ? "参加" : "主催"}
                 </button>
               ))}
