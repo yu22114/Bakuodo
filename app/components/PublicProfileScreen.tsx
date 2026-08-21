@@ -272,6 +272,15 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         {/* Instagram・プレイリストは横幅を半分にして、残りにその他項目のバッジを並べる */}
         {profileData && (profileData.instagram || profileData.playlist_url || profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
           <div style={{ marginTop: "12px", display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "flex-start" }}>
+            {/* 他項目のバッジを先に、Instagram・プレイリストは下の行に表示する */}
+            {(profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
+              <div style={{ flexBasis: "100%", display: "flex", flexWrap: "wrap", alignContent: "flex-start", gap: "6px" }}>
+                {profileData.age_group && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.age_group}</span>}
+                {profileData.dance_years != null && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>歴{profileData.dance_years}年</span>}
+                {profileData.gender && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.gender}</span>}
+                {profileData.genres.map(g => <GenreBadge key={g} genre={g} />)}
+              </div>
+            )}
             {/* gap(8px)ぶんを差し引いた50%にして、2つがきっちり横並びになるようにする */}
             {profileData.instagram && (
               <a href={`https://instagram.com/${profileData.instagram}`} target="_blank" rel="noopener noreferrer"
@@ -300,14 +309,6 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 </a>
               );
             })()}
-            {(profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
-              <div style={{ flex: 1, minWidth: "120px", display: "flex", flexWrap: "wrap", alignContent: "flex-start", gap: "6px" }}>
-                {profileData.age_group && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.age_group}</span>}
-                {profileData.dance_years != null && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>歴{profileData.dance_years}年</span>}
-                {profileData.gender && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.gender}</span>}
-                {profileData.genres.map(g => <GenreBadge key={g} genre={g} />)}
-              </div>
-            )}
           </div>
         )}
 
@@ -315,11 +316,11 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         {isOwn ? (
           <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
             <button onClick={() => onEdit?.()}
-              style={{ flex: 1, padding: "10px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
+              style={{ flex: 1, padding: "6px 10px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
               プロフィールを編集
             </button>
             <button onClick={() => setShowQR(true)}
-              style={{ flex: 1, padding: "10px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
+              style={{ flex: 1, padding: "6px 10px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
               プロフィールをシェア
             </button>
           </div>
