@@ -181,7 +181,9 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
   if (submitted) return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "70vh", gap: "16px", background: "#000000" }}>
       <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "rgba(22,163,74,0.15)", border: "2px solid #16A34A", display: "flex", alignItems: "center", justifyContent: "center" }}><Check size={32} color="#16A34A" /></div>
-      <p style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "28px", color: "#16A34A", margin: 0 }}>POSTED!</p>
+      <p style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "28px", color: "#16A34A", margin: 0 }}>
+        POSTED {tab === "cypher" ? "CYPHER" : tab === "pl" ? "P LESSON" : "EVENT"}!
+      </p>
     </div>
   );
 
