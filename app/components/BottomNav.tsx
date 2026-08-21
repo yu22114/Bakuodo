@@ -34,7 +34,7 @@ export function BottomNav({ current, onNav }: { current: string; onNav: (s: stri
       <div style={{ width: "100%", maxWidth: "448px", background: "rgba(20,20,20,0)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "26px", display: "flex", boxShadow: "0 10px 30px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.12)", pointerEvents: "auto" }}>
         {items.map(item => {
           const active = current === item.id;
-          const accent = item.id === "profile" ? "#DC2626" : "#fff";
+          const accent = "#fff";
           return (
             <button key={item.id} onClick={() => onNav(item.id)} aria-label={item.label} style={{ flex: 1, padding: "9px 0", border: "none", background: "transparent", color: active ? accent : "rgba(255,255,255,0.5)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               {item.id === "post" ? (
