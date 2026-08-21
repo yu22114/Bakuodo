@@ -99,7 +99,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
               <MapPin size={14} color="rgba(255,255,255,0.45)" />
               <span style={{ flex: 1 }}>
                 {venue || (station && `${station}駅`)}
-                {venue && station && <span style={{ color: "rgba(255,255,255,0.45)" }}> {station}駅</span>}
+                {venue && station && ` ${station}駅`}
               </span>
               <span style={{ fontSize: "11px", color: accent, fontWeight: 700, flexShrink: 0 }}>地図を開く →</span>
             </a>
