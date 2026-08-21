@@ -33,10 +33,10 @@ export function BottomNav({ current, onNav }: { current: string; onNav: (s: stri
       {/* 透明度は最大（背景色なし）。ぼかしだけでガラス感を出す */}
       <div style={{ width: "100%", maxWidth: "448px", background: "rgba(20,20,20,0)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "26px", display: "flex", boxShadow: "0 10px 30px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.12)", pointerEvents: "auto" }}>
         {items.map(item => (
-          <button key={item.id} onClick={() => onNav(item.id)} aria-label={item.label} style={{ flex: 1, padding: "14px 0", border: "none", background: "transparent", color: current === item.id ? (item.id === "profile" ? "#DC2626" : "#fff") : "rgba(255,255,255,0.5)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <button key={item.id} onClick={() => onNav(item.id)} aria-label={item.label} style={{ flex: 1, padding: "9px 0", border: "none", background: "transparent", color: current === item.id ? (item.id === "profile" ? "#DC2626" : "#fff") : "rgba(255,255,255,0.5)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {item.id === "post" ? (
-              <div style={{ width: "42px", height: "42px", borderRadius: "14px", background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.35)" }}>
-                <Plus size={20} color="#171717" />
+              <div style={{ width: "36px", height: "36px", borderRadius: "12px", background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.35)" }}>
+                <Plus size={18} color="#171717" />
               </div>
             ) : item.icon}
           </button>
