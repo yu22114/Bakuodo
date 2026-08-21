@@ -241,7 +241,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             }
           </div>
           <div style={{ flex: 1 }}>
-            <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "15px", color: "#F0F0F0" }}>{name}</h2>
+            <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "12px", color: "#F0F0F0" }}>{name}</h2>
             {/* space-betweenにして「開催」を左端＝名前の真下に揃える */}
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
               {([
