@@ -95,6 +95,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [followSheet, setFollowSheet] = useState<{ type: "followers" | "following"; users: { id: string; dancer_name: string; avatar_url: string | null }[] } | null>(null);
   const [followSheetLoading, setFollowSheetLoading] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [showTeam, setShowTeam] = useState(false);
   const [qrSaving, setQrSaving] = useState(false);
   const [qrComposite, setQrComposite] = useState<string | null>(null);
 
@@ -400,13 +401,19 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           上段＝アイコンと数字が横並び、その下に名前、いちばん下に横長のボタン
           「参加/主催」より下のカード一覧だけがスクロールするよう、ここは固定（flexShrink:0） */}
       <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", flexShrink: 0 }}>
-        <div style={{ display: "flex", justifyContent: onBack ? "space-between" : "flex-end", alignItems: "center", marginBottom: "4px" }}>
-          {onBack && (
-            <button onClick={onBack} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: "4px" }}>
+          {onBack ? (
+            <button onClick={onBack} style={{ justifySelf: "start", background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>
               <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
             </button>
+          ) : <div />}
+          {/* チームを表示するボタン。チーム未設定なら出さない */}
+          {profileData?.team && (
+            <button onClick={() => setShowTeam(true)} style={{ justifySelf: "center", background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", cursor: "pointer", padding: "6px 14px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold" }}>
+              Rep
+            </button>
           )}
-          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <div style={{ justifySelf: "end", display: "flex", gap: "8px", alignItems: "center" }}>
             {isOwn && (
               <div style={{ position: "relative" }}>
                 <button onClick={() => setMenuOpen(m => !m)}
@@ -780,6 +787,19 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           </div>
         );
       })()}
+
+      {/* 「Rep」ボタンで開くチーム表示 */}
+      {showTeam && profileData?.team && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setShowTeam(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>REP</div>
+              <button onClick={() => setShowTeam(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
+            </div>
+            <div style={{ fontSize: "22px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{profileData.team}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
