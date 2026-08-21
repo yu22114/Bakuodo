@@ -3,12 +3,14 @@ import { useState, useEffect } from "react";
 import { Bell, ChevronLeft, Check, X } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { showToast } from "./Toast";
+import { useSwipeBack } from "../lib/useSwipeBack";
 
 export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
   currentUserId: string;
   onBack: () => void;
   onViewProfile?: (id: string) => void;
 }) {
+  const swipeBack = useSwipeBack(onBack);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -82,7 +84,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>
+    <div {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>
       <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "center", gap: "16px" }}>
         <button onClick={onBack} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px", flexShrink: 0 }}>
           <ChevronLeft size={18} strokeWidth={2.5} /> 戻る

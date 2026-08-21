@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabase";
 import type { ProfileState } from "../lib/types";
 import { GENRES, GENRE_COLORS } from "../lib/constants";
 import { Loading } from "./Loading";
+import { useSwipeBack } from "../lib/useSwipeBack";
 
 export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, onBack }: {
   user: SupabaseUser;
@@ -13,6 +14,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
   onAvatarChange?: (url: string) => void;
   onBack?: () => void;
 }) {
+  const swipeBack = useSwipeBack(onBack);
   const [profile, setProfile] = useState<ProfileState>({ dancer_name: "", genres: [], instagram: "", dance_years: "", age_group: "", gender: "", bio: "", playlist_url: "", team: "" });
   const [isPrivate, setIsPrivate] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -116,7 +118,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
   );
 
   return (
-    <div style={{ paddingBottom: "80px", background: "#000000" }}>
+    <div {...swipeBack} style={{ paddingBottom: "80px", background: "#000000" }}>
       <div style={{ padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
         {onBack && (
           <button onClick={onBack} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", marginBottom: "14px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>

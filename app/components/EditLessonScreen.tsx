@@ -7,6 +7,7 @@ import type { GenreKey } from "../lib/types";
 import { GENRES, GENRE_COLORS, genreLabel, START_TIME_OPTIONS, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr, toggleGenre as toggleGenreList } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
 import { Loading } from "./Loading";
+import { useSwipeBack } from "../lib/useSwipeBack";
 
 // ジャンルは横スクロールのドラム式で選ぶ（投稿画面と同じ見た目）
 function GenreStrip({ value, onChange }: { value: string; onChange: (g: (typeof GENRES)[number]) => void }) {
@@ -38,6 +39,7 @@ export function EditLessonScreen({ lessonId, user, onBack, onSaved }: {
   onBack: () => void;
   onSaved: () => void;
 }) {
+  const swipeBack = useSwipeBack(onBack);
   const [form, setForm] = useState(EMPTY_FORM);
   // kindは既存データから読み取るだけで、編集画面側で変更はさせない（レッスン⇄イベントの種別変更は想定外）
   const [kind, setKind] = useState<"lesson" | "event">("lesson");
@@ -116,7 +118,7 @@ export function EditLessonScreen({ lessonId, user, onBack, onSaved }: {
   );
 
   return (
-    <div style={{ paddingBottom: "80px", background: "#000000" }}>
+    <div {...swipeBack} style={{ paddingBottom: "80px", background: "#000000" }}>
       <div style={{ padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
         <button onClick={onBack} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", marginBottom: "14px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>
           <ChevronLeft size={18} strokeWidth={2.5} /> 戻る

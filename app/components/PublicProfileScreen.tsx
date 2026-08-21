@@ -52,10 +52,15 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     setCypherTab(next);
   };
   const slideCypherTab = (dir: 1 | -1) => {
-    if (!isOwn) return; // タブがあるのは自分のプロフィールだけ
+    // タブがない（他人のプロフィール、またはタブの一番左）で右スワイプしたら
+    // 一つ前の画面に戻る（「戻る」ボタンがある画面共通の仕様）
+    if (!isOwn) { if (dir === -1) onBack?.(); return; }
     const curIdx = CYPHER_TAB_ORDER.indexOf(cypherTab);
     const nextIdx = curIdx + dir;
-    if (nextIdx < 0 || nextIdx >= CYPHER_TAB_ORDER.length) return;
+    if (nextIdx < 0 || nextIdx >= CYPHER_TAB_ORDER.length) {
+      if (dir === -1) onBack?.();
+      return;
+    }
     goToCypherTab(CYPHER_TAB_ORDER[nextIdx]);
   };
   const handleTabTouchStart = (e: React.TouchEvent) => {
