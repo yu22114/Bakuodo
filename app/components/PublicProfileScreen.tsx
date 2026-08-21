@@ -20,12 +20,6 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 }) {
   const isOwn = profileId === currentUserId;
   type ProfileData = { dancer_name: string; genres: GenreKey[]; instagram: string | null; dance_years: number | null; age_group: string | null; gender: string | null; bio: string | null; playlist_url: string | null; avatar_url: string | null; is_private: boolean };
-  // URLからApple Music / Spotifyを見分けて、ラベルと色だけ変える
-  const playlistMeta = (url: string) => {
-    if (url.includes("spotify.com")) return { label: "SPOTIFY", color: "#1DB954" };
-    if (url.includes("music.apple.com")) return { label: "APPLE MUSIC", color: "#FA243C" };
-    return { label: "PLAYLIST", color: "#F0F0F0" };
-  };
   type HostedCypher = { id: string; title: string; starts_at: string; location: string; participant_count: number };
   type JoinedCypher = { id: string; title: string; starts_at: string; location: string; organizer_name: string };
   type HostedLesson = { id: string; title: string; starts_at: string; location: string; kind: "lesson" | "event" };
@@ -282,33 +276,26 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
               </div>
             )}
             {/* gap(8px)ぶんを差し引いた50%にして、2つがきっちり横並びになるようにする */}
+            {/* 「プロフィールを編集」ボタンと同じ枠サイズ（padding/borderRadius）に揃え、
+                INSTAGRAM/SPOTIFYなどのラベル文字は出さない */}
             {profileData.instagram && (
               <a href={`https://instagram.com/${profileData.instagram}`} target="_blank" rel="noopener noreferrer"
-                style={{ flex: "0 1 calc(50% - 4px)", minWidth: "130px", boxSizing: "border-box", display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.1)", textDecoration: "none", background: "linear-gradient(90deg, rgba(168,85,247,0.1), transparent)" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                style={{ flex: "0 1 calc(50% - 4px)", minWidth: "130px", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "6px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.16)", textDecoration: "none", background: "transparent" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <rect x="1" y="1" width="22" height="22" rx="6" stroke="rgba(255,255,255,0.55)" strokeWidth="1.8" fill="none"/>
                   <circle cx="12" cy="12" r="4.2" stroke="rgba(255,255,255,0.55)" strokeWidth="1.8" fill="none"/>
                   <circle cx="17.2" cy="6.8" r="1.1" fill="rgba(255,255,255,0.55)"/>
                 </svg>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: "8px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.12em", marginBottom: "1px" }}>INSTAGRAM</div>
-                  <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#A855F7", fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>@{profileData.instagram}</div>
-                </div>
+                <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>@{profileData.instagram}</span>
               </a>
             )}
-            {profileData.playlist_url && (() => {
-              const { label, color } = playlistMeta(profileData.playlist_url);
-              return (
-                <a href={profileData.playlist_url} target="_blank" rel="noopener noreferrer"
-                  style={{ flex: "0 1 calc(50% - 4px)", minWidth: "130px", boxSizing: "border-box", display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.1)", textDecoration: "none", background: `linear-gradient(90deg, ${color}1A, transparent)` }}>
-                  <Music size={16} color={color} />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: "8px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.12em", marginBottom: "1px" }}>{label}</div>
-                    <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color, fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>プレイリストを聴く</div>
-                  </div>
-                </a>
-              );
-            })()}
+            {profileData.playlist_url && (
+              <a href={profileData.playlist_url} target="_blank" rel="noopener noreferrer"
+                style={{ flex: "0 1 calc(50% - 4px)", minWidth: "130px", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "6px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.16)", textDecoration: "none", background: "transparent" }}>
+                <Music size={14} color="#F0F0F0" />
+                <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>プレイリストを聴く</span>
+              </a>
+            )}
           </div>
         )}
 
