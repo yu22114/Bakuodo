@@ -184,11 +184,10 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
     </div>
   );
 
-  // この画面はTopScreenと違って中身ごとページがスクロールするので、グラデーションの位置が
-  // コンテンツの高さに引っ張られないようbackgroundAttachment:fixedでビューポート基準に固定する
+  // ホーム画面（TopScreen）と同じく、ヘッダー＋タブは固定し、入力項目だけがスクロールする作りにする
   return (
-    <div className="bd-glow-bg" style={{ paddingBottom: "80px", background: TAB_BG[tab], backgroundAttachment: "fixed", transition: "background 0.2s" }}>
-      <div style={{ padding: "24px 16px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
+    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ flexShrink: 0, padding: "24px 16px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
         <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ NEW SESSION</div>
         <h2 style={{ margin: "0 0 16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>投稿する</h2>
         {/* タブはホーム画面と同じ、丸い枠の中で選択中だけ浮くセグメント風 */}
@@ -201,7 +200,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
           ))}
         </div>
       </div>
-      <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div className="bd-scroll bd-glow-bg" style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any, background: TAB_BG[tab], transition: "background 0.2s", padding: "20px 16px", display: "flex", flexDirection: "column", gap: "16px" }}>
         {error && <div style={{ padding: "10px 12px", background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: "6px", color: "#DC2626", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>{error}</div>}
 
         {/* 勝手に前回の入力が入っていると驚くので、復元したことを明示して捨てられるようにする */}
@@ -314,6 +313,8 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
             {loading ? "投稿中..." : `${plNoun}を投稿する`}
           </button>
         </>)}
+        {/* 浮き島の下部ナビに隠れないための余白（TopScreenと同じ） */}
+        <div style={{ height: "80px" }} />
       </div>
     </div>
   );
