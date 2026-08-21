@@ -399,15 +399,12 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       {/* ヘッダー。Instagramと同じ並びにする：
           上段＝アイコンと数字が横並び、その下に名前、いちばん下に横長のボタン
           「参加/主催」より下のカード一覧だけがスクロールするよう、ここは固定（flexShrink:0） */}
-      <div style={{ padding: "16px 16px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", flexShrink: 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-          {onBack ? (
+      <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", flexShrink: 0 }}>
+        <div style={{ display: "flex", justifyContent: onBack ? "space-between" : "flex-end", alignItems: "center", marginBottom: "4px" }}>
+          {onBack && (
             <button onClick={onBack} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>
               <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
             </button>
-          ) : (
-            // メニューアイコンを右端に置くための空要素（space-betweenのバランス用）
-            <div />
           )}
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             {isOwn && (
