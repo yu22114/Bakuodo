@@ -96,8 +96,8 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <MapPin size={11} color="rgba(255,255,255,0.4)" />
           <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
-            {venue || station}
-            {venue && station && <span style={{ color: "rgba(255,255,255,0.4)" }}> {station}</span>}
+            {venue || (station && `${station}駅`)}
+            {venue && station && <span style={{ color: "rgba(255,255,255,0.4)" }}> {station}駅</span>}
           </span>
         </div>
       </div>
