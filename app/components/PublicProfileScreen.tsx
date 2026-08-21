@@ -409,7 +409,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           ) : <div />}
           {/* チームを表示するボタン。チーム未設定なら出さない */}
           {profileData?.team && (
-            <button onClick={() => setShowTeam(true)} style={{ justifySelf: "center", background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", cursor: "pointer", padding: "6px 14px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold" }}>
+            <button onClick={() => setShowTeam(true)} style={{ justifySelf: "center", background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", cursor: "pointer", padding: "6px 14px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "15px", fontWeight: "bold" }}>
               Rep
             </button>
           )}
