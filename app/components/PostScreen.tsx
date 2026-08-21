@@ -112,6 +112,8 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
   const plAccent = isEvent ? "#EAB308" : "#2563EB";
   // EVENTの黄色は白文字だと読みにくいので、plAccentを背景に敷く箇所だけ文字色を切り替える
   const onPlAccent = isEvent ? "#171717" : "#fff";
+  // 投稿完了演出の色。タブごとの色（CYPHER=赤・P LESSON=青・EVENT=黄）に合わせる
+  const postedAccent = tab === "cypher" ? "#DC2626" : plAccent;
   const plNoun = isEvent ? "イベント" : "レッスン";
 
   const handleSubmit = async () => {
@@ -180,8 +182,8 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
   const lbl: React.CSSProperties = { display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.15em", color: "#F0F0F0", marginBottom: "6px", textTransform: "uppercase" };
   if (submitted) return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "70vh", gap: "16px", background: "#000000" }}>
-      <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "rgba(22,163,74,0.15)", border: "2px solid #16A34A", display: "flex", alignItems: "center", justifyContent: "center" }}><Check size={32} color="#16A34A" /></div>
-      <p style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "28px", color: "#16A34A", margin: 0 }}>
+      <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: postedAccent + "26", border: `2px solid ${postedAccent}`, display: "flex", alignItems: "center", justifyContent: "center" }}><Check size={32} color={postedAccent} /></div>
+      <p style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "28px", color: postedAccent, margin: 0 }}>
         POSTED {tab === "cypher" ? "CYPHER" : tab === "pl" ? "P LESSON" : "EVENT"}!
       </p>
     </div>
