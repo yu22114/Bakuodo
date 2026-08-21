@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Clock, MapPin, BookOpen } from "lucide-react";
 import type { PrivateLesson } from "../lib/types";
-import { GENRE_COLORS, genreLabel, formatDate, dateBadgeParts, timeUntil, formatEndTime } from "../lib/constants";
+import { GENRE_COLORS, genreLabel, formatDate, dateBadgeParts, timeUntil, formatEndTime, splitLocation } from "../lib/constants";
 
 const LEVEL_LABELS: Record<string, string> = {
   all: "全レベル",
@@ -14,6 +14,7 @@ const LEVEL_LABELS: Record<string, string> = {
 export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; onClick: () => void; index?: number }) {
   const { time } = formatDate(lesson.starts_at);
   const { month, day, weekday } = dateBadgeParts(lesson.starts_at);
+  const { station, venue } = splitLocation(lesson.location);
   const until = timeUntil(lesson.starts_at);
   const [hover, setHover] = useState(false);
   // イベントもこのカードを使い回す。青(レッスン)と紫(イベント)だけ切り替える
@@ -94,7 +95,10 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
         {/* カード上では地図リンクにしない（CypherCardと同じ理由） */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <MapPin size={11} color="rgba(255,255,255,0.4)" />
-          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{lesson.location}</span>
+          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
+            {venue || station}
+            {venue && station && <span style={{ color: "rgba(255,255,255,0.4)" }}> {station}</span>}
+          </span>
         </div>
       </div>
       </div>

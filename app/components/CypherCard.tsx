@@ -2,11 +2,12 @@
 import { useState } from "react";
 import { Clock, MapPin } from "lucide-react";
 import type { Cypher } from "../lib/types";
-import { GENRE_COLORS, genreLabel, formatDate, dateBadgeParts, timeUntil, formatEndTime } from "../lib/constants";
+import { GENRE_COLORS, genreLabel, formatDate, dateBadgeParts, timeUntil, formatEndTime, splitLocation } from "../lib/constants";
 
 export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onClick: () => void; index?: number }) {
   const { time } = formatDate(cypher.starts_at);
   const { month, day, weekday } = dateBadgeParts(cypher.starts_at);
+  const { station, venue } = splitLocation(cypher.location);
   const until = timeUntil(cypher.starts_at);
   const [hover, setHover] = useState(false);
   const color = GENRE_COLORS[cypher.genres[0]] ?? "#DC2626";
@@ -88,7 +89,10 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
             「カードを押したつもりが地図に飛ぶ」のを防ぐ。地図へは詳細モーダルから飛べる */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <MapPin size={11} color="rgba(255,255,255,0.4)" />
-          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{cypher.location}</span>
+          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
+            {venue || station}
+            {venue && station && <span style={{ color: "rgba(255,255,255,0.4)" }}> {station}</span>}
+          </span>
         </div>
       </div>
       </div>

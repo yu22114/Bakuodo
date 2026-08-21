@@ -93,6 +93,13 @@ export function dateBadgeParts(iso: string) {
   return { month: d.getMonth() + 1, day: d.getDate(), weekday: weekdays[d.getDay()] };
 }
 
+// locationは投稿時に「駅名 会場名」の形（半角スペース区切り）で保存されている。
+// カード最下部では会場を先に、駅名をその右に出したいので分割する
+export function splitLocation(location: string): { station: string; venue: string } {
+  const [station, ...rest] = location.split(" ");
+  return { station: station ?? "", venue: rest.join(" ") };
+}
+
 // 開始時間の選択肢（00:00〜23:30。表示はフォーム側で初期値9:00から始める）
 export const START_TIME_OPTIONS = TIME_OPTIONS;
 
