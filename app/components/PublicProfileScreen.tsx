@@ -260,30 +260,31 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           <p style={{ margin: "6px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.7)", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.6, whiteSpace: "pre-line" }}>{profileData.bio}</p>
         )}
 
-        {/* Instagramだけは枠付きのリンクカードのまま。名前のすぐ下に表示する */}
-        {profileData?.instagram && (
-          <a href={`https://instagram.com/${profileData.instagram}`} target="_blank" rel="noopener noreferrer"
-            style={{ marginTop: "12px", display: "flex", alignItems: "center", gap: "10px", padding: "14px 16px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.1)", textDecoration: "none", background: "linear-gradient(90deg, rgba(168,85,247,0.1), transparent)" }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="1" y="1" width="22" height="22" rx="6" stroke="rgba(255,255,255,0.55)" strokeWidth="1.8" fill="none"/>
-              <circle cx="12" cy="12" r="4.2" stroke="rgba(255,255,255,0.55)" strokeWidth="1.8" fill="none"/>
-              <circle cx="17.2" cy="6.8" r="1.1" fill="rgba(255,255,255,0.55)"/>
-            </svg>
-            <div>
-              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.12em", marginBottom: "2px" }}>INSTAGRAM</div>
-              <div style={{ fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", color: "#A855F7", fontWeight: "bold" }}>@{profileData.instagram}</div>
-            </div>
-            <span style={{ marginLeft: "auto", fontSize: "14px", color: "#A855F7" }}>↗</span>
-          </a>
-        )}
-
-        {/* 年代・ダンス歴・性別・得意ジャンルは枠なしで、バッジが連なる見た目にする */}
-        {profileData && (profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
-          <div style={{ marginTop: "10px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            {profileData.age_group && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.age_group}</span>}
-            {profileData.dance_years != null && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>歴{profileData.dance_years}年</span>}
-            {profileData.gender && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.gender}</span>}
-            {profileData.genres.map(g => <GenreBadge key={g} genre={g} />)}
+        {/* Instagramは横幅を半分にして、残りにその他項目のバッジを並べる */}
+        {profileData && (profileData.instagram || profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
+          <div style={{ marginTop: "12px", display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "flex-start" }}>
+            {profileData.instagram && (
+              <a href={`https://instagram.com/${profileData.instagram}`} target="_blank" rel="noopener noreferrer"
+                style={{ flex: "0 1 50%", minWidth: "150px", boxSizing: "border-box", display: "flex", alignItems: "center", gap: "10px", padding: "14px 16px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.1)", textDecoration: "none", background: "linear-gradient(90deg, rgba(168,85,247,0.1), transparent)" }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="1" y="1" width="22" height="22" rx="6" stroke="rgba(255,255,255,0.55)" strokeWidth="1.8" fill="none"/>
+                  <circle cx="12" cy="12" r="4.2" stroke="rgba(255,255,255,0.55)" strokeWidth="1.8" fill="none"/>
+                  <circle cx="17.2" cy="6.8" r="1.1" fill="rgba(255,255,255,0.55)"/>
+                </svg>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.12em", marginBottom: "2px" }}>INSTAGRAM</div>
+                  <div style={{ fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", color: "#A855F7", fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>@{profileData.instagram}</div>
+                </div>
+              </a>
+            )}
+            {(profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
+              <div style={{ flex: 1, minWidth: "120px", display: "flex", flexWrap: "wrap", alignContent: "flex-start", gap: "6px" }}>
+                {profileData.age_group && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.age_group}</span>}
+                {profileData.dance_years != null && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>歴{profileData.dance_years}年</span>}
+                {profileData.gender && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.gender}</span>}
+                {profileData.genres.map(g => <GenreBadge key={g} genre={g} />)}
+              </div>
+            )}
           </div>
         )}
 
