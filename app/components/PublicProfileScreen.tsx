@@ -232,8 +232,10 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           </div>
         </div>
 
+        <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0" }}>{name}</h2>
+
         {/* アイコンと数字を横並び。数字は押すと中身が見られる */}
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "10px" }}>
           <div style={{ width: "82px", height: "82px", borderRadius: "50%", background: "linear-gradient(135deg,#DC2626,#F87171)", border: "3px solid #141414", boxShadow: "0 2px 10px rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
             {profileData?.avatar_url
               ? <img src={profileData.avatar_url} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -255,9 +257,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           </div>
         </div>
 
-        <h2 style={{ margin: "12px 0 0", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0" }}>{name}</h2>
         {profileData?.bio && (
-          <p style={{ margin: "6px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.7)", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.6, whiteSpace: "pre-line" }}>{profileData.bio}</p>
+          <p style={{ margin: "12px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.7)", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.6, whiteSpace: "pre-line" }}>{profileData.bio}</p>
         )}
 
         {/* Instagramは横幅を半分にして、残りにその他項目のバッジを並べる */}
