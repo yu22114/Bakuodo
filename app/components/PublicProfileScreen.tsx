@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText, MessageCircle, Music, Download } from "lucide-react";
+import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText, MessageCircle, Music, Download, UserPlus } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import type { GenreKey } from "../lib/types";
 import { formatDate, timeUntil } from "../lib/constants";
@@ -96,6 +96,11 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [followSheetLoading, setFollowSheetLoading] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [showTeam, setShowTeam] = useState(false);
+  // チームメイト（Repボタンで表示）。追加候補はフォロー中のアカウントから選ぶ
+  const [teammates, setTeammates] = useState<{ id: string; dancer_name: string; avatar_url: string | null }[]>([]);
+  const [teammatesLoading, setTeammatesLoading] = useState(false);
+  const [pickTeammateOpen, setPickTeammateOpen] = useState(false);
+  const [followingCandidates, setFollowingCandidates] = useState<{ id: string; dancer_name: string; avatar_url: string | null }[] | null>(null);
   const [qrSaving, setQrSaving] = useState(false);
   const [qrComposite, setQrComposite] = useState<string | null>(null);
 
@@ -300,6 +305,34 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     setFollowSheetLoading(false);
   };
 
+  // Repボタンで開くチームメイト一覧
+  const fetchTeammates = async () => {
+    setTeammatesLoading(true);
+    const { data } = await supabase.from("team_members").select("teammate_id, profiles:teammate_id(dancer_name, avatar_url)").eq("profile_id", profileId);
+    setTeammates((data ?? []).map((r: any) => ({ id: r.teammate_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN", avatar_url: r.profiles?.avatar_url ?? null })));
+    setTeammatesLoading(false);
+  };
+
+  // チームメイトの追加候補（フォロー中のアカウント）。開いた時に一度だけ取得する
+  const openTeammatePicker = async () => {
+    setPickTeammateOpen(true);
+    if (followingCandidates !== null) return;
+    const { data } = await supabase.from("follows").select("following_id, profiles:following_id(dancer_name, avatar_url)").eq("follower_id", currentUserId);
+    setFollowingCandidates((data ?? []).map((r: any) => ({ id: r.following_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN", avatar_url: r.profiles?.avatar_url ?? null })));
+  };
+
+  const addTeammate = async (mate: { id: string; dancer_name: string; avatar_url: string | null }) => {
+    const { error } = await supabase.from("team_members").insert({ profile_id: currentUserId, teammate_id: mate.id });
+    if (error) { showToast("追加に失敗しました"); return; }
+    setTeammates(t => [...t, mate]);
+  };
+
+  const removeTeammate = async (mateId: string) => {
+    const { error } = await supabase.from("team_members").delete().eq("profile_id", currentUserId).eq("teammate_id", mateId);
+    if (error) { showToast("削除に失敗しました"); return; }
+    setTeammates(t => t.filter(m => m.id !== mateId));
+  };
+
   const handleOpenParticipants = async (cypher: HostedCypher) => {
     const { data } = await supabase.from("participations").select("profile_id, profiles:profile_id(dancer_name, avatar_url)").eq("cypher_id", cypher.id);
     setParticipantSheet({ title: cypher.title, participants: (data ?? []).map((row: any) => ({ profile_id: row.profile_id, dancer_name: row.profiles?.dancer_name ?? "UNKNOWN", avatar_url: row.profiles?.avatar_url ?? null })) });
@@ -409,7 +442,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           ) : <div />}
           {/* チームを表示するボタン。チーム未設定なら出さない */}
           {profileData?.team && (
-            <button onClick={() => setShowTeam(true)} style={{ justifySelf: "center", background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", cursor: "pointer", padding: "6px 14px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "15px", fontWeight: "bold" }}>
+            <button onClick={() => { setShowTeam(true); fetchTeammates(); }} style={{ justifySelf: "center", background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", cursor: "pointer", padding: "6px 14px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "15px", fontWeight: "bold" }}>
               Rep
             </button>
           )}
@@ -788,18 +821,73 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         );
       })()}
 
-      {/* 「Rep」ボタンで開くチーム表示 */}
-      {showTeam && profileData?.team && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setShowTeam(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>REP</div>
-              <button onClick={() => setShowTeam(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
-            </div>
-            <div style={{ fontSize: "22px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{profileData.team}</div>
+      {/* 「Rep」ボタンで開くチーム表示。チームメイトの追加はフォロー中から選ぶ */}
+      {showTeam && profileData?.team && (() => {
+        const closeTeam = () => { setShowTeam(false); setPickTeammateOpen(false); };
+        const teammateAvatar = (m: { avatar_url: string | null; dancer_name: string }) => (
+          <div style={{ width: "34px", height: "34px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
+            {m.avatar_url ? <img src={m.avatar_url} alt={m.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : m.dancer_name[0]?.toUpperCase()}
           </div>
-        </div>
-      )}
+        );
+        return (
+          <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={closeTeam}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "320px", maxHeight: "70vh", overflowY: "auto", textAlign: "center" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>{pickTeammateOpen ? "フォロー中から選ぶ" : "REP"}</div>
+                <button onClick={closeTeam} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
+              </div>
+
+              {pickTeammateOpen ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {followingCandidates === null ? (
+                    <Loading />
+                  ) : (() => {
+                    const candidates = followingCandidates.filter(f => !teammates.some(t => t.id === f.id));
+                    return candidates.length === 0
+                      ? <div style={{ textAlign: "center", padding: "24px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>追加できるアカウントがありません</div>
+                      : candidates.map(f => (
+                          <div key={f.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "6px 4px" }}>
+                            {teammateAvatar(f)}
+                            <div style={{ flex: 1, fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", textAlign: "left" }}>{f.dancer_name}</div>
+                            <button onClick={() => addTeammate(f)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", cursor: "pointer", padding: "6px", color: "#F0F0F0", display: "flex", alignItems: "center", justifyContent: "center" }}><UserPlus size={14} /></button>
+                          </div>
+                        ));
+                  })()}
+                  <button onClick={() => setPickTeammateOpen(false)} style={{ marginTop: "8px", width: "100%", padding: "10px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>戻る</button>
+                </div>
+              ) : (
+                <>
+                  <div style={{ fontSize: "22px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", marginBottom: "16px" }}>{profileData.team}</div>
+                  {teammatesLoading ? (
+                    <Loading />
+                  ) : teammates.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "12px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだチームメイトがいません</div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {teammates.map(m => (
+                        <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "6px 4px" }}>
+                          <button onClick={() => { closeTeam(); onViewProfile?.(m.id); }} style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, background: "none", border: "none", cursor: onViewProfile ? "pointer" : "default", padding: 0, textAlign: "left" }}>
+                            {teammateAvatar(m)}
+                            <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{m.dancer_name}</div>
+                          </button>
+                          {isOwn && (
+                            <button onClick={() => removeTeammate(m.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", padding: "4px" }}><X size={14} /></button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {isOwn && (
+                    <button onClick={openTeammatePicker} style={{ marginTop: "14px", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "8px 10px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
+                      <UserPlus size={14} /> チームメイトを追加
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
