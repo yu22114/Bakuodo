@@ -418,15 +418,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 {menuOpen && (<>
                   <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 9 }} />
                   <div style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", background: "#1E1E1E", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", boxShadow: "0 4px 20px rgba(0,0,0,0.4)", overflow: "hidden", zIndex: 10, minWidth: "140px" }}>
-                    {/* 「編集」はヘッダーの横長ボタンに移したのでメニューからは外した */}
-                    <button onClick={() => {
-                        setMenuOpen(false);
-                        const url = `${window.location.origin}/u/${profileId}`;
-                        navigator.clipboard.writeText(url).then(() => { setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); });
-                      }}
-                      style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: linkCopied ? "#16A34A" : "#F0F0F0", textAlign: "left", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                      <Link size={13} /> {linkCopied ? "コピーしました！" : "プロフィールリンクをコピー"}
-                    </button>
+                    {/* 「編集」はヘッダーの横長ボタンに移したのでメニューからは外した。
+                        「プロフィールリンクをコピー」も「プロフィールをシェア」の中に移した */}
                     <a href="/help" style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                       <BookOpen size={13} /> 使い方ガイド
                     </a>
@@ -775,6 +768,13 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
               >
                 <Download size={14} />
                 {qrSaving ? "保存中..." : "写真に保存"}
+              </button>
+              <button
+                onClick={() => navigator.clipboard.writeText(profileUrl).then(() => { setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); })}
+                style={{ marginTop: "8px", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", background: "transparent", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", padding: "8px 10px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: linkCopied ? "#16A34A" : "#F0F0F0", cursor: "pointer" }}
+              >
+                <Link size={14} />
+                {linkCopied ? "コピーしました！" : "リンクをコピー"}
               </button>
             </div>
           </div>
