@@ -189,7 +189,6 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <div style={{ flexShrink: 0, padding: "24px 16px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
-        <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.2em", marginBottom: "4px" }}>▶ NEW SESSION</div>
         <h2 style={{ margin: "0 0 16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>投稿する</h2>
         {/* タブはホーム画面と同じ、丸い枠の中で選択中だけ浮くセグメント風 */}
         <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "14px", padding: "4px" }}>

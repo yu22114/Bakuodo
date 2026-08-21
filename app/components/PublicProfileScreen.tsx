@@ -406,7 +406,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
               <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
             </button>
           ) : (
-            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.2em" }}>▶ プロフィール</div>
+            // メニューアイコンを右端に置くための空要素（space-betweenのバランス用）
+            <div />
           )}
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             {isOwn && (
