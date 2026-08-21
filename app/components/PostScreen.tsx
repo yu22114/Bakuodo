@@ -146,7 +146,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
     await supabase.from("participations").insert({ cypher_id: cypher.id, profile_id: user.id });
     clearDraft(); // 投稿できたので下書きは残さない
     setLoading(false); setSubmitted(true);
-    setTimeout(() => onNav("top"), 1800);
+    setTimeout(() => onNav("top"), 1400);
   };
 
   const handleSubmitPL = async () => {
@@ -175,7 +175,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
     }
     clearDraft(); // 投稿できたので下書きは残さない
     setLoading(false); setSubmitted(true);
-    setTimeout(() => onNav("top"), 1800);
+    setTimeout(() => onNav("top"), 1400);
   };
 
   const inp: React.CSSProperties = { width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box", colorScheme: "dark" as any };
