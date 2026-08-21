@@ -1,11 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText, MessageCircle, Music } from "lucide-react";
+import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText, MessageCircle, Music, Download } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import type { GenreKey } from "../lib/types";
 import { formatDate, timeUntil } from "../lib/constants";
 import { GenreBadge } from "./GenreBadge";
 import { Loading } from "./Loading";
+import { showToast } from "./Toast";
 
 export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogout, onViewProfile, onCypherClick, onLessonClick, onEditCypher }: {
   profileId: string;
@@ -41,6 +42,34 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [followSheet, setFollowSheet] = useState<{ type: "followers" | "following"; users: { id: string; dancer_name: string; avatar_url: string | null }[] } | null>(null);
   const [followSheetLoading, setFollowSheetLoading] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [qrSaving, setQrSaving] = useState(false);
+
+  // QRコード画像を写真に保存できるようにする。外部APIの画像はdownload属性を無視されがちなので、
+  // 一度blobとして取得してから保存する。スマホはWeb Share APIがあれば「写真に保存」までできる
+  const handleSaveQR = async (qrSrc: string) => {
+    setQrSaving(true);
+    try {
+      const res = await fetch(qrSrc);
+      const blob = await res.blob();
+      const file = new File([blob], "bakuodo-profile-qr.png", { type: blob.type || "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "bakuodo-profile-qr.png";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+    } catch (e) {
+      // シェアシートを閉じただけ（AbortError）の場合はエラー扱いしない
+      if ((e as any)?.name !== "AbortError") showToast("QRコードの保存に失敗しました");
+    }
+    setQrSaving(false);
+  };
 
   useEffect(() => {
     async function fetchAll() {
@@ -489,6 +518,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       {/* プロフィールシェア用QRコード */}
       {showQR && (() => {
         const profileUrl = `${window.location.origin}/u/${profileId}`;
+        const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(profileUrl)}`;
         return (
           <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setShowQR(false)}>
             <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
@@ -497,9 +527,17 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 <button onClick={() => setShowQR(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
               </div>
               <div style={{ background: "#fff", borderRadius: "12px", padding: "16px", display: "inline-block", lineHeight: 0 }}>
-                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(profileUrl)}`} alt="プロフィールのQRコード" width={220} height={220} />
+                <img src={qrSrc} alt="プロフィールのQRコード" width={220} height={220} />
               </div>
               <div style={{ marginTop: "14px", fontSize: "11px", color: "rgba(255,255,255,0.55)", fontFamily: "'Noto Sans JP',sans-serif", wordBreak: "break-all" }}>{profileUrl}</div>
+              <button
+                onClick={() => handleSaveQR(qrSrc)}
+                disabled={qrSaving}
+                style={{ marginTop: "14px", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", background: "#F0F0F0", border: "none", borderRadius: "8px", padding: "8px 10px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#141414", cursor: qrSaving ? "default" : "pointer", opacity: qrSaving ? 0.6 : 1 }}
+              >
+                <Download size={14} />
+                {qrSaving ? "保存中..." : "写真に保存"}
+              </button>
             </div>
           </div>
         );
