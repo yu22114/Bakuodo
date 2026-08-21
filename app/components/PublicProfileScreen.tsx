@@ -28,6 +28,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   type HostedCypher = { id: string; title: string; starts_at: string; location: string; participant_count: number };
   type JoinedCypher = { id: string; title: string; starts_at: string; location: string; organizer_name: string };
   type HostedLesson = { id: string; title: string; starts_at: string; location: string; kind: "lesson" | "event"; participant_count: number };
+  type JoinedLesson = { id: string; title: string; starts_at: string; location: string; kind: "lesson" | "event"; organizer_name: string };
 
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [followStatus, setFollowStatus] = useState<"none" | "pending" | "accepted">("none");
@@ -37,6 +38,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [hostedCyphers, setHostedCyphers] = useState<HostedCypher[]>([]);
   const [hostedLessons, setHostedLessons] = useState<HostedLesson[]>([]);
   const [joinedCyphers, setJoinedCyphers] = useState<JoinedCypher[]>([]);
+  const [joinedLessons, setJoinedLessons] = useState<JoinedLesson[]>([]);
   const [cypherTab, setCypherTab] = useState<"joined" | "hosted">("joined");
   // 「参加/主催」タブの左右スワイプ切り替え（ホーム画面のタブ切り替えと同じ仕組み）
   const [tabSlideDir, setTabSlideDir] = useState<1 | -1>(1);
@@ -243,6 +245,14 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           setJoinedCyphers((joinedData as any[]).map(row => row.cyphers).filter(Boolean)
             .map((c: any) => ({ id: c.id, title: c.title, starts_at: c.starts_at, location: c.location, organizer_name: c.profiles?.dancer_name ?? "UNKNOWN" })));
         }
+        // 参加タブをCYPHER/P LESSON/EVENTで分けるため、レッスン・イベントの参加分も取る
+        const { data: joinedLessonData } = await supabase.from("pl_participations")
+          .select("private_lessons:lesson_id(id, title, starts_at, location, kind, profiles:organizer_id(dancer_name))")
+          .eq("profile_id", profileId);
+        if (joinedLessonData) {
+          setJoinedLessons((joinedLessonData as any[]).map(row => row.private_lessons).filter(Boolean)
+            .map((l: any) => ({ id: l.id, title: l.title, starts_at: l.starts_at, location: l.location, kind: l.kind === "event" ? "event" : "lesson", organizer_name: l.profiles?.dancer_name ?? "UNKNOWN" })));
+        }
       }
       setLoading(false);
     }
@@ -361,6 +371,25 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       </div>
     </div>
   );
+
+  // 参加タブ1件分のカード（主催タブのCYPHER/P LESSON/EVENTと同じ見た目にする。
+  // 自分のものではないので参加人数・編集・削除ボタンは出さず、主催者名だけ出す）
+  const renderJoinedRow = (item: { id: string; title: string; starts_at: string; organizer_name: string }, accent: string, onClick?: (id: string) => void) => {
+    const { date, time } = formatDate(item.starts_at);
+    const isPast = new Date(item.starts_at) < new Date();
+    return (
+      <div key={item.id} onClick={() => onClick?.(item.id)} style={{ padding: "10px 14px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderLeft: `3px solid ${accent}`, borderRadius: "8px", cursor: onClick ? "pointer" : "default", opacity: isPast ? 0.45 : 1 }}>
+        <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</div>
+        <div style={{ fontSize: "10px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "2px" }}>by {item.organizer_name}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "2px" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Clock size={9} color="rgba(255,255,255,0.35)" />{date} {time}</span>
+          {isPast && <span style={{ fontSize: "9px", padding: "1px 5px", background: "rgba(255,255,255,0.08)", borderRadius: "3px", color: "#F0F0F0" }}>終了</span>}
+        </div>
+      </div>
+    );
+  };
+  const joinedPlList = joinedLessons.filter(l => l.kind === "lesson");
+  const joinedEventList = joinedLessons.filter(l => l.kind === "event");
 
   return (
     <div style={onBack
@@ -535,23 +564,35 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           {isOwn ? (
             <div key={cypherTab} style={{ animation: `${tabSlideDir === 1 ? "bdSlideFromRight" : "bdSlideFromLeft"} 0.2s ease-out` }}>
             {cypherTab === "joined" ? (
-              <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", overflow: "hidden" }}>
-                {joinedCyphers.length === 0
-                  ? <div style={{ textAlign: "center", padding: "32px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ参加しているサイファーはありません</div>
-                  : joinedCyphers.map(c => {
-                      const { date, time } = formatDate(c.starts_at);
-                      const isPast = new Date(c.starts_at) < new Date();
-                      return (
-                        <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding: "12px 14px", borderBottom: "1px solid rgba(255,255,255,0.08)", opacity: isPast ? 0.45 : 1, cursor: onCypherClick ? "pointer" : "default" }}>
-                          <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{c.title}</div>
-                          <div style={{ fontSize: "10px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginBottom: "3px" }}>by {c.organizer_name}</div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
-                            <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Clock size={9} />{date} {time}</span>
-                            {isPast && <span style={{ fontSize: "9px", padding: "1px 5px", background: "rgba(255,255,255,0.08)", borderRadius: "3px", color: "#F0F0F0" }}>終了</span>}
-                          </div>
+              // 参加タブも主催タブと同じくCYPHER / P LESSON / EVENTで見出しを分けて表示する
+              joinedCyphers.length === 0 && joinedLessons.length === 0
+                ? <div style={{ textAlign: "center", padding: "32px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ参加しているサイファー・レッスンはありません</div>
+                : (<>
+                    {joinedCyphers.length > 0 && (
+                      <div style={{ marginBottom: (joinedPlList.length > 0 || joinedEventList.length > 0) ? "12px" : 0 }}>
+                        <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>CYPHER</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                          {joinedCyphers.map(c => renderJoinedRow(c, "#DC2626", onCypherClick))}
                         </div>
-                      );})}
-              </div>
+                      </div>
+                    )}
+                    {joinedPlList.length > 0 && (
+                      <div style={{ marginBottom: joinedEventList.length > 0 ? "12px" : 0 }}>
+                        <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>P LESSON</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                          {joinedPlList.map(l => renderJoinedRow(l, "#2563EB", onLessonClick))}
+                        </div>
+                      </div>
+                    )}
+                    {joinedEventList.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>EVENT</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                          {joinedEventList.map(l => renderJoinedRow(l, "#EAB308", onLessonClick))}
+                        </div>
+                      </div>
+                    )}
+                  </>)
             ) : (
               // 主催タブ：CYPHER / P LESSON / EVENT を種類ごとに見出しを分けて表示する
               hostedCyphers.length === 0 && hostedLessons.length === 0
