@@ -448,15 +448,15 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           </div>
           <div style={{ flex: 1 }}>
             <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "12px", color: "#F0F0F0" }}>{name}</h2>
-            {/* 名前の位置はそのまま、開催の行だけ少し右にずらす */}
-            <div style={{ display: "flex", gap: "18px", marginTop: "5px", marginLeft: "10px" }}>
+            {/* 名前の位置はそのまま、3つまとめて右寄せにする */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "18px", marginTop: "5px" }}>
               {([
                 ["開催", hostedCyphers.length + hostedLessons.length, undefined],
                 ["フォロワー", followerCount, () => openFollowSheet("followers")],
                 ["フォロー中", followingCount, () => openFollowSheet("following")],
               ] as const).map(([label, count, onClick]) => (
                 <button key={label} onClick={onClick} disabled={!onClick}
-                  style={{ background: "none", border: "none", padding: "4px 6px", cursor: onClick ? "pointer" : "default", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", marginLeft: label === "フォロー中" ? "auto" : 0 }}>
+                  style={{ background: "none", border: "none", padding: "4px 6px", cursor: onClick ? "pointer" : "default", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
                   <span style={{ fontSize: "17px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{count}</span>
                   <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{label}</span>
                 </button>
