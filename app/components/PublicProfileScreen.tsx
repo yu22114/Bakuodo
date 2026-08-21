@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText, MessageCircle, Music, Download } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import type { GenreKey } from "../lib/types";
@@ -7,6 +7,9 @@ import { formatDate, timeUntil } from "../lib/constants";
 import { GenreBadge } from "./GenreBadge";
 import { Loading } from "./Loading";
 import { showToast } from "./Toast";
+
+// 「参加/主催」タブの並び順。左右スワイプで隣のタブに切り替える時に使う
+const CYPHER_TAB_ORDER = ["joined", "hosted"] as const;
 
 export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogout, onViewProfile, onCypherClick, onLessonClick, onEditCypher, onEditLesson }: {
   profileId: string;
@@ -35,6 +38,53 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [hostedLessons, setHostedLessons] = useState<HostedLesson[]>([]);
   const [joinedCyphers, setJoinedCyphers] = useState<JoinedCypher[]>([]);
   const [cypherTab, setCypherTab] = useState<"joined" | "hosted">("joined");
+  // 「参加/主催」タブの左右スワイプ切り替え（ホーム画面のタブ切り替えと同じ仕組み）
+  const [tabSlideDir, setTabSlideDir] = useState<1 | -1>(1);
+  const tabTouchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const tabWheelAccumRef = useRef(0);
+  const tabWheelLockRef = useRef(false);
+  const tabWheelResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const goToCypherTab = (next: "joined" | "hosted") => {
+    if (next === cypherTab) return;
+    setTabSlideDir(CYPHER_TAB_ORDER.indexOf(next) > CYPHER_TAB_ORDER.indexOf(cypherTab) ? 1 : -1);
+    setCypherTab(next);
+  };
+  const slideCypherTab = (dir: 1 | -1) => {
+    if (!isOwn) return; // タブがあるのは自分のプロフィールだけ
+    const curIdx = CYPHER_TAB_ORDER.indexOf(cypherTab);
+    const nextIdx = curIdx + dir;
+    if (nextIdx < 0 || nextIdx >= CYPHER_TAB_ORDER.length) return;
+    goToCypherTab(CYPHER_TAB_ORDER[nextIdx]);
+  };
+  const handleTabTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    tabTouchStartRef.current = { x: t.clientX, y: t.clientY };
+  };
+  const handleTabTouchEnd = (e: React.TouchEvent) => {
+    const start = tabTouchStartRef.current;
+    tabTouchStartRef.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    // 横移動が閾値未満、または縦移動の方が大きい場合はスクロール操作とみなして無視
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    slideCypherTab(dx < 0 ? 1 : -1);
+  };
+  // トラックパッドの2本指横スワイプはtouchではなくwheel(deltaX)で飛んでくるので別途拾う
+  const handleTabWheel = (e: React.WheelEvent) => {
+    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // 縦スクロールは触らない
+    if (tabWheelLockRef.current) return;
+    tabWheelAccumRef.current += e.deltaX;
+    if (tabWheelResetRef.current) clearTimeout(tabWheelResetRef.current);
+    tabWheelResetRef.current = setTimeout(() => { tabWheelAccumRef.current = 0; }, 150);
+    if (Math.abs(tabWheelAccumRef.current) < 80) return;
+    const dir = tabWheelAccumRef.current > 0 ? 1 : -1;
+    tabWheelAccumRef.current = 0;
+    tabWheelLockRef.current = true;
+    setTimeout(() => { tabWheelLockRef.current = false; }, 500);
+    slideCypherTab(dir);
+  };
   const [loading, setLoading] = useState(true);
   const [participantSheet, setParticipantSheet] = useState<{ title: string; participants: Array<{ profile_id: string; dancer_name: string; avatar_url: string | null }> } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; kind: "cypher" | "lesson" } | null>(null);
@@ -466,7 +516,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         <div style={{ padding: "6px 16px 0", flexShrink: 0 }}>
           <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "12px", padding: "3px" }}>
             {(["joined", "hosted"] as const).map(t => (
-              <button key={t} onClick={() => setCypherTab(t)}
+              <button key={t} onClick={() => goToCypherTab(t)}
                 style={{ flex: 1, padding: "5px 4px", border: "none", borderRadius: "9px", background: cypherTab === t ? "#2A2A2A" : "transparent", boxShadow: cypherTab === t ? "0 1px 4px rgba(255,255,255,0.08)" : "none", color: cypherTab === t ? "#DC2626" : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: cypherTab === t ? "bold" : "normal", transition: "all 0.15s" }}>
                 {t === "joined" ? "参加" : "主催"}
               </button>
@@ -475,14 +525,16 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         </div>
       )}
 
-      {/* カード一覧。ここだけ上下スクロールできる */}
-      <div className="bd-scroll" style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any, padding: "6px 16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+      {/* カード一覧。上下スクロールに加えて、左右スワイプで参加/主催タブを切り替えられる */}
+      <div className="bd-scroll" onTouchStart={handleTabTouchStart} onTouchEnd={handleTabTouchEnd} onWheel={handleTabWheel}
+        style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any, padding: "6px 16px", display: "flex", flexDirection: "column", gap: "8px" }}>
         {loading ? (
           <Loading />
         ) : (<>
           {/* 開催・参加した記録：自分なら参加/主催の2タブ（過去はグレー）、他人なら主催のみ */}
           {isOwn ? (
-            cypherTab === "joined" ? (
+            <div key={cypherTab} style={{ animation: `${tabSlideDir === 1 ? "bdSlideFromRight" : "bdSlideFromLeft"} 0.2s ease-out` }}>
+            {cypherTab === "joined" ? (
               <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", overflow: "hidden" }}>
                 {joinedCyphers.length === 0
                   ? <div style={{ textAlign: "center", padding: "32px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ参加しているサイファーはありません</div>
@@ -552,7 +604,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                       </div>
                     )}
                   </>)
-            )
+            )}
+            </div>
           ) : (
             hostedCyphers.length === 0 && hostedLessons.length === 0
               ? <div style={{ textAlign: "center", padding: "40px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ主催しているサイファー・レッスンはありません</div>
