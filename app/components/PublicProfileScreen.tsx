@@ -72,7 +72,33 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         canvas.height = size;
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
-        ctx.drawImage(qrImg, 0, 0, size, size);
+
+        // QRコードは黒白で生成し、黒いモジュール部分だけオレンジ→赤のグラデーションに塗り替える
+        const moduleCanvas = document.createElement("canvas");
+        moduleCanvas.width = size;
+        moduleCanvas.height = size;
+        const moduleCtx = moduleCanvas.getContext("2d");
+        if (!moduleCtx) return;
+        moduleCtx.drawImage(qrImg, 0, 0, size, size);
+        const imageData = moduleCtx.getImageData(0, 0, size, size);
+        const pixels = imageData.data;
+        for (let i = 0; i < pixels.length; i += 4) {
+          // 白っぽい背景部分は透明にして、黒いモジュールだけ残す
+          const luminance = (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
+          if (luminance > 200) pixels[i + 3] = 0;
+        }
+        moduleCtx.putImageData(imageData, 0, 0);
+        moduleCtx.globalCompositeOperation = "source-in";
+        const gradient = moduleCtx.createLinearGradient(0, 0, size, size);
+        gradient.addColorStop(0, "#F97316"); // オレンジ
+        gradient.addColorStop(1, "#DC2626"); // 赤
+        moduleCtx.fillStyle = gradient;
+        moduleCtx.fillRect(0, 0, size, size);
+
+        // 白背景を敷いてから、色付けしたモジュールを重ねる
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, size, size);
+        ctx.drawImage(moduleCanvas, 0, 0);
 
         // 中央に白丸の台座を敷いてからロゴを丸くくり抜いて重ねる
         const cx = size / 2;
