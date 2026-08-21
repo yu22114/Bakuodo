@@ -190,8 +190,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     }>
       {/* ヘッダー。Instagramと同じ並びにする：
           上段＝アイコンと数字が横並び、その下に名前、いちばん下に横長のボタン */}
-      <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+      <div style={{ padding: "16px 16px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
           {onBack ? (
             <button onClick={onBack} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>
               <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
@@ -249,7 +249,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           <div style={{ flex: 1 }}>
             <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "12px", color: "#F0F0F0" }}>{name}</h2>
             {/* space-betweenにして「開催」を左端＝名前の真下に揃える */}
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "5px" }}>
               {([
                 ["開催", hostedCyphers.length + hostedLessons.length, undefined],
                 ["フォロワー", followerCount, () => openFollowSheet("followers")],
@@ -266,12 +266,12 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         </div>
 
         {profileData?.bio && (
-          <p style={{ margin: "12px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.7)", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.6, whiteSpace: "pre-line" }}>{profileData.bio}</p>
+          <p style={{ margin: "8px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.7)", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.6, whiteSpace: "pre-line" }}>{profileData.bio}</p>
         )}
 
         {/* Instagram・プレイリストは横幅を半分にして、残りにその他項目のバッジを並べる */}
         {profileData && (profileData.instagram || profileData.playlist_url || profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
-          <div style={{ marginTop: "12px", display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "flex-start" }}>
+          <div style={{ marginTop: "8px", display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "flex-start" }}>
             {/* 他項目のバッジを先に、Instagram・プレイリストは下の行に表示する */}
             {(profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
               <div style={{ flexBasis: "100%", display: "flex", flexWrap: "wrap", alignContent: "flex-start", gap: "6px" }}>
@@ -314,7 +314,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
         {/* 横長のボタン（インスタと同じ位置）。自分のプロフィールでは編集とシェアを並べる */}
         {isOwn ? (
-          <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
+          <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
             <button onClick={() => onEdit?.()}
               style={{ flex: 1, padding: "6px 10px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
               プロフィールを編集
@@ -326,7 +326,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           </div>
         ) : currentUserId && (
           <button onClick={handleFollow} disabled={followLoading}
-            style={{ width: "100%", marginTop: "14px", padding: "10px", border: followStatus !== "none" ? "1px solid rgba(255,255,255,0.16)" : "none", borderRadius: "8px", background: followStatus !== "none" ? "transparent" : "#DC2626", color: followStatus !== "none" ? "rgba(255,255,255,0.55)" : "#fff", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer", opacity: followLoading ? 0.6 : 1 }}>
+            style={{ width: "100%", marginTop: "8px", padding: "8px", border: followStatus !== "none" ? "1px solid rgba(255,255,255,0.16)" : "none", borderRadius: "8px", background: followStatus !== "none" ? "transparent" : "#DC2626", color: followStatus !== "none" ? "rgba(255,255,255,0.55)" : "#fff", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer", opacity: followLoading ? 0.6 : 1 }}>
             {followStatus === "accepted" ? "フォロー中" : followStatus === "pending" ? "申請中..." : (profileData?.is_private ? "🔒 申請する" : "フォローする")}
           </button>
         )}
