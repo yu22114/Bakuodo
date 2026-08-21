@@ -36,8 +36,8 @@ export function BottomNav({ current, onNav }: { current: string; onNav: (s: stri
           const active = current === item.id;
           return (
             <button key={item.id} onClick={() => onNav(item.id)} aria-label={item.label} style={{ flex: 1, padding: "9px 0", border: "none", background: "transparent", color: active ? "#fff" : "rgba(255,255,255,0.5)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {/* 選択中は角丸の四角い薄い枠を背後に敷いて分かるようにする（3項目共通） */}
-              <div style={{ width: "40px", height: "40px", borderRadius: "13px", border: `1.5px solid ${active ? "rgba(255,255,255,0.25)" : "transparent"}`, display: "flex", alignItems: "center", justifyContent: "center", transition: "border-color 0.15s" }}>
+              {/* 選択中の見せ方はホーム画面上部のタブ（CYPHER/P LESSON/EVENT/SPOTS）と同じ仕様に揃える */}
+              <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: active ? "#2A2A2A" : "transparent", boxShadow: active ? "0 1px 4px rgba(255,255,255,0.08)" : "none", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>
                 {item.id === "post" ? (
                   <div style={{ width: "36px", height: "36px", borderRadius: "12px", background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.35)" }}>
                     <Plus size={18} color="#171717" />
