@@ -94,7 +94,11 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
         {error && <div style={{ padding: "10px 12px", background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: "6px", color: "#DC2626", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>{error}</div>}
         <div><label style={lbl}>最寄り駅 <span style={{ color: "#DC2626" }}>*</span></label><StationSearch value={form.station} onChange={v => setForm(f => ({ ...f, station: v }))} inputStyle={inp} /></div>
         <div><label style={lbl}>会場・スタジオ名・部屋番号</label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={form.studio} onChange={e => setForm(f => ({ ...f, studio: e.target.value }))} /></div>
-        <div><label style={lbl}>日付 <span style={{ color: "#DC2626" }}>*</span></label><input type="date" style={inp} min={todayStr()} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
+        {/* Safariはinput[type=date]にwidth:100%を反映しないことがあるため、
+            flexコンテナ+flex:1で他の入力欄と横幅を揃える */}
+        <div><label style={lbl}>日付 <span style={{ color: "#DC2626" }}>*</span></label>
+          <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <div>
             <label style={lbl}>開始時間</label>

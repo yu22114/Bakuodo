@@ -252,7 +252,11 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
           <div><label style={lbl}>最寄り駅 <span style={{ color: "#DC2626" }}>*</span></label><StationSearch value={form.station} onChange={v => setForm(f => ({ ...f, station: v }))} inputStyle={inp} /></div>
           <div><label style={lbl}>会場・スタジオ名・部屋番号</label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={form.studio} onChange={e => setForm(f => ({ ...f, studio: e.target.value }))} /></div>
           {/* 過去のサイファーは掲載できないので今日より前は選べない */}
-          <div><label style={lbl}>日付 <span style={{ color: "#DC2626" }}>*</span></label><input type="date" style={inp} min={todayStr()} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
+          {/* Safariはinput[type=date]にwidth:100%を反映しないことがあるため、
+              flexコンテナ+flex:1で他の入力欄と横幅を揃える */}
+          <div><label style={lbl}>日付 <span style={{ color: "#DC2626" }}>*</span></label>
+            <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <div><label style={lbl}>開始時間</label>
               <select style={inp} value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))}>
@@ -297,7 +301,9 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
         </>) : (<>
           <div><label style={lbl}>最寄り駅 <span style={{ color: plAccent }}>*</span></label><StationSearch value={plForm.station} onChange={v => setPlForm(f => ({ ...f, station: v }))} inputStyle={inp} /></div>
           <div><label style={lbl}>会場・スタジオ名・部屋番号</label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={plForm.studio} onChange={e => setPlForm(f => ({ ...f, studio: e.target.value }))} /></div>
-          <div><label style={lbl}>日付 <span style={{ color: plAccent }}>*</span></label><input type="date" style={inp} min={todayStr()} value={plForm.date} onChange={e => setPlForm(f => ({ ...f, date: e.target.value }))} /></div>
+          <div><label style={lbl}>日付 <span style={{ color: plAccent }}>*</span></label>
+            <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={plForm.date} onChange={e => setPlForm(f => ({ ...f, date: e.target.value }))} /></div>
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <div><label style={lbl}>開始時間</label>
               <select style={inp} value={plForm.start_time} onChange={e => setPlForm(f => ({ ...f, start_time: e.target.value }))}>
