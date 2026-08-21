@@ -4,7 +4,7 @@ import { Check, Zap, BookOpen, RotateCcw } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { FormState } from "../lib/types";
-import { GENRES, GENRE_COLORS, genreLabel, START_TIME_OPTIONS, DEFAULT_START_TIME, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr, toggleGenre as toggleGenreList } from "../lib/constants";
+import { GENRES, GENRE_COLORS, genreLabel, DEFAULT_START_TIME, isNextDayEnd, getNextDate, todayStr, toggleGenre as toggleGenreList } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
 
 // タブの並び順。ホーム画面と同じ順でスワイプ移動できるようにする
@@ -257,17 +257,13 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
           <div><label style={lbl}>日付 <span style={{ color: "#DC2626" }}>*</span></label>
             <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
           </div>
+          {/* 24時間表記のタイムピッカー。step=1800(秒)=30分刻みでスピナー操作を制限する */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <div><label style={lbl}>開始時間</label>
-              <select style={inp} value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))}>
-                {START_TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
+              <div style={{ display: "flex" }}><input type="time" step={1800} style={{ ...inp, flex: 1 }} value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} /></div>
             </div>
             <div><label style={lbl}>終了時間</label>
-              <select style={inp} value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))}>
-                <option value="">未設定</option>
-                {endTimeOptions(form.start_time).map(t => <option key={t} value={t}>{endTimeLabel(t, form.start_time)}</option>)}
-              </select>
+              <div style={{ display: "flex" }}><input type="time" step={1800} style={{ ...inp, flex: 1 }} value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} /></div>
             </div>
           </div>
           <div><label style={lbl}>イベント名 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
@@ -304,17 +300,13 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
           <div><label style={lbl}>日付 <span style={{ color: plAccent }}>*</span></label>
             <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={plForm.date} onChange={e => setPlForm(f => ({ ...f, date: e.target.value }))} /></div>
           </div>
+          {/* 24時間表記のタイムピッカー。step=1800(秒)=30分刻みでスピナー操作を制限する */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <div><label style={lbl}>開始時間</label>
-              <select style={inp} value={plForm.start_time} onChange={e => setPlForm(f => ({ ...f, start_time: e.target.value }))}>
-                {START_TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
+              <div style={{ display: "flex" }}><input type="time" step={1800} style={{ ...inp, flex: 1 }} value={plForm.start_time} onChange={e => setPlForm(f => ({ ...f, start_time: e.target.value }))} /></div>
             </div>
             <div><label style={lbl}>終了時間</label>
-              <select style={inp} value={plForm.end_time} onChange={e => setPlForm(f => ({ ...f, end_time: e.target.value }))}>
-                <option value="">未設定</option>
-                {endTimeOptions(plForm.start_time).map(t => <option key={t} value={t}>{endTimeLabel(t, plForm.start_time)}</option>)}
-              </select>
+              <div style={{ display: "flex" }}><input type="time" step={1800} style={{ ...inp, flex: 1 }} value={plForm.end_time} onChange={e => setPlForm(f => ({ ...f, end_time: e.target.value }))} /></div>
             </div>
           </div>
           <div><label style={lbl}>{plNoun}名 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={plForm.title} onChange={e => setPlForm(f => ({ ...f, title: e.target.value }))} /></div>
