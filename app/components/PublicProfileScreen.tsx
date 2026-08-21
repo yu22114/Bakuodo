@@ -41,6 +41,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [linkCopied, setLinkCopied] = useState(false);
   const [followSheet, setFollowSheet] = useState<{ type: "followers" | "following"; users: { id: string; dancer_name: string; avatar_url: string | null }[] } | null>(null);
   const [followSheetLoading, setFollowSheetLoading] = useState(false);
+  const [showQR, setShowQR] = useState(false);
 
   useEffect(() => {
     async function fetchAll() {
@@ -257,12 +258,18 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
         <h2 style={{ margin: "12px 0 0", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0" }}>{name}</h2>
 
-        {/* 横長のボタン（インスタと同じ位置） */}
+        {/* 横長のボタン（インスタと同じ位置）。自分のプロフィールでは編集とシェアを並べる */}
         {isOwn ? (
-          <button onClick={() => onEdit?.()}
-            style={{ width: "100%", marginTop: "14px", padding: "10px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
-            プロフィールを編集
-          </button>
+          <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
+            <button onClick={() => onEdit?.()}
+              style={{ flex: 1, padding: "10px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
+              プロフィールを編集
+            </button>
+            <button onClick={() => setShowQR(true)}
+              style={{ flex: 1, padding: "10px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
+              プロフィールをシェア
+            </button>
+          </div>
         ) : currentUserId && (
           <button onClick={handleFollow} disabled={followLoading}
             style={{ width: "100%", marginTop: "14px", padding: "10px", border: followStatus !== "none" ? "1px solid rgba(255,255,255,0.16)" : "none", borderRadius: "8px", background: followStatus !== "none" ? "transparent" : "#DC2626", color: followStatus !== "none" ? "rgba(255,255,255,0.55)" : "#fff", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer", opacity: followLoading ? 0.6 : 1 }}>
@@ -477,6 +484,25 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           </div>
         </div>
       )}
+
+      {/* プロフィールシェア用QRコード */}
+      {showQR && (() => {
+        const profileUrl = `${window.location.origin}/u/${profileId}`;
+        return (
+          <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setShowQR(false)}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>SHARE PROFILE</div>
+                <button onClick={() => setShowQR(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
+              </div>
+              <div style={{ background: "#fff", borderRadius: "12px", padding: "16px", display: "inline-block", lineHeight: 0 }}>
+                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(profileUrl)}`} alt="プロフィールのQRコード" width={220} height={220} />
+              </div>
+              <div style={{ marginTop: "14px", fontSize: "11px", color: "rgba(255,255,255,0.55)", fontFamily: "'Noto Sans JP',sans-serif", wordBreak: "break-all" }}>{profileUrl}</div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
