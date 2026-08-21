@@ -496,15 +496,16 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
               </a>
             )}
             {profileData.playlist_url && (() => {
-              // URLからApple Music / Spotifyを見分けて色を変える
-              const color = profileData.playlist_url.includes("spotify.com") ? "#1DB954"
-                : profileData.playlist_url.includes("music.apple.com") ? "#FA243C"
-                : "#F0F0F0";
+              // URLからApple Music / Spotifyを見分けて色とラベルを変える
+              const isSpotify = profileData.playlist_url.includes("spotify.com");
+              const isAppleMusic = profileData.playlist_url.includes("music.apple.com");
+              const color = isSpotify ? "#1DB954" : isAppleMusic ? "#FA243C" : "#F0F0F0";
+              const label = isSpotify ? "Spotify" : isAppleMusic ? "Apple Music" : "プレイリストを聴く";
               return (
                 <a href={profileData.playlist_url} target="_blank" rel="noopener noreferrer"
                   style={{ flex: "0 1 calc(50% - 4px)", minWidth: "130px", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "6px 10px", borderRadius: "8px", border: `1px solid ${color}59`, textDecoration: "none", background: `${color}1A` }}>
                   <Music size={14} color={color} />
-                  <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color, fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>プレイリストを聴く</span>
+                  <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color, fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
                 </a>
               );
             })()}
