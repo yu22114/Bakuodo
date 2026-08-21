@@ -31,7 +31,7 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
         const label = genreLabel(cypher.genres[0]).toUpperCase();
         // 左側の縁取りでジャンル色を出さなくなった代わりに、この背景ジャンル名を1.1倍大きくして目立たせる
         return (
-          <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", fontSize: `${Math.round(Math.min(68, Math.round(360 / label.length)) * 1.1)}px`, fontStyle: "italic", fontFamily: "'Titan One','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: color + "40", pointerEvents: "none", userSelect: "none" }}>
+          <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", fontSize: `${Math.round(Math.min(68, Math.round(360 / label.length)) * 1.1)}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: color + "40", pointerEvents: "none", userSelect: "none" }}>
             {label}
           </div>
         );
