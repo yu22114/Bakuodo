@@ -456,7 +456,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 ["フォロー中", followingCount, () => openFollowSheet("following")],
               ] as const).map(([label, count, onClick]) => (
                 <button key={label} onClick={onClick} disabled={!onClick}
-                  style={{ background: "none", border: "none", padding: "4px 6px", cursor: onClick ? "pointer" : "default", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+                  style={{ background: "none", border: "none", padding: "4px 6px", cursor: onClick ? "pointer" : "default", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", marginLeft: label === "フォロー中" ? "auto" : 0 }}>
                   <span style={{ fontSize: "17px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{count}</span>
                   <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{label}</span>
                 </button>
