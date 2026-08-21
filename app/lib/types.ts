@@ -68,6 +68,7 @@ export interface ProfileState {
   gender: string;
   bio: string;
   playlist_url: string;
+  team: string;
 }
 
 export interface ParticipantProfile {
