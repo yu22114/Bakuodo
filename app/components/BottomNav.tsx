@@ -35,7 +35,7 @@ export function BottomNav({ current, onNav }: { current: string; onNav: (s: stri
         {items.map(item => (
           <button key={item.id} onClick={() => onNav(item.id)} aria-label={item.label} style={{ flex: 1, padding: "14px 0", border: "none", background: "transparent", color: current === item.id ? (item.id === "profile" ? "#DC2626" : "#fff") : "rgba(255,255,255,0.5)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {item.id === "post" ? (
-              <div style={{ width: "42px", height: "42px", borderRadius: "50%", background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", marginTop: "-22px", marginBottom: "-8px", boxShadow: "0 2px 12px rgba(0,0,0,0.35)" }}>
+              <div style={{ width: "42px", height: "42px", borderRadius: "14px", background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.35)" }}>
                 <Plus size={20} color="#171717" />
               </div>
             ) : item.icon}
