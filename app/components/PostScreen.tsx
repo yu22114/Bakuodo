@@ -1,11 +1,33 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Check, Zap, BookOpen, RotateCcw } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { FormState } from "../lib/types";
 import { GENRES, GENRE_COLORS, genreLabel, START_TIME_OPTIONS, DEFAULT_START_TIME, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr, toggleGenre as toggleGenreList } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
+
+// ジャンルは横スクロールのドラム式で選ぶ。折り返さず1列に並べ、選択中を追いかけてスクロールする
+function GenreStrip({ value, onChange }: { value: string; onChange: (g: (typeof GENRES)[number]) => void }) {
+  const selectedRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    selectedRef.current?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [value]);
+  return (
+    <div className="bd-scroll" style={{ display: "flex", gap: "7px", overflowX: "auto", padding: "2px 1px 6px" }}>
+      {GENRES.map(g => {
+        const sel = value === g;
+        const col = GENRE_COLORS[g];
+        return (
+          <button key={g} ref={sel ? selectedRef : undefined} type="button" onClick={() => onChange(g)}
+            style={{ flexShrink: 0, padding: "6px 12px", border: sel ? `1px solid ${col}` : "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", whiteSpace: "nowrap" }}>
+            {genreLabel(g)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 // 背景の光もホーム画面（TopScreen）と同じ考え方。タブの色を上から当たる光として敷く
 const TAB_BG: Record<"cypher" | "pl" | "event", string> = {
@@ -219,9 +241,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
           </div>
           <div><label style={lbl}>イベント名 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
           <div><label style={lbl}>ジャンル</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "7px" }}>
-              {GENRES.map(g => { const sel = form.genres.includes(g); const col = GENRE_COLORS[g]; return (<button key={g} onClick={() => toggleGenre(g)} style={{ padding: "6px 12px", border: sel ? `1px solid ${col}` : "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>{genreLabel(g)}</button>); })}
-            </div>
+            <GenreStrip value={form.genres[0] ?? ""} onChange={toggleGenre} />
           </div>
           <div><label style={lbl}>詳細説明</label><textarea style={{ ...inp, minHeight: "80px", resize: "vertical" } as React.CSSProperties} placeholder="参加者へのメッセージ..." value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
@@ -277,9 +297,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
             </div>}
           </div>
           <div><label style={lbl}>ジャンル</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "7px" }}>
-              {GENRES.map(g => { const sel = plForm.genres.includes(g); const col = GENRE_COLORS[g]; return (<button key={g} onClick={() => togglePlGenre(g)} style={{ padding: "6px 12px", border: sel ? `1px solid ${col}` : "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>{genreLabel(g)}</button>); })}
-            </div>
+            <GenreStrip value={plForm.genres[0] ?? ""} onChange={togglePlGenre} />
           </div>
           <div><label style={lbl}>詳細説明</label><textarea style={{ ...inp, minHeight: "80px", resize: "vertical" } as React.CSSProperties} placeholder={isEvent ? "イベント内容、持ち物など..." : "レッスン内容、持ち物など..."} value={plForm.description} onChange={e => setPlForm(f => ({ ...f, description: e.target.value }))} /></div>
           <div><label style={lbl}>定員</label><input style={inp} type="number" min="1" placeholder="空欄 = 無制限" value={plForm.max_members} onChange={e => setPlForm(f => ({ ...f, max_members: e.target.value }))} /></div>
