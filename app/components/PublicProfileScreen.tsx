@@ -24,7 +24,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   onEditLesson?: (lessonId: string) => void;
 }) {
   const isOwn = profileId === currentUserId;
-  type ProfileData = { dancer_name: string; genres: GenreKey[]; instagram: string | null; dance_years: number | null; age_group: string | null; gender: string | null; bio: string | null; playlist_url: string | null; avatar_url: string | null; is_private: boolean };
+  type ProfileData = { dancer_name: string; genres: GenreKey[]; instagram: string | null; dance_years: number | null; age_group: string | null; gender: string | null; bio: string | null; playlist_url: string | null; team: string | null; avatar_url: string | null; is_private: boolean };
   type HostedCypher = { id: string; title: string; starts_at: string; location: string; participant_count: number };
   type JoinedCypher = { id: string; title: string; starts_at: string; location: string; organizer_name: string };
   type HostedLesson = { id: string; title: string; starts_at: string; location: string; kind: "lesson" | "event"; participant_count: number };
@@ -209,7 +209,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     async function fetchAll() {
       setLoading(true);
       const [profileRes, hostedRes, hostedLessonsRes, allPartsRes, allPlPartsRes, followersRes, followingRes] = await Promise.all([
-        supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, bio, playlist_url, avatar_url, is_private").eq("id", profileId).single(),
+        supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, bio, playlist_url, team, avatar_url, is_private").eq("id", profileId).single(),
         supabase.from("cyphers").select("id, title, starts_at, location").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("private_lessons").select("id, title, starts_at, location, kind").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("participations").select("cypher_id"),
@@ -219,7 +219,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       ]);
       if (profileRes.data) {
         const d = profileRes.data as any;
-        setProfileData({ dancer_name: d.dancer_name ?? "", genres: (d.genres ?? []) as GenreKey[], instagram: d.instagram ?? null, dance_years: d.dance_years ?? null, age_group: d.age_group ?? null, gender: d.gender ?? null, bio: d.bio ?? null, playlist_url: d.playlist_url ?? null, avatar_url: d.avatar_url ?? null, is_private: d.is_private ?? false });
+        setProfileData({ dancer_name: d.dancer_name ?? "", genres: (d.genres ?? []) as GenreKey[], instagram: d.instagram ?? null, dance_years: d.dance_years ?? null, age_group: d.age_group ?? null, gender: d.gender ?? null, bio: d.bio ?? null, playlist_url: d.playlist_url ?? null, team: d.team ?? null, avatar_url: d.avatar_url ?? null, is_private: d.is_private ?? false });
       }
       setFollowerCount(followersRes.count ?? 0);
       setFollowingCount(followingRes.count ?? 0);
@@ -470,11 +470,12 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         )}
 
         {/* Instagram・プレイリストは横幅を半分にして、残りにその他項目のバッジを並べる */}
-        {profileData && (profileData.instagram || profileData.playlist_url || profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
+        {profileData && (profileData.instagram || profileData.playlist_url || profileData.team || profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
           <div style={{ marginTop: "8px", display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "flex-start" }}>
             {/* 他項目のバッジを先に、Instagram・プレイリストは下の行に表示する */}
-            {(profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
+            {(profileData.team || profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
               <div style={{ flexBasis: "100%", display: "flex", flexWrap: "wrap", alignContent: "flex-start", gap: "6px" }}>
+                {profileData.team && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.team}</span>}
                 {profileData.age_group && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.age_group}</span>}
                 {profileData.dance_years != null && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>歴{profileData.dance_years}年</span>}
                 {profileData.gender && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.gender}</span>}

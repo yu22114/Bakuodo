@@ -13,7 +13,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
   onAvatarChange?: (url: string) => void;
   onBack?: () => void;
 }) {
-  const [profile, setProfile] = useState<ProfileState>({ dancer_name: "", genres: [], instagram: "", dance_years: "", age_group: "", gender: "", bio: "", playlist_url: "" });
+  const [profile, setProfile] = useState<ProfileState>({ dancer_name: "", genres: [], instagram: "", dance_years: "", age_group: "", gender: "", bio: "", playlist_url: "", team: "" });
   const [isPrivate, setIsPrivate] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -27,7 +27,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
 
   useEffect(() => {
     async function fetchProfile() {
-      const { data } = await supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, bio, playlist_url, avatar_url, is_private").eq("id", user.id).single();
+      const { data } = await supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, bio, playlist_url, team, avatar_url, is_private").eq("id", user.id).single();
       if (data) {
         setProfile({
           dancer_name: data.dancer_name ?? "",
@@ -38,6 +38,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
           gender: data.gender ?? "",
           bio: (data as any).bio ?? "",
           playlist_url: (data as any).playlist_url ?? "",
+          team: (data as any).team ?? "",
         });
         setAvatarUrl((data as any).avatar_url ?? null);
         setIsPrivate((data as any).is_private ?? false);
@@ -93,6 +94,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
       gender: profile.gender || null,
       bio: profile.bio.trim() || null,
       playlist_url: profile.playlist_url.trim() || null,
+      team: profile.team.trim() || null,
       is_private: isPrivate,
     }, { onConflict: "id" });
     if (error) {
@@ -158,6 +160,9 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
         </div>
         <div><label style={lbl}>ダンサーネーム</label>
           <input style={{ ...inp, fontSize: "15px" }} autoCapitalize="none" autoCorrect="off" placeholder="例: taro / 太郎" value={profile.dancer_name} onChange={e => { setProfile(p => ({ ...p, dancer_name: e.target.value })); setSaved(false); }} />
+        </div>
+        <div><label style={lbl}>チーム（任意）</label>
+          <input style={inp} placeholder="例: w+i&s" value={profile.team} onChange={e => { setProfile(p => ({ ...p, team: e.target.value })); setSaved(false); }} />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <div><label style={lbl}>ダンス歴（年）</label>
