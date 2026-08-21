@@ -34,20 +34,16 @@ export function BottomNav({ current, onNav }: { current: string; onNav: (s: stri
       <div style={{ width: "100%", maxWidth: "448px", background: "rgba(20,20,20,0)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "26px", display: "flex", boxShadow: "0 10px 30px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.12)", pointerEvents: "auto" }}>
         {items.map(item => {
           const active = current === item.id;
-          const accent = "#fff";
           return (
-            <button key={item.id} onClick={() => onNav(item.id)} aria-label={item.label} style={{ flex: 1, padding: "9px 0", border: "none", background: "transparent", color: active ? accent : "rgba(255,255,255,0.5)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {item.id === "post" ? (
-                // 選択中は白い四角の周りに薄いリングを足して分かるようにする
-                <div style={{ width: "36px", height: "36px", borderRadius: "12px", background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: active ? "0 0 0 3px rgba(255,255,255,0.35), 0 2px 12px rgba(0,0,0,0.35)" : "0 2px 12px rgba(0,0,0,0.35)", transition: "box-shadow 0.15s" }}>
-                  <Plus size={18} color="#171717" />
-                </div>
-              ) : (
-                // 選択中は背景に薄いピル状のハイライトを敷く
-                <div style={{ padding: "6px 14px", borderRadius: "10px", background: active ? accent + "22" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.15s" }}>
-                  {item.icon}
-                </div>
-              )}
+            <button key={item.id} onClick={() => onNav(item.id)} aria-label={item.label} style={{ flex: 1, padding: "9px 0", border: "none", background: "transparent", color: active ? "#fff" : "rgba(255,255,255,0.5)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {/* 選択中は角丸の四角い薄い枠を背後に敷いて分かるようにする（3項目共通） */}
+              <div style={{ width: "40px", height: "40px", borderRadius: "13px", border: `1.5px solid ${active ? "rgba(255,255,255,0.25)" : "transparent"}`, display: "flex", alignItems: "center", justifyContent: "center", transition: "border-color 0.15s" }}>
+                {item.id === "post" ? (
+                  <div style={{ width: "36px", height: "36px", borderRadius: "12px", background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.35)" }}>
+                    <Plus size={18} color="#171717" />
+                  </div>
+                ) : item.icon}
+              </div>
             </button>
           );
         })}
