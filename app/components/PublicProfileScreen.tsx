@@ -32,7 +32,6 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [hostedCyphers, setHostedCyphers] = useState<HostedCypher[]>([]);
   const [hostedLessons, setHostedLessons] = useState<HostedLesson[]>([]);
   const [joinedCyphers, setJoinedCyphers] = useState<JoinedCypher[]>([]);
-  const [mainTab, setMainTab] = useState<"profile" | "cyphers">("profile");
   const [cypherTab, setCypherTab] = useState<"joined" | "hosted">("joined");
   const [loading, setLoading] = useState(true);
   const [participantSheet, setParticipantSheet] = useState<{ title: string; participants: Array<{ profile_id: string; dancer_name: string; avatar_url: string | null }> } | null>(null);
@@ -243,12 +242,12 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           </div>
           <div style={{ flex: 1, display: "flex", justifyContent: "space-around" }}>
             {([
-              ["開催", hostedCyphers.length + hostedLessons.length, () => setMainTab("cyphers")],
+              ["開催", hostedCyphers.length + hostedLessons.length, undefined],
               ["フォロワー", followerCount, () => openFollowSheet("followers")],
               ["フォロー中", followingCount, () => openFollowSheet("following")],
             ] as const).map(([label, count, onClick]) => (
-              <button key={label} onClick={onClick}
-                style={{ background: "none", border: "none", padding: "4px 6px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+              <button key={label} onClick={onClick} disabled={!onClick}
+                style={{ background: "none", border: "none", padding: "4px 6px", cursor: onClick ? "pointer" : "default", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
                 <span style={{ fontSize: "17px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{count}</span>
                 <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{label}</span>
               </button>
@@ -259,6 +258,39 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         <h2 style={{ margin: "12px 0 0", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0" }}>{name}</h2>
         {profileData?.bio && (
           <p style={{ margin: "6px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.7)", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.6, whiteSpace: "pre-line" }}>{profileData.bio}</p>
+        )}
+
+        {/* ダンサー設定の記入項目（Instagram・年代・ダンス歴・性別・ジャンル）は
+            名前のすぐ下に表示する。以前はPROFILEタブの中にあったが、タブを開かなくても
+            見えるようここへ移動した */}
+        {profileData && (profileData.instagram || profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
+          <div style={{ marginTop: "12px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", overflow: "hidden" }}>
+            {profileData.instagram && (
+              <a href={`https://instagram.com/${profileData.instagram}`} target="_blank" rel="noopener noreferrer"
+                style={{ display: "flex", alignItems: "center", gap: "10px", padding: "14px 16px", borderBottom: (profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) ? "1px solid rgba(255,255,255,0.08)" : "none", textDecoration: "none", background: "linear-gradient(90deg, rgba(168,85,247,0.1), transparent)" }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="1" y="1" width="22" height="22" rx="6" stroke="rgba(255,255,255,0.55)" strokeWidth="1.8" fill="none"/>
+                  <circle cx="12" cy="12" r="4.2" stroke="rgba(255,255,255,0.55)" strokeWidth="1.8" fill="none"/>
+                  <circle cx="17.2" cy="6.8" r="1.1" fill="rgba(255,255,255,0.55)"/>
+                </svg>
+                <div>
+                  <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.12em", marginBottom: "2px" }}>INSTAGRAM</div>
+                  <div style={{ fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", color: "#A855F7", fontWeight: "bold" }}>@{profileData.instagram}</div>
+                </div>
+                <span style={{ marginLeft: "auto", fontSize: "14px", color: "#A855F7" }}>↗</span>
+              </a>
+            )}
+            {(profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
+              <div style={{ padding: "14px 16px" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: profileData.genres.length > 0 ? "10px" : "0" }}>
+                  {profileData.age_group && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.age_group}</span>}
+                  {profileData.dance_years != null && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>歴{profileData.dance_years}年</span>}
+                  {profileData.gender && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.gender}</span>}
+                </div>
+                {profileData.genres.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>{profileData.genres.map(g => <GenreBadge key={g} genre={g} />)}</div>}
+              </div>
+            )}
+          </div>
         )}
 
         {/* 横長のボタン（インスタと同じ位置）。自分のプロフィールでは編集とシェアを並べる */}
@@ -281,57 +313,11 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         )}
       </div>
 
-      {/* メインタブ切り替え。ホーム画面と同じ角丸セグメント。
-          サイファーだけでなくレッスンも並ぶので「CYPHER」ではなく「ACTIVITY」 */}
-      <div style={{ padding: "10px 16px", background: "#0D0D0D", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "14px", padding: "4px" }}>
-          {(["profile", "cyphers"] as const).map(t => (
-            <button key={t} onClick={() => setMainTab(t)}
-              style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: mainTab === t ? "#2A2A2A" : "transparent", boxShadow: mainTab === t ? "0 1px 4px rgba(255,255,255,0.08)" : "none", color: mainTab === t ? "#DC2626" : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: mainTab === t ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
-              {t === "profile" ? "PROFILE" : "ACTIVITY"}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "10px" }}>
         {loading ? (
           <Loading />
-        ) : mainTab === "profile" ? (
-          profileData && (profileData.instagram || profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) ? (
-            <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", overflow: "hidden" }}>
-              {profileData.instagram && (
-                <a href={`https://instagram.com/${profileData.instagram}`} target="_blank" rel="noopener noreferrer"
-                  style={{ display: "flex", alignItems: "center", gap: "10px", padding: "14px 16px", borderBottom: (profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) ? "1px solid rgba(255,255,255,0.08)" : "none", textDecoration: "none", background: "linear-gradient(90deg, rgba(168,85,247,0.1), transparent)" }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="1" y="1" width="22" height="22" rx="6" stroke="rgba(255,255,255,0.55)" strokeWidth="1.8" fill="none"/>
-                    <circle cx="12" cy="12" r="4.2" stroke="rgba(255,255,255,0.55)" strokeWidth="1.8" fill="none"/>
-                    <circle cx="17.2" cy="6.8" r="1.1" fill="rgba(255,255,255,0.55)"/>
-                  </svg>
-                  <div>
-                    <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.12em", marginBottom: "2px" }}>INSTAGRAM</div>
-                    <div style={{ fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", color: "#A855F7", fontWeight: "bold" }}>@{profileData.instagram}</div>
-                  </div>
-                  <span style={{ marginLeft: "auto", fontSize: "14px", color: "#A855F7" }}>↗</span>
-                </a>
-              )}
-              {(profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
-                <div style={{ padding: "14px 16px" }}>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: profileData.genres.length > 0 ? "10px" : "0" }}>
-                    {profileData.age_group && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.age_group}</span>}
-                    {profileData.dance_years != null && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>歴{profileData.dance_years}年</span>}
-                    {profileData.gender && <span style={{ fontSize: "11px", padding: "3px 8px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.gender}</span>}
-                  </div>
-                  {profileData.genres.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>{profileData.genres.map(g => <GenreBadge key={g} genre={g} />)}</div>}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div style={{ textAlign: "center", padding: "40px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>プロフィール情報がありません</div>
-          )
         ) : (<>
-          {/* ACTIVITYタブ：自分なら参加/主催の2タブ（過去はグレー）、他人なら主催のみ。
-              タブの見た目は上のメインタブと同じ角丸セグメントに揃える */}
+          {/* 開催・参加した記録：自分なら参加/主催の2タブ（過去はグレー）、他人なら主催のみ */}
           {isOwn ? (<>
             <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "14px", padding: "4px" }}>
               {(["joined", "hosted"] as const).map(t => (
