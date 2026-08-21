@@ -43,6 +43,61 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [followSheetLoading, setFollowSheetLoading] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [qrSaving, setQrSaving] = useState(false);
+  const [qrComposite, setQrComposite] = useState<string | null>(null);
+
+  // QRコードの中心に爆踊ロゴを合成する。誤り訂正レベルを最高（H）にしてQRを生成しているので、
+  // 中央の一部が隠れても読み取れる。canvasでQR画像とロゴ画像を重ねてPNGにする
+  useEffect(() => {
+    if (!showQR) { setQrComposite(null); return; }
+    const profileUrl = `${window.location.origin}/u/${profileId}`;
+    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=440x440&ecc=H&data=${encodeURIComponent(profileUrl)}`;
+    let cancelled = false;
+
+    const loadImage = (src: string, crossOrigin?: string) =>
+      new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        if (crossOrigin) img.crossOrigin = crossOrigin;
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+
+    (async () => {
+      try {
+        const [qrImg, logoImg] = await Promise.all([loadImage(qrSrc, "anonymous"), loadImage("/logo.jpg")]);
+        if (cancelled) return;
+        const size = 440;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(qrImg, 0, 0, size, size);
+
+        // 中央に白丸の台座を敷いてからロゴを丸くくり抜いて重ねる
+        const cx = size / 2;
+        const cy = size / 2;
+        const bgRadius = size * 0.15;
+        const logoRadius = size * 0.13;
+        ctx.beginPath();
+        ctx.arc(cx, cy, bgRadius, 0, Math.PI * 2);
+        ctx.fillStyle = "#fff";
+        ctx.fill();
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, logoRadius, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(logoImg, cx - logoRadius, cy - logoRadius, logoRadius * 2, logoRadius * 2);
+        ctx.restore();
+
+        if (!cancelled) setQrComposite(canvas.toDataURL("image/png"));
+      } catch {
+        // 合成に失敗しても素のQRコードが表示されるので何もしない
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [showQR, profileId]);
 
   // QRコード画像を写真に保存できるようにする。外部APIの画像はdownload属性を無視されがちなので、
   // 一度blobとして取得してから保存する。スマホはWeb Share APIがあれば「写真に保存」までできる
@@ -518,7 +573,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       {/* プロフィールシェア用QRコード */}
       {showQR && (() => {
         const profileUrl = `${window.location.origin}/u/${profileId}`;
-        const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(profileUrl)}`;
+        // ロゴ合成がまだ終わっていない間は素のQRコードを表示し、できあがり次第差し替える
+        const qrImageSrc = qrComposite || `https://api.qrserver.com/v1/create-qr-code/?size=220x220&ecc=H&data=${encodeURIComponent(profileUrl)}`;
         return (
           <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setShowQR(false)}>
             <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
@@ -527,11 +583,11 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 <button onClick={() => setShowQR(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
               </div>
               <div style={{ background: "#fff", borderRadius: "12px", padding: "16px", display: "inline-block", lineHeight: 0 }}>
-                <img src={qrSrc} alt="プロフィールのQRコード" width={220} height={220} />
+                <img src={qrImageSrc} alt="プロフィールのQRコード" width={220} height={220} />
               </div>
               <div style={{ marginTop: "14px", fontSize: "11px", color: "rgba(255,255,255,0.55)", fontFamily: "'Noto Sans JP',sans-serif", wordBreak: "break-all" }}>{profileUrl}</div>
               <button
-                onClick={() => handleSaveQR(qrSrc)}
+                onClick={() => handleSaveQR(qrImageSrc)}
                 disabled={qrSaving}
                 style={{ marginTop: "14px", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", background: "#F0F0F0", border: "none", borderRadius: "8px", padding: "8px 10px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#141414", cursor: qrSaving ? "default" : "pointer", opacity: qrSaving ? 0.6 : 1 }}
               >
