@@ -482,20 +482,21 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                       const { date, time } = formatDate(c.starts_at);
                       const isPast = new Date(c.starts_at) < new Date();
                       return (
-                        <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding: "12px 14px", borderBottom: "1px solid rgba(255,255,255,0.08)", cursor: onCypherClick ? "pointer" : "default", opacity: isPast ? 0.45 : 1 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                            <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flex: 1 }}>{c.title}</div>
-                            <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, marginLeft: "8px" }}>
-                              <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: isPast ? "rgba(255,255,255,0.35)" : "#DC2626", fontWeight: "bold" }}>{c.participant_count}人</span>
-                              {/* 編集は開催前だけ。削除は終わったものにも出す
-                                  （テストで作ったサイファーを後片付けできるように） */}
-                              {!isPast && <button onClick={e => { e.stopPropagation(); onEditCypher?.(c.id); }} title="編集" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#F0F0F0", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Pencil size={13} /></button>}
-                              <button onClick={e => { e.stopPropagation(); setDeleteConfirm({ id: c.id, kind: "cypher" }); }} title="削除" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#F0F0F0", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
+                        // レッスン・イベントの行と縦幅を揃えるため、同じ1行レイアウト（左に見出し、右にバッジ）にする
+                        <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding: "10px 14px", borderBottom: "1px solid rgba(255,255,255,0.08)", cursor: onCypherClick ? "pointer" : "default", opacity: isPast ? 0.45 : 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div>
+                            <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{c.title}</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "2px" }}>
+                              <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Clock size={9} />{date} {time}</span>
+                              {isPast && <span style={{ fontSize: "9px", padding: "1px 5px", background: "rgba(255,255,255,0.08)", borderRadius: "3px", color: "#F0F0F0" }}>終了</span>}
                             </div>
                           </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "3px" }}>
-                            <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Clock size={9} />{date} {time}</span>
-                            {isPast && <span style={{ fontSize: "9px", padding: "1px 5px", background: "rgba(255,255,255,0.08)", borderRadius: "3px", color: "#F0F0F0" }}>終了</span>}
+                          <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, marginLeft: "8px" }}>
+                            <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: isPast ? "rgba(255,255,255,0.35)" : "#DC2626", fontWeight: "bold" }}>{c.participant_count}人</span>
+                            {/* 編集は開催前だけ。削除は終わったものにも出す
+                                （テストで作ったサイファーを後片付けできるように） */}
+                            {!isPast && <button onClick={e => { e.stopPropagation(); onEditCypher?.(c.id); }} title="編集" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#F0F0F0", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Pencil size={13} /></button>}
+                            <button onClick={e => { e.stopPropagation(); setDeleteConfirm({ id: c.id, kind: "cypher" }); }} title="削除" style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#F0F0F0", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
                           </div>
                         </div>
                       );})
