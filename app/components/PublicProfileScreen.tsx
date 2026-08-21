@@ -232,28 +232,30 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           </div>
         </div>
 
-        <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0" }}>{name}</h2>
-
-        {/* アイコンと数字を横並び。数字は押すと中身が見られる */}
-        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "10px" }}>
+        {/* アバターは左、名前とその真下に数字（開催が先頭）を右側にまとめる */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
           <div style={{ width: "82px", height: "82px", borderRadius: "50%", background: "linear-gradient(135deg,#DC2626,#F87171)", border: "3px solid #141414", boxShadow: "0 2px 10px rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
             {profileData?.avatar_url
               ? <img src={profileData.avatar_url} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               : <span style={{ fontSize: "30px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#fff" }}>{name[0]?.toUpperCase() ?? "?"}</span>
             }
           </div>
-          <div style={{ flex: 1, display: "flex", justifyContent: "space-around" }}>
-            {([
-              ["開催", hostedCyphers.length + hostedLessons.length, undefined],
-              ["フォロワー", followerCount, () => openFollowSheet("followers")],
-              ["フォロー中", followingCount, () => openFollowSheet("following")],
-            ] as const).map(([label, count, onClick]) => (
-              <button key={label} onClick={onClick} disabled={!onClick}
-                style={{ background: "none", border: "none", padding: "4px 6px", cursor: onClick ? "pointer" : "default", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
-                <span style={{ fontSize: "17px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{count}</span>
-                <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{label}</span>
-              </button>
-            ))}
+          <div style={{ flex: 1 }}>
+            <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0" }}>{name}</h2>
+            {/* space-betweenにして「開催」を左端＝名前の真下に揃える */}
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
+              {([
+                ["開催", hostedCyphers.length + hostedLessons.length, undefined],
+                ["フォロワー", followerCount, () => openFollowSheet("followers")],
+                ["フォロー中", followingCount, () => openFollowSheet("following")],
+              ] as const).map(([label, count, onClick]) => (
+                <button key={label} onClick={onClick} disabled={!onClick}
+                  style={{ background: "none", border: "none", padding: "4px 6px", cursor: onClick ? "pointer" : "default", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+                  <span style={{ fontSize: "17px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{count}</span>
+                  <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
