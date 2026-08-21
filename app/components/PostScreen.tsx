@@ -4,8 +4,30 @@ import { Check, Zap, BookOpen, RotateCcw } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { FormState } from "../lib/types";
-import { GENRES, GENRE_COLORS, genreLabel, DEFAULT_START_TIME, isNextDayEnd, getNextDate, todayStr, toggleGenre as toggleGenreList } from "../lib/constants";
+import { GENRES, GENRE_COLORS, genreLabel, START_TIME_OPTIONS, DEFAULT_START_TIME, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr, toggleGenre as toggleGenreList } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
+
+// 時間はネイティブのtime pickerだとタップして開くまで触れず、AM/PM表記になる端末もあるため、
+// 常時展開の横スクロールストリップにする。タップ即選択・24時間表記固定（AM/PMは出さない）
+function TimeStrip({ value, onChange, options, accent }: { value: string; onChange: (v: string) => void; options: { t: string; label: string }[]; accent: string }) {
+  const selectedRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    selectedRef.current?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [value]);
+  return (
+    <div className="bd-scroll" style={{ display: "flex", gap: "6px", overflowX: "auto", padding: "2px 1px 6px" }}>
+      {options.map(({ t, label }) => {
+        const sel = t === value;
+        return (
+          <button key={t || "unset"} ref={sel ? selectedRef : undefined} type="button" onClick={() => onChange(t)}
+            style={{ flexShrink: 0, padding: "8px 12px", borderRadius: "8px", border: sel ? `1px solid ${accent}` : "1px solid rgba(255,255,255,0.14)", background: sel ? `${accent}22` : "#1A1A1A", color: sel ? accent : "rgba(255,255,255,0.7)", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: sel ? 700 : 400, cursor: "pointer", whiteSpace: "nowrap" }}>
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 // タブの並び順。ホーム画面と同じ順でスワイプ移動できるようにする
 const TAB_ORDER = ["cypher", "pl", "event"] as const;
@@ -257,14 +279,14 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
           <div><label style={lbl}>日付 <span style={{ color: "#DC2626" }}>*</span></label>
             <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
           </div>
-          {/* 24時間表記のタイムピッカー。step=1800(秒)=30分刻みでスピナー操作を制限する */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-            <div><label style={lbl}>開始時間</label>
-              <div style={{ display: "flex" }}><input type="time" step={1800} style={{ ...inp, flex: 1 }} value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} /></div>
-            </div>
-            <div><label style={lbl}>終了時間</label>
-              <div style={{ display: "flex" }}><input type="time" step={1800} style={{ ...inp, flex: 1 }} value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} /></div>
-            </div>
+          {/* タップして開くプルダウンではなく、常時展開されたストリップを直接タップ/スクロールで選ぶ。24時間表記固定 */}
+          <div><label style={lbl}>開始時間</label>
+            <TimeStrip accent="#DC2626" value={form.start_time} onChange={t => setForm(f => ({ ...f, start_time: t }))}
+              options={START_TIME_OPTIONS.map(t => ({ t, label: t }))} />
+          </div>
+          <div><label style={lbl}>終了時間</label>
+            <TimeStrip accent="#DC2626" value={form.end_time} onChange={t => setForm(f => ({ ...f, end_time: t }))}
+              options={[{ t: "", label: "未設定" }, ...endTimeOptions(form.start_time).map(t => ({ t, label: endTimeLabel(t, form.start_time) }))]} />
           </div>
           <div><label style={lbl}>イベント名 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
           <div><label style={lbl}>ジャンル</label>
@@ -300,14 +322,14 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
           <div><label style={lbl}>日付 <span style={{ color: plAccent }}>*</span></label>
             <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={plForm.date} onChange={e => setPlForm(f => ({ ...f, date: e.target.value }))} /></div>
           </div>
-          {/* 24時間表記のタイムピッカー。step=1800(秒)=30分刻みでスピナー操作を制限する */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-            <div><label style={lbl}>開始時間</label>
-              <div style={{ display: "flex" }}><input type="time" step={1800} style={{ ...inp, flex: 1 }} value={plForm.start_time} onChange={e => setPlForm(f => ({ ...f, start_time: e.target.value }))} /></div>
-            </div>
-            <div><label style={lbl}>終了時間</label>
-              <div style={{ display: "flex" }}><input type="time" step={1800} style={{ ...inp, flex: 1 }} value={plForm.end_time} onChange={e => setPlForm(f => ({ ...f, end_time: e.target.value }))} /></div>
-            </div>
+          {/* タップして開くプルダウンではなく、常時展開されたストリップを直接タップ/スクロールで選ぶ。24時間表記固定 */}
+          <div><label style={lbl}>開始時間</label>
+            <TimeStrip accent={plAccent} value={plForm.start_time} onChange={t => setPlForm(f => ({ ...f, start_time: t }))}
+              options={START_TIME_OPTIONS.map(t => ({ t, label: t }))} />
+          </div>
+          <div><label style={lbl}>終了時間</label>
+            <TimeStrip accent={plAccent} value={plForm.end_time} onChange={t => setPlForm(f => ({ ...f, end_time: t }))}
+              options={[{ t: "", label: "未設定" }, ...endTimeOptions(plForm.start_time).map(t => ({ t, label: endTimeLabel(t, plForm.start_time) }))]} />
           </div>
           <div><label style={lbl}>{plNoun}名 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={plForm.title} onChange={e => setPlForm(f => ({ ...f, title: e.target.value }))} /></div>
           <div style={{ display: "grid", gridTemplateColumns: isEvent ? "1fr" : "1fr 1fr", gap: "10px" }}>
