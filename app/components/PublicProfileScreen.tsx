@@ -8,7 +8,7 @@ import { GenreBadge } from "./GenreBadge";
 import { Loading } from "./Loading";
 import { showToast } from "./Toast";
 
-export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogout, onViewProfile, onCypherClick, onLessonClick, onEditCypher }: {
+export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogout, onViewProfile, onCypherClick, onLessonClick, onEditCypher, onEditLesson }: {
   profileId: string;
   currentUserId: string;
   onBack?: () => void;
@@ -18,12 +18,13 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   onCypherClick?: (cypherId: string) => void;
   onLessonClick?: (lessonId: string) => void;
   onEditCypher?: (cypherId: string) => void;
+  onEditLesson?: (lessonId: string) => void;
 }) {
   const isOwn = profileId === currentUserId;
   type ProfileData = { dancer_name: string; genres: GenreKey[]; instagram: string | null; dance_years: number | null; age_group: string | null; gender: string | null; bio: string | null; playlist_url: string | null; avatar_url: string | null; is_private: boolean };
   type HostedCypher = { id: string; title: string; starts_at: string; location: string; participant_count: number };
   type JoinedCypher = { id: string; title: string; starts_at: string; location: string; organizer_name: string };
-  type HostedLesson = { id: string; title: string; starts_at: string; location: string; kind: "lesson" | "event" };
+  type HostedLesson = { id: string; title: string; starts_at: string; location: string; kind: "lesson" | "event"; participant_count: number };
 
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [followStatus, setFollowStatus] = useState<"none" | "pending" | "accepted">("none");
@@ -155,11 +156,12 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   useEffect(() => {
     async function fetchAll() {
       setLoading(true);
-      const [profileRes, hostedRes, hostedLessonsRes, allPartsRes, followersRes, followingRes] = await Promise.all([
+      const [profileRes, hostedRes, hostedLessonsRes, allPartsRes, allPlPartsRes, followersRes, followingRes] = await Promise.all([
         supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, bio, playlist_url, avatar_url, is_private").eq("id", profileId).single(),
         supabase.from("cyphers").select("id, title, starts_at, location").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("private_lessons").select("id, title, starts_at, location, kind").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("participations").select("cypher_id"),
+        supabase.from("pl_participations").select("lesson_id"),
         supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", profileId).eq("status", "accepted"),
         supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", profileId),
       ]);
@@ -175,11 +177,13 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       }
       const countMap: Record<string, number> = {};
       (allPartsRes.data ?? []).forEach((p: any) => { countMap[p.cypher_id] = (countMap[p.cypher_id] ?? 0) + 1; });
+      const plCountMap: Record<string, number> = {};
+      (allPlPartsRes.data ?? []).forEach((p: any) => { plCountMap[p.lesson_id] = (plCountMap[p.lesson_id] ?? 0) + 1; });
       if (hostedRes.data) {
         setHostedCyphers((hostedRes.data as any[]).map(c => ({ id: c.id, title: c.title, starts_at: c.starts_at, location: c.location, participant_count: countMap[c.id] ?? 0 })));
       }
       if (hostedLessonsRes.data) {
-        setHostedLessons((hostedLessonsRes.data as any[]).map(l => ({ id: l.id, title: l.title, starts_at: l.starts_at, location: l.location, kind: l.kind === "event" ? "event" : "lesson" })));
+        setHostedLessons((hostedLessonsRes.data as any[]).map(l => ({ id: l.id, title: l.title, starts_at: l.starts_at, location: l.location, kind: l.kind === "event" ? "event" : "lesson", participant_count: plCountMap[l.id] ?? 0 })));
       }
       if (isOwn) {
         const { data: joinedData } = await supabase.from("participations")
@@ -268,15 +272,21 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     const accent = isEv ? "#EAB308" : "#2563EB";
     return (
       <div key={l.id} onClick={() => onLessonClick?.(l.id)} style={{ padding: "10px 14px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderLeft: "3px solid " + accent, borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: onLessonClick ? "pointer" : "default", opacity: ended ? 0.5 : 1 }}>
-        <div>
-          <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: ended ? "rgba(255,255,255,0.45)" : "#F0F0F0" }}>{l.title}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: ended ? "rgba(255,255,255,0.45)" : "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.title}</div>
           <div style={{ fontSize: "10px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "2px", display: "flex", alignItems: "center", gap: "6px" }}><Clock size={9} color="rgba(255,255,255,0.35)" />{date} {time}</div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, marginLeft: "8px" }}>
           {ended
             ? <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", padding: "2px 7px", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "3px" }}>終了</span>
             : <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: accent, fontWeight: "bold", padding: "2px 7px", background: accent + "14", borderRadius: "3px" }}>{isEv ? "EVENT" : "PRIVATE"}</span>}
-          {/* 自分のレッスンには削除ボタン（終了後も消せる） */}
+          {/* 参加人数はCYPHERの主催カードと同じ見せ方 */}
+          <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: ended ? "rgba(255,255,255,0.35)" : accent, fontWeight: "bold" }}>{l.participant_count}人</span>
+          {/* 自分のレッスン・イベントには編集（開催前だけ）・削除（終了後も消せる）ボタン */}
+          {isOwn && !ended && (
+            <button onClick={e => { e.stopPropagation(); onEditLesson?.(l.id); }} title="編集"
+              style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#F0F0F0", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Pencil size={13} /></button>
+          )}
           {isOwn && (
             <button onClick={e => { e.stopPropagation(); setDeleteConfirm({ id: l.id, kind: "lesson" }); }} title="削除"
               style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#F0F0F0", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
@@ -495,7 +505,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 : (<>
                     {hostedCyphers.length > 0 && (
                       <div style={{ marginBottom: (hostedPlList.length > 0 || hostedEventList.length > 0) ? "12px" : 0 }}>
-                        <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>CYPHER / サイファー</div>
+                        <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>CYPHER</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                           {hostedCyphers.map(c => {
                             const { date, time } = formatDate(c.starts_at);
@@ -525,7 +535,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                     )}
                     {hostedPlList.length > 0 && (
                       <div style={{ marginBottom: hostedEventList.length > 0 ? "12px" : 0 }}>
-                        <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>P LESSON / プライベートレッスン</div>
+                        <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>P LESSON</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                           {hostedPlList.map(renderLessonRow)}
                         </div>
@@ -533,7 +543,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                     )}
                     {hostedEventList.length > 0 && (
                       <div>
-                        <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>EVENT / イベント</div>
+                        <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>EVENT</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                           {hostedEventList.map(renderLessonRow)}
                         </div>
