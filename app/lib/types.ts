@@ -66,6 +66,7 @@ export interface ProfileState {
   dance_years: string;
   age_group: string;
   gender: string;
+  bio: string;
 }
 
 export interface ParticipantProfile {
