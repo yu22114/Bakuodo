@@ -60,7 +60,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
 
   // 入力が何かあるか。何も書いていない状態を下書きとして残さないための判定
   const hasContent = (f: typeof EMPTY_FORM, p: typeof EMPTY_PL) =>
-    !!(f.title || f.date || f.station || f.studio || f.description || f.max_members || f.studio_fee || f.genres.length || f.payment.length ||
+    !!(f.title || f.date || f.station || f.studio || f.description || f.max_members || f.studio_fee || f.genres.length ||
        p.title || p.date || p.station || p.studio || p.description || p.max_members || p.price);
 
   // 下書きの復元。タブだけは復元しない（トップで見ていたセクションを優先したいため）
@@ -102,7 +102,6 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
 
   // All Styleと他ジャンルの同時選択はできない（constants.tsのtoggleGenreが担当）
   const toggleGenre = (g: (typeof GENRES)[number]) => setForm(f => ({ ...f, genres: toggleGenreList(f.genres, g) }));
-  const togglePayment = (p: string) => setForm(f => ({ ...f, payment: f.payment.includes(p) ? f.payment.filter(x => x !== p) : [...f.payment, p] }));
   const togglePlGenre = (g: string) => setPlForm(f => ({ ...f, genres: toggleGenreList(f.genres, g) }));
 
   // 必須項目（最寄り駅・日付）が埋まっているか
@@ -246,11 +245,6 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <div><label style={lbl}>参加定員</label><input style={inp} type="number" min="1" placeholder="空欄 = 無制限" value={form.max_members} onChange={e => setForm(f => ({ ...f, max_members: e.target.value }))} /></div>
             <div><label style={lbl}>スタジオ代（円・合計）</label><input style={inp} type="number" min="0" placeholder="例: 6000" value={form.studio_fee} onChange={e => setForm(f => ({ ...f, studio_fee: e.target.value }))} /></div>
-          </div>
-          <div><label style={lbl}>支払い方法（複数選択可）</label>
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              {["現金", "PayPay", "無料"].map(p => { const sel = form.payment.includes(p); return (<button key={p} onClick={() => togglePayment(p)} style={{ padding: "8px 16px", border: sel ? "1px solid #DC2626" : "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", background: sel ? "rgba(220,38,38,0.1)" : "transparent", color: sel ? "#DC2626" : "rgba(255,255,255,0.5)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>{p}</button>); })}
-            </div>
           </div>
           <button onClick={() => setIsPrivate(v => !v)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
             <div><div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold" }}>🔒 フォロワー限定</div><div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginTop: "3px" }}>ONにするとフォロワーにのみ表示されます</div></div>
