@@ -91,7 +91,8 @@ export function EditLessonScreen({ lessonId, user, onBack, onSaved }: {
     const endDate = form.end_time && isNextDayEnd(form.end_time, form.start_time) ? getNextDate(form.date) : form.date;
     const ends_at = form.end_time ? `${endDate}T${form.end_time}:00+09:00` : null;
     const location = form.studio ? `${form.station} ${form.studio}` : form.station;
-    const title = form.title.trim() || location;
+    // イベント名が空欄なら会場名だけをタイトルにする（会場も未入力なら駅名にフォールバック）
+    const title = form.title.trim() || form.studio || location;
     const { error: uErr } = await supabase.from("private_lessons").update({ title, location, description: form.description, starts_at, ends_at, max_members: form.max_members ? Number(form.max_members) : null, price: form.price ? Number(form.price) : null, target_level: form.target_level, visibility: isPrivate ? "private" : "public", requires_approval: requiresApproval }).eq("id", lessonId).eq("organizer_id", user.id);
     if (uErr) { setError(`保存に失敗しました: ${uErr.message}`); setSaving(false); return; }
     await supabase.from("pl_genres").delete().eq("lesson_id", lessonId);

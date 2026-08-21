@@ -127,7 +127,8 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
     const endDate = form.end_time && isNextDayEnd(form.end_time, form.start_time) ? getNextDate(form.date) : form.date;
     const ends_at = form.end_time ? `${endDate}T${form.end_time}:00+09:00` : null;
     const location = form.studio ? `${form.station} ${form.studio}` : form.station;
-    const title = form.title.trim() || location;
+    // イベント名が空欄なら会場名だけをタイトルにする（会場も未入力なら駅名にフォールバック）
+    const title = form.title.trim() || form.studio || location;
     const { data: cypher, error: cErr } = await supabase
       .from("cyphers")
       .insert({ title, location, description: form.description, starts_at, ends_at, max_members: form.max_members ? Number(form.max_members) : null, organizer_id: user.id, visibility: isPrivate ? "private" : "public", requires_approval: requiresApproval, studio_fee: form.studio_fee ? Number(form.studio_fee) : null })
@@ -157,7 +158,8 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
     const endDate = plForm.end_time && isNextDayEnd(plForm.end_time, plForm.start_time) ? getNextDate(plForm.date) : plForm.date;
     const ends_at = plForm.end_time ? `${endDate}T${plForm.end_time}:00+09:00` : null;
     const location = plForm.studio ? `${plForm.station} ${plForm.studio}` : plForm.station;
-    const title = plForm.title.trim() || location;
+    // レッスン・イベント名が空欄なら会場名だけをタイトルにする（会場も未入力なら駅名にフォールバック）
+    const title = plForm.title.trim() || plForm.studio || location;
     const { data: lesson, error: lErr } = await supabase
       .from("private_lessons")
       .insert({ title, location, description: plForm.description, starts_at, ends_at, max_members: plForm.max_members ? Number(plForm.max_members) : null, price: plForm.price ? Number(plForm.price) : null, target_level: plForm.target_level, organizer_id: user.id, visibility: plIsPrivate ? "private" : "public", requires_approval: plRequiresApproval, kind: isEvent ? "event" : "lesson" })

@@ -58,7 +58,8 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
     const endDate = form.end_time && isNextDayEnd(form.end_time, form.start_time) ? getNextDate(form.date) : form.date;
     const ends_at = form.end_time ? `${endDate}T${form.end_time}:00+09:00` : null;
     const location = form.studio ? `${form.station} ${form.studio}` : form.station;
-    const title = form.title.trim() || location;
+    // イベント名が空欄なら会場名だけをタイトルにする（会場も未入力なら駅名にフォールバック）
+    const title = form.title.trim() || form.studio || location;
     const { error: uErr } = await supabase.from("cyphers").update({ title, location, description: form.description, starts_at, ends_at, max_members: form.max_members ? Number(form.max_members) : null, visibility: isPrivate ? "private" : "public", requires_approval: requiresApproval, studio_fee: form.studio_fee ? Number(form.studio_fee) : null }).eq("id", cypherId).eq("organizer_id", user.id);
     if (uErr) { setError(`保存に失敗しました: ${uErr.message}`); setSaving(false); return; }
     await supabase.from("cypher_genres").delete().eq("cypher_id", cypherId);
