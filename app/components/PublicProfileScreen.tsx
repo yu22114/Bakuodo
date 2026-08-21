@@ -264,8 +264,10 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
   const name = profileData?.dancer_name || "DANCER";
 
-  // レッスン・イベント1件分のカード（他人のプロフィールの主催一覧と、自分の主催タブのP LESSON/EVENT区分の両方で使う）
-  const renderLessonRow = (l: HostedLesson) => {
+  // レッスン・イベント1件分のカード（他人のプロフィールの主催一覧と、自分の主催タブのP LESSON/EVENT区分の両方で使う）。
+  // showType: 種類バッジ（EVENT/PRIVATE）を出すかどうか。P LESSON/EVENTで見出しが分かれている自分の主催タブでは
+  // 見出しと重複するので出さない。種類を分けずまとめて出す「他人のプロフィール」では出す
+  const renderLessonRow = (l: HostedLesson, showType: boolean = true) => {
     const { date, time } = formatDate(l.starts_at);
     const ended = timeUntil(l.starts_at) === "終了";
     const isEv = l.kind === "event";
@@ -279,7 +281,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, marginLeft: "8px" }}>
           {ended
             ? <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", padding: "2px 7px", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "3px" }}>終了</span>
-            : <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: accent, fontWeight: "bold", padding: "2px 7px", background: accent + "14", borderRadius: "3px" }}>{isEv ? "EVENT" : "PRIVATE"}</span>}
+            : showType && <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: accent, fontWeight: "bold", padding: "2px 7px", background: accent + "14", borderRadius: "3px" }}>{isEv ? "EVENT" : "PRIVATE"}</span>}
           {/* 参加人数はCYPHERの主催カードと同じ見せ方 */}
           <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: ended ? "rgba(255,255,255,0.35)" : accent, fontWeight: "bold" }}>{l.participant_count}人</span>
           {/* 自分のレッスン・イベントには編集（開催前だけ）・削除（終了後も消せる）ボタン */}
@@ -305,7 +307,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     <div style={{ marginTop: "12px" }}>
       <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>LESSON &amp; EVENT / レッスン・イベント</div>
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-        {hostedLessons.map(renderLessonRow)}
+        {hostedLessons.map(l => renderLessonRow(l))}
       </div>
     </div>
   );
@@ -537,7 +539,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                       <div style={{ marginBottom: hostedEventList.length > 0 ? "12px" : 0 }}>
                         <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>P LESSON</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                          {hostedPlList.map(renderLessonRow)}
+                          {hostedPlList.map(l => renderLessonRow(l, false))}
                         </div>
                       </div>
                     )}
@@ -545,7 +547,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                       <div>
                         <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>EVENT</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                          {hostedEventList.map(renderLessonRow)}
+                          {hostedEventList.map(l => renderLessonRow(l, false))}
                         </div>
                       </div>
                     )}
