@@ -67,6 +67,7 @@ export interface ProfileState {
   age_group: string;
   gender: string;
   bio: string;
+  playlist_url: string;
 }
 
 export interface ParticipantProfile {

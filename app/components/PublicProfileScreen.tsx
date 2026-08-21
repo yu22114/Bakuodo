@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText, MessageCircle } from "lucide-react";
+import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText, MessageCircle, Music } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import type { GenreKey } from "../lib/types";
 import { formatDate, timeUntil } from "../lib/constants";
@@ -19,7 +19,13 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   onEditCypher?: (cypherId: string) => void;
 }) {
   const isOwn = profileId === currentUserId;
-  type ProfileData = { dancer_name: string; genres: GenreKey[]; instagram: string | null; dance_years: number | null; age_group: string | null; gender: string | null; bio: string | null; avatar_url: string | null; is_private: boolean };
+  type ProfileData = { dancer_name: string; genres: GenreKey[]; instagram: string | null; dance_years: number | null; age_group: string | null; gender: string | null; bio: string | null; playlist_url: string | null; avatar_url: string | null; is_private: boolean };
+  // URLからApple Music / Spotifyを見分けて、ラベルと色だけ変える
+  const playlistMeta = (url: string) => {
+    if (url.includes("spotify.com")) return { label: "SPOTIFY", color: "#1DB954" };
+    if (url.includes("music.apple.com")) return { label: "APPLE MUSIC", color: "#FA243C" };
+    return { label: "PLAYLIST", color: "#F0F0F0" };
+  };
   type HostedCypher = { id: string; title: string; starts_at: string; location: string; participant_count: number };
   type JoinedCypher = { id: string; title: string; starts_at: string; location: string; organizer_name: string };
   type HostedLesson = { id: string; title: string; starts_at: string; location: string; kind: "lesson" | "event" };
@@ -46,7 +52,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     async function fetchAll() {
       setLoading(true);
       const [profileRes, hostedRes, hostedLessonsRes, allPartsRes, followersRes, followingRes] = await Promise.all([
-        supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, bio, avatar_url, is_private").eq("id", profileId).single(),
+        supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, bio, playlist_url, avatar_url, is_private").eq("id", profileId).single(),
         supabase.from("cyphers").select("id, title, starts_at, location").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("private_lessons").select("id, title, starts_at, location, kind").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("participations").select("cypher_id"),
@@ -55,7 +61,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       ]);
       if (profileRes.data) {
         const d = profileRes.data as any;
-        setProfileData({ dancer_name: d.dancer_name ?? "", genres: (d.genres ?? []) as GenreKey[], instagram: d.instagram ?? null, dance_years: d.dance_years ?? null, age_group: d.age_group ?? null, gender: d.gender ?? null, bio: d.bio ?? null, avatar_url: d.avatar_url ?? null, is_private: d.is_private ?? false });
+        setProfileData({ dancer_name: d.dancer_name ?? "", genres: (d.genres ?? []) as GenreKey[], instagram: d.instagram ?? null, dance_years: d.dance_years ?? null, age_group: d.age_group ?? null, gender: d.gender ?? null, bio: d.bio ?? null, playlist_url: d.playlist_url ?? null, avatar_url: d.avatar_url ?? null, is_private: d.is_private ?? false });
       }
       setFollowerCount(followersRes.count ?? 0);
       setFollowingCount(followingRes.count ?? 0);
@@ -263,8 +269,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           <p style={{ margin: "12px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.7)", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.6, whiteSpace: "pre-line" }}>{profileData.bio}</p>
         )}
 
-        {/* Instagramは横幅を半分にして、残りにその他項目のバッジを並べる */}
-        {profileData && (profileData.instagram || profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
+        {/* Instagram・プレイリストは横幅を半分にして、残りにその他項目のバッジを並べる */}
+        {profileData && (profileData.instagram || profileData.playlist_url || profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
           <div style={{ marginTop: "12px", display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "flex-start" }}>
             {profileData.instagram && (
               <a href={`https://instagram.com/${profileData.instagram}`} target="_blank" rel="noopener noreferrer"
@@ -280,6 +286,19 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 </div>
               </a>
             )}
+            {profileData.playlist_url && (() => {
+              const { label, color } = playlistMeta(profileData.playlist_url);
+              return (
+                <a href={profileData.playlist_url} target="_blank" rel="noopener noreferrer"
+                  style={{ flex: "0 1 50%", minWidth: "150px", boxSizing: "border-box", display: "flex", alignItems: "center", gap: "10px", padding: "14px 16px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.1)", textDecoration: "none", background: `linear-gradient(90deg, ${color}1A, transparent)` }}>
+                  <Music size={20} color={color} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.12em", marginBottom: "2px" }}>{label}</div>
+                    <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color, fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>プレイリストを聴く</div>
+                  </div>
+                </a>
+              );
+            })()}
             {(profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
               <div style={{ flex: 1, minWidth: "120px", display: "flex", flexWrap: "wrap", alignContent: "flex-start", gap: "6px" }}>
                 {profileData.age_group && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.age_group}</span>}
