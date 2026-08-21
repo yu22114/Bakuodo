@@ -570,7 +570,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 : (<>
                     {joinedCyphers.length > 0 && (
                       <div style={{ marginBottom: (joinedPlList.length > 0 || joinedEventList.length > 0) ? "12px" : 0 }}>
-                        <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>CYPHER</div>
+                        <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#DC2626", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#DC262614", borderRadius: "3px", margin: "0 0 6px 2px" }}>CYPHER</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                           {joinedCyphers.map(c => renderJoinedRow(c, "#DC2626", onCypherClick))}
                         </div>
@@ -578,7 +578,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                     )}
                     {joinedPlList.length > 0 && (
                       <div style={{ marginBottom: joinedEventList.length > 0 ? "12px" : 0 }}>
-                        <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>P LESSON</div>
+                        <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#2563EB", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#2563EB14", borderRadius: "3px", margin: "0 0 6px 2px" }}>P LESSON</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                           {joinedPlList.map(l => renderJoinedRow(l, "#2563EB", onLessonClick))}
                         </div>
@@ -586,7 +586,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                     )}
                     {joinedEventList.length > 0 && (
                       <div>
-                        <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>EVENT</div>
+                        <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#EAB308", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#EAB30814", borderRadius: "3px", margin: "0 0 6px 2px" }}>EVENT</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                           {joinedEventList.map(l => renderJoinedRow(l, "#EAB308", onLessonClick))}
                         </div>
@@ -600,7 +600,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 : (<>
                     {hostedCyphers.length > 0 && (
                       <div style={{ marginBottom: (hostedPlList.length > 0 || hostedEventList.length > 0) ? "12px" : 0 }}>
-                        <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>CYPHER</div>
+                        <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#DC2626", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#DC262614", borderRadius: "3px", margin: "0 0 6px 2px" }}>CYPHER</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                           {hostedCyphers.map(c => {
                             const { date, time } = formatDate(c.starts_at);
@@ -630,7 +630,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                     )}
                     {hostedPlList.length > 0 && (
                       <div style={{ marginBottom: hostedEventList.length > 0 ? "12px" : 0 }}>
-                        <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>P LESSON</div>
+                        <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#2563EB", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#2563EB14", borderRadius: "3px", margin: "0 0 6px 2px" }}>P LESSON</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                           {hostedPlList.map(l => renderLessonRow(l, false))}
                         </div>
@@ -638,7 +638,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                     )}
                     {hostedEventList.length > 0 && (
                       <div>
-                        <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>EVENT</div>
+                        <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#EAB308", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#EAB30814", borderRadius: "3px", margin: "0 0 6px 2px" }}>EVENT</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                           {hostedEventList.map(l => renderLessonRow(l, false))}
                         </div>
