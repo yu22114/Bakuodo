@@ -4,7 +4,7 @@ import { Clock, MapPin, User, X, Check, Zap, Share2 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, ParticipantProfile } from "../lib/types";
-import { formatDate, timeUntil, formatEndTime, timeAgo } from "../lib/constants";
+import { formatDate, timeUntil, formatEndTime, timeAgo, splitLocation } from "../lib/constants";
 import { GenreBadge } from "./GenreBadge";
 import { ParticipantBar } from "./ParticipantBar";
 import { showToast } from "./Toast";
@@ -26,6 +26,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
   const organizerId = cypher.organizer.id;
 
   const { date, time } = formatDate(cypher.starts_at);
+  const { station, venue } = splitLocation(cypher.location);
   const isEnded = timeUntil(cypher.starts_at) === "終了";
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
@@ -86,7 +87,10 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
               style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", textDecoration: "none", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px 12px", minHeight: "44px", background: "#1A1A1A" }}
             >
               <MapPin size={14} color="rgba(255,255,255,0.45)" />
-              <span style={{ flex: 1 }}>{cypher.location}</span>
+              <span style={{ flex: 1 }}>
+                {venue || (station && `${station}駅`)}
+                {venue && station && <span style={{ color: "rgba(255,255,255,0.45)" }}> {station}駅</span>}
+              </span>
               <span style={{ fontSize: "11px", color: "#5B9BFF", fontWeight: 700, flexShrink: 0 }}>地図を開く →</span>
             </a>
             <button onClick={() => onViewProfile(organizerId)}

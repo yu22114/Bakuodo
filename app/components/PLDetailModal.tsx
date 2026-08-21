@@ -4,7 +4,7 @@ import { Clock, MapPin, User, X, Check, BookOpen } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { PrivateLesson, ParticipantProfile } from "../lib/types";
-import { formatDate, timeUntil, formatEndTime, timeAgo } from "../lib/constants";
+import { formatDate, timeUntil, formatEndTime, timeAgo, splitLocation } from "../lib/constants";
 import { useComments } from "../lib/useComments";
 import { GenreBadge } from "./GenreBadge";
 import { ParticipantBar } from "./ParticipantBar";
@@ -55,6 +55,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   if (!lesson) return null;
 
   const { date, time } = formatDate(lesson.starts_at);
+  const { station, venue } = splitLocation(lesson.location);
   const isEnded = timeUntil(lesson.starts_at) === "終了";
   const isOwn = lesson.organizer.id === user.id;
   // イベントもこのモーダルを使い回す。色と呼び方だけ切り替える
@@ -96,7 +97,10 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
             {/* 地図へ飛べるのはここだけ。押せる場所だと分かるよう枠で囲う（DetailModalと同じ） */}
             <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lesson.location)}`} target="_blank" rel="noopener noreferrer" style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", textDecoration: "none", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px 12px", minHeight: "44px", background: "#1A1A1A" }}>
               <MapPin size={14} color="rgba(255,255,255,0.45)" />
-              <span style={{ flex: 1 }}>{lesson.location}</span>
+              <span style={{ flex: 1 }}>
+                {venue || (station && `${station}駅`)}
+                {venue && station && <span style={{ color: "rgba(255,255,255,0.45)" }}> {station}駅</span>}
+              </span>
               <span style={{ fontSize: "11px", color: accent, fontWeight: 700, flexShrink: 0 }}>地図を開く →</span>
             </a>
             <button onClick={() => onViewProfile(lesson.organizer.id)} style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
