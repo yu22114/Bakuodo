@@ -126,32 +126,31 @@ export function CommunityBoardScreen({ board, user, onBack }: {
             </div>
           )}
 
-          {/* 練習日程カード（表示専用。追加ボタンは上に分離した） */}
+          {/* 練習日程カード（1件ごとに独立したカードとして表示。追加ボタンは上に分離した） */}
           {schedules.length > 0 && (
-            <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px", marginBottom: "16px" }}>
-              <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", marginBottom: "8px" }}>練習日程</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                {schedules.map(s => (
-                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", background: "#1A1A1A", borderRadius: "8px", padding: "8px 10px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-                      <Calendar size={11} color="rgba(255,255,255,0.4)" />{formatJaDate(s.practice_date)}
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
+              {schedules.map(s => (
+                <div key={s.id} style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "5px", flex: 1, minWidth: 0, fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                      <Calendar size={12} color="rgba(255,255,255,0.4)" />{formatJaDate(s.practice_date)}
                     </div>
                     {s.practice_time && (
-                      <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-                        <Clock size={11} color="rgba(255,255,255,0.4)" />{s.practice_time}
+                      <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                        <Clock size={12} color="rgba(255,255,255,0.4)" />{s.practice_time}
                       </div>
                     )}
                     {s.place && (
-                      <div style={{ display: "flex", alignItems: "center", gap: "4px", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        <MapPin size={11} color="rgba(255,255,255,0.4)" />{s.place}
+                      <div style={{ display: "flex", alignItems: "center", gap: "5px", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <MapPin size={12} color="rgba(255,255,255,0.4)" />{s.place}
                       </div>
                     )}
-                    {isOwn && (
-                      <button onClick={() => deleteSchedule(s.id)} title="削除" style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "2px", flexShrink: 0 }}><Trash2 size={12} /></button>
-                    )}
                   </div>
-                ))}
-              </div>
+                  {isOwn && (
+                    <button onClick={() => deleteSchedule(s.id)} title="削除" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px", flexShrink: 0 }}><Trash2 size={14} /></button>
+                  )}
+                </div>
+              ))}
             </div>
           )}
 
