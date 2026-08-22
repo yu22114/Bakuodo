@@ -6,6 +6,28 @@ import { X, Check, ZoomIn } from "lucide-react";
 // 出力は正方形の画像（実際の円形マスクは表示側のborderRadius:50%に任せる）
 const VIEWPORT = 260; // 表示上の枠のサイズ(px)
 const OUTPUT = 600; // 書き出す画像の一辺のサイズ(px)。高解像度の端末でも荒れないように大きめにする
+const MAX_SOURCE = 1600; // スマホの高解像度写真をそのまま扱うとメモリ不足で落ちることがあるため、先に長辺をここまで縮める
+
+// 元画像が大きすぎる場合だけ縮小したBlobを返す（十分小さい場合はそのまま元ファイルを使う）
+async function shrinkIfNeeded(file: File): Promise<Blob> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const longSide = Math.max(bitmap.width, bitmap.height);
+    if (longSide <= MAX_SOURCE) { bitmap.close?.(); return file; }
+    const s = MAX_SOURCE / longSide;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * s);
+    canvas.height = Math.round(bitmap.height * s);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) { bitmap.close?.(); return file; }
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close?.();
+    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.9));
+    return blob ?? file;
+  } catch {
+    return file; // createImageBitmap非対応など、失敗したら元ファイルのまま使う
+  }
+}
 
 export function AvatarCropper({ file, onCancel, onConfirm }: {
   file: File;
@@ -22,9 +44,15 @@ export function AvatarCropper({ file, onCancel, onConfirm }: {
   const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
-    const url = URL.createObjectURL(file);
-    setImgUrl(url);
-    return () => URL.revokeObjectURL(url);
+    let url: string | null = null;
+    let cancelled = false;
+    (async () => {
+      const shrunk = await shrinkIfNeeded(file);
+      if (cancelled) return;
+      url = URL.createObjectURL(shrunk);
+      setImgUrl(url);
+    })();
+    return () => { cancelled = true; if (url) URL.revokeObjectURL(url); };
   }, [file]);
 
   // 画像全体がVIEWPORTを覆う最小の拡大率（これ未満に縮小すると枠内に隙間ができてしまう）
@@ -105,6 +133,11 @@ export function AvatarCropper({ file, onCancel, onConfirm }: {
           {loadError && (
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", textAlign: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)" }}>
               この画像は読み込めませんでした。別の写真をお試しください
+            </div>
+          )}
+          {!imgUrl && !loadError && (
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.4)" }}>
+              読み込み中...
             </div>
           )}
           {/* 実際に円形で保存されるイメージが分かるよう、四隅を暗くして丸いガイドを見せる */}
