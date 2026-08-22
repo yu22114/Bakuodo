@@ -1,27 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Plus, X, Check, UserPlus, Calendar, MapPin } from "lucide-react";
+import { Plus, X, Check, UserPlus } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { GENRES, GENRE_COLORS, genreLabel, toggleGenre, todayStr } from "../lib/constants";
 import type { GenreKey } from "../lib/types";
 import { Loading } from "./Loading";
+import { CommunityBoardCard, type Board } from "./CommunityBoardCard";
 
-type Board = {
-  id: string; title: string; subtitle: string | null; venue: string | null; genre: GenreKey | null;
-  event_date: string | null; event_start_date: string | null; event_end_date: string | null;
-  created_at: string;
-  instructors: { id: string; name: string; instagram: string | null }[];
-};
 type InstructorInput = { name: string; instagram: string };
 const EMPTY_INSTRUCTOR: InstructorInput = { name: "", instagram: "" };
-
-// 公演日程を「9/20(日)」のように短く表示する（保存はYYYY-MM-DDのカレンダー値のまま）
-function formatJaDate(dateStr: string) {
-  const d = new Date(`${dateStr}T00:00:00`);
-  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
-  return `${d.getMonth() + 1}/${d.getDate()}(${weekdays[d.getDay()]})`;
-}
 
 // 「コミュニティ」タブ：みんなが自由に作れる掲示板の一覧。
 // 右上の「＋」でタイトル等を入力して新しい掲示板を作り、タップすると中身（CommunityBoardScreen）が開く
@@ -39,11 +27,14 @@ export function CommunityScreen({ user, onOpenBoard }: {
   const [newGenres, setNewGenres] = useState<GenreKey[]>([]);
   const [instructors, setInstructors] = useState<InstructorInput[]>([{ ...EMPTY_INSTRUCTOR }]);
   const [creating, setCreating] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchBoards = async () => {
     const { data } = await supabase
       .from("community_boards")
-      .select("id, title, subtitle, venue, genre, event_date, event_start_date, event_end_date, created_at, instructors:community_board_instructors(id, name, instagram, sort_order)")
+      .select("id, title, subtitle, venue, genre, event_date, event_start_date, event_end_date, created_at, creator_id, instructors:community_board_instructors(id, name, instagram, sort_order)")
       .order("created_at", { ascending: false })
       .order("sort_order", { referencedTable: "community_board_instructors", ascending: true });
     setBoards((data as any[])?.map(b => ({ ...b, instructors: b.instructors ?? [] })) ?? []);
@@ -62,36 +53,76 @@ export function CommunityScreen({ user, onOpenBoard }: {
   const addInstructor = () => setInstructors(list => [...list, { ...EMPTY_INSTRUCTOR }]);
   const removeInstructor = (i: number) => setInstructors(list => list.filter((_, idx) => idx !== i));
 
-  const handleCreate = async () => {
+  // カードの編集ボタン：フォームに既存の内容を詰めて、作成と同じモーダルを編集モードで開く
+  const startEdit = (b: Board) => {
+    setEditingId(b.id);
+    setNewTitle(b.title);
+    setNewSubtitle(b.subtitle ?? "");
+    setNewStartDate(b.event_start_date ?? "");
+    setNewEndDate(b.event_end_date ?? "");
+    setNewVenue(b.venue ?? "");
+    setNewGenres(b.genre ? [b.genre] : []);
+    setInstructors(b.instructors.length > 0 ? b.instructors.map(ins => ({ name: ins.name, instagram: ins.instagram ?? "" })) : [{ ...EMPTY_INSTRUCTOR }]);
+    setShowCreate(true);
+  };
+
+  const closeModal = () => { setShowCreate(false); setEditingId(null); resetForm(); };
+
+  const handleSubmit = async () => {
     const title = newTitle.trim();
     if (!title || creating) return;
     setCreating(true);
-    const { data, error } = await supabase
-      .from("community_boards")
-      .insert({
-        title,
-        creator_id: user.id,
-        subtitle: newSubtitle.trim() || null,
-        event_start_date: newStartDate || null,
-        // 2日目は1日目より後の日を選んだ時だけ意味がある値として保存する
-        event_end_date: newEndDate && newEndDate > newStartDate ? newEndDate : null,
-        venue: newVenue.trim() || null,
-        genre: newGenres[0] ?? null,
-      })
-      .select("id, title").single();
-    if (error || !data) { setCreating(false); return; }
+    const fields = {
+      title,
+      subtitle: newSubtitle.trim() || null,
+      event_start_date: newStartDate || null,
+      // 2日目は1日目より後の日を選んだ時だけ意味がある値として保存する
+      event_end_date: newEndDate && newEndDate > newStartDate ? newEndDate : null,
+      venue: newVenue.trim() || null,
+      genre: newGenres[0] ?? null,
+    };
     // 名前を入れた講師だけ登録する（空欄の行は無視）
     const validInstructors = instructors.map(ins => ({ name: ins.name.trim(), instagram: ins.instagram.trim() })).filter(ins => ins.name);
+
+    if (editingId) {
+      const { error } = await supabase.from("community_boards").update(fields).eq("id", editingId);
+      if (error) { setCreating(false); return; }
+      // 講師は一旦全部消してから今のフォームの内容で入れ直す（作成者しか触れないのでRLS上も問題ない）
+      await supabase.from("community_board_instructors").delete().eq("board_id", editingId);
+      if (validInstructors.length > 0) {
+        await supabase.from("community_board_instructors").insert(
+          validInstructors.map((ins, i) => ({ board_id: editingId, name: ins.name, instagram: ins.instagram || null, sort_order: i }))
+        );
+      }
+      setCreating(false);
+      closeModal();
+      fetchBoards();
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("community_boards")
+      .insert({ ...fields, creator_id: user.id })
+      .select("id, title").single();
+    if (error || !data) { setCreating(false); return; }
     if (validInstructors.length > 0) {
       await supabase.from("community_board_instructors").insert(
         validInstructors.map((ins, i) => ({ board_id: (data as any).id, name: ins.name, instagram: ins.instagram || null, sort_order: i }))
       );
     }
     setCreating(false);
-    setShowCreate(false);
-    resetForm();
+    closeModal();
     fetchBoards();
     onOpenBoard(data as any);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    const { error } = await supabase.from("community_boards").delete().eq("id", deleteTarget);
+    setDeleting(false);
+    if (!error) setBoards(list => list?.filter(b => b.id !== deleteTarget) ?? list);
+    setDeleteTarget(null);
   };
 
   const inp: React.CSSProperties = { width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" };
@@ -118,59 +149,22 @@ export function CommunityScreen({ user, onOpenBoard }: {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {boards.map(b => {
-              const color = b.genre ? GENRE_COLORS[b.genre] : null;
-              const genreText = b.genre ? genreLabel(b.genre).toUpperCase() : "";
-              return (
-                <div key={b.id} onClick={() => onOpenBoard(b)}
-                  style={{ padding: "12px 14px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderLeft: "3px solid #DC2626", borderRadius: "8px", cursor: "pointer", position: "relative", overflow: "hidden" }}>
-                  {/* ジャンルはホーム画面のカードと同じく、右下に色付きの背景文字で出す */}
-                  {color && (
-                    <div aria-hidden="true" style={{ position: "absolute", right: "10px", bottom: "-6px", fontSize: `${Math.round(Math.min(46, Math.round(240 / genreText.length)) * 1.1)}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: color + "40", pointerEvents: "none", userSelect: "none" }}>
-                      {genreText}
-                    </div>
-                  )}
-                  <div style={{ position: "relative" }}>
-                    <div style={{ fontSize: "20px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>【{b.title}】</div>
-                    {b.subtitle && <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", marginTop: "4px" }}>{b.subtitle}</div>}
-                    {(b.event_start_date || b.event_date) && (
-                      <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "11px", color: "rgba(255,255,255,0.65)", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "5px" }}>
-                        <Calendar size={10} color="rgba(255,255,255,0.4)" />
-                        {b.event_start_date
-                          ? formatJaDate(b.event_start_date) + (b.event_end_date ? `〜${formatJaDate(b.event_end_date)}` : "")
-                          : b.event_date}
-                      </div>
-                    )}
-                    {b.venue && (
-                      <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "11px", color: "rgba(255,255,255,0.65)", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "3px" }}>
-                        <MapPin size={10} color="rgba(255,255,255,0.4)" />{b.venue}
-                      </div>
-                    )}
-                    {b.instructors.length > 0 && (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "6px" }}>
-                        {b.instructors.map(ins => (
-                          <span key={ins.id} style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
-                            {ins.name}{ins.instagram && <span style={{ color: "#A855F7" }}> @{ins.instagram}</span>}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            {boards.map(b => (
+              <CommunityBoardCard key={b.id} board={b} isOwn={b.creator_id === user.id}
+                onClick={() => onOpenBoard(b)} onEdit={() => startEdit(b)} onDelete={() => setDeleteTarget(b.id)} />
+            ))}
           </div>
         )}
         <div style={{ height: "80px" }} />
       </div>
 
-      {/* 掲示板を作る */}
+      {/* 掲示板を作る・編集する */}
       {showCreate && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setShowCreate(false)}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={closeModal}>
           <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px", maxHeight: "80vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>NEW BOARD</div>
-              <button onClick={() => setShowCreate(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
+              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>{editingId ? "EDIT BOARD" : "NEW BOARD"}</div>
+              <button onClick={closeModal} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -227,10 +221,25 @@ export function CommunityScreen({ user, onOpenBoard }: {
               </div>
             </div>
 
-            <button onClick={handleCreate} disabled={!newTitle.trim() || creating}
+            <button onClick={handleSubmit} disabled={!newTitle.trim() || creating}
               style={{ marginTop: "18px", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "10px", border: "none", borderRadius: "8px", background: newTitle.trim() ? "#DC2626" : "rgba(255,255,255,0.08)", color: newTitle.trim() ? "#fff" : "rgba(255,255,255,0.3)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "bold", cursor: newTitle.trim() ? "pointer" : "default" }}>
-              <Check size={14} /> {creating ? "作成中..." : "作成する"}
+              <Check size={14} /> {creating ? (editingId ? "保存中..." : "作成中...") : (editingId ? "保存する" : "作成する")}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 削除確認モーダル */}
+      {deleteTarget && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 260, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setDeleteTarget(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "12px", padding: "28px 24px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
+            <div style={{ fontSize: "28px", marginBottom: "8px" }}>🗑️</div>
+            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "20px", color: "#F0F0F0", marginBottom: "8px" }}>掲示板を削除</div>
+            <div style={{ fontSize: "13px", color: "#F0F0F0", marginBottom: "24px", lineHeight: "1.6" }}>削除すると投稿・練習内容もすべて消えます。元に戻せません。本当に削除しますか？</div>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button onClick={() => setDeleteTarget(null)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#F0F0F0" }}>キャンセル</button>
+              <button onClick={handleDelete} disabled={deleting} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "#DC2626", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>{deleting ? "削除中..." : "削除する"}</button>
+            </div>
           </div>
         </div>
       )}
