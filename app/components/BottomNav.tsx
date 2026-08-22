@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Home, Plus, User } from "lucide-react";
+import { Home, Plus, Users, User } from "lucide-react";
 
 export function BottomNav({ current, onNav }: { current: string; onNav: (s: string) => void }) {
   // 下スクロールで隠れ、上スクロールで戻る
@@ -24,6 +24,7 @@ export function BottomNav({ current, onNav }: { current: string; onNav: (s: stri
   const items = [
     { id: "top", icon: <Home size={22} />, label: "ホーム" },
     { id: "post", icon: <Plus size={22} />, label: "投稿" },
+    { id: "community", icon: <Users size={22} />, label: "コミュニティ" },
     { id: "profile", icon: <User size={22} />, label: "マイページ" },
   ];
   return (
