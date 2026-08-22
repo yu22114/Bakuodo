@@ -7,6 +7,7 @@ import type { ProfileState } from "../lib/types";
 import { GENRES, GENRE_COLORS } from "../lib/constants";
 import { Loading } from "./Loading";
 import { useSwipeBack } from "../lib/useSwipeBack";
+import { AvatarCropper } from "./AvatarCropper";
 
 export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, onBack }: {
   user: SupabaseUser;
@@ -20,6 +21,8 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState("");
+  // 選択直後の画像。丸枠の範囲選び（クロップ）が終わるまではまだアップロードしない
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -50,8 +53,10 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
     fetchProfile();
   }, [user.id]);
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ファイルを選んだ直後はまだアップロードせず、丸枠の範囲選び（クロップ）画面を開く
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = ""; // 同じファイルを選び直しても変化を検知できるようにリセット
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
       setAvatarError("ファイルサイズは10MB以下にしてください");
@@ -61,17 +66,26 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
       setAvatarError("画像ファイルを選択してください");
       return;
     }
+    setAvatarError("");
+    setPendingAvatarFile(file);
+  };
+
+  // クロップ確定後、その範囲の画像（blob）をアップロードする
+  const handleAvatarCropped = async (blob: Blob) => {
+    setPendingAvatarFile(null);
     setAvatarUploading(true);
     setAvatarError("");
-    const ext = file.name.split(".").pop() ?? "jpg";
-    const path = `${user.id}.${ext}`;
-    const { error: uploadErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    const path = `${user.id}.jpg`;
+    const { error: uploadErr } = await supabase.storage.from("avatars").upload(path, blob, { upsert: true, contentType: "image/jpeg" });
     if (uploadErr) {
       setAvatarError(`アップロード失敗: ${uploadErr.message}`);
       setAvatarUploading(false);
       return;
     }
-    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+    const { data: { publicUrl: rawUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+    // 同じファイル名で上書きすると古い画像がキャッシュされたままになることがあるため、
+    // URLの末尾に更新時刻を付けてブラウザに新しい画像だと分からせる
+    const publicUrl = `${rawUrl}?t=${Date.now()}`;
     // updateだとprofilesの行が存在しない場合にエラーなしでスルーされるためupsertを使う。
     // まだ一度もダンサーネームを保存していない新規ユーザーだと、行が無いのでinsert扱いになり
     // dancer_nameのNOT NULL制約に引っかかるので、保存済みの値（無ければ仮の名前）を一緒に送る
@@ -145,7 +159,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
                 : <Camera size={13} color="#fff" />
               }
             </div>
-            <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: "none" }} disabled={avatarUploading} />
+            <input type="file" accept="image/*" onChange={handleAvatarSelect} style={{ display: "none" }} disabled={avatarUploading} />
           </label>
         </div>
         {avatarError && <div style={{ padding: "8px 12px", background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: "6px", color: "#DC2626", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", textAlign: "center" }}>{avatarError}</div>}
@@ -231,6 +245,9 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
           {saved ? <><Check size={15} />SAVED!</> : <><Star size={15} />プロフィールを保存する</>}
         </button>
       </div>
+      {pendingAvatarFile && (
+        <AvatarCropper file={pendingAvatarFile} onCancel={() => setPendingAvatarFile(null)} onConfirm={handleAvatarCropped} />
+      )}
     </div>
   );
 }
