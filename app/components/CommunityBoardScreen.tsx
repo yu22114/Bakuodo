@@ -18,7 +18,7 @@ function formatJaDate(dateStr: string) {
 
 type BoardDetail = { creator_id: string; subtitle: string | null };
 type PracticeSchedule = { id: string; practice_date: string; practice_time: string | null; practice_end_time: string | null; place: string | null };
-type Member = { id: string; dancer_name: string; avatar_url: string | null; isCreator: boolean };
+type Member = { id: string; dancer_name: string; avatar_url: string | null; instagram: string | null; isCreator: boolean };
 type AttendanceStatus = "yes" | "maybe" | "no";
 
 // 参加可否の表示（○=参加できる/△=未定/×=参加できない）
@@ -71,13 +71,13 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   // メンバー欄：作成者＋招待された人。両方を取ってきて1つのリストにする
   const fetchMembers = async (creatorId: string) => {
     const [{ data: creatorProfile }, { data: invites }] = await Promise.all([
-      supabase.from("profiles").select("id, dancer_name, avatar_url").eq("id", creatorId).single(),
-      supabase.from("community_board_invites").select("user_id, profiles:user_id(dancer_name, avatar_url)").eq("board_id", board.id),
+      supabase.from("profiles").select("id, dancer_name, avatar_url, instagram").eq("id", creatorId).single(),
+      supabase.from("community_board_invites").select("user_id, profiles:user_id(dancer_name, avatar_url, instagram)").eq("board_id", board.id),
     ]);
     const list: Member[] = [];
-    if (creatorProfile) list.push({ id: (creatorProfile as any).id, dancer_name: (creatorProfile as any).dancer_name, avatar_url: (creatorProfile as any).avatar_url, isCreator: true });
+    if (creatorProfile) list.push({ id: (creatorProfile as any).id, dancer_name: (creatorProfile as any).dancer_name, avatar_url: (creatorProfile as any).avatar_url, instagram: (creatorProfile as any).instagram, isCreator: true });
     (invites as any[] ?? []).forEach(i => {
-      list.push({ id: i.user_id, dancer_name: i.profiles?.dancer_name ?? "UNKNOWN", avatar_url: i.profiles?.avatar_url ?? null, isCreator: false });
+      list.push({ id: i.user_id, dancer_name: i.profiles?.dancer_name ?? "UNKNOWN", avatar_url: i.profiles?.avatar_url ?? null, instagram: i.profiles?.instagram ?? null, isCreator: false });
     });
     setMembers(list);
   };
@@ -183,20 +183,9 @@ export function CommunityBoardScreen({ board, user, onBack }: {
           <Loading />
         ) : (
           <>
-          {/* メンバー欄：作成者＋招待された人 */}
+          {/* メンバー欄：一覧は出さず合計人数だけ表示する */}
           {members && members.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
-              {members.map(m => (
-                <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "5px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "20px", padding: "3px 10px 3px 3px" }}>
-                  <div style={{ width: "20px", height: "20px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
-                    {m.avatar_url ? <img src={m.avatar_url} alt={m.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : m.dancer_name[0]?.toUpperCase()}
-                  </div>
-                  <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>
-                    {m.dancer_name}{m.isCreator && <span style={{ color: "rgba(255,255,255,0.4)" }}>・主催</span>}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "16px" }}>メンバー {members.length}人</div>
           )}
 
           {/* 練習日程を追加するボタン（作成者だけ）。一番上に置く */}
@@ -279,7 +268,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                         const mine = attendances[s.id]?.[user.id] === st;
                         return (
                           <button key={st} onClick={() => setMyAttendance(s.id, st)}
-                            style={{ flex: 1, aspectRatio: "1", borderRadius: "6px", border: mine ? `1px solid ${meta.color}` : "1px solid rgba(255,255,255,0.14)", background: mine ? `${meta.color}22` : "transparent", color: mine ? meta.color : "rgba(255,255,255,0.5)", fontSize: "14px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            style={{ flex: 1, height: "30px", borderRadius: "6px", border: mine ? `1px solid ${meta.color}` : "1px solid rgba(255,255,255,0.14)", background: mine ? `${meta.color}22` : "transparent", color: mine ? meta.color : "rgba(255,255,255,0.5)", fontSize: "14px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                             {meta.label}
                           </button>
                         );
@@ -326,7 +315,12 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                       <div style={{ width: "26px", height: "26px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
                         {m.avatar_url ? <img src={m.avatar_url} alt={m.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : m.dancer_name[0]?.toUpperCase()}
                       </div>
-                      <span style={{ flex: 1, fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{m.dancer_name}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{m.dancer_name}</div>
+                        {m.instagram && (
+                          <a href={`https://instagram.com/${m.instagram}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: "10px", color: "#A855F7", textDecoration: "none" }}>@{m.instagram}</a>
+                        )}
+                      </div>
                       <span style={{ fontSize: "14px", fontWeight: 700, color: meta ? meta.color : "rgba(255,255,255,0.3)" }}>{meta ? meta.label : "未回答"}</span>
                     </div>
                   );
