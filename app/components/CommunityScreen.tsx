@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { Plus, X, Check, UserPlus, Calendar, MapPin } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
-import { timeAgo } from "../lib/constants";
 import { Loading } from "./Loading";
 
 type Board = {
@@ -107,7 +106,7 @@ export function CommunityScreen({ user, onOpenBoard }: {
             {boards.map(b => (
               <div key={b.id} onClick={() => onOpenBoard(b)}
                 style={{ padding: "12px 14px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderLeft: "3px solid #DC2626", borderRadius: "8px", cursor: "pointer" }}>
-                <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>【{b.title}】</div>
+                <div style={{ fontSize: "20px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>【{b.title}】</div>
                 {b.subtitle && <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", marginTop: "4px" }}>{b.subtitle}</div>}
                 {b.event_date && (
                   <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "11px", color: "rgba(255,255,255,0.65)", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "5px" }}>
@@ -128,9 +127,6 @@ export function CommunityScreen({ user, onOpenBoard }: {
                     ))}
                   </div>
                 )}
-                <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "8px" }}>
-                  {timeAgo(b.created_at)}
-                </div>
               </div>
             ))}
           </div>
