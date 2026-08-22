@@ -4,13 +4,22 @@ import { ChevronLeft, Trash2, Send, MapPin, Calendar } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { timeAgo } from "../lib/constants";
+import type { GenreKey } from "../lib/types";
 import { useCommunityBoard } from "../lib/useCommunityBoard";
 import { useSwipeBack } from "../lib/useSwipeBack";
 import { Loading } from "./Loading";
+import { GenreBadge } from "./GenreBadge";
 
 const ACCENT = "#DC2626";
 
-type BoardDetail = { subtitle: string | null; event_date: string | null; venue: string | null };
+// 公演日程を「9/20(日)」のように短く表示する（CommunityScreenと同じ）
+function formatJaDate(dateStr: string) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  return `${d.getMonth() + 1}/${d.getDate()}(${weekdays[d.getDay()]})`;
+}
+
+type BoardDetail = { subtitle: string | null; venue: string | null; genre: GenreKey | null; event_date: string | null; event_start_date: string | null; event_end_date: string | null };
 type Instructor = { id: string; name: string; instagram: string | null };
 
 export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
@@ -27,7 +36,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
   useEffect(() => {
     async function fetchDetail() {
       const [{ data: boardData }, { data: instructorData }] = await Promise.all([
-        supabase.from("community_boards").select("subtitle, event_date, venue").eq("id", board.id).single(),
+        supabase.from("community_boards").select("subtitle, venue, genre, event_date, event_start_date, event_end_date").eq("id", board.id).single(),
         supabase.from("community_board_instructors").select("id, name, instagram").eq("board_id", board.id).order("sort_order", { ascending: true }),
       ]);
       if (boardData) setDetail(boardData as any);
@@ -36,7 +45,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
     fetchDetail();
   }, [board.id]);
 
-  const hasDetail = detail && (detail.subtitle || detail.event_date || detail.venue);
+  const hasDetail = detail && (detail.subtitle || detail.genre || detail.event_start_date || detail.event_date || detail.venue);
 
   return (
     <div {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }}>
@@ -53,10 +62,14 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
       <div className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "20px 16px" }}>
         {(hasDetail || instructors.length > 0) && (
           <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px", marginBottom: "20px" }}>
+            {detail?.genre && <div style={{ marginBottom: "10px" }}><GenreBadge genre={detail.genre} /></div>}
             {detail?.subtitle && <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", marginBottom: "10px" }}>{detail.subtitle}</div>}
-            {detail?.event_date && (
+            {(detail?.event_start_date || detail?.event_date) && (
               <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginBottom: "6px" }}>
-                <Calendar size={12} color="rgba(255,255,255,0.5)" />{detail.event_date}
+                <Calendar size={12} color="rgba(255,255,255,0.5)" />
+                {detail?.event_start_date
+                  ? formatJaDate(detail.event_start_date) + (detail.event_end_date ? `〜${formatJaDate(detail.event_end_date)}` : "")
+                  : detail?.event_date}
               </div>
             )}
             {detail?.venue && (
@@ -65,7 +78,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
               </div>
             )}
             {instructors.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "5px", paddingTop: instructors.length > 0 && (detail?.subtitle || detail?.event_date || detail?.venue) ? "8px" : 0, borderTop: (detail?.subtitle || detail?.event_date || detail?.venue) ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "5px", paddingTop: (detail?.genre || detail?.subtitle || detail?.event_start_date || detail?.event_date || detail?.venue) ? "8px" : 0, borderTop: (detail?.genre || detail?.subtitle || detail?.event_start_date || detail?.event_date || detail?.venue) ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
                 {instructors.map(ins => (
                   <div key={ins.id} style={{ display: "flex", alignItems: "baseline", gap: "8px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>
                     <span style={{ color: "#F0F0F0", fontWeight: "bold" }}>{ins.name}</span>
