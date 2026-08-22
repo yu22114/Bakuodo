@@ -28,7 +28,7 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       // タッチ端末はホバーできないので、PCのホバー時と同じ色付き影を@media(hover:none)で常時出す
       className="bd-glow-card-blue"
-      style={{ background: "#141414", border: `1px solid ${hover ? accent + "4D" : "rgba(255,255,255,0.1)"}`, borderRadius: "10px", padding: "8px 16px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: hover ? "0 6px 12px rgba(0,0,0,0.3), 0 18px 36px " + accent + "2E" : "0 2px 4px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2)", opacity: isEnded ? 0.55 : 1 }}>
+      style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: `1px solid ${hover ? accent + "4D" : "rgba(255,255,255,0.14)"}`, borderRadius: "10px", padding: "8px 16px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: (hover ? "0 6px 12px rgba(0,0,0,0.3), 0 18px 36px " + accent + "2E, " : "0 2px 4px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2), ") + "inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.5)", opacity: isEnded ? 0.55 : 1 }}>
       {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.12)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
 
       {lesson.genres[0] && (() => {
@@ -41,8 +41,8 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
         );
       })()}
       {/* 開催日時はチケットの半券風にカード左端へ張り付ける（CypherCardと同じ）。
-          背景色はカード本体と同じにして馴染ませ、区切り線だけで境目を示す */}
-      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "44px", display: "flex", flexDirection: "column", background: "#141414", borderRight: "1px solid rgba(255,255,255,0.1)" }}>
+          背景はカード本体のメタリックな地色を透かして馴染ませ、区切り線だけで境目を示す */}
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "44px", display: "flex", flexDirection: "column", borderRight: "1px solid rgba(255,255,255,0.1)" }}>
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 900, color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0" }}>{month}</div>
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontWeight: 900, fontFamily: "'Noto Sans JP',sans-serif", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", lineHeight: 1 }}>{day}</div>
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontWeight: 900, fontFamily: "'Noto Sans JP',sans-serif", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", borderTop: "1px solid rgba(255,255,255,0.08)" }}>{weekday}</div>
