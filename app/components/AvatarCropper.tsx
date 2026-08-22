@@ -8,22 +8,33 @@ const VIEWPORT = 260; // 表示上の枠のサイズ(px)
 const OUTPUT = 600; // 書き出す画像の一辺のサイズ(px)。高解像度の端末でも荒れないように大きめにする
 const MAX_SOURCE = 1600; // スマホの高解像度写真をそのまま扱うとメモリ不足で落ちることがあるため、先に長辺をここまで縮める
 
+// iPhoneのHEIC/HEIFはブラウザの標準機能では読み込めないため、専用ライブラリでJPEGに変換する。
+// 使う人だけが読み込むよう動的importにして、他の人の初期表示を重くしないようにする
+async function convertHeicIfNeeded(file: File): Promise<Blob> {
+  const isHeic = /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+  if (!isHeic) return file;
+  const { default: heic2any } = await import("heic2any");
+  const result = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
+  return Array.isArray(result) ? result[0] : result;
+}
+
 // 元画像が大きすぎる場合だけ縮小したBlobを返す（十分小さい場合はそのまま元ファイルを使う）
 async function shrinkIfNeeded(file: File): Promise<Blob> {
   try {
-    const bitmap = await createImageBitmap(file);
+    const source = await convertHeicIfNeeded(file);
+    const bitmap = await createImageBitmap(source);
     const longSide = Math.max(bitmap.width, bitmap.height);
-    if (longSide <= MAX_SOURCE) { bitmap.close?.(); return file; }
+    if (longSide <= MAX_SOURCE) { bitmap.close?.(); return source; }
     const s = MAX_SOURCE / longSide;
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(bitmap.width * s);
     canvas.height = Math.round(bitmap.height * s);
     const ctx = canvas.getContext("2d");
-    if (!ctx) { bitmap.close?.(); return file; }
+    if (!ctx) { bitmap.close?.(); return source; }
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     bitmap.close?.();
     const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.9));
-    return blob ?? file;
+    return blob ?? source;
   } catch {
     return file; // createImageBitmap非対応など、失敗したら元ファイルのまま使う
   }
