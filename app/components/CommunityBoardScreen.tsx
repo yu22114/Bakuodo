@@ -1,14 +1,23 @@
 "use client";
 import { useState, useEffect } from "react";
-import { ChevronLeft, Pencil, Check, X } from "lucide-react";
+import { ChevronLeft, Pencil, Check, X, Plus, Trash2, Clock, MapPin, Calendar } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
+import { todayStr } from "../lib/constants";
 import { useSwipeBack } from "../lib/useSwipeBack";
 import { Loading } from "./Loading";
 
 const ACCENT = "#DC2626";
 
+// 練習日程を「9/20(日)」のように短く表示する
+function formatJaDate(dateStr: string) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  return `${d.getMonth() + 1}/${d.getDate()}(${weekdays[d.getDay()]})`;
+}
+
 type BoardDetail = { creator_id: string; practice_notes: string | null };
+type PracticeSchedule = { id: string; practice_date: string; practice_time: string | null; place: string | null };
 
 // マイコミュニティのカードを押すと開く画面。中身は「練習内容」カードのみ。
 // 閲覧は誰でもできるが、書き換えられるのは作成者だけ
@@ -23,6 +32,18 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [schedules, setSchedules] = useState<PracticeSchedule[]>([]);
+  const [showAddSchedule, setShowAddSchedule] = useState(false);
+  const [newDate, setNewDate] = useState("");
+  const [newTime, setNewTime] = useState("");
+  const [newPlace, setNewPlace] = useState("");
+  const [addingSchedule, setAddingSchedule] = useState(false);
+
+  const fetchSchedules = async () => {
+    const { data } = await supabase.from("community_board_practice_schedules").select("id, practice_date, practice_time, place")
+      .eq("board_id", board.id).order("practice_date", { ascending: true }).order("created_at", { ascending: true });
+    setSchedules((data as any) ?? []);
+  };
 
   useEffect(() => {
     async function fetchDetail() {
@@ -30,6 +51,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
       if (data) setDetail(data as any);
     }
     fetchDetail();
+    fetchSchedules();
   }, [board.id]);
 
   const isOwn = detail?.creator_id === user.id;
@@ -42,6 +64,23 @@ export function CommunityBoardScreen({ board, user, onBack }: {
     const { error } = await supabase.from("community_boards").update({ practice_notes: text || null }).eq("id", board.id);
     setSavingNotes(false);
     if (!error) { setDetail({ ...detail, practice_notes: text || null }); setEditingNotes(false); }
+  };
+
+  const addSchedule = async () => {
+    if (!newDate || addingSchedule) return;
+    setAddingSchedule(true);
+    const { error } = await supabase.from("community_board_practice_schedules").insert({
+      board_id: board.id, practice_date: newDate, practice_time: newTime || null, place: newPlace.trim() || null,
+    });
+    setAddingSchedule(false);
+    if (!error) {
+      setNewDate(""); setNewTime(""); setNewPlace(""); setShowAddSchedule(false);
+      fetchSchedules();
+    }
+  };
+  const deleteSchedule = async (id: string) => {
+    const { error } = await supabase.from("community_board_practice_schedules").delete().eq("id", id);
+    if (!error) setSchedules(list => list.filter(s => s.id !== id));
   };
 
   return (
@@ -61,8 +100,62 @@ export function CommunityBoardScreen({ board, user, onBack }: {
           <Loading />
         ) : (
           <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-              <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>練習内容</span>
+            <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", marginBottom: "10px" }}>練習内容</div>
+
+            {/* 練習日程（複数登録できる。作成者だけ追加・削除できる） */}
+            <div style={{ marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: schedules.length > 0 ? "8px" : "0" }}>
+                <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.08em", color: "rgba(255,255,255,0.5)" }}>練習日程</span>
+              </div>
+              {schedules.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  {schedules.map(s => (
+                    <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", background: "#1A1A1A", borderRadius: "8px", padding: "8px 10px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+                        <Calendar size={11} color="rgba(255,255,255,0.4)" />{formatJaDate(s.practice_date)}
+                      </div>
+                      {s.practice_time && (
+                        <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+                          <Clock size={11} color="rgba(255,255,255,0.4)" />{s.practice_time}
+                        </div>
+                      )}
+                      {s.place && (
+                        <div style={{ display: "flex", alignItems: "center", gap: "4px", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <MapPin size={11} color="rgba(255,255,255,0.4)" />{s.place}
+                        </div>
+                      )}
+                      {isOwn && (
+                        <button onClick={() => deleteSchedule(s.id)} title="削除" style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "2px", flexShrink: 0 }}><Trash2 size={12} /></button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {isOwn && !showAddSchedule && (
+                <button onClick={() => setShowAddSchedule(true)} style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "5px", background: "none", border: "1px dashed rgba(255,255,255,0.25)", borderRadius: "6px", padding: "7px 10px", color: "rgba(255,255,255,0.6)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                  <Plus size={13} /> 練習日程を追加
+                </button>
+              )}
+              {isOwn && showAddSchedule && (
+                <div style={{ marginTop: "8px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px" }}>
+                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                    <input type="date" min={todayStr()} value={newDate} onChange={e => setNewDate(e.target.value)}
+                      style={{ flex: "1 1 120px", padding: "8px 10px", background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none" }} />
+                    <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
+                      style={{ flex: "1 1 90px", padding: "8px 10px", background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none" }} />
+                  </div>
+                  <input value={newPlace} onChange={e => setNewPlace(e.target.value)} placeholder="場所（任意）" maxLength={100}
+                    style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "8px" }}>
+                    <button onClick={() => { setShowAddSchedule(false); setNewDate(""); setNewTime(""); setNewPlace(""); }} disabled={addingSchedule} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
+                    <button onClick={addSchedule} disabled={!newDate || addingSchedule} style={{ background: newDate ? ACCENT : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: newDate ? "pointer" : "default", color: newDate ? "#fff" : "rgba(255,255,255,0.3)", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>{addingSchedule ? "追加中..." : "追加する"}</button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px", paddingTop: "12px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+              <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.08em", color: "rgba(255,255,255,0.5)" }}>メモ</span>
               {isOwn && !editingNotes && (
                 <button onClick={startEditNotes} title="編集" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", padding: "4px" }}><Pencil size={14} /></button>
               )}
