@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { ChevronLeft, Pencil, Check, X, Plus, Trash2, Clock, MapPin, Calendar } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Clock, MapPin, Calendar } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { todayStr, TIME_OPTIONS, endTimeOptions, endTimeLabel, isNextDayEnd, DEFAULT_START_TIME } from "../lib/constants";
@@ -16,7 +16,7 @@ function formatJaDate(dateStr: string) {
   return `${d.getMonth() + 1}/${d.getDate()}(${weekdays[d.getDay()]})`;
 }
 
-type BoardDetail = { creator_id: string; practice_notes: string | null; subtitle: string | null };
+type BoardDetail = { creator_id: string; subtitle: string | null };
 type PracticeSchedule = { id: string; practice_date: string; practice_time: string | null; practice_end_time: string | null; place: string | null };
 
 // 開始・終了時間を「19:00〜21:00」のように表示する（CYPHERのformatEndTimeと同じ考え方で、
@@ -42,9 +42,6 @@ export function CommunityBoardScreen({ board, user, onBack }: {
 }) {
   const swipeBack = useSwipeBack(onBack);
   const [detail, setDetail] = useState<BoardDetail | null>(null);
-  const [editingNotes, setEditingNotes] = useState(false);
-  const [notesDraft, setNotesDraft] = useState("");
-  const [savingNotes, setSavingNotes] = useState(false);
   const [schedules, setSchedules] = useState<PracticeSchedule[]>([]);
   const [showAddSchedule, setShowAddSchedule] = useState(false);
   const [newDate, setNewDate] = useState("");
@@ -61,7 +58,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
 
   useEffect(() => {
     async function fetchDetail() {
-      const { data } = await supabase.from("community_boards").select("creator_id, practice_notes, subtitle").eq("id", board.id).single();
+      const { data } = await supabase.from("community_boards").select("creator_id, subtitle").eq("id", board.id).single();
       if (data) setDetail(data as any);
     }
     fetchDetail();
@@ -69,16 +66,6 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   }, [board.id]);
 
   const isOwn = detail?.creator_id === user.id;
-
-  const startEditNotes = () => { setNotesDraft(detail?.practice_notes ?? ""); setEditingNotes(true); };
-  const saveNotes = async () => {
-    if (!detail || savingNotes) return;
-    setSavingNotes(true);
-    const text = notesDraft.trim();
-    const { error } = await supabase.from("community_boards").update({ practice_notes: text || null }).eq("id", board.id);
-    setSavingNotes(false);
-    if (!error) { setDetail({ ...detail, practice_notes: text || null }); setEditingNotes(false); }
-  };
 
   const addSchedule = async () => {
     if (!newDate || addingSchedule) return;
@@ -193,39 +180,6 @@ export function CommunityBoardScreen({ board, user, onBack }: {
               ))}
             </div>
           )}
-
-          {/* メモカード（自由記述） */}
-          <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-              <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>メモ</span>
-              {isOwn && !editingNotes && (
-                <button onClick={startEditNotes} title="編集" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", padding: "4px" }}><Pencil size={14} /></button>
-              )}
-            </div>
-            {editingNotes ? (
-              <div>
-                <textarea
-                  value={notesDraft}
-                  onChange={e => setNotesDraft(e.target.value)}
-                  placeholder="公演に向けた練習内容を記入..."
-                  rows={8}
-                  style={{ width: "100%", resize: "vertical", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px 12px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", background: "#1A1A1A", outline: "none", lineHeight: 1.5, boxSizing: "border-box" }}
-                />
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "8px" }}>
-                  <button onClick={() => setEditingNotes(false)} disabled={savingNotes} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "8px 14px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>
-                    <X size={13} /> キャンセル
-                  </button>
-                  <button onClick={saveNotes} disabled={savingNotes} style={{ background: ACCENT, border: "none", borderRadius: "8px", cursor: "pointer", color: "#fff", padding: "8px 14px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>
-                    <Check size={13} /> 保存
-                  </button>
-                </div>
-              </div>
-            ) : detail.practice_notes ? (
-              <p style={{ margin: 0, fontSize: "13px", color: "#F0F0F0", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{detail.practice_notes}</p>
-            ) : (
-              <p style={{ margin: 0, fontSize: "12px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif" }}>まだ記載がありません</p>
-            )}
-          </div>
           </>
         )}
       </div>
