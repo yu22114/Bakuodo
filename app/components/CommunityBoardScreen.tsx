@@ -18,6 +18,15 @@ function formatJaDate(dateStr: string) {
 
 type BoardDetail = { creator_id: string; subtitle: string | null };
 type PracticeSchedule = { id: string; practice_date: string; practice_time: string | null; practice_end_time: string | null; place: string | null };
+type Member = { id: string; dancer_name: string; avatar_url: string | null; isCreator: boolean };
+type AttendanceStatus = "yes" | "maybe" | "no";
+
+// 参加可否の表示（○=参加できる/△=未定/×=参加できない）
+const STATUS_META: Record<AttendanceStatus, { label: string; color: string }> = {
+  yes: { label: "○", color: "#16A34A" },
+  maybe: { label: "△", color: "#EAB308" },
+  no: { label: "×", color: "#DC2626" },
+};
 
 // 開始・終了時間を「19:00〜21:00」のように表示する（CYPHERのformatEndTimeと同じ考え方で、
 // 終了が開始以下＝翌日をまたぐ場合は「翌」を付ける）
@@ -55,21 +64,64 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   const [editEndTime, setEditEndTime] = useState("");
   const [editPlace, setEditPlace] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
+  const [members, setMembers] = useState<Member[] | null>(null);
+  const [attendances, setAttendances] = useState<Record<string, Record<string, AttendanceStatus>>>({});
+  const [viewingScheduleId, setViewingScheduleId] = useState<string | null>(null);
+
+  // メンバー欄：作成者＋招待された人。両方を取ってきて1つのリストにする
+  const fetchMembers = async (creatorId: string) => {
+    const [{ data: creatorProfile }, { data: invites }] = await Promise.all([
+      supabase.from("profiles").select("id, dancer_name, avatar_url").eq("id", creatorId).single(),
+      supabase.from("community_board_invites").select("user_id, profiles:user_id(dancer_name, avatar_url)").eq("board_id", board.id),
+    ]);
+    const list: Member[] = [];
+    if (creatorProfile) list.push({ id: (creatorProfile as any).id, dancer_name: (creatorProfile as any).dancer_name, avatar_url: (creatorProfile as any).avatar_url, isCreator: true });
+    (invites as any[] ?? []).forEach(i => {
+      list.push({ id: i.user_id, dancer_name: i.profiles?.dancer_name ?? "UNKNOWN", avatar_url: i.profiles?.avatar_url ?? null, isCreator: false });
+    });
+    setMembers(list);
+  };
+
+  // 練習日程ごとの○/△/×の回答を、対象の日程IDまとめて取ってくる
+  const fetchAttendances = async (scheduleIds: string[]) => {
+    if (scheduleIds.length === 0) { setAttendances({}); return; }
+    const { data } = await supabase.from("community_board_attendances").select("schedule_id, user_id, status").in("schedule_id", scheduleIds);
+    const map: Record<string, Record<string, AttendanceStatus>> = {};
+    (data as any[] ?? []).forEach(r => {
+      if (!map[r.schedule_id]) map[r.schedule_id] = {};
+      map[r.schedule_id][r.user_id] = r.status;
+    });
+    setAttendances(map);
+  };
 
   const fetchSchedules = async () => {
     const { data } = await supabase.from("community_board_practice_schedules").select("id, practice_date, practice_time, practice_end_time, place")
       .eq("board_id", board.id).order("practice_date", { ascending: true }).order("practice_time", { ascending: true }).order("created_at", { ascending: true });
-    setSchedules((data as any) ?? []);
+    const list = (data as any[]) ?? [];
+    setSchedules(list);
+    fetchAttendances(list.map(s => s.id));
   };
 
   useEffect(() => {
     async function fetchDetail() {
       const { data } = await supabase.from("community_boards").select("creator_id, subtitle").eq("id", board.id).single();
-      if (data) setDetail(data as any);
+      if (data) {
+        setDetail(data as any);
+        fetchMembers((data as any).creator_id);
+      }
     }
     fetchDetail();
     fetchSchedules();
   }, [board.id]);
+
+  // 自分の○/△/×を記録する（同じ日程に既に回答済みなら上書き）
+  const setMyAttendance = async (scheduleId: string, status: AttendanceStatus) => {
+    const { error } = await supabase.from("community_board_attendances")
+      .upsert({ schedule_id: scheduleId, user_id: user.id, status }, { onConflict: "schedule_id,user_id" });
+    if (!error) {
+      setAttendances(prev => ({ ...prev, [scheduleId]: { ...(prev[scheduleId] ?? {}), [user.id]: status } }));
+    }
+  };
 
   const isOwn = detail?.creator_id === user.id;
 
@@ -131,6 +183,22 @@ export function CommunityBoardScreen({ board, user, onBack }: {
           <Loading />
         ) : (
           <>
+          {/* メンバー欄：作成者＋招待された人 */}
+          {members && members.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
+              {members.map(m => (
+                <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "5px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "20px", padding: "3px 10px 3px 3px" }}>
+                  <div style={{ width: "20px", height: "20px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
+                    {m.avatar_url ? <img src={m.avatar_url} alt={m.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : m.dancer_name[0]?.toUpperCase()}
+                  </div>
+                  <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>
+                    {m.dancer_name}{m.isCreator && <span style={{ color: "rgba(255,255,255,0.4)" }}>・主催</span>}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* 練習日程を追加するボタン（作成者だけ）。一番上に置く */}
           {isOwn && (
             <div style={{ marginBottom: "16px" }}>
@@ -182,7 +250,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                 // まだ来ていないものは「今後の予定」バッジを出す
                 const isPast = s.practice_date < todayStr();
                 return (
-                <div key={s.id} style={{ width: "100%", boxSizing: "border-box", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px", position: "relative", overflow: "hidden", opacity: isPast ? 0.5 : 1 }}>
+                <div key={s.id} onClick={() => setViewingScheduleId(s.id)} style={{ width: "100%", boxSizing: "border-box", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px", position: "relative", overflow: "hidden", opacity: isPast ? 0.5 : 1, cursor: "pointer" }}>
                   {!isPast && (
                     <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.12)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>今後の予定</div>
                   )}
@@ -204,9 +272,22 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                         <MapPin size={12} color="rgba(255,255,255,0.4)" />{s.place}
                       </div>
                     )}
+                    {/* 参加可否（○/△/×）。タップで自分の回答を記録する */}
+                    <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: "4px", marginTop: "2px" }}>
+                      {(["yes", "maybe", "no"] as AttendanceStatus[]).map(st => {
+                        const meta = STATUS_META[st];
+                        const mine = attendances[s.id]?.[user.id] === st;
+                        return (
+                          <button key={st} onClick={() => setMyAttendance(s.id, st)}
+                            style={{ width: "28px", height: "28px", borderRadius: "6px", border: mine ? `1px solid ${meta.color}` : "1px solid rgba(255,255,255,0.14)", background: mine ? `${meta.color}22` : "transparent", color: mine ? meta.color : "rgba(255,255,255,0.5)", fontSize: "14px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            {meta.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                   {isOwn && (
-                    <div style={{ display: "flex", gap: "2px", flexShrink: 0 }}>
+                    <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: "2px", flexShrink: 0 }}>
                       <button onClick={() => startEditSchedule(s)} title="編集" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px" }}><Pencil size={14} /></button>
                       <button onClick={() => deleteSchedule(s.id)} title="削除" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px" }}><Trash2 size={14} /></button>
                     </div>
@@ -219,6 +300,42 @@ export function CommunityBoardScreen({ board, user, onBack }: {
           </>
         )}
       </div>
+
+      {/* 練習日程を開くと出る、誰が○/△/×を押したかの一覧 */}
+      {viewingScheduleId && (() => {
+        const sched = schedules.find(s => s.id === viewingScheduleId);
+        if (!sched) return null;
+        const schedAttendance = attendances[viewingScheduleId] ?? {};
+        return (
+          <div style={{ position: "fixed", inset: 0, zIndex: 245, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setViewingScheduleId(null)}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px", maxHeight: "80vh", overflowY: "auto" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>参加状況</div>
+                <button onClick={() => setViewingScheduleId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", marginBottom: "16px" }}>
+                <Calendar size={13} color="rgba(255,255,255,0.4)" />{formatJaDate(sched.practice_date)}
+                {sched.practice_time && <>・{formatTimeRange(sched.practice_time, sched.practice_end_time)}</>}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {(members ?? []).map(m => {
+                  const st = schedAttendance[m.id];
+                  const meta = st ? STATUS_META[st] : null;
+                  return (
+                    <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div style={{ width: "26px", height: "26px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
+                        {m.avatar_url ? <img src={m.avatar_url} alt={m.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : m.dancer_name[0]?.toUpperCase()}
+                      </div>
+                      <span style={{ flex: 1, fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{m.dancer_name}</span>
+                      <span style={{ fontSize: "14px", fontWeight: 700, color: meta ? meta.color : "rgba(255,255,255,0.3)" }}>{meta ? meta.label : "未回答"}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 練習日程の編集モーダル */}
       {editingId && (
