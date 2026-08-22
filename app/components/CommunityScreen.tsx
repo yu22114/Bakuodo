@@ -8,7 +8,7 @@ import { Loading } from "./Loading";
 
 type Board = {
   id: string; title: string; subtitle: string | null; event_date: string | null; venue: string | null;
-  created_at: string; creator: { dancer_name: string } | null;
+  created_at: string;
   instructors: { id: string; name: string; instagram: string | null }[];
 };
 type InstructorInput = { name: string; instagram: string };
@@ -32,10 +32,10 @@ export function CommunityScreen({ user, onOpenBoard }: {
   const fetchBoards = async () => {
     const { data } = await supabase
       .from("community_boards")
-      .select("id, title, subtitle, event_date, venue, created_at, creator:creator_id(dancer_name), instructors:community_board_instructors(id, name, instagram, sort_order)")
+      .select("id, title, subtitle, event_date, venue, created_at, instructors:community_board_instructors(id, name, instagram, sort_order)")
       .order("created_at", { ascending: false })
       .order("sort_order", { referencedTable: "community_board_instructors", ascending: true });
-    setBoards((data as any[])?.map(b => ({ ...b, creator: b.creator ?? null, instructors: b.instructors ?? [] })) ?? []);
+    setBoards((data as any[])?.map(b => ({ ...b, instructors: b.instructors ?? [] })) ?? []);
   };
 
   useEffect(() => { fetchBoards(); }, []);
@@ -130,7 +130,7 @@ export function CommunityScreen({ user, onOpenBoard }: {
                   </div>
                 )}
                 <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "8px" }}>
-                  {b.creator?.dancer_name ?? "UNKNOWN"} ・ {timeAgo(b.created_at)}
+                  {timeAgo(b.created_at)}
                 </div>
               </div>
             ))}
