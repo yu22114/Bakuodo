@@ -13,6 +13,8 @@ import { PublicProfileScreen } from "./components/PublicProfileScreen";
 import { EditProfileScreen } from "./components/EditProfileScreen";
 import { EditCypherScreen } from "./components/EditCypherScreen";
 import { EditLessonScreen } from "./components/EditLessonScreen";
+import { CommunityScreen } from "./components/CommunityScreen";
+import { EventBoardScreen } from "./components/EventBoardScreen";
 import { DetailModal } from "./components/DetailModal";
 import { PLDetailModal } from "./components/PLDetailModal";
 import { ConfirmModal } from "./components/ConfirmModal";
@@ -46,6 +48,8 @@ export default function BakuOdori() {
   const [editCypherId, setEditCypherId] = useState<string | null>(null);
   // レッスン・イベント編集
   const [editLessonId, setEditLessonId] = useState<string | null>(null);
+  // コミュニティ（参加者限定掲示板）：どのイベントの掲示板を開いているか
+  const [boardTarget, setBoardTarget] = useState<{ kind: "cypher" | "lesson"; id: string; title: string; accent: string } | null>(null);
   // トップで開いているセクション。LESSONを見ている時に投稿を押したら
   // レッスン作成フォームが開くようにするため、画面をまたいで保持する
   const [topSection, setTopSection] = useState<TopSection>("cypher");
@@ -161,9 +165,9 @@ export default function BakuOdori() {
   // オーバーレイが開くたびに履歴を1つ積み、popstateで最前面だけ閉じる。
   const overlayCount =
     (detail ? 1 : 0) + (plDetail ? 1 : 0) + (showNotifications ? 1 : 0) +
-    (editCypherId ? 1 : 0) + (editLessonId ? 1 : 0) + (confirmId ? 1 : 0) + profileStack.length;
-  const overlayStateRef = useRef({ detail, plDetail, showNotifications, editCypherId, editLessonId, confirmId, profileStack });
-  overlayStateRef.current = { detail, plDetail, showNotifications, editCypherId, editLessonId, confirmId, profileStack };
+    (editCypherId ? 1 : 0) + (editLessonId ? 1 : 0) + (boardTarget ? 1 : 0) + (confirmId ? 1 : 0) + profileStack.length;
+  const overlayStateRef = useRef({ detail, plDetail, showNotifications, editCypherId, editLessonId, boardTarget, confirmId, profileStack });
+  overlayStateRef.current = { detail, plDetail, showNotifications, editCypherId, editLessonId, boardTarget, confirmId, profileStack };
   const prevOverlayCountRef = useRef(0);
   const suppressPopRef = useRef(0);
 
@@ -183,12 +187,13 @@ export default function BakuOdori() {
     const onPop = () => {
       if (suppressPopRef.current > 0) { suppressPopRef.current--; return; }
       const s = overlayStateRef.current;
-      if (s.confirmId || s.editCypherId || s.editLessonId || s.showNotifications || s.profileStack.length > 0 || s.plDetail || s.detail) {
+      if (s.confirmId || s.editCypherId || s.editLessonId || s.boardTarget || s.showNotifications || s.profileStack.length > 0 || s.plDetail || s.detail) {
         // 履歴エントリはすでに消費されているので、countの差分処理をスキップさせる
         prevOverlayCountRef.current -= 1;
         if (s.confirmId) setConfirmId(null);
         else if (s.editCypherId) setEditCypherId(null);
         else if (s.editLessonId) setEditLessonId(null);
+        else if (s.boardTarget) setBoardTarget(null);
         else if (s.showNotifications) { setShowNotifications(false); setUnreadCount(0); }
         else if (s.profileStack.length > 0) setProfileStack(st => st.slice(0, -1));
         else if (s.plDetail) setPlDetail(null);
@@ -257,6 +262,7 @@ export default function BakuOdori() {
             {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} onPLClick={setPlDetail} onViewProfile={id => setProfileStack(s => [...s, id])} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} section={topSection} onSectionChange={setTopSection} />}
             {screen === "post"    && <PostScreen onNav={setScreen} user={user} initialTab={topSection === "pl" || topSection === "event" ? topSection : "cypher"} />}
             {screen === "profile" && <PublicProfileScreen profileId={user.id} currentUserId={user.id} onEdit={() => setScreen("edit")} onLogout={() => supabase.auth.signOut()} onViewProfile={id => setProfileStack(s => [...s, id])} onCypherClick={openCypherDetail} onLessonClick={openLessonDetail} onEditCypher={id => setEditCypherId(id)} onEditLesson={id => setEditLessonId(id)} />}
+            {screen === "community" && <CommunityScreen user={user} onOpenBoard={setBoardTarget} />}
             {screen === "edit"    && <EditProfileScreen user={user} onDancerNameChange={setDancerName} onAvatarChange={setMyAvatarUrl} onBack={() => setScreen("profile")} />}
             <BottomNav current={screen} onNav={s => { setScreen(s); setProfileStack([]); }} />
             {detail && <DetailModal cypher={detail} onClose={() => setDetail(null)} joined={joined.includes(detail.id)} pending={pendingJoins.includes(detail.id)} onJoin={handleJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} />}
@@ -281,6 +287,14 @@ export default function BakuOdori() {
                   onSaved={() => { setEditLessonId(null); setRefreshKey(k => k + 1); }}
                 />
               </div>
+            )}
+            {boardTarget && (
+              <EventBoardScreen
+                target={boardTarget}
+                user={user}
+                onBack={() => setBoardTarget(null)}
+                onViewProfile={id => setProfileStack(s => [...s, id])}
+              />
             )}
             {showNotifications && (
               <NotificationScreen
