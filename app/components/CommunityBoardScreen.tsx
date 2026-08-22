@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { ChevronLeft, Plus, Trash2, Pencil, Check, X, Clock, MapPin, Calendar } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Pencil, Check, X, Clock, MapPin, Calendar, MessageSquare } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { todayStr, TIME_OPTIONS, endTimeOptions, endTimeLabel, isNextDayEnd, DEFAULT_START_TIME } from "../lib/constants";
@@ -20,6 +20,7 @@ type BoardDetail = { creator_id: string; subtitle: string | null };
 type PracticeSchedule = { id: string; practice_date: string; practice_time: string | null; practice_end_time: string | null; place: string | null };
 type Member = { id: string; dancer_name: string; avatar_url: string | null; instagram: string | null; isCreator: boolean };
 type AttendanceStatus = "yes" | "maybe" | "no";
+type Attendance = { status: AttendanceStatus | null; comment: string | null };
 
 // 参加可否の表示（○=参加できる/△=未定/×=参加できない）
 const STATUS_META: Record<AttendanceStatus, { label: string; color: string }> = {
@@ -65,8 +66,11 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   const [editPlace, setEditPlace] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const [members, setMembers] = useState<Member[] | null>(null);
-  const [attendances, setAttendances] = useState<Record<string, Record<string, AttendanceStatus>>>({});
+  const [attendances, setAttendances] = useState<Record<string, Record<string, Attendance>>>({});
   const [viewingScheduleId, setViewingScheduleId] = useState<string | null>(null);
+  const [commentTarget, setCommentTarget] = useState<string | null>(null);
+  const [commentDraft, setCommentDraft] = useState("");
+  const [savingComment, setSavingComment] = useState(false);
 
   // メンバー欄：作成者＋招待された人。両方を取ってきて1つのリストにする
   const fetchMembers = async (creatorId: string) => {
@@ -82,14 +86,14 @@ export function CommunityBoardScreen({ board, user, onBack }: {
     setMembers(list);
   };
 
-  // 練習日程ごとの○/△/×の回答を、対象の日程IDまとめて取ってくる
+  // 練習日程ごとの○/△/×の回答とコメントを、対象の日程IDまとめて取ってくる
   const fetchAttendances = async (scheduleIds: string[]) => {
     if (scheduleIds.length === 0) { setAttendances({}); return; }
-    const { data } = await supabase.from("community_board_attendances").select("schedule_id, user_id, status").in("schedule_id", scheduleIds);
-    const map: Record<string, Record<string, AttendanceStatus>> = {};
+    const { data } = await supabase.from("community_board_attendances").select("schedule_id, user_id, status, comment").in("schedule_id", scheduleIds);
+    const map: Record<string, Record<string, Attendance>> = {};
     (data as any[] ?? []).forEach(r => {
       if (!map[r.schedule_id]) map[r.schedule_id] = {};
-      map[r.schedule_id][r.user_id] = r.status;
+      map[r.schedule_id][r.user_id] = { status: r.status, comment: r.comment };
     });
     setAttendances(map);
   };
@@ -114,12 +118,30 @@ export function CommunityBoardScreen({ board, user, onBack }: {
     fetchSchedules();
   }, [board.id]);
 
-  // 自分の○/△/×を記録する（同じ日程に既に回答済みなら上書き）
+  // 自分の○/△/×を記録する（同じ日程に既に回答済みなら上書き。コメントは触らないので消えない）
   const setMyAttendance = async (scheduleId: string, status: AttendanceStatus) => {
     const { error } = await supabase.from("community_board_attendances")
       .upsert({ schedule_id: scheduleId, user_id: user.id, status }, { onConflict: "schedule_id,user_id" });
     if (!error) {
-      setAttendances(prev => ({ ...prev, [scheduleId]: { ...(prev[scheduleId] ?? {}), [user.id]: status } }));
+      setAttendances(prev => ({ ...prev, [scheduleId]: { ...(prev[scheduleId] ?? {}), [user.id]: { status, comment: prev[scheduleId]?.[user.id]?.comment ?? null } } }));
+    }
+  };
+
+  // コメントボタン：自分の今のコメントを詰めてモーダルを開く
+  const openComment = (scheduleId: string) => {
+    setCommentTarget(scheduleId);
+    setCommentDraft(attendances[scheduleId]?.[user.id]?.comment ?? "");
+  };
+  const saveComment = async () => {
+    if (!commentTarget || savingComment) return;
+    setSavingComment(true);
+    const comment = commentDraft.trim();
+    const { error } = await supabase.from("community_board_attendances")
+      .upsert({ schedule_id: commentTarget, user_id: user.id, comment: comment || null }, { onConflict: "schedule_id,user_id" });
+    setSavingComment(false);
+    if (!error) {
+      setAttendances(prev => ({ ...prev, [commentTarget]: { ...(prev[commentTarget] ?? {}), [user.id]: { status: prev[commentTarget]?.[user.id]?.status ?? null, comment: comment || null } } }));
+      setCommentTarget(null);
     }
   };
 
@@ -265,7 +287,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                     <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: "6px", marginTop: "4px", width: "100%" }}>
                       {(["yes", "maybe", "no"] as AttendanceStatus[]).map(st => {
                         const meta = STATUS_META[st];
-                        const mine = attendances[s.id]?.[user.id] === st;
+                        const mine = attendances[s.id]?.[user.id]?.status === st;
                         return (
                           <button key={st} onClick={() => setMyAttendance(s.id, st)}
                             style={{ flex: 1, height: "30px", borderRadius: "6px", border: mine ? `1px solid ${meta.color}` : "1px solid rgba(255,255,255,0.14)", background: mine ? `${meta.color}22` : "transparent", color: mine ? meta.color : "rgba(255,255,255,0.5)", fontSize: "14px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -274,6 +296,12 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                         );
                       })}
                     </div>
+                    {/* コメント：一言を残す。参加状況の一覧で名前の下に出る */}
+                    <button onClick={e => { e.stopPropagation(); openComment(s.id); }}
+                      style={{ display: "flex", alignItems: "center", gap: "4px", maxWidth: "100%", marginTop: "2px", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", padding: "2px 0" }}>
+                      <MessageSquare size={11} style={{ flexShrink: 0 }} />
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{attendances[s.id]?.[user.id]?.comment || "コメント"}</span>
+                    </button>
                   </div>
                   {isOwn && (
                     <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: "2px", flexShrink: 0 }}>
@@ -295,6 +323,9 @@ export function CommunityBoardScreen({ board, user, onBack }: {
         const sched = schedules.find(s => s.id === viewingScheduleId);
         if (!sched) return null;
         const schedAttendance = attendances[viewingScheduleId] ?? {};
+        // ○/△/×それぞれの人数を数える
+        const counts: Record<AttendanceStatus, number> = { yes: 0, maybe: 0, no: 0 };
+        Object.values(schedAttendance).forEach(a => { if (a.status) counts[a.status]++; });
         return (
           <div style={{ position: "fixed", inset: 0, zIndex: 245, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setViewingScheduleId(null)}>
             <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px", maxHeight: "80vh", overflowY: "auto" }}>
@@ -302,26 +333,40 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                 <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>参加状況</div>
                 <button onClick={() => setViewingScheduleId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", marginBottom: "12px" }}>
                 <Calendar size={13} color="rgba(255,255,255,0.4)" />{formatJaDate(sched.practice_date)}
                 {sched.practice_time && <>・{formatTimeRange(sched.practice_time, sched.practice_end_time)}</>}
               </div>
+              {/* ○/△/×それぞれの人数 */}
+              <div style={{ display: "flex", gap: "14px", marginBottom: "16px", paddingBottom: "14px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                {(["yes", "maybe", "no"] as AttendanceStatus[]).map(st => (
+                  <div key={st} style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>
+                    <span style={{ color: STATUS_META[st].color, fontWeight: 700, fontSize: "15px" }}>{STATUS_META[st].label}</span>
+                    <span style={{ color: "#F0F0F0" }}>{counts[st]}人</span>
+                  </div>
+                ))}
+              </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {(members ?? []).map(m => {
-                  const st = schedAttendance[m.id];
-                  const meta = st ? STATUS_META[st] : null;
+                  const a = schedAttendance[m.id];
+                  const meta = a?.status ? STATUS_META[a.status] : null;
                   return (
                     <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <div style={{ width: "26px", height: "26px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
                         {m.avatar_url ? <img src={m.avatar_url} alt={m.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : m.dancer_name[0]?.toUpperCase()}
                       </div>
-                      <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap" }}>
-                        <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{m.dancer_name}</span>
-                        {m.instagram && (
-                          <a href={`https://instagram.com/${m.instagram}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: "10px", color: "#A855F7", textDecoration: "none" }}>@{m.instagram}</a>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap" }}>
+                          <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{m.dancer_name}</span>
+                          {m.instagram && (
+                            <a href={`https://instagram.com/${m.instagram}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: "10px", color: "#A855F7", textDecoration: "none" }}>@{m.instagram}</a>
+                          )}
+                        </div>
+                        {a?.comment && (
+                          <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginTop: "2px" }}>{a.comment}</div>
                         )}
                       </div>
-                      <span style={{ fontSize: "14px", fontWeight: 700, color: meta ? meta.color : "rgba(255,255,255,0.3)" }}>{meta ? meta.label : "未回答"}</span>
+                      <span style={{ fontSize: "14px", fontWeight: 700, color: meta ? meta.color : "rgba(255,255,255,0.3)", flexShrink: 0 }}>{meta ? meta.label : "未回答"}</span>
                     </div>
                   );
                 })}
@@ -330,6 +375,26 @@ export function CommunityBoardScreen({ board, user, onBack }: {
           </div>
         );
       })()}
+
+      {/* コメントを書くモーダル */}
+      {commentTarget && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setCommentTarget(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>COMMENT</div>
+              <button onClick={() => setCommentTarget(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
+            </div>
+            <input value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="一言コメント" maxLength={60} autoFocus
+              style={{ width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "16px" }}>
+              <button onClick={() => setCommentTarget(null)} disabled={savingComment} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "8px 14px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
+              <button onClick={saveComment} disabled={savingComment} style={{ background: ACCENT, border: "none", borderRadius: "8px", cursor: "pointer", color: "#fff", padding: "8px 14px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>
+                <Check size={13} /> {savingComment ? "保存中..." : "保存する"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 練習日程の編集モーダル */}
       {editingId && (
