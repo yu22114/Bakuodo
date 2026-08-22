@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, Pencil, Check, X, Plus, Trash2, Clock, MapPin, Calendar } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
-import { todayStr, TIME_OPTIONS, endTimeOptions, endTimeLabel, isNextDayEnd } from "../lib/constants";
+import { todayStr, TIME_OPTIONS, endTimeOptions, endTimeLabel, isNextDayEnd, DEFAULT_START_TIME } from "../lib/constants";
 import { useSwipeBack } from "../lib/useSwipeBack";
 import { Loading } from "./Loading";
 
@@ -43,7 +43,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   const [schedules, setSchedules] = useState<PracticeSchedule[]>([]);
   const [showAddSchedule, setShowAddSchedule] = useState(false);
   const [newDate, setNewDate] = useState("");
-  const [newStartTime, setNewStartTime] = useState("");
+  const [newStartTime, setNewStartTime] = useState(DEFAULT_START_TIME);
   const [newEndTime, setNewEndTime] = useState("");
   const [newPlace, setNewPlace] = useState("");
   const [addingSchedule, setAddingSchedule] = useState(false);
@@ -83,7 +83,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
     });
     setAddingSchedule(false);
     if (!error) {
-      setNewDate(""); setNewStartTime(""); setNewEndTime(""); setNewPlace(""); setShowAddSchedule(false);
+      setNewDate(""); setNewStartTime(DEFAULT_START_TIME); setNewEndTime(""); setNewPlace(""); setShowAddSchedule(false);
       fetchSchedules();
     }
   };
@@ -94,16 +94,17 @@ export function CommunityBoardScreen({ board, user, onBack }: {
 
   return (
     <div {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }}>
-      <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "center", gap: "16px" }}>
+      <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "flex-start", gap: "16px" }}>
         <button onClick={onBack} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px", flexShrink: 0 }}>
           <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
         </button>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: ACCENT, letterSpacing: "0.15em", marginBottom: "2px" }}>BOARD</div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "8px", minWidth: 0 }}>
-            <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flexShrink: 0, maxWidth: "60%" }}>【{board.title}】</h2>
+          {/* タイトル・サブタイトルは省略せず全部見えるように折り返す */}
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "8px" }}>
+            <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0", wordBreak: "break-word" }}>【{board.title}】</h2>
             {detail?.subtitle && (
-              <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.55)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{detail.subtitle}</span>
+              <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.55)", wordBreak: "break-word" }}>{detail.subtitle}</span>
             )}
           </div>
         </div>
@@ -148,7 +149,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                   <input value={newPlace} onChange={e => setNewPlace(e.target.value)} placeholder="場所（任意）" maxLength={100}
                     style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
                   <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "8px" }}>
-                    <button onClick={() => { setShowAddSchedule(false); setNewDate(""); setNewStartTime(""); setNewEndTime(""); setNewPlace(""); }} disabled={addingSchedule} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
+                    <button onClick={() => { setShowAddSchedule(false); setNewDate(""); setNewStartTime(DEFAULT_START_TIME); setNewEndTime(""); setNewPlace(""); }} disabled={addingSchedule} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
                     <button onClick={addSchedule} disabled={!newDate || addingSchedule} style={{ background: newDate ? ACCENT : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: newDate ? "pointer" : "default", color: newDate ? "#fff" : "rgba(255,255,255,0.3)", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>{addingSchedule ? "追加中..." : "追加する"}</button>
                   </div>
                 </div>
