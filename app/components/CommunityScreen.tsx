@@ -30,6 +30,8 @@ export function CommunityScreen({ user, onOpenBoard }: {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [followingCandidates, setFollowingCandidates] = useState<{ id: string; dancer_name: string; avatar_url: string | null }[] | null>(null);
+  const [inviteIds, setInviteIds] = useState<string[]>([]);
 
   const fetchBoards = async () => {
     const { data } = await supabase
@@ -42,9 +44,20 @@ export function CommunityScreen({ user, onOpenBoard }: {
 
   useEffect(() => { fetchBoards(); }, []);
 
+  // フォロー中のアカウント一覧を取得する（招待の候補。一度取れたら使い回す）
+  const fetchFollowing = async () => {
+    if (followingCandidates !== null) return;
+    const { data } = await supabase.from("follows").select("following_id, profiles:following_id(dancer_name, avatar_url)").eq("follower_id", user.id);
+    setFollowingCandidates((data ?? []).map((r: any) => ({ id: r.following_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN", avatar_url: r.profiles?.avatar_url ?? null })));
+  };
+  const toggleInvite = (id: string) => setInviteIds(list => list.includes(id) ? list.filter(x => x !== id) : [...list, id]);
+
+  const openCreate = () => { setShowCreate(true); fetchFollowing(); };
+
   const resetForm = () => {
     setNewTitle(""); setNewSubtitle(""); setNewStartDate(""); setNewEndDate(""); setNewVenue(""); setNewGenres([]);
     setInstructors([{ ...EMPTY_INSTRUCTOR }]);
+    setInviteIds([]);
   };
 
   const updateInstructor = (i: number, field: keyof InstructorInput, value: string) => {
@@ -54,7 +67,7 @@ export function CommunityScreen({ user, onOpenBoard }: {
   const removeInstructor = (i: number) => setInstructors(list => list.filter((_, idx) => idx !== i));
 
   // カードの編集ボタン：フォームに既存の内容を詰めて、作成と同じモーダルを編集モードで開く
-  const startEdit = (b: Board) => {
+  const startEdit = async (b: Board) => {
     setEditingId(b.id);
     setNewTitle(b.title);
     setNewSubtitle(b.subtitle ?? "");
@@ -64,6 +77,9 @@ export function CommunityScreen({ user, onOpenBoard }: {
     setNewGenres(b.genre ? [b.genre] : []);
     setInstructors(b.instructors.length > 0 ? b.instructors.map(ins => ({ name: ins.name, instagram: ins.instagram ?? "" })) : [{ ...EMPTY_INSTRUCTOR }]);
     setShowCreate(true);
+    fetchFollowing();
+    const { data } = await supabase.from("community_board_invites").select("user_id").eq("board_id", b.id);
+    setInviteIds((data ?? []).map((r: any) => r.user_id));
   };
 
   const closeModal = () => { setShowCreate(false); setEditingId(null); resetForm(); };
@@ -94,6 +110,11 @@ export function CommunityScreen({ user, onOpenBoard }: {
           validInstructors.map((ins, i) => ({ board_id: editingId, name: ins.name, instagram: ins.instagram || null, sort_order: i }))
         );
       }
+      // 招待リストも同様に一旦全部消してから入れ直す
+      await supabase.from("community_board_invites").delete().eq("board_id", editingId);
+      if (inviteIds.length > 0) {
+        await supabase.from("community_board_invites").insert(inviteIds.map(uid => ({ board_id: editingId, user_id: uid })));
+      }
       setCreating(false);
       closeModal();
       fetchBoards();
@@ -109,6 +130,9 @@ export function CommunityScreen({ user, onOpenBoard }: {
       await supabase.from("community_board_instructors").insert(
         validInstructors.map((ins, i) => ({ board_id: (data as any).id, name: ins.name, instagram: ins.instagram || null, sort_order: i }))
       );
+    }
+    if (inviteIds.length > 0) {
+      await supabase.from("community_board_invites").insert(inviteIds.map(uid => ({ board_id: (data as any).id, user_id: uid })));
     }
     setCreating(false);
     closeModal();
@@ -134,7 +158,7 @@ export function CommunityScreen({ user, onOpenBoard }: {
         <div>
           <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>マイコミュニティ</h2>
         </div>
-        <button onClick={() => setShowCreate(true)} aria-label="掲示板を作る"
+        <button onClick={openCreate} aria-label="掲示板を作る"
           style={{ background: "#DC2626", border: "none", borderRadius: "10px", cursor: "pointer", width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "4px" }}>
           <Plus size={20} color="#fff" />
         </button>
@@ -218,6 +242,32 @@ export function CommunityScreen({ user, onOpenBoard }: {
                 <button onClick={addInstructor} style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "5px", background: "none", border: "1px dashed rgba(255,255,255,0.25)", borderRadius: "6px", padding: "7px 10px", color: "rgba(255,255,255,0.6)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
                   <UserPlus size={13} /> 講師を追加
                 </button>
+              </div>
+
+              <div>
+                <label style={lbl}>招待するアカウント（フォロー中・任意）</label>
+                {followingCandidates === null ? (
+                  <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif" }}>読み込み中...</div>
+                ) : followingCandidates.length === 0 ? (
+                  <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif" }}>フォロー中のアカウントがいません</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", maxHeight: "160px", overflowY: "auto" }}>
+                    {followingCandidates.map(f => {
+                      const sel = inviteIds.includes(f.id);
+                      return (
+                        <button key={f.id} onClick={() => toggleInvite(f.id)} type="button"
+                          style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 8px", borderRadius: "8px", border: sel ? "1px solid #DC2626" : "1px solid rgba(255,255,255,0.1)", background: sel ? "rgba(220,38,38,0.12)" : "transparent", cursor: "pointer", textAlign: "left" }}>
+                          <div style={{ width: "26px", height: "26px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
+                            {f.avatar_url ? <img src={f.avatar_url} alt={f.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : f.dancer_name[0]?.toUpperCase()}
+                          </div>
+                          <span style={{ flex: 1, fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{f.dancer_name}</span>
+                          {sel && <Check size={14} color="#DC2626" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "5px" }}>招待した人だけがこの掲示板を見られます</div>
               </div>
             </div>
 
