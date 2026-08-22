@@ -18,26 +18,23 @@ async function convertHeicIfNeeded(file: File): Promise<Blob> {
   return Array.isArray(result) ? result[0] : result;
 }
 
-// 元画像が大きすぎる場合だけ縮小したBlobを返す（十分小さい場合はそのまま元ファイルを使う）
+// 元画像が大きすぎる場合だけ縮小したBlobを返す（十分小さい場合はそのまま元ファイルを使う）。
+// 失敗時はここで揉み消さず呼び出し側に投げる（原因を画面に出して調べられるようにするため）
 async function shrinkIfNeeded(file: File): Promise<Blob> {
-  try {
-    const source = await convertHeicIfNeeded(file);
-    const bitmap = await createImageBitmap(source);
-    const longSide = Math.max(bitmap.width, bitmap.height);
-    if (longSide <= MAX_SOURCE) { bitmap.close?.(); return source; }
-    const s = MAX_SOURCE / longSide;
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bitmap.width * s);
-    canvas.height = Math.round(bitmap.height * s);
-    const ctx = canvas.getContext("2d");
-    if (!ctx) { bitmap.close?.(); return source; }
-    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    bitmap.close?.();
-    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.9));
-    return blob ?? source;
-  } catch {
-    return file; // createImageBitmap非対応など、失敗したら元ファイルのまま使う
-  }
+  const source = await convertHeicIfNeeded(file);
+  const bitmap = await createImageBitmap(source);
+  const longSide = Math.max(bitmap.width, bitmap.height);
+  if (longSide <= MAX_SOURCE) { bitmap.close?.(); return source; }
+  const s = MAX_SOURCE / longSide;
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * s);
+  canvas.height = Math.round(bitmap.height * s);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) { bitmap.close?.(); return source; }
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close?.();
+  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.9));
+  return blob ?? source;
 }
 
 export function AvatarCropper({ file, onCancel, onConfirm }: {
@@ -48,6 +45,8 @@ export function AvatarCropper({ file, onCancel, onConfirm }: {
   const [imgUrl, setImgUrl] = useState<string | null>(null);
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
   const [loadError, setLoadError] = useState(false);
+  // うまくいかない時の原因調べ用（ファイル形式・エラー内容）。うまくいけば使わない
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [saving, setSaving] = useState(false);
@@ -58,10 +57,18 @@ export function AvatarCropper({ file, onCancel, onConfirm }: {
     let url: string | null = null;
     let cancelled = false;
     (async () => {
-      const shrunk = await shrinkIfNeeded(file);
-      if (cancelled) return;
-      url = URL.createObjectURL(shrunk);
-      setImgUrl(url);
+      try {
+        const shrunk = await shrinkIfNeeded(file);
+        if (cancelled) return;
+        url = URL.createObjectURL(shrunk);
+        setImgUrl(url);
+      } catch (err) {
+        if (cancelled) return;
+        // 加工に失敗しても、元のファイルそのままなら表示できるかもしれないので試す
+        setDebugInfo(`種類:${file.type || "不明"} / ${(err as any)?.message ?? String(err)}`);
+        url = URL.createObjectURL(file);
+        setImgUrl(url);
+      }
     })();
     return () => { cancelled = true; if (url) URL.revokeObjectURL(url); };
   }, [file]);
@@ -142,8 +149,9 @@ export function AvatarCropper({ file, onCancel, onConfirm }: {
             />
           )}
           {loadError && (
-            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", textAlign: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)" }}>
-              この画像は読み込めませんでした。別の写真をお試しください
+            <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", gap: "6px", alignItems: "center", justifyContent: "center", padding: "16px", textAlign: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)" }}>
+              <div>この画像は読み込めませんでした。別の写真をお試しください</div>
+              {debugInfo && <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.35)", wordBreak: "break-all" }}>{debugInfo}</div>}
             </div>
           )}
           {!imgUrl && !loadError && (
