@@ -176,6 +176,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
           {/* 練習日程カード（1件ごとに独立したカードとして表示。追加ボタンは上に分離した） */}
           {schedules.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
+              <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)" }}>全{schedules.length}件</div>
               {schedules.map((s, i) => {
                 // 日にちが過ぎたものは灰色にして終わったことがわかるようにする。
                 // まだ来ていないものは「今後の予定」バッジを出す
