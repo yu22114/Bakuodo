@@ -100,57 +100,60 @@ export function CommunityBoardScreen({ board, user, onBack }: {
           <Loading />
         ) : (
           <>
-          {/* 練習日程カード（複数登録できる。作成者だけ追加・削除できる） */}
-          <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px", marginBottom: "16px" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: schedules.length > 0 ? "8px" : "0" }}>
-              <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>練習日程</span>
-            </div>
-            {schedules.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  {schedules.map(s => (
-                    <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", background: "#1A1A1A", borderRadius: "8px", padding: "8px 10px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-                        <Calendar size={11} color="rgba(255,255,255,0.4)" />{formatJaDate(s.practice_date)}
-                      </div>
-                      {s.practice_time && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-                          <Clock size={11} color="rgba(255,255,255,0.4)" />{s.practice_time}
-                        </div>
-                      )}
-                      {s.place && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "4px", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          <MapPin size={11} color="rgba(255,255,255,0.4)" />{s.place}
-                        </div>
-                      )}
-                      {isOwn && (
-                        <button onClick={() => deleteSchedule(s.id)} title="削除" style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "2px", flexShrink: 0 }}><Trash2 size={12} /></button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-              {isOwn && !showAddSchedule && (
-                <button onClick={() => setShowAddSchedule(true)} style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "5px", background: "none", border: "1px dashed rgba(255,255,255,0.25)", borderRadius: "6px", padding: "7px 10px", color: "rgba(255,255,255,0.6)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
-                  <Plus size={13} /> 練習日程を追加
+          {/* 練習日程を追加するボタン（作成者だけ）。一番上に置く */}
+          {isOwn && (
+            <div style={{ marginBottom: "16px" }}>
+              {!showAddSchedule ? (
+                <button onClick={() => setShowAddSchedule(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", background: "none", border: "1px dashed rgba(255,255,255,0.25)", borderRadius: "8px", padding: "10px", color: "rgba(255,255,255,0.6)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", boxSizing: "border-box" }}>
+                  <Plus size={14} /> 練習日程を追加
                 </button>
-              )}
-              {isOwn && showAddSchedule && (
-                <div style={{ marginTop: "8px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px" }}>
+              ) : (
+                <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px" }}>
                   <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
                     <input type="date" min={todayStr()} value={newDate} onChange={e => setNewDate(e.target.value)}
-                      style={{ flex: "1 1 120px", padding: "8px 10px", background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none" }} />
+                      style={{ flex: "1 1 120px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none" }} />
                     <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
-                      style={{ flex: "1 1 90px", padding: "8px 10px", background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none" }} />
+                      style={{ flex: "1 1 90px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none" }} />
                   </div>
                   <input value={newPlace} onChange={e => setNewPlace(e.target.value)} placeholder="場所（任意）" maxLength={100}
-                    style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                    style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
                   <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "8px" }}>
                     <button onClick={() => { setShowAddSchedule(false); setNewDate(""); setNewTime(""); setNewPlace(""); }} disabled={addingSchedule} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
                     <button onClick={addSchedule} disabled={!newDate || addingSchedule} style={{ background: newDate ? ACCENT : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: newDate ? "pointer" : "default", color: newDate ? "#fff" : "rgba(255,255,255,0.3)", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>{addingSchedule ? "追加中..." : "追加する"}</button>
                   </div>
                 </div>
               )}
-          </div>
+            </div>
+          )}
+
+          {/* 練習日程カード（表示専用。追加ボタンは上に分離した） */}
+          {schedules.length > 0 && (
+            <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px", marginBottom: "16px" }}>
+              <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", marginBottom: "8px" }}>練習日程</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {schedules.map(s => (
+                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", background: "#1A1A1A", borderRadius: "8px", padding: "8px 10px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+                      <Calendar size={11} color="rgba(255,255,255,0.4)" />{formatJaDate(s.practice_date)}
+                    </div>
+                    {s.practice_time && (
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+                        <Clock size={11} color="rgba(255,255,255,0.4)" />{s.practice_time}
+                      </div>
+                    )}
+                    {s.place && (
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <MapPin size={11} color="rgba(255,255,255,0.4)" />{s.place}
+                      </div>
+                    )}
+                    {isOwn && (
+                      <button onClick={() => deleteSchedule(s.id)} title="削除" style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "2px", flexShrink: 0 }}><Trash2 size={12} /></button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* メモカード（自由記述） */}
           <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px" }}>
