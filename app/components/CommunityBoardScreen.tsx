@@ -1,12 +1,17 @@
 "use client";
-import { ChevronLeft, Trash2, Send } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronLeft, Trash2, Send, MapPin, Calendar } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { supabase } from "../../lib/supabase";
 import { timeAgo } from "../lib/constants";
 import { useCommunityBoard } from "../lib/useCommunityBoard";
 import { useSwipeBack } from "../lib/useSwipeBack";
 import { Loading } from "./Loading";
 
 const ACCENT = "#DC2626";
+
+type BoardDetail = { subtitle: string | null; event_date: string | null; venue: string | null };
+type Instructor = { id: string; name: string; instagram: string | null };
 
 export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
   board: { id: string; title: string };
@@ -16,6 +21,22 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
 }) {
   const swipeBack = useSwipeBack(onBack);
   const { posts, loading, postText, setPostText, posting, postMessage, deletePost } = useCommunityBoard(board.id, user);
+  const [detail, setDetail] = useState<BoardDetail | null>(null);
+  const [instructors, setInstructors] = useState<Instructor[]>([]);
+
+  useEffect(() => {
+    async function fetchDetail() {
+      const [{ data: boardData }, { data: instructorData }] = await Promise.all([
+        supabase.from("community_boards").select("subtitle, event_date, venue").eq("id", board.id).single(),
+        supabase.from("community_board_instructors").select("id, name, instagram").eq("board_id", board.id).order("sort_order", { ascending: true }),
+      ]);
+      if (boardData) setDetail(boardData as any);
+      if (instructorData) setInstructors(instructorData as any);
+    }
+    fetchDetail();
+  }, [board.id]);
+
+  const hasDetail = detail && (detail.subtitle || detail.event_date || detail.venue);
 
   return (
     <div {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }}>
@@ -25,11 +46,38 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
         </button>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: ACCENT, letterSpacing: "0.15em", marginBottom: "2px" }}>BOARD</div>
-          <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{board.title}</h2>
+          <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>【{board.title}】</h2>
         </div>
       </div>
 
       <div className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "20px 16px" }}>
+        {(hasDetail || instructors.length > 0) && (
+          <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px", marginBottom: "20px" }}>
+            {detail?.subtitle && <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", marginBottom: "10px" }}>{detail.subtitle}</div>}
+            {detail?.event_date && (
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginBottom: "6px" }}>
+                <Calendar size={12} color="rgba(255,255,255,0.5)" />{detail.event_date}
+              </div>
+            )}
+            {detail?.venue && (
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginBottom: instructors.length > 0 ? "10px" : 0 }}>
+                <MapPin size={12} color="rgba(255,255,255,0.5)" />{detail.venue}
+              </div>
+            )}
+            {instructors.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "5px", paddingTop: instructors.length > 0 && (detail?.subtitle || detail?.event_date || detail?.venue) ? "8px" : 0, borderTop: (detail?.subtitle || detail?.event_date || detail?.venue) ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
+                {instructors.map(ins => (
+                  <div key={ins.id} style={{ display: "flex", alignItems: "baseline", gap: "8px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>
+                    <span style={{ color: "#F0F0F0", fontWeight: "bold" }}>{ins.name}</span>
+                    {ins.instagram && (
+                      <a href={`https://instagram.com/${ins.instagram}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ color: "#A855F7", textDecoration: "none" }}>@{ins.instagram}</a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {loading ? (
           <Loading />
         ) : posts.length === 0 ? (
