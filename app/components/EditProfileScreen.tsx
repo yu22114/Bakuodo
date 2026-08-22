@@ -72,8 +72,10 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
       return;
     }
     const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-    // updateだとprofilesの行が存在しない場合にエラーなしでスルーされるためupsertを使う
-    const { error: updateErr } = await supabase.from("profiles").upsert({ id: user.id, avatar_url: publicUrl }, { onConflict: "id" });
+    // updateだとprofilesの行が存在しない場合にエラーなしでスルーされるためupsertを使う。
+    // まだ一度もダンサーネームを保存していない新規ユーザーだと、行が無いのでinsert扱いになり
+    // dancer_nameのNOT NULL制約に引っかかるので、保存済みの値（無ければ仮の名前）を一緒に送る
+    const { error: updateErr } = await supabase.from("profiles").upsert({ id: user.id, dancer_name: profile.dancer_name || "DANCER", avatar_url: publicUrl }, { onConflict: "id" });
     if (updateErr) {
       setAvatarError(`DB更新失敗: ${updateErr.message}`);
       setAvatarUploading(false);
