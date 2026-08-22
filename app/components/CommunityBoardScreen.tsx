@@ -272,14 +272,14 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                         <MapPin size={12} color="rgba(255,255,255,0.4)" />{s.place}
                       </div>
                     )}
-                    {/* 参加可否（○/△/×）。タップで自分の回答を記録する */}
-                    <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: "4px", marginTop: "2px" }}>
+                    {/* 参加可否（○/△/×）。タップで自分の回答を記録する。横幅いっぱいに均一の四角で並べる */}
+                    <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: "6px", marginTop: "4px", width: "100%" }}>
                       {(["yes", "maybe", "no"] as AttendanceStatus[]).map(st => {
                         const meta = STATUS_META[st];
                         const mine = attendances[s.id]?.[user.id] === st;
                         return (
                           <button key={st} onClick={() => setMyAttendance(s.id, st)}
-                            style={{ width: "28px", height: "28px", borderRadius: "6px", border: mine ? `1px solid ${meta.color}` : "1px solid rgba(255,255,255,0.14)", background: mine ? `${meta.color}22` : "transparent", color: mine ? meta.color : "rgba(255,255,255,0.5)", fontSize: "14px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            style={{ flex: 1, aspectRatio: "1", borderRadius: "6px", border: mine ? `1px solid ${meta.color}` : "1px solid rgba(255,255,255,0.14)", background: mine ? `${meta.color}22` : "transparent", color: mine ? meta.color : "rgba(255,255,255,0.5)", fontSize: "14px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                             {meta.label}
                           </button>
                         );
