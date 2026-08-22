@@ -160,7 +160,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
           {schedules.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
               {schedules.map(s => (
-                <div key={s.id} style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
+                <div key={s.id} style={{ width: "100%", boxSizing: "border-box", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "5px", flex: 1, minWidth: 0, fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                       <Calendar size={12} color="rgba(255,255,255,0.4)" />{formatJaDate(s.practice_date)}
