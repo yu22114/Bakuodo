@@ -1,12 +1,16 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Plus, X, Check, UserPlus } from "lucide-react";
+import { Plus, X, Check, UserPlus, Calendar, MapPin } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { timeAgo } from "../lib/constants";
 import { Loading } from "./Loading";
 
-type Board = { id: string; title: string; created_at: string; creator: { dancer_name: string } | null };
+type Board = {
+  id: string; title: string; subtitle: string | null; event_date: string | null; venue: string | null;
+  created_at: string; creator: { dancer_name: string } | null;
+  instructors: { id: string; name: string; instagram: string | null }[];
+};
 type InstructorInput = { name: string; instagram: string };
 const EMPTY_INSTRUCTOR: InstructorInput = { name: "", instagram: "" };
 
@@ -28,9 +32,10 @@ export function CommunityScreen({ user, onOpenBoard }: {
   const fetchBoards = async () => {
     const { data } = await supabase
       .from("community_boards")
-      .select("id, title, created_at, creator:creator_id(dancer_name)")
-      .order("created_at", { ascending: false });
-    setBoards((data as any[])?.map(b => ({ ...b, creator: b.creator ?? null })) ?? []);
+      .select("id, title, subtitle, event_date, venue, created_at, creator:creator_id(dancer_name), instructors:community_board_instructors(id, name, instagram, sort_order)")
+      .order("created_at", { ascending: false })
+      .order("sort_order", { referencedTable: "community_board_instructors", ascending: true });
+    setBoards((data as any[])?.map(b => ({ ...b, creator: b.creator ?? null, instructors: b.instructors ?? [] })) ?? []);
   };
 
   useEffect(() => { fetchBoards(); }, []);
@@ -104,7 +109,27 @@ export function CommunityScreen({ user, onOpenBoard }: {
               <div key={b.id} onClick={() => onOpenBoard(b)}
                 style={{ padding: "12px 14px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderLeft: "3px solid #DC2626", borderRadius: "8px", cursor: "pointer" }}>
                 <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>【{b.title}】</div>
-                <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "3px" }}>
+                {b.subtitle && <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", marginTop: "4px" }}>{b.subtitle}</div>}
+                {b.event_date && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "11px", color: "rgba(255,255,255,0.65)", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "5px" }}>
+                    <Calendar size={10} color="rgba(255,255,255,0.4)" />{b.event_date}
+                  </div>
+                )}
+                {b.venue && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "11px", color: "rgba(255,255,255,0.65)", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "3px" }}>
+                    <MapPin size={10} color="rgba(255,255,255,0.4)" />{b.venue}
+                  </div>
+                )}
+                {b.instructors.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "6px" }}>
+                    {b.instructors.map(ins => (
+                      <span key={ins.id} style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
+                        {ins.name}{ins.instagram && <span style={{ color: "#A855F7" }}> @{ins.instagram}</span>}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "8px" }}>
                   {b.creator?.dancer_name ?? "UNKNOWN"} ・ {timeAgo(b.created_at)}
                 </div>
               </div>
