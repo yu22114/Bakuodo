@@ -190,14 +190,14 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                     {circledNumber(i + 1)}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "5px", flex: 1, minWidth: 0, fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap" }}>
                       <Calendar size={12} color="rgba(255,255,255,0.4)" />{formatJaDate(s.practice_date)}
+                      {s.practice_time && (
+                        <>
+                          <Clock size={12} color="rgba(255,255,255,0.4)" style={{ marginLeft: "6px" }} />{formatTimeRange(s.practice_time, s.practice_end_time)}
+                        </>
+                      )}
                     </div>
-                    {s.practice_time && (
-                      <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                        <Clock size={12} color="rgba(255,255,255,0.4)" />{formatTimeRange(s.practice_time, s.practice_end_time)}
-                      </div>
-                    )}
                     {s.place && (
                       <div style={{ display: "flex", alignItems: "center", gap: "5px", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         <MapPin size={12} color="rgba(255,255,255,0.4)" />{s.place}
