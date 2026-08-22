@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { ChevronLeft, Trash2, Send, MapPin, Calendar } from "lucide-react";
+import { ChevronLeft, Trash2, Send, MapPin, Calendar, Pencil, Check, X } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { timeAgo } from "../lib/constants";
@@ -19,7 +19,7 @@ function formatJaDate(dateStr: string) {
   return `${d.getMonth() + 1}/${d.getDate()}(${weekdays[d.getDay()]})`;
 }
 
-type BoardDetail = { subtitle: string | null; venue: string | null; genre: GenreKey | null; event_date: string | null; event_start_date: string | null; event_end_date: string | null };
+type BoardDetail = { subtitle: string | null; venue: string | null; genre: GenreKey | null; event_date: string | null; event_start_date: string | null; event_end_date: string | null; creator_id: string; practice_notes: string | null };
 type Instructor = { id: string; name: string; instagram: string | null };
 
 export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
@@ -32,11 +32,14 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
   const { posts, loading, postText, setPostText, posting, postMessage, deletePost } = useCommunityBoard(board.id, user);
   const [detail, setDetail] = useState<BoardDetail | null>(null);
   const [instructors, setInstructors] = useState<Instructor[]>([]);
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesDraft, setNotesDraft] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
 
   useEffect(() => {
     async function fetchDetail() {
       const [{ data: boardData }, { data: instructorData }] = await Promise.all([
-        supabase.from("community_boards").select("subtitle, venue, genre, event_date, event_start_date, event_end_date").eq("id", board.id).single(),
+        supabase.from("community_boards").select("subtitle, venue, genre, event_date, event_start_date, event_end_date, creator_id, practice_notes").eq("id", board.id).single(),
         supabase.from("community_board_instructors").select("id, name, instagram").eq("board_id", board.id).order("sort_order", { ascending: true }),
       ]);
       if (boardData) setDetail(boardData as any);
@@ -45,7 +48,18 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
     fetchDetail();
   }, [board.id]);
 
+  const isOwn = detail?.creator_id === user.id;
   const hasDetail = detail && (detail.subtitle || detail.genre || detail.event_start_date || detail.event_date || detail.venue);
+
+  const startEditNotes = () => { setNotesDraft(detail?.practice_notes ?? ""); setEditingNotes(true); };
+  const saveNotes = async () => {
+    if (!detail || savingNotes) return;
+    setSavingNotes(true);
+    const text = notesDraft.trim();
+    const { error } = await supabase.from("community_boards").update({ practice_notes: text || null }).eq("id", board.id);
+    setSavingNotes(false);
+    if (!error) { setDetail({ ...detail, practice_notes: text || null }); setEditingNotes(false); }
+  };
 
   return (
     <div {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }}>
@@ -88,6 +102,39 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        )}
+        {(detail?.practice_notes || isOwn) && (
+          <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px", marginBottom: "20px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+              <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>練習内容</span>
+              {isOwn && !editingNotes && (
+                <button onClick={startEditNotes} title="編集" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", padding: "4px" }}><Pencil size={14} /></button>
+              )}
+            </div>
+            {editingNotes ? (
+              <div>
+                <textarea
+                  value={notesDraft}
+                  onChange={e => setNotesDraft(e.target.value)}
+                  placeholder="公演に向けた練習内容を記入..."
+                  rows={5}
+                  style={{ width: "100%", resize: "vertical", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px 12px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", background: "#1A1A1A", outline: "none", lineHeight: 1.5, boxSizing: "border-box" }}
+                />
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "8px" }}>
+                  <button onClick={() => setEditingNotes(false)} disabled={savingNotes} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "8px 14px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>
+                    <X size={13} /> キャンセル
+                  </button>
+                  <button onClick={saveNotes} disabled={savingNotes} style={{ background: ACCENT, border: "none", borderRadius: "8px", cursor: "pointer", color: "#fff", padding: "8px 14px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>
+                    <Check size={13} /> 保存
+                  </button>
+                </div>
+              </div>
+            ) : detail?.practice_notes ? (
+              <p style={{ margin: 0, fontSize: "13px", color: "#F0F0F0", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{detail.practice_notes}</p>
+            ) : (
+              <p style={{ margin: 0, fontSize: "12px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif" }}>まだ記載がありません</p>
             )}
           </div>
         )}
