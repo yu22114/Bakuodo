@@ -11,38 +11,35 @@ export type BoardPost = {
 
 const SELECT = "id, body, created_at, profile:profile_id(id, dancer_name, avatar_url)";
 
-// event_board_posts（主催者・承認済み参加者だけが読み書きできる掲示板）用のフック。
-// useComments.tsと同じ形にして、コメント機能と迷わず対応できるようにする
-export function useEventBoard(target: { cypherId: string } | { lessonId: string }, user: SupabaseUser | null) {
-  const key = "cypherId" in target ? target.cypherId : target.lessonId;
-  const column = "cypherId" in target ? "cypher_id" : "lesson_id";
+// community_board_posts（コミュニティ画面の「＋」で作った自由な掲示板）用のフック。
+// useComments.tsと同じ形にしている
+export function useCommunityBoard(boardId: string, user: SupabaseUser | null) {
   const [posts, setPosts] = useState<BoardPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [postText, setPostText] = useState("");
   const [posting, setPosting] = useState(false);
 
   useEffect(() => {
-    if (!key) return;
+    if (!boardId) return;
     async function fetchPosts() {
       setLoading(true);
-      // 参加者でなければRLSに弾かれて空配列が返る（想定内なのでエラー扱いしない）
       const { data } = await supabase
-        .from("event_board_posts").select(SELECT)
-        .eq(column, key)
+        .from("community_board_posts").select(SELECT)
+        .eq("board_id", boardId)
         .order("created_at", { ascending: true });
       if (data) setPosts(data.map((p: any) => ({ ...p, profile: p.profile ?? { id: "", dancer_name: "UNKNOWN", avatar_url: null } })));
       setLoading(false);
     }
     fetchPosts();
-  }, [key, column]);
+  }, [boardId]);
 
   const postMessage = async () => {
     const text = postText.trim();
-    if (!text || posting || !user || !key) return;
+    if (!text || posting || !user || !boardId) return;
     setPosting(true);
     const { data, error } = await supabase
-      .from("event_board_posts")
-      .insert({ [column]: key, profile_id: user.id, body: text })
+      .from("community_board_posts")
+      .insert({ board_id: boardId, profile_id: user.id, body: text })
       .select(SELECT).single();
     if (!error && data) {
       setPosts(p => [...p, { ...(data as any), profile: (data as any).profile ?? { id: user.id, dancer_name: "YOU", avatar_url: null } }]);
@@ -52,7 +49,7 @@ export function useEventBoard(target: { cypherId: string } | { lessonId: string 
   };
 
   const deletePost = async (id: string) => {
-    const { error } = await supabase.from("event_board_posts").delete().eq("id", id);
+    const { error } = await supabase.from("community_board_posts").delete().eq("id", id);
     if (!error) setPosts(p => p.filter(x => x.id !== id));
   };
 

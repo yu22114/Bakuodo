@@ -14,7 +14,7 @@ import { EditProfileScreen } from "./components/EditProfileScreen";
 import { EditCypherScreen } from "./components/EditCypherScreen";
 import { EditLessonScreen } from "./components/EditLessonScreen";
 import { CommunityScreen } from "./components/CommunityScreen";
-import { EventBoardScreen } from "./components/EventBoardScreen";
+import { CommunityBoardScreen } from "./components/CommunityBoardScreen";
 import { DetailModal } from "./components/DetailModal";
 import { PLDetailModal } from "./components/PLDetailModal";
 import { ConfirmModal } from "./components/ConfirmModal";
@@ -48,8 +48,8 @@ export default function BakuOdori() {
   const [editCypherId, setEditCypherId] = useState<string | null>(null);
   // レッスン・イベント編集
   const [editLessonId, setEditLessonId] = useState<string | null>(null);
-  // コミュニティ（参加者限定掲示板）：どのイベントの掲示板を開いているか
-  const [boardTarget, setBoardTarget] = useState<{ kind: "cypher" | "lesson"; id: string; title: string; accent: string } | null>(null);
+  // コミュニティ：どの掲示板を開いているか
+  const [boardTarget, setBoardTarget] = useState<{ id: string; title: string } | null>(null);
   // トップで開いているセクション。LESSONを見ている時に投稿を押したら
   // レッスン作成フォームが開くようにするため、画面をまたいで保持する
   const [topSection, setTopSection] = useState<TopSection>("cypher");
@@ -289,8 +289,8 @@ export default function BakuOdori() {
               </div>
             )}
             {boardTarget && (
-              <EventBoardScreen
-                target={boardTarget}
+              <CommunityBoardScreen
+                board={boardTarget}
                 user={user}
                 onBack={() => setBoardTarget(null)}
                 onViewProfile={id => setProfileStack(s => [...s, id])}
