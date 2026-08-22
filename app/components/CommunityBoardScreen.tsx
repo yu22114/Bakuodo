@@ -27,6 +27,11 @@ function formatTimeRange(start: string | null, end: string | null) {
   return `${start}〜${isNextDayEnd(end, start) ? `翌${end}` : end}`;
 }
 
+// 日時が早い順の並び順を①②③...で表す（21件目以降は(21)のように数字にフォールバック）
+function circledNumber(n: number) {
+  return n >= 1 && n <= 20 ? String.fromCodePoint(0x2460 + n - 1) : `(${n})`;
+}
+
 // マイコミュニティのカードを押すと開く画面。中身は「練習内容」カードのみ。
 // 閲覧は誰でもできるが、書き換えられるのは作成者だけ
 export function CommunityBoardScreen({ board, user, onBack }: {
@@ -50,7 +55,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
 
   const fetchSchedules = async () => {
     const { data } = await supabase.from("community_board_practice_schedules").select("id, practice_date, practice_time, practice_end_time, place")
-      .eq("board_id", board.id).order("practice_date", { ascending: true }).order("created_at", { ascending: true });
+      .eq("board_id", board.id).order("practice_date", { ascending: true }).order("practice_time", { ascending: true }).order("created_at", { ascending: true });
     setSchedules((data as any) ?? []);
   };
 
@@ -160,10 +165,11 @@ export function CommunityBoardScreen({ board, user, onBack }: {
           {/* 練習日程カード（1件ごとに独立したカードとして表示。追加ボタンは上に分離した） */}
           {schedules.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
-              {schedules.map(s => (
+              {schedules.map((s, i) => (
                 <div key={s.id} style={{ width: "100%", boxSizing: "border-box", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "5px", flex: 1, minWidth: 0, fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                      <span style={{ color: ACCENT, fontWeight: 700 }}>{circledNumber(i + 1)}</span>
                       <Calendar size={12} color="rgba(255,255,255,0.4)" />{formatJaDate(s.practice_date)}
                     </div>
                     {s.practice_time && (
