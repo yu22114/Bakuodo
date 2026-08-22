@@ -2,19 +2,20 @@
 import { ChevronLeft, Trash2, Send } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { timeAgo } from "../lib/constants";
-import { useEventBoard } from "../lib/useEventBoard";
+import { useCommunityBoard } from "../lib/useCommunityBoard";
 import { useSwipeBack } from "../lib/useSwipeBack";
 import { Loading } from "./Loading";
 
-export function EventBoardScreen({ target, user, onBack, onViewProfile }: {
-  target: { kind: "cypher" | "lesson"; id: string; title: string; accent: string };
+const ACCENT = "#DC2626";
+
+export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
+  board: { id: string; title: string };
   user: SupabaseUser;
   onBack: () => void;
   onViewProfile?: (id: string) => void;
 }) {
   const swipeBack = useSwipeBack(onBack);
-  const { posts, loading, postText, setPostText, posting, postMessage, deletePost } =
-    useEventBoard(target.kind === "cypher" ? { cypherId: target.id } : { lessonId: target.id }, user);
+  const { posts, loading, postText, setPostText, posting, postMessage, deletePost } = useCommunityBoard(board.id, user);
 
   return (
     <div {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }}>
@@ -23,8 +24,8 @@ export function EventBoardScreen({ target, user, onBack, onViewProfile }: {
           <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
         </button>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: target.accent, letterSpacing: "0.15em", marginBottom: "2px" }}>BOARD</div>
-          <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{target.title}</h2>
+          <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: ACCENT, letterSpacing: "0.15em", marginBottom: "2px" }}>BOARD</div>
+          <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{board.title}</h2>
         </div>
       </div>
 
@@ -33,7 +34,7 @@ export function EventBoardScreen({ target, user, onBack, onViewProfile }: {
           <Loading />
         ) : posts.length === 0 ? (
           <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>
-            まだ投稿はありません。参加者同士で連絡事項を書き込めます
+            まだ投稿はありません。最初のメッセージを書き込みましょう
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -68,7 +69,7 @@ export function EventBoardScreen({ target, user, onBack, onViewProfile }: {
           value={postText}
           onChange={e => setPostText(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); postMessage(); } }}
-          placeholder="参加者に向けて投稿..."
+          placeholder="メッセージを入力..."
           rows={1}
           maxLength={500}
           style={{ flex: 1, resize: "none", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", padding: "10px 14px", fontSize: "13px", fontFamily: "inherit", color: "#F0F0F0", background: "#1A1A1A", outline: "none", lineHeight: 1.5 }}
@@ -76,7 +77,7 @@ export function EventBoardScreen({ target, user, onBack, onViewProfile }: {
         <button
           onClick={postMessage}
           disabled={!postText.trim() || posting}
-          style={{ width: "38px", height: "38px", borderRadius: "50%", background: postText.trim() ? target.accent : "rgba(255,255,255,0.12)", border: "none", cursor: postText.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.2s" }}>
+          style={{ width: "38px", height: "38px", borderRadius: "50%", background: postText.trim() ? ACCENT : "rgba(255,255,255,0.12)", border: "none", cursor: postText.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.2s" }}>
           <Send size={15} color="#fff" />
         </button>
       </div>
