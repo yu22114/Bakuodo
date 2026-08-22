@@ -99,15 +99,13 @@ export function CommunityBoardScreen({ board, user, onBack }: {
         {detail === null ? (
           <Loading />
         ) : (
-          <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px" }}>
-            <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", marginBottom: "10px" }}>練習内容</div>
-
-            {/* 練習日程（複数登録できる。作成者だけ追加・削除できる） */}
-            <div style={{ marginBottom: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: schedules.length > 0 ? "8px" : "0" }}>
-                <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.08em", color: "rgba(255,255,255,0.5)" }}>練習日程</span>
-              </div>
-              {schedules.length > 0 && (
+          <>
+          {/* 練習日程カード（複数登録できる。作成者だけ追加・削除できる） */}
+          <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px", marginBottom: "16px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: schedules.length > 0 ? "8px" : "0" }}>
+              <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>練習日程</span>
+            </div>
+            {schedules.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   {schedules.map(s => (
                     <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", background: "#1A1A1A", borderRadius: "8px", padding: "8px 10px" }}>
@@ -152,10 +150,12 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                   </div>
                 </div>
               )}
-            </div>
+          </div>
 
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px", paddingTop: "12px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-              <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.08em", color: "rgba(255,255,255,0.5)" }}>メモ</span>
+          {/* メモカード（自由記述） */}
+          <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+              <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>メモ</span>
               {isOwn && !editingNotes && (
                 <button onClick={startEditNotes} title="編集" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", padding: "4px" }}><Pencil size={14} /></button>
               )}
@@ -184,6 +184,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
               <p style={{ margin: 0, fontSize: "12px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif" }}>まだ記載がありません</p>
             )}
           </div>
+          </>
         )}
       </div>
     </div>
