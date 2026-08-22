@@ -8,14 +8,15 @@ const VIEWPORT = 260; // 表示上の枠のサイズ(px)
 const OUTPUT = 600; // 書き出す画像の一辺のサイズ(px)。高解像度の端末でも荒れないように大きめにする
 const MAX_SOURCE = 1600; // スマホの高解像度写真をそのまま扱うとメモリ不足で落ちることがあるため、先に長辺をここまで縮める
 
-// iPhoneのHEIC/HEIFはブラウザの標準機能では読み込めないため、専用ライブラリでJPEGに変換する。
-// 使う人だけが読み込むよう動的importにして、他の人の初期表示を重くしないようにする
+// iPhoneのHEIC/HEIFはブラウザの標準機能では読み込めない。以前はブラウザの中だけで
+// 変換していたが、高解像度写真だとスマホのメモリが足りずページごと落ちることがあったため、
+// サーバー側（/api/convert-heic）でJPEGに変換してから受け取るようにしている
 async function convertHeicIfNeeded(file: File): Promise<Blob> {
   const isHeic = /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
   if (!isHeic) return file;
-  const { default: heic2any } = await import("heic2any");
-  const result = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
-  return Array.isArray(result) ? result[0] : result;
+  const res = await fetch("/api/convert-heic", { method: "POST", body: file });
+  if (!res.ok) throw new Error(`HEIC変換に失敗しました (status ${res.status})`);
+  return await res.blob();
 }
 
 // 元画像が大きすぎる場合だけ縮小したBlobを返す（十分小さい場合はそのまま元ファイルを使う）。
