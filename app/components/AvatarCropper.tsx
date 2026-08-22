@@ -14,6 +14,7 @@ export function AvatarCropper({ file, onCancel, onConfirm }: {
 }) {
   const [imgUrl, setImgUrl] = useState<string | null>(null);
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [saving, setSaving] = useState(false);
@@ -90,15 +91,21 @@ export function AvatarCropper({ file, onCancel, onConfirm }: {
           onPointerCancel={handlePointerUp}
           style={{ position: "relative", width: `${VIEWPORT}px`, height: `${VIEWPORT}px`, margin: "0 auto", borderRadius: "12px", overflow: "hidden", background: "#000", touchAction: "none", cursor: "grab" }}
         >
-          {imgUrl && (
+          {imgUrl && !loadError && (
             <img
               ref={imgRef}
               src={imgUrl}
               alt=""
               draggable={false}
               onLoad={e => setNatural(n => n ?? { w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
+              onError={() => setLoadError(true)}
               style={{ position: "absolute", left: `${VIEWPORT / 2 - dispW / 2 + offset.x}px`, top: `${VIEWPORT / 2 - dispH / 2 + offset.y}px`, width: natural ? `${dispW}px` : "auto", height: natural ? `${dispH}px` : "auto", maxWidth: "none", pointerEvents: "none", userSelect: "none" }}
             />
+          )}
+          {loadError && (
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", textAlign: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)" }}>
+              この画像は読み込めませんでした。別の写真をお試しください
+            </div>
           )}
           {/* 実際に円形で保存されるイメージが分かるよう、四隅を暗くして丸いガイドを見せる */}
           <div style={{ position: "absolute", inset: 0, pointerEvents: "none", boxShadow: `0 0 0 ${VIEWPORT}px rgba(0,0,0,0.55)`, borderRadius: "50%" }} />

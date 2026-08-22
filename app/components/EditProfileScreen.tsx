@@ -62,7 +62,9 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
       setAvatarError("ファイルサイズは10MB以下にしてください");
       return;
     }
-    if (!file.type.startsWith("image/")) {
+    // file.typeが空になる端末・OSの組み合わせがあるため、拡張子でも判定できるようにする
+    const looksLikeImage = file.type.startsWith("image/") || /\.(jpe?g|png|gif|webp|heic|heif|bmp|avif)$/i.test(file.name);
+    if (!looksLikeImage) {
       setAvatarError("画像ファイルを選択してください");
       return;
     }
