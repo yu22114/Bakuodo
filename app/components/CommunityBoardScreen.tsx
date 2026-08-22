@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { ChevronLeft, Plus, Trash2, Clock, MapPin, Calendar } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Pencil, Check, X, Clock, MapPin, Calendar } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { todayStr, TIME_OPTIONS, endTimeOptions, endTimeLabel, isNextDayEnd, DEFAULT_START_TIME } from "../lib/constants";
@@ -49,6 +49,12 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   const [newEndTime, setNewEndTime] = useState("");
   const [newPlace, setNewPlace] = useState("");
   const [addingSchedule, setAddingSchedule] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDate, setEditDate] = useState("");
+  const [editStartTime, setEditStartTime] = useState("");
+  const [editEndTime, setEditEndTime] = useState("");
+  const [editPlace, setEditPlace] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const fetchSchedules = async () => {
     const { data } = await supabase.from("community_board_practice_schedules").select("id, practice_date, practice_time, practice_end_time, place")
@@ -82,6 +88,24 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   const deleteSchedule = async (id: string) => {
     const { error } = await supabase.from("community_board_practice_schedules").delete().eq("id", id);
     if (!error) setSchedules(list => list.filter(s => s.id !== id));
+  };
+
+  // 練習日程の編集：カードの✎から開く。入力欄は追加フォームと同じ内容を別モーダルで出す
+  const startEditSchedule = (s: PracticeSchedule) => {
+    setEditingId(s.id);
+    setEditDate(s.practice_date);
+    setEditStartTime(s.practice_time ?? "");
+    setEditEndTime(s.practice_end_time ?? "");
+    setEditPlace(s.place ?? "");
+  };
+  const saveEditSchedule = async () => {
+    if (!editingId || !editDate || savingEdit) return;
+    setSavingEdit(true);
+    const { error } = await supabase.from("community_board_practice_schedules").update({
+      practice_date: editDate, practice_time: editStartTime || null, practice_end_time: editEndTime || null, place: editPlace.trim() || null,
+    }).eq("id", editingId);
+    setSavingEdit(false);
+    if (!error) { setEditingId(null); fetchSchedules(); }
   };
 
   return (
@@ -174,7 +198,10 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                     )}
                   </div>
                   {isOwn && (
-                    <button onClick={() => deleteSchedule(s.id)} title="削除" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px", flexShrink: 0 }}><Trash2 size={14} /></button>
+                    <div style={{ display: "flex", gap: "2px", flexShrink: 0 }}>
+                      <button onClick={() => startEditSchedule(s)} title="編集" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px" }}><Pencil size={14} /></button>
+                      <button onClick={() => deleteSchedule(s.id)} title="削除" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px" }}><Trash2 size={14} /></button>
+                    </div>
                   )}
                 </div>
               ))}
@@ -183,6 +210,46 @@ export function CommunityBoardScreen({ board, user, onBack }: {
           </>
         )}
       </div>
+
+      {/* 練習日程の編集モーダル */}
+      {editingId && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setEditingId(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>EDIT SCHEDULE</div>
+              <button onClick={() => setEditingId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
+            </div>
+            <input type="date" min={todayStr()} value={editDate} onChange={e => setEditDate(e.target.value)}
+              style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginTop: "6px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "3px" }}>開始時間</label>
+                <select value={editStartTime} onChange={e => setEditStartTime(e.target.value)}
+                  style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }}>
+                  <option value="">未設定</option>
+                  {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "3px" }}>終了時間</label>
+                <select value={editEndTime} onChange={e => setEditEndTime(e.target.value)}
+                  style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }}>
+                  <option value="">未設定</option>
+                  {endTimeOptions(editStartTime).map(t => <option key={t} value={t}>{endTimeLabel(t, editStartTime)}</option>)}
+                </select>
+              </div>
+            </div>
+            <input value={editPlace} onChange={e => setEditPlace(e.target.value)} placeholder="場所（任意）" maxLength={100}
+              style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "16px" }}>
+              <button onClick={() => setEditingId(null)} disabled={savingEdit} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "8px 14px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
+              <button onClick={saveEditSchedule} disabled={!editDate || savingEdit} style={{ background: editDate ? ACCENT : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: editDate ? "pointer" : "default", color: editDate ? "#fff" : "rgba(255,255,255,0.3)", padding: "8px 14px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>
+                <Check size={13} /> {savingEdit ? "保存中..." : "保存する"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
