@@ -56,23 +56,13 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   // 作成フォームを出すか決めるのに使うため、画面を離れても覚えておきたい
   section: TopSection;
   onSectionChange: (s: TopSection) => void;
-  // 団体用アカウントではSPOTS機能を使わないため、タブごと隠す
-  accountType?: string;
 }) {
   const [slideDir, setSlideDir] = useState<1 | -1>(1);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  // 団体用アカウントの時だけSPOTSタブを除いた並び順を使う
-  const visibleSections = accountType === "organization" ? SECTION_ORDER.filter(s => s !== "spots") : SECTION_ORDER;
-
-  // 団体用に切り替えた直後など、SPOTSを表示中のまま隠れてしまう場合は先頭のタブへ逃がす
-  useEffect(() => {
-    if (!visibleSections.includes(section)) onSectionChange(visibleSections[0]);
-  }, [accountType, section]);
-
   const goToSection = (next: TopSection) => {
-    const curIdx = visibleSections.indexOf(section);
-    const nextIdx = visibleSections.indexOf(next);
+    const curIdx = SECTION_ORDER.indexOf(section);
+    const nextIdx = SECTION_ORDER.indexOf(next);
     if (nextIdx === curIdx) return;
     setSlideDir(nextIdx > curIdx ? 1 : -1);
     onSectionChange(next);
@@ -100,10 +90,10 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   const wheelResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const slideBy = (dir: 1 | -1) => {
-    const curIdx = visibleSections.indexOf(section);
+    const curIdx = SECTION_ORDER.indexOf(section);
     const nextIdx = curIdx + dir;
-    if (nextIdx < 0 || nextIdx >= visibleSections.length) return;
-    goToSection(visibleSections[nextIdx]);
+    if (nextIdx < 0 || nextIdx >= SECTION_ORDER.length) return;
+    goToSection(SECTION_ORDER[nextIdx]);
   };
 
   const handleContentWheel = (e: React.WheelEvent) => {
@@ -360,7 +350,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       {/* セクション切り替え：四角い下線タブから、丸い枠の中で選択中だけ浮くセグメント風に */}
       <div style={{ padding: "10px 16px", background: "#0D0D0D", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "14px", padding: "4px" }}>
-          {visibleSections.map(key => { const label = SECTION_LABEL[key]; const color = SECTION_COLOR[key]; return (
+          {SECTION_ORDER.map(key => { const label = SECTION_LABEL[key]; const color = SECTION_COLOR[key]; return (
             <button key={key} onClick={() => goToSection(key)}
               style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: section === key ? "#2A2A2A" : "transparent", boxShadow: section === key ? "0 1px 4px rgba(255,255,255,0.08)" : "none", color: section === key ? color : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
               {/* 選んでいるタブだけ、文字を1つずつ左から順に上下させてウェーブっぽく見せる。
