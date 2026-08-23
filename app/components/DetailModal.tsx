@@ -28,6 +28,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
   const { date, time } = formatDate(cypher.starts_at);
   const { station, venue } = splitLocation(cypher.location);
   const isEnded = timeUntil(cypher.starts_at) === "終了";
+  const isOwn = organizerId === user?.id;
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
   // コメントの取得・投稿はレッスン側と同じ処理を使う
@@ -39,7 +40,8 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
         .from("participations")
         .select("profile_id, profiles:profile_id ( dancer_name, avatar_url )")
         .eq("cypher_id", cypherId)
-        .eq("status", "approved");
+        .eq("status", "approved")
+        .neq("profile_id", organizerId); // 主催者は参加者に含めない
       if (data) {
         setParticipants(data.map((row: any) => ({
           profile_id: row.profile_id,
@@ -135,7 +137,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
             </div>
           )}
 
-          {isEnded ? (
+          {!isOwn && (isEnded ? (
             <div style={{ marginTop: "20px", padding: "14px", background: "rgba(255,255,255,0.06)", borderRadius: "6px", textAlign: "center", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
               このサイファーは終了しました
             </div>
@@ -152,7 +154,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
                 <Zap size={16} /> このサイファーに参加する
               </button>
             );
-          })()}
+          })())}
 
           <div style={{ marginTop: "28px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "20px" }}>
             <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "14px" }}>コメント{comments.length > 0 ? ` (${comments.length})` : ""}</div>
