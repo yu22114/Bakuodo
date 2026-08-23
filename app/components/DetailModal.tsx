@@ -65,9 +65,9 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={onClose}>
-      {/* ホーム画面のカードと同じメタリックな質感にそろえる */}
-      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderBottom: "none", borderRadius: "12px 12px 0 0", maxHeight: "88vh", display: "flex", flexDirection: "column", boxShadow: "0 -4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", padding: "0 12px 12px", boxSizing: "border-box" }} onClick={onClose}>
+      {/* ホーム画面のカードと同じメタリックな質感にそろえる。左右下に少し余白を持たせて浮かせる */}
+      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", maxHeight: "88vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 -4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
         <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0, borderRadius: "12px 12px 0 0" }}>
           <h2 style={{ margin: 0, fontSize: "24px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", lineHeight: 1.1, flex: 1 }}>{cypher.title}</h2>
           <button onClick={handleShare} title="共有" style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Share2 size={19} /></button>
@@ -77,7 +77,12 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
             {cypher.genres.map(g => <GenreBadge key={g} genre={g} size="md" />)}
           </div>
+          {/* 並び順: 主催者→開催日時→場所→参加人数→スタジオ代→参加者 */}
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
+            <button onClick={() => onViewProfile(organizerId)}
+              style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
+              <User size={14} color="rgba(255,255,255,0.45)" /> 主催: {cypher.organizer.dancer_name}
+            </button>
             <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center" }}><Clock size={14} color="rgba(255,255,255,0.45)" /> {date} {time}{cypher.ends_at ? `〜${formatEndTime(cypher.starts_at, cypher.ends_at)}` : ""}</div>
             {/* 地図へ飛べるのはここだけ。押せる場所だと一目で分かるよう枠で囲い、
                 指で押しやすいよう高さも確保する */}
@@ -94,10 +99,6 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
               </span>
               <span style={{ fontSize: "11px", color: "#5B9BFF", fontWeight: 700, flexShrink: 0 }}>地図を開く →</span>
             </a>
-            <button onClick={() => onViewProfile(organizerId)}
-              style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
-              <User size={14} color="rgba(255,255,255,0.45)" /> 主催: {cypher.organizer.dancer_name}
-            </button>
           </div>
           {cypher.description && <p style={{ fontSize: "13px", color: "#F0F0F0", lineHeight: 1.7, marginBottom: "20px", fontFamily: "'Noto Sans JP',sans-serif" }}>{cypher.description}</p>}
           <ParticipantBar count={participantsFetched ? participants.length : cypher.participant_count} max={cypher.max_members} />

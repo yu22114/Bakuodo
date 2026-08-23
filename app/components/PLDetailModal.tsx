@@ -81,9 +81,9 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={onClose}>
-      {/* ホーム画面のカードと同じメタリックな質感にそろえる */}
-      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderBottom: "none", borderRadius: "12px 12px 0 0", maxHeight: "88vh", display: "flex", flexDirection: "column", boxShadow: "0 -4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", padding: "0 12px 12px", boxSizing: "border-box" }} onClick={onClose}>
+      {/* ホーム画面のカードと同じメタリックな質感にそろえる。左右下に少し余白を持たせて浮かせる */}
+      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", maxHeight: "88vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 -4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
         <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0 }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: "5px", background: accent, borderRadius: "4px", padding: "2px 8px", marginBottom: "6px" }}>
@@ -107,7 +107,11 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
             )}
           </div>
 
+          {/* 並び順: 主催者→開催日時→場所→参加人数→料金→参加者 */}
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
+            <button onClick={() => onViewProfile(lesson.organizer.id)} style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
+              <User size={14} color="rgba(255,255,255,0.45)" /> {isEvent ? "主催" : "講師"}: {lesson.organizer.dancer_name}
+            </button>
             <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center" }}>
               <Clock size={14} color="rgba(255,255,255,0.45)" /> {date} {time}{lesson.ends_at ? `〜${formatEndTime(lesson.starts_at, lesson.ends_at)}` : ""}
             </div>
@@ -120,19 +124,18 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
               </span>
               <span style={{ fontSize: "11px", color: accent, fontWeight: 700, flexShrink: 0 }}>地図を開く →</span>
             </a>
-            <button onClick={() => onViewProfile(lesson.organizer.id)} style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
-              <User size={14} color="rgba(255,255,255,0.45)" /> {isEvent ? "主催" : "講師"}: {lesson.organizer.dancer_name}
-            </button>
-            {lesson.price != null && (
-              <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center" }}>
-                ¥{lesson.price.toLocaleString()}
-              </div>
-            )}
           </div>
 
           {lesson.description && <p style={{ fontSize: "13px", color: "#F0F0F0", lineHeight: 1.7, marginBottom: "20px", fontFamily: "'Noto Sans JP',sans-serif" }}>{lesson.description}</p>}
 
           <ParticipantBar count={participantsFetched ? participants.length : lesson.participant_count} max={lesson.max_members} />
+
+          {lesson.price != null && (
+            <div style={{ marginTop: "16px", padding: "12px 14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>料金</div>
+              <div style={{ fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>¥{lesson.price.toLocaleString()}</div>
+            </div>
+          )}
 
           {participants.length > 0 && (
             <div style={{ marginTop: "16px" }}>
