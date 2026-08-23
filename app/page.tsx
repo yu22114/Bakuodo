@@ -41,6 +41,8 @@ export default function BakuOdori() {
   // ダンサーネーム（ヘッダー表示用）
   const [dancerName, setDancerName] = useState("");
   const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null);
+  // アカウントの種類（個人用/団体用）。団体用ではホーム画面からSPOTS機能を隠す
+  const [accountType, setAccountType] = useState("individual");
   // プロフィール遷移スタック（Instagram風の重ねて表示）
   const [profileStack, setProfileStack] = useState<string[]>([]);
   // 通知関連
@@ -67,7 +69,7 @@ export default function BakuOdori() {
   // ログイン後にダンサーネームと参加済みサイファー・レッスン一覧・未読通知数をDBから取得
   const fetchUserData = async (u: SupabaseUser) => {
     const [profileRes, partsRes, plPartsRes, notifRes] = await Promise.all([
-      supabase.from("profiles").select("dancer_name, avatar_url").eq("id", u.id).single(),
+      supabase.from("profiles").select("dancer_name, avatar_url, account_type").eq("id", u.id).single(),
       supabase.from("participations").select("cypher_id, status").eq("profile_id", u.id),
       supabase.from("pl_participations").select("lesson_id, status").eq("profile_id", u.id),
       supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", u.id).eq("read", false),
@@ -75,6 +77,7 @@ export default function BakuOdori() {
     const name = profileRes.data?.dancer_name || u.user_metadata?.full_name || "";
     if (name) setDancerName(name);
     setMyAvatarUrl((profileRes.data as any)?.avatar_url ?? null);
+    setAccountType((profileRes.data as any)?.account_type === "organization" ? "organization" : "individual");
     if (partsRes.data) {
       setJoined(partsRes.data.filter((p: any) => p.status !== "pending").map((p: any) => p.cypher_id));
       setPendingJoins(partsRes.data.filter((p: any) => p.status === "pending").map((p: any) => p.cypher_id));
@@ -275,11 +278,11 @@ export default function BakuOdori() {
           <LoginScreen />
         ) : (
           <>
-            {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} onPLClick={setPlDetail} onViewProfile={id => setProfileStack(s => [...s, id])} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} section={topSection} onSectionChange={setTopSection} />}
+            {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} onPLClick={setPlDetail} onViewProfile={id => setProfileStack(s => [...s, id])} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} section={topSection} onSectionChange={setTopSection} accountType={accountType} />}
             {screen === "post"    && <PostScreen onNav={setScreen} user={user} initialTab={topSection === "pl" || topSection === "event" ? topSection : "cypher"} />}
             {screen === "profile" && <PublicProfileScreen profileId={user.id} currentUserId={user.id} onEdit={() => setScreen("edit")} onLogout={() => supabase.auth.signOut()} onViewProfile={id => setProfileStack(s => [...s, id])} onCypherClick={openCypherDetail} onLessonClick={openLessonDetail} onEditCypher={id => setEditCypherId(id)} onEditLesson={id => setEditLessonId(id)} />}
             {screen === "community" && <CommunityScreen user={user} onOpenBoard={setBoardTarget} />}
-            {screen === "edit"    && <EditProfileScreen user={user} onDancerNameChange={setDancerName} onAvatarChange={setMyAvatarUrl} onBack={() => setScreen("profile")} />}
+            {screen === "edit"    && <EditProfileScreen user={user} onDancerNameChange={setDancerName} onAvatarChange={setMyAvatarUrl} onAccountTypeChange={setAccountType} onBack={() => setScreen("profile")} />}
             <BottomNav current={screen} onNav={s => { setScreen(s); setProfileStack([]); }} onProfileLongPress={() => setShowSwitchAccount(true)} />
             {detail && <DetailModal cypher={detail} onClose={() => setDetail(null)} joined={joined.includes(detail.id)} pending={pendingJoins.includes(detail.id)} onJoin={handleJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} />}
             {plDetail && <PLDetailModal lesson={plDetail} onClose={() => setPlDetail(null)} joined={plJoined.includes(plDetail.id)} pending={plPending.includes(plDetail.id)} onJoin={handlePLJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} />}
