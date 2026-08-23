@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus } from "lucide-react";
+import { Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, PrivateLesson, GenreKey } from "../lib/types";
@@ -123,6 +123,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   const [specificDate, setSpecificDate] = useState("");
   // ロゴを押すと月間カレンダーを開く（今日が何日かひと目で分かるように）
   const [showCalendar, setShowCalendar] = useState(false);
+  // カレンダーで表示中の月。今月からのズレを月数で持つ（開くたびに0＝今月に戻す）
+  const [calendarMonthOffset, setCalendarMonthOffset] = useState(0);
   const [areaText, setAreaText] = useState("");
   // 現在地
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -297,8 +299,10 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   const todayLabel = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}(${weekdays[today.getDay()]})`;
 
   // ロゴを押した時に出す月間カレンダー用のマス目。月初の曜日ぶんだけ空マスを前に詰める
-  const firstWeekday = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
-  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  // calendarMonthOffsetぶん今月からずらした月を表示する（前月・次月ボタンで変わる）
+  const calendarViewDate = new Date(today.getFullYear(), today.getMonth() + calendarMonthOffset, 1);
+  const firstWeekday = calendarViewDate.getDay();
+  const daysInMonth = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth() + 1, 0).getDate();
   const calendarCells: (number | null)[] = [
     ...Array(firstWeekday).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
@@ -316,7 +320,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
           {/* 今日の日付は常に出しておく。ロゴを押すと月間カレンダーが開く */}
           <div style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", letterSpacing: "0.02em" }}>{todayLabel}</div>
           <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center", animation: "bdLogoRollIn 1.8s cubic-bezier(0.33,1,0.68,1) both" }}>
-            <button onClick={() => setShowCalendar(true)} aria-label="カレンダーを表示"
+            <button onClick={() => { setCalendarMonthOffset(0); setShowCalendar(true); }} aria-label="カレンダーを表示"
               style={{ background: "none", border: "none", padding: 0, lineHeight: 0, cursor: "pointer" }}>
               <Logo size={52} />
             </button>
@@ -540,7 +544,11 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setShowCalendar(false)}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "#141414", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", letterSpacing: "0.05em" }}>{today.getFullYear()}年{today.getMonth() + 1}月</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <button onClick={() => setCalendarMonthOffset(o => o - 1)} aria-label="前の月" style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><ChevronLeft size={20} /></button>
+                <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", letterSpacing: "0.05em" }}>{calendarViewDate.getFullYear()}年{calendarViewDate.getMonth() + 1}月</span>
+                <button onClick={() => setCalendarMonthOffset(o => o + 1)} aria-label="次の月" style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><ChevronRight size={20} /></button>
+              </div>
               <button onClick={() => setShowCalendar(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={20} /></button>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: "4px" }}>
@@ -550,7 +558,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: "4px" }}>
               {calendarCells.map((d, i) => {
-                const isToday = d === today.getDate();
+                const isToday = calendarMonthOffset === 0 && d === today.getDate();
                 return (
                   <div key={i} style={{ aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: isToday ? "#DC2626" : "transparent", color: d === null ? "transparent" : isToday ? "#fff" : "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: isToday ? 700 : 400 }}>
                     {d ?? "-"}
