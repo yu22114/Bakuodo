@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, MapPin, User, X, Check, BookOpen } from "lucide-react";
+import { Clock, MapPin, User, X, Check, BookOpen, Share2 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { PrivateLesson, ParticipantProfile } from "../lib/types";
@@ -8,6 +8,7 @@ import { formatDate, timeUntil, formatEndTime, timeAgo, splitLocation } from "..
 import { useComments } from "../lib/useComments";
 import { GenreBadge } from "./GenreBadge";
 import { ParticipantBar } from "./ParticipantBar";
+import { showToast } from "./Toast";
 
 const LEVEL_LABELS: Record<string, string> = {
   all: "全レベル対象",
@@ -16,14 +17,15 @@ const LEVEL_LABELS: Record<string, string> = {
   advanced: "上級者向け",
 };
 
-export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onViewProfile, user }: {
+export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onViewProfile, user, keepOpenOnJoin }: {
   lesson: PrivateLesson | null;
   onClose: () => void;
   joined: boolean;
   pending?: boolean;
   onJoin: (id: string) => void;
   onViewProfile: (id: string) => void;
-  user: SupabaseUser;
+  user: SupabaseUser | null; // 未ログイン閲覧（/l/[id] 共有ページ）でも表示できる
+  keepOpenOnJoin?: boolean; // /l/[id] では参加後も閉じない（onCloseがページ遷移のため）
 }) {
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
@@ -57,7 +59,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   const { date, time } = formatDate(lesson.starts_at);
   const { station, venue } = splitLocation(lesson.location);
   const isEnded = timeUntil(lesson.starts_at) === "終了";
-  const isOwn = lesson.organizer.id === user.id;
+  const isOwn = lesson.organizer.id === user?.id;
   // イベントもこのモーダルを使い回す。色と呼び方だけ切り替える
   const isEvent = lesson.kind === "event";
   const accent = isEvent ? "#EAB308" : "#2563EB";
@@ -66,6 +68,17 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   const noun = isEvent ? "イベント" : "レッスン";
 
   const isFull = !joined && !pending && lesson.max_members !== null && participantsFetched && participants.length >= lesson.max_members;
+
+  // /l/[id] の共有リンクを配る（対応端末はOSの共有シート、なければコピー）
+  const handleShare = async () => {
+    const url = `${window.location.origin}/l/${lesson.id}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: `${lesson.title} | 爆踊`, url }); } catch { /* ユーザーが共有をやめた */ }
+    } else {
+      await navigator.clipboard.writeText(url);
+      showToast("リンクをコピーしました");
+    }
+  };
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={onClose}>
@@ -77,7 +90,10 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
             </div>
             <h2 style={{ margin: 0, fontSize: "24px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", lineHeight: 1.1 }}>{lesson.title}</h2>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", marginLeft: "12px", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><X size={22} /></button>
+          <div style={{ display: "flex", flexShrink: 0, marginLeft: "12px" }}>
+            <button onClick={handleShare} title="共有" style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Share2 size={19} /></button>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><X size={22} /></button>
+          </div>
         </div>
 
         <div style={{ overflowY: "auto", padding: "8px 20px 0", flex: 1 }}>
@@ -144,7 +160,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
                 定員に達しています（{participants.length}/{lesson.max_members}人）
               </div>
             ) : (
-              <button onClick={() => { onJoin(lesson.id); if (!joined && !pending) onClose(); }}
+              <button onClick={() => { onJoin(lesson.id); if (!joined && !pending && !keepOpenOnJoin) onClose(); }}
                 style={{ marginTop: "20px", width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: joined ? "rgba(22,163,74,0.12)" : pending ? "rgba(255,255,255,0.08)" : accent, color: joined ? "#16A34A" : pending ? "rgba(255,255,255,0.5)" : onAccent, fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
                 {joined ? <><Check size={16} /> 申込済み — キャンセルする</> : pending ? <>申請中... — キャンセルする</> : lesson.requires_approval ? <>📋 {isEvent ? "参加" : "受講"}を申請する</> : <><BookOpen size={16} /> この{noun}に申し込む</>}
               </button>
