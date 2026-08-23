@@ -24,7 +24,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   onEditLesson?: (lessonId: string) => void;
 }) {
   const isOwn = profileId === currentUserId;
-  type ProfileData = { dancer_name: string; genres: GenreKey[]; instagram: string | null; dance_years: number | null; age_group: string | null; gender: string | null; bio: string | null; playlist_url: string | null; team: string | null; avatar_url: string | null; is_private: boolean; account_type: string };
+  type ProfileData = { dancer_name: string; genres: GenreKey[]; instagram: string | null; dance_years: number | null; age_group: string | null; gender: string | null; bio: string | null; playlist_url: string | null; team: string | null; avatar_url: string | null; is_private: boolean; account_type: string; community_name: string | null };
   type HostedCypher = { id: string; title: string; starts_at: string; location: string; participant_count: number };
   type JoinedCypher = { id: string; title: string; starts_at: string; location: string; organizer_name: string };
   type HostedLesson = { id: string; title: string; starts_at: string; location: string; kind: "lesson" | "event"; participant_count: number };
@@ -109,6 +109,12 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [teammatesLoading, setTeammatesLoading] = useState(false);
   const [pickTeammateOpen, setPickTeammateOpen] = useState(false);
   const [followingCandidates, setFollowingCandidates] = useState<{ id: string; dancer_name: string; avatar_url: string | null }[] | null>(null);
+  // マイコミュニティ（チームとは別の独立した枠）。仕組みはチームと同じで、
+  // メンバーはフォロー中のアカウントから選ぶ
+  const [showCommunity, setShowCommunity] = useState(false);
+  const [communityMembers, setCommunityMembers] = useState<{ id: string; dancer_name: string; avatar_url: string | null }[]>([]);
+  const [communityMembersLoading, setCommunityMembersLoading] = useState(false);
+  const [pickCommunityMemberOpen, setPickCommunityMemberOpen] = useState(false);
   const [qrSaving, setQrSaving] = useState(false);
   const [qrComposite, setQrComposite] = useState<string | null>(null);
 
@@ -223,7 +229,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     async function fetchAll() {
       setLoading(true);
       const [profileRes, hostedRes, hostedLessonsRes, allPartsRes, allPlPartsRes, followersRes, followingRes] = await Promise.all([
-        supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, bio, playlist_url, team, avatar_url, is_private, account_type").eq("id", profileId).single(),
+        supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, bio, playlist_url, team, avatar_url, is_private, account_type, community_name").eq("id", profileId).single(),
         supabase.from("cyphers").select("id, title, starts_at, location").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("private_lessons").select("id, title, starts_at, location, kind").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("participations").select("cypher_id"),
@@ -233,7 +239,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       ]);
       if (profileRes.data) {
         const d = profileRes.data as any;
-        setProfileData({ dancer_name: d.dancer_name ?? "", genres: (d.genres ?? []) as GenreKey[], instagram: d.instagram ?? null, dance_years: d.dance_years ?? null, age_group: d.age_group ?? null, gender: d.gender ?? null, bio: d.bio ?? null, playlist_url: d.playlist_url ?? null, team: d.team ?? null, avatar_url: d.avatar_url ?? null, is_private: d.is_private ?? false, account_type: (d as any).account_type ?? "individual" });
+        setProfileData({ dancer_name: d.dancer_name ?? "", genres: (d.genres ?? []) as GenreKey[], instagram: d.instagram ?? null, dance_years: d.dance_years ?? null, age_group: d.age_group ?? null, gender: d.gender ?? null, bio: d.bio ?? null, playlist_url: d.playlist_url ?? null, team: d.team ?? null, avatar_url: d.avatar_url ?? null, is_private: d.is_private ?? false, account_type: (d as any).account_type ?? "individual", community_name: (d as any).community_name ?? null });
       }
       setFollowerCount(followersRes.count ?? 0);
       setFollowingCount(followingRes.count ?? 0);
@@ -339,6 +345,34 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     const { error } = await supabase.from("team_members").delete().eq("profile_id", currentUserId).eq("teammate_id", mateId);
     if (error) { showToast("削除に失敗しました"); return; }
     setTeammates(t => t.filter(m => m.id !== mateId));
+  };
+
+  // マイコミュニティのメンバー一覧（チームと同じ仕組み、テーブルだけ別）
+  const fetchCommunityMembers = async () => {
+    setCommunityMembersLoading(true);
+    const { data } = await supabase.from("community_members").select("member_id, profiles:member_id(dancer_name, avatar_url)").eq("profile_id", profileId);
+    setCommunityMembers((data ?? []).map((r: any) => ({ id: r.member_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN", avatar_url: r.profiles?.avatar_url ?? null })));
+    setCommunityMembersLoading(false);
+  };
+
+  // 追加候補（フォロー中のアカウント）はチームと共有できるので、既に取得済みならそのまま使う
+  const openCommunityMemberPicker = async () => {
+    setPickCommunityMemberOpen(true);
+    if (followingCandidates !== null) return;
+    const { data } = await supabase.from("follows").select("following_id, profiles:following_id(dancer_name, avatar_url)").eq("follower_id", currentUserId);
+    setFollowingCandidates((data ?? []).map((r: any) => ({ id: r.following_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN", avatar_url: r.profiles?.avatar_url ?? null })));
+  };
+
+  const addCommunityMember = async (mate: { id: string; dancer_name: string; avatar_url: string | null }) => {
+    const { error } = await supabase.from("community_members").insert({ profile_id: currentUserId, member_id: mate.id });
+    if (error) { showToast("追加に失敗しました"); return; }
+    setCommunityMembers(m => [...m, mate]);
+  };
+
+  const removeCommunityMember = async (mateId: string) => {
+    const { error } = await supabase.from("community_members").delete().eq("profile_id", currentUserId).eq("member_id", mateId);
+    if (error) { showToast("削除に失敗しました"); return; }
+    setCommunityMembers(m => m.filter(x => x.id !== mateId));
   };
 
   const handleOpenParticipants = async (cypher: HostedCypher) => {
@@ -468,12 +502,19 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
               <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
             </button>
           ) : <div />}
-          {/* チームを表示するボタン。チーム未設定なら出さない */}
-          {profileData?.team && (
-            <button onClick={() => { setShowTeam(true); fetchTeammates(); }} style={{ justifySelf: "center", background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", cursor: "pointer", padding: "6px 14px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "15px", fontWeight: "bold" }}>
-              Rep
-            </button>
-          )}
+          {/* チーム・マイコミュニティを表示するボタン。それぞれ未設定なら出さない */}
+          <div style={{ justifySelf: "center", display: "flex", gap: "6px" }}>
+            {profileData?.team && (
+              <button onClick={() => { setShowTeam(true); fetchTeammates(); }} style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", cursor: "pointer", padding: "6px 14px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "15px", fontWeight: "bold" }}>
+                Rep
+              </button>
+            )}
+            {profileData?.community_name && (
+              <button onClick={() => { setShowCommunity(true); fetchCommunityMembers(); }} style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", cursor: "pointer", padding: "6px 14px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold" }}>
+                マイコミュニティ
+              </button>
+            )}
+          </div>
           <div style={{ justifySelf: "end", display: "flex", gap: "8px", alignItems: "center" }}>
             {isOwn && (
               <div style={{ position: "relative" }}>
@@ -537,12 +578,13 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         )}
 
         {/* Instagram・プレイリストは横幅を半分にして、残りにその他項目のバッジを並べる */}
-        {profileData && (profileData.instagram || profileData.playlist_url || profileData.team || profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
+        {profileData && (profileData.instagram || profileData.playlist_url || profileData.team || profileData.community_name || profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
           <div style={{ marginTop: "8px", display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "flex-start" }}>
             {/* 他項目のバッジを先に、Instagram・プレイリストは下の行に表示する */}
-            {(profileData.team || profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
+            {(profileData.team || profileData.community_name || profileData.age_group || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
               <div style={{ flexBasis: "100%", display: "flex", flexWrap: "wrap", alignContent: "flex-start", gap: "6px" }}>
                 {profileData.team && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.team}</span>}
+                {profileData.community_name && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.community_name}</span>}
                 {profileData.age_group && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.age_group}</span>}
                 {profileData.dance_years != null && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>歴{profileData.dance_years}年</span>}
                 {profileData.gender && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.gender}</span>}
@@ -949,6 +991,74 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                   {isOwn && (
                     <button onClick={openTeammatePicker} style={{ marginTop: "14px", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "8px 10px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
                       <UserPlus size={14} /> チームメイトを追加
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* マイコミュニティのシート。チームのシートと同じ作りで、テーブルと文言だけ変えている */}
+      {showCommunity && profileData?.community_name && (() => {
+        const closeCommunity = () => { setShowCommunity(false); setPickCommunityMemberOpen(false); };
+        const memberAvatar = (m: { avatar_url: string | null; dancer_name: string }) => (
+          <div style={{ width: "34px", height: "34px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
+            {m.avatar_url ? <img src={m.avatar_url} alt={m.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : m.dancer_name[0]?.toUpperCase()}
+          </div>
+        );
+        return (
+          <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={closeCommunity}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "320px", maxHeight: "70vh", overflowY: "auto", textAlign: "center" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>{pickCommunityMemberOpen ? "フォロー中から選ぶ" : "マイコミュニティ"}</div>
+                <button onClick={closeCommunity} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
+              </div>
+
+              {pickCommunityMemberOpen ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {followingCandidates === null ? (
+                    <Loading />
+                  ) : (() => {
+                    const candidates = followingCandidates.filter(f => !communityMembers.some(m => m.id === f.id));
+                    return candidates.length === 0
+                      ? <div style={{ textAlign: "center", padding: "24px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>追加できるアカウントがありません</div>
+                      : candidates.map(f => (
+                          <div key={f.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "6px 4px" }}>
+                            {memberAvatar(f)}
+                            <div style={{ flex: 1, fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", textAlign: "left" }}>{f.dancer_name}</div>
+                            <button onClick={() => addCommunityMember(f)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", cursor: "pointer", padding: "6px", color: "#F0F0F0", display: "flex", alignItems: "center", justifyContent: "center" }}><UserPlus size={14} /></button>
+                          </div>
+                        ));
+                  })()}
+                  <button onClick={() => setPickCommunityMemberOpen(false)} style={{ marginTop: "8px", width: "100%", padding: "10px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>戻る</button>
+                </div>
+              ) : (
+                <>
+                  <div style={{ fontSize: "22px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", marginBottom: "16px" }}>{profileData.community_name}</div>
+                  {communityMembersLoading ? (
+                    <Loading />
+                  ) : communityMembers.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "12px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだメンバーがいません</div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {communityMembers.map(m => (
+                        <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "6px 4px" }}>
+                          <button onClick={() => { closeCommunity(); onViewProfile?.(m.id); }} style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, background: "none", border: "none", cursor: onViewProfile ? "pointer" : "default", padding: 0, textAlign: "left" }}>
+                            {memberAvatar(m)}
+                            <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{m.dancer_name}</div>
+                          </button>
+                          {isOwn && (
+                            <button onClick={() => removeCommunityMember(m.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", padding: "4px" }}><X size={14} /></button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {isOwn && (
+                    <button onClick={openCommunityMemberPicker} style={{ marginTop: "14px", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "8px 10px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
+                      <UserPlus size={14} /> メンバーを追加
                     </button>
                   )}
                 </>
