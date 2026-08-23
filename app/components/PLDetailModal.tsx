@@ -168,7 +168,8 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
             </div>
           )}
 
-          {!isOwn && (
+          {/* TODO: 動作確認のため一時的に作成者にもボタンを表示している。確認が終わったら !isOwn に戻す */}
+          {true && (
             isEnded ? (
               <div style={{ marginTop: "20px", padding: "14px", background: "rgba(255,255,255,0.06)", borderRadius: "6px", textAlign: "center", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
                 この{noun}は終了しました
