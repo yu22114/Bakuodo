@@ -189,7 +189,6 @@ export function CommunityBoardScreen({ board, user, onBack }: {
           <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
         </button>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: ACCENT, letterSpacing: "0.15em", marginBottom: "2px" }}>BOARD</div>
           {/* タイトル・サブタイトルは省略せず全部見えるように折り返す */}
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "8px" }}>
             <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0", wordBreak: "break-word" }}>【{board.title}】</h2>
