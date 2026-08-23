@@ -243,7 +243,8 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
     {showApplyForm && (
       <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setShowApplyForm(false)}>
         <div onClick={e => e.stopPropagation()} style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px" }}>
-          <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "16px" }}>参加申請</div>
+          <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "8px" }}>参加申請</div>
+          <p style={{ margin: "0 0 16px", fontSize: "11px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.6 }}>この回答は作成者以外に表示されません。</p>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <div>
               <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "4px" }}>ダンサーネーム</label>
