@@ -69,6 +69,7 @@ export interface ProfileState {
   bio: string;
   playlist_url: string;
   team: string;
+  account_type: "individual" | "organization";
 }
 
 export interface ParticipantProfile {

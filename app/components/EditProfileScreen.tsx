@@ -16,7 +16,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
   onBack?: () => void;
 }) {
   const swipeBack = useSwipeBack(onBack);
-  const [profile, setProfile] = useState<ProfileState>({ dancer_name: "", genres: [], instagram: "", dance_years: "", age_group: "", gender: "", bio: "", playlist_url: "", team: "" });
+  const [profile, setProfile] = useState<ProfileState>({ dancer_name: "", genres: [], instagram: "", dance_years: "", age_group: "", gender: "", bio: "", playlist_url: "", team: "", account_type: "individual" });
   const [isPrivate, setIsPrivate] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -32,7 +32,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
 
   useEffect(() => {
     async function fetchProfile() {
-      const { data } = await supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, bio, playlist_url, team, avatar_url, is_private").eq("id", user.id).single();
+      const { data } = await supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, bio, playlist_url, team, avatar_url, is_private, account_type").eq("id", user.id).single();
       if (data) {
         setProfile({
           dancer_name: data.dancer_name ?? "",
@@ -44,6 +44,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
           bio: (data as any).bio ?? "",
           playlist_url: (data as any).playlist_url ?? "",
           team: (data as any).team ?? "",
+          account_type: (data as any).account_type === "organization" ? "organization" : "individual",
         });
         setAvatarUrl((data as any).avatar_url ?? null);
         setIsPrivate((data as any).is_private ?? false);
@@ -116,6 +117,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
       playlist_url: profile.playlist_url.trim() || null,
       team: profile.team.trim() || null,
       is_private: isPrivate,
+      account_type: profile.account_type,
     }, { onConflict: "id" });
     if (error) {
       console.error("profile save error:", error);
@@ -173,6 +175,22 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
           <button onClick={handleSignOut} style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "4px", color: "#F0F0F0", cursor: "pointer", padding: "6px 10px", display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif" }}>
             <LogOut size={12} /> ログアウト
           </button>
+        </div>
+        {/* 個人用・団体用の切り替え。長押しで別Googleアカウントに切り替えた時、
+            どちらのプロフィールかひと目で分かるようにする */}
+        <div>
+          <label style={lbl}>アカウントの種類</label>
+          <div style={{ display: "flex", gap: "8px" }}>
+            {([["individual", "個人用"], ["organization", "団体用"]] as const).map(([value, label]) => {
+              const sel = profile.account_type === value;
+              return (
+                <button key={value} onClick={() => { setProfile(p => ({ ...p, account_type: value })); setSaved(false); }}
+                  style={{ flex: 1, padding: "10px", border: sel ? "1px solid #DC2626" : "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", background: sel ? "rgba(220,38,38,0.1)" : "transparent", color: sel ? "#DC2626" : "rgba(255,255,255,0.5)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: sel ? "bold" : "normal", cursor: "pointer" }}>
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
         <div><label style={lbl}>自己紹介（任意）</label>
           <textarea style={{ ...inp, minHeight: "80px", resize: "vertical" } as React.CSSProperties} maxLength={300} placeholder="活動歴やクルー、好きなジャンルなど自由に書いてください" value={profile.bio} onChange={e => { setProfile(p => ({ ...p, bio: e.target.value })); setSaved(false); }} />
