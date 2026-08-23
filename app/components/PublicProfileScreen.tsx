@@ -803,7 +803,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           <div onClick={e => e.stopPropagation()} style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "360px", maxHeight: "80vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
               <div>
-                <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#EAB308", letterSpacing: "0.15em", marginBottom: "4px" }}>APPLICANT ANSWERS</div>
+                <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#EAB308", letterSpacing: "0.15em", marginBottom: "4px" }}>回答内容</div>
                 <div style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{answersModal.title}</div>
               </div>
               <button onClick={() => setAnswersModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
@@ -816,12 +816,12 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {answers.map(a => (
                   <div key={a.profile_id} style={{ background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "12px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                    <button onClick={() => onViewProfile?.(a.profile_id)} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}>
                       <div style={{ width: "26px", height: "26px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
                         {a.avatar_url ? <img src={a.avatar_url} alt={a.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : a.dancer_name[0]?.toUpperCase()}
                       </div>
-                      <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{a.dancer_name}</span>
-                    </div>
+                      <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>{a.dancer_name}</span>
+                    </button>
                     {a.answer_dancer_name || a.answer_email || a.answer_phone ? (
                       <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
                         {a.answer_dancer_name && <div style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}><UserPlus size={12} color="rgba(255,255,255,0.4)" />{a.answer_dancer_name}</div>}
