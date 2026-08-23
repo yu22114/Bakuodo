@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText, MessageCircle, Music, Download, UserPlus } from "lucide-react";
+import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText, MessageCircle, Music, Download, UserPlus, ClipboardList, Mail, Phone } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import type { GenreKey } from "../lib/types";
 import { formatDate, timeUntil } from "../lib/constants";
@@ -95,6 +95,9 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [loading, setLoading] = useState(true);
   const [participantSheet, setParticipantSheet] = useState<{ title: string; participants: Array<{ profile_id: string; dancer_name: string; avatar_url: string | null }> } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; kind: "cypher" | "lesson" } | null>(null);
+  // EVENT申請時の回答（ダンサーネーム・メールアドレス・電話番号）は、主催者のこの画面からしか見られない
+  const [answersModal, setAnswersModal] = useState<{ title: string } | null>(null);
+  const [answers, setAnswers] = useState<{ profile_id: string; dancer_name: string; avatar_url: string | null; answer_dancer_name: string | null; answer_email: string | null; answer_phone: string | null }[] | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [followSheet, setFollowSheet] = useState<{ type: "followers" | "following"; users: { id: string; dancer_name: string; avatar_url: string | null }[] } | null>(null);
@@ -343,6 +346,21 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     setParticipantSheet({ title: cypher.title, participants: (data ?? []).map((row: any) => ({ profile_id: row.profile_id, dancer_name: row.profiles?.dancer_name ?? "UNKNOWN", avatar_url: row.profiles?.avatar_url ?? null })) });
   };
 
+  // EVENT申請時の回答一覧を開く（自分が主催したEVENTのみ、この画面からしか見られない）
+  const handleOpenAnswers = async (lesson: HostedLesson) => {
+    setAnswersModal({ title: lesson.title });
+    setAnswers(null);
+    const { data } = await supabase.from("pl_participations")
+      .select("profile_id, answer_dancer_name, answer_email, answer_phone, profiles:profile_id(dancer_name, avatar_url)")
+      .eq("lesson_id", lesson.id);
+    setAnswers((data ?? []).map((row: any) => ({
+      profile_id: row.profile_id,
+      dancer_name: row.profiles?.dancer_name ?? "UNKNOWN",
+      avatar_url: row.profiles?.avatar_url ?? null,
+      answer_dancer_name: row.answer_dancer_name, answer_email: row.answer_email, answer_phone: row.answer_phone,
+    })));
+  };
+
   // サイファーもレッスンも、FK制約があるので関連レコードを先に消す
   const handleDelete = async () => {
     if (!deleteConfirm) return;
@@ -383,6 +401,11 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             : showType && <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: accent, fontWeight: "bold", padding: "2px 7px", background: accent + "14", borderRadius: "3px" }}>{isEv ? "EVENT" : "PRIVATE"}</span>}
           {/* 参加人数はCYPHERの主催カードと同じ見せ方 */}
           <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: ended ? "rgba(255,255,255,0.35)" : accent, fontWeight: "bold" }}>{l.participant_count}人</span>
+          {/* EVENTの参加申請の回答（ダンサーネーム・メール・電話番号）は、主催者がここからだけ見られる */}
+          {isOwn && isEv && (
+            <button onClick={e => { e.stopPropagation(); handleOpenAnswers(l); }} title="回答を見る"
+              style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#F0F0F0", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><ClipboardList size={13} /></button>
+          )}
           {/* 自分のレッスン・イベントには編集（開催前だけ）・削除（終了後も消せる）ボタン */}
           {isOwn && !ended && (
             <button onClick={e => { e.stopPropagation(); onEditLesson?.(l.id); }} title="編集"
@@ -770,6 +793,48 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                     ))}
                   </div>
             }
+          </div>
+        </div>
+      )}
+
+      {/* EVENT申請の回答一覧（ダンサーネーム・メールアドレス・電話番号）。主催者のこの画面からしか見られない */}
+      {answersModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setAnswersModal(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "360px", maxHeight: "80vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
+              <div>
+                <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#EAB308", letterSpacing: "0.15em", marginBottom: "4px" }}>APPLICANT ANSWERS</div>
+                <div style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{answersModal.title}</div>
+              </div>
+              <button onClick={() => setAnswersModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
+            </div>
+            {answers === null ? (
+              <Loading />
+            ) : answers.length === 0 ? (
+              <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif" }}>まだ申請がありません</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {answers.map(a => (
+                  <div key={a.profile_id} style={{ background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "12px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                      <div style={{ width: "26px", height: "26px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
+                        {a.avatar_url ? <img src={a.avatar_url} alt={a.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : a.dancer_name[0]?.toUpperCase()}
+                      </div>
+                      <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{a.dancer_name}</span>
+                    </div>
+                    {a.answer_dancer_name || a.answer_email || a.answer_phone ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                        {a.answer_dancer_name && <div style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}><UserPlus size={12} color="rgba(255,255,255,0.4)" />{a.answer_dancer_name}</div>}
+                        {a.answer_email && <div style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}><Mail size={12} color="rgba(255,255,255,0.4)" />{a.answer_email}</div>}
+                        {a.answer_phone && <div style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}><Phone size={12} color="rgba(255,255,255,0.4)" />{a.answer_phone}</div>}
+                      </div>
+                    ) : (
+                      <p style={{ margin: 0, fontSize: "11px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif" }}>回答なし</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
