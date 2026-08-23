@@ -1,8 +1,23 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Home, Plus, Users, User } from "lucide-react";
 
-export function BottomNav({ current, onNav }: { current: string; onNav: (s: string) => void }) {
+export function BottomNav({ current, onNav, onProfileLongPress }: { current: string; onNav: (s: string) => void; onProfileLongPress?: () => void }) {
+  // マイページボタンの長押しでアカウント切り替えを開く（団体用・個人用など複数Googleアカウントの使い分け用）
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFired = useRef(false);
+  const startLongPress = (id: string) => {
+    if (id !== "profile" || !onProfileLongPress) return;
+    longPressFired.current = false;
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      onProfileLongPress();
+    }, 550);
+  };
+  const clearLongPress = () => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+  };
+
   // 下スクロールで隠れ、上スクロールで戻る
   const [hidden, setHidden] = useState(false);
   useEffect(() => {
@@ -36,7 +51,14 @@ export function BottomNav({ current, onNav }: { current: string; onNav: (s: stri
         {items.map(item => {
           const active = current === item.id;
           return (
-            <button key={item.id} onClick={() => onNav(item.id)} aria-label={item.label} style={{ flex: 1, padding: "9px 0", border: "none", background: "transparent", color: active ? "#fff" : "rgba(255,255,255,0.5)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <button key={item.id}
+              onClick={() => { if (longPressFired.current) { longPressFired.current = false; return; } onNav(item.id); }}
+              onPointerDown={() => startLongPress(item.id)}
+              onPointerUp={clearLongPress}
+              onPointerLeave={clearLongPress}
+              onPointerCancel={clearLongPress}
+              aria-label={item.id === "profile" && onProfileLongPress ? `${item.label}（長押しでアカウント切り替え）` : item.label}
+              style={{ flex: 1, padding: "9px 0", border: "none", background: "transparent", color: active ? "#fff" : "rgba(255,255,255,0.5)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               {/* 選択中の見せ方はホーム画面上部のタブ（CYPHER/P LESSON/EVENT/SPOTS）と同じ仕様に揃える */}
               <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: active ? "#2A2A2A" : "transparent", boxShadow: active ? "0 1px 4px rgba(255,255,255,0.08)" : "none", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>
                 {item.id === "post" ? (

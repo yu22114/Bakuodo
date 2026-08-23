@@ -34,6 +34,8 @@ export default function BakuOdori() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  // マイページボタン長押し→アカウント切り替え確認（団体用・個人用など別Googleアカウントへの切り替え）
+  const [showSwitchAccount, setShowSwitchAccount] = useState(false);
   // TopScreen再フェッチトリガー（参加/キャンセル後にインクリメント）
   const [refreshKey, setRefreshKey] = useState(0);
   // ダンサーネーム（ヘッダー表示用）
@@ -98,6 +100,20 @@ export default function BakuOdori() {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  // 別のGoogleアカウントに切り替える（団体用・個人用など）。サインアウト後、
+  // 毎回アカウント選択画面を強制表示するprompt付きでログインを開き直す
+  const handleSwitchAccount = async () => {
+    setShowSwitchAccount(false);
+    await supabase.auth.signOut();
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: typeof window !== "undefined" ? window.location.origin : "",
+        queryParams: { prompt: "select_account" },
+      },
+    });
+  };
 
   // サイファーIDからフルデータを取得してDetailModalを開く
   const openCypherDetail = async (cypherId: string) => {
@@ -264,10 +280,22 @@ export default function BakuOdori() {
             {screen === "profile" && <PublicProfileScreen profileId={user.id} currentUserId={user.id} onEdit={() => setScreen("edit")} onLogout={() => supabase.auth.signOut()} onViewProfile={id => setProfileStack(s => [...s, id])} onCypherClick={openCypherDetail} onLessonClick={openLessonDetail} onEditCypher={id => setEditCypherId(id)} onEditLesson={id => setEditLessonId(id)} />}
             {screen === "community" && <CommunityScreen user={user} onOpenBoard={setBoardTarget} />}
             {screen === "edit"    && <EditProfileScreen user={user} onDancerNameChange={setDancerName} onAvatarChange={setMyAvatarUrl} onBack={() => setScreen("profile")} />}
-            <BottomNav current={screen} onNav={s => { setScreen(s); setProfileStack([]); }} />
+            <BottomNav current={screen} onNav={s => { setScreen(s); setProfileStack([]); }} onProfileLongPress={() => setShowSwitchAccount(true)} />
             {detail && <DetailModal cypher={detail} onClose={() => setDetail(null)} joined={joined.includes(detail.id)} pending={pendingJoins.includes(detail.id)} onJoin={handleJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} />}
             {plDetail && <PLDetailModal lesson={plDetail} onClose={() => setPlDetail(null)} joined={plJoined.includes(plDetail.id)} pending={plPending.includes(plDetail.id)} onJoin={handlePLJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} />}
             {confirmId && <ConfirmModal onConfirm={handleConfirmCancel} onCancel={() => setConfirmId(null)} />}
+            {showSwitchAccount && (
+              <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }} onClick={() => setShowSwitchAccount(false)}>
+                <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "12px", padding: "28px 24px", maxWidth: "300px", width: "100%", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}>
+                  <p style={{ margin: "0 0 8px", fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", letterSpacing: "0.05em" }}>アカウントを切り替えますか？</p>
+                  <p style={{ margin: "0 0 24px", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.7 }}>一度サインアウトし、Googleのアカウント選択画面を開きます。<br />団体用・個人用など、別のGoogleアカウントでログインし直せます。</p>
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <button onClick={() => setShowSwitchAccount(false)} style={{ flex: 1, padding: "11px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", background: "transparent", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>戻る</button>
+                    <button onClick={handleSwitchAccount} style={{ flex: 1, padding: "11px", border: "none", borderRadius: "6px", background: "#DC2626", color: "#fff", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: "bold" }}>切り替える</button>
+                  </div>
+                </div>
+              </div>
+            )}
             {editCypherId && (
               <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>
                 <EditCypherScreen
