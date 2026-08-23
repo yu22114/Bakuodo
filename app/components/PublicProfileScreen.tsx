@@ -515,13 +515,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             }
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "12px", color: "#F0F0F0" }}>{name}</h2>
-              {/* 団体用プロフィールだと分かるバッジ。個人用の時は何も出さない */}
-              {profileData?.account_type === "organization" && (
-                <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(255,255,255,0.1)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", flexShrink: 0 }}>団体</span>
-              )}
-            </div>
+            <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "12px", color: "#F0F0F0" }}>{name}</h2>
             {/* 名前の位置はそのまま、右寄せにする */}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "18px", marginTop: "5px" }}>
               {([
