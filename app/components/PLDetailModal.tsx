@@ -30,6 +30,8 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
 }) {
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
+  // EVENTのみ：定員に達した後も申請自体は受け付けているので、承認待ちの人を「キャンセル待ち」として見せる
+  const [pendingParticipants, setPendingParticipants] = useState<ParticipantProfile[]>([]);
   // EVENTは申請前にダンサーネーム・メールアドレス・電話番号を必須で答えてもらう
   const [showApplyForm, setShowApplyForm] = useState(false);
   const [answerDancerName, setAnswerDancerName] = useState("");
@@ -58,7 +60,26 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
       }
     }
     fetchParticipants();
-  }, [lessonId, joined]);
+
+    // EVENTだけ、承認待ちの人も取得しておく（定員に達した後の申請＝キャンセル待ち表示に使う）
+    if (lesson?.kind === "event") {
+      supabase
+        .from("pl_participations")
+        .select("profile_id, profiles:profile_id ( dancer_name, avatar_url )")
+        .eq("lesson_id", lessonId)
+        .eq("status", "pending")
+        .then(({ data }) => {
+          if (data) {
+            setPendingParticipants(data.map((row: any) => ({
+              profile_id: row.profile_id,
+              dancer_name: row.profiles?.dancer_name ?? "UNKNOWN",
+              avatar_url: row.profiles?.avatar_url ?? null,
+              genres: [], instagram: null, dance_years: null, age_group: null, gender: null,
+            })));
+          }
+        });
+    }
+  }, [lessonId, joined, pending, lesson?.kind]);
 
   if (!lesson) return null;
 
@@ -74,6 +95,8 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   const noun = isEvent ? "イベント" : "レッスン";
 
   const isFull = !joined && !pending && lesson.max_members !== null && participantsFetched && participants.length >= lesson.max_members;
+  // 定員に達した後も申請自体は通るので、承認待ち＝キャンセル待ちの人がいるかどうか（EVENTのみ表示）
+  const capacityReached = lesson.max_members !== null && participantsFetched && participants.length >= lesson.max_members;
 
   // /l/[id] の共有リンクを配る（対応端末はOSの共有シート、なければコピー）
   const handleShare = async () => {
@@ -158,6 +181,24 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
                 {participants.map(p => (
                   <button key={p.profile_id} onClick={() => onViewProfile(p.profile_id)}
                     style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}
+                    title={p.dancer_name}>
+                    {p.avatar_url
+                      ? <img src={p.avatar_url} alt={p.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : p.dancer_name[0]?.toUpperCase() ?? "?"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 参加者項目のすぐ下に表示。定員に達した後の申請者＝キャンセル待ち（EVENTのみ） */}
+          {isEvent && capacityReached && pendingParticipants.length > 0 && (
+            <div style={{ marginTop: "16px" }}>
+              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "8px" }}>キャンセル待ち</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                {pendingParticipants.map(p => (
+                  <button key={p.profile_id} onClick={() => onViewProfile(p.profile_id)}
+                    style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0, opacity: 0.55 }}
                     title={p.dancer_name}>
                     {p.avatar_url
                       ? <img src={p.avatar_url} alt={p.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
