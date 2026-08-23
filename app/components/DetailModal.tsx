@@ -106,7 +106,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
             const perPerson = count > 0 ? Math.ceil(cypher.studio_fee / count) : null;
             return (
               <div style={{ marginTop: "16px", padding: "12px 14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>💴 スタジオ代（合計 ¥{cypher.studio_fee.toLocaleString()}）</div>
+                <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>スタジオ代（合計 ¥{cypher.studio_fee.toLocaleString()}）</div>
                 <div style={{ fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
                   {perPerson != null
                     ? <>¥{perPerson.toLocaleString()}<span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}> /人</span></>
@@ -118,7 +118,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
 
           {participants.length > 0 && (
             <div style={{ marginTop: "16px" }}>
-              <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "8px" }}>PARTICIPANTS</div>
+              <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "8px" }}>参加者</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 {participants.map(p => (
                   <button key={p.profile_id} onClick={() => onViewProfile(p.profile_id)}
@@ -152,7 +152,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
           })()}
 
           <div style={{ marginTop: "28px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "20px" }}>
-            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "14px" }}>COMMENTS{comments.length > 0 ? ` (${comments.length})` : ""}</div>
+            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "14px" }}>コメント{comments.length > 0 ? ` (${comments.length})` : ""}</div>
             {comments.length === 0 ? (
               <p style={{ fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginBottom: "16px" }}>まだコメントはありません</p>
             ) : (

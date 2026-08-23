@@ -108,7 +108,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
             </button>
             {lesson.price != null && (
               <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center" }}>
-                <span style={{ fontSize: "14px" }}>💴</span> ¥{lesson.price.toLocaleString()}
+                ¥{lesson.price.toLocaleString()}
               </div>
             )}
           </div>
@@ -119,7 +119,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
 
           {participants.length > 0 && (
             <div style={{ marginTop: "16px" }}>
-              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "8px" }}>PARTICIPANTS</div>
+              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "8px" }}>参加者</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 {participants.map(p => (
                   <button key={p.profile_id} onClick={() => onViewProfile(p.profile_id)}
@@ -151,7 +151,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
             )
           )}
           <div style={{ marginTop: "28px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "20px" }}>
-            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "14px" }}>COMMENTS{comments.length > 0 ? ` (${comments.length})` : ""}</div>
+            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "14px" }}>コメント{comments.length > 0 ? ` (${comments.length})` : ""}</div>
             {comments.length === 0 ? (
               <p style={{ fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginBottom: "16px" }}>まだコメントはありません</p>
             ) : (
