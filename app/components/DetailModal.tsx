@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, MapPin, User, X, Check, Zap, Share2 } from "lucide-react";
+import { Clock, MapPin, User, X, Zap, Share2 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, ParticipantProfile } from "../lib/types";
@@ -146,9 +146,10 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
                 定員に達しています（{participants.length}/{cypher.max_members}人）
               </div>
             ) : (
-              <button onClick={() => { onJoin(cypher.id); if (!joined && !pending && !keepOpenOnJoin) onClose(); }}
-                style={{ marginTop: "20px", width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: joined ? "rgba(22,163,74,0.12)" : pending ? "rgba(255,255,255,0.08)" : "#DC2626", color: joined ? "#16A34A" : pending ? "rgba(255,255,255,0.5)" : "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-                {joined ? <><Check size={16} /> 参加済み — キャンセルする</> : pending ? <>申請中... — キャンセルする</> : cypher.requires_approval ? <>📋 参加を申請する</> : <><Zap size={16} /> このサイファーに参加する</>}
+              // 参加機能は停止中。ボタンは表示だけして押せないようにする
+              <button disabled
+                style={{ marginTop: "20px", width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.35)", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "default", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                <Zap size={16} /> このサイファーに参加する
               </button>
             );
           })()}
