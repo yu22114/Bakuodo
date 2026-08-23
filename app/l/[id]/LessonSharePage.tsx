@@ -4,7 +4,7 @@ import { supabase } from "../../../lib/supabase";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import type { PrivateLesson } from "../../lib/types";
 import { fetchLessonById } from "../../lib/fetchDetail";
-import { joinLesson, cancelLesson } from "../../lib/participation";
+import { joinLesson, cancelLesson, type EventApplicationAnswers } from "../../lib/participation";
 import { showToast } from "../../components/Toast";
 import { PLDetailModal } from "../../components/PLDetailModal";
 import { ConfirmModal } from "../../components/ConfirmModal";
@@ -39,7 +39,7 @@ export function LessonSharePage({ lessonId }: { lessonId: string }) {
     init();
   }, [lessonId]);
 
-  const handleJoin = async (id: string) => {
+  const handleJoin = async (id: string, answers?: EventApplicationAnswers) => {
     if (!user) {
       // 未ログインはトップへ（ログイン画面が出る）
       window.location.href = "/";
@@ -49,7 +49,7 @@ export function LessonSharePage({ lessonId }: { lessonId: string }) {
       setConfirmOpen(true);
       return;
     }
-    const result = await joinLesson(user.id, id);
+    const result = await joinLesson(user.id, id, answers);
     if ("error" in result) { showToast(result.error); return; }
     if (result.status === "pending") { setPending(true); showToast("参加を申請しました"); }
     else { setJoined(true); showToast("参加しました！"); }

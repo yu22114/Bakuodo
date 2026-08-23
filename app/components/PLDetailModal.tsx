@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabase";
 import type { PrivateLesson, ParticipantProfile } from "../lib/types";
 import { formatDate, timeUntil, formatEndTime, timeAgo, splitLocation } from "../lib/constants";
 import { useComments } from "../lib/useComments";
+import type { EventApplicationAnswers } from "../lib/participation";
 import { GenreBadge } from "./GenreBadge";
 import { ParticipantBar } from "./ParticipantBar";
 import { showToast } from "./Toast";
@@ -22,13 +23,18 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   onClose: () => void;
   joined: boolean;
   pending?: boolean;
-  onJoin: (id: string) => void;
+  onJoin: (id: string, answers?: EventApplicationAnswers) => void;
   onViewProfile: (id: string) => void;
   user: SupabaseUser | null; // 未ログイン閲覧（/l/[id] 共有ページ）でも表示できる
   keepOpenOnJoin?: boolean; // /l/[id] では参加後も閉じない（onCloseがページ遷移のため）
 }) {
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
+  // EVENTは申請前にダンサーネーム・メールアドレス・電話番号を必須で答えてもらう
+  const [showApplyForm, setShowApplyForm] = useState(false);
+  const [answerDancerName, setAnswerDancerName] = useState("");
+  const [answerEmail, setAnswerEmail] = useState("");
+  const [answerPhone, setAnswerPhone] = useState("");
   const lessonId = lesson?.id;
   // コメントの取得・投稿はサイファー側と同じ処理を使う（commentsテーブル共通）
   const { comments, commentText, setCommentText, posting, postComment } = useComments({ lessonId: lessonId ?? "" }, user);
@@ -80,7 +86,15 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
     }
   };
 
+  const submitApply = () => {
+    if (!answerDancerName.trim() || !answerEmail.trim() || !answerPhone.trim()) return;
+    onJoin(lesson.id, { dancerName: answerDancerName.trim(), email: answerEmail.trim(), phone: answerPhone.trim() });
+    setShowApplyForm(false);
+    if (!keepOpenOnJoin) onClose();
+  };
+
   return (
+    <>
     <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", padding: "0 12px 12px", boxSizing: "border-box" }} onClick={onClose}>
       {/* ホーム画面のカードと同じメタリックな質感にそろえる。左右下に少し余白を持たせて浮かせる */}
       <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", maxHeight: "88vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 -4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
@@ -164,7 +178,11 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
                 定員に達しています（{participants.length}/{lesson.max_members}人）
               </div>
             ) : (
-              <button onClick={() => { onJoin(lesson.id); if (!joined && !pending && !keepOpenOnJoin) onClose(); }}
+              <button onClick={() => {
+                // EVENTへの新規申請だけ、先に必須項目を聞くフォームを挟む
+                if (isEvent && !joined && !pending) { setShowApplyForm(true); return; }
+                onJoin(lesson.id); if (!joined && !pending && !keepOpenOnJoin) onClose();
+              }}
                 style={{ marginTop: "20px", width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: joined ? "rgba(22,163,74,0.12)" : pending ? "rgba(255,255,255,0.08)" : accent, color: joined ? "#16A34A" : pending ? "rgba(255,255,255,0.5)" : onAccent, fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
                 {joined ? <><Check size={16} /> 申込済み — キャンセルする</> : pending ? <>申請中... — キャンセルする</> : lesson.requires_approval ? <>📋 {isEvent ? "参加" : "受講"}を申請する</> : <><BookOpen size={16} /> この{noun}に申し込む</>}
               </button>
@@ -220,5 +238,39 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
         </div>
       </div>
     </div>
+
+    {/* EVENT申請前の必須項目フォーム */}
+    {showApplyForm && (
+      <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setShowApplyForm(false)}>
+        <div onClick={e => e.stopPropagation()} style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px" }}>
+          <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "16px" }}>参加申請</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div>
+              <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "4px" }}>ダンサーネーム</label>
+              <input value={answerDancerName} onChange={e => setAnswerDancerName(e.target.value)} maxLength={50}
+                style={{ width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "4px" }}>メールアドレス</label>
+              <input type="email" value={answerEmail} onChange={e => setAnswerEmail(e.target.value)} maxLength={200}
+                style={{ width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "4px" }}>電話番号</label>
+              <input type="tel" value={answerPhone} onChange={e => setAnswerPhone(e.target.value)} maxLength={20}
+                style={{ width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+            </div>
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "18px" }}>
+            <button onClick={() => setShowApplyForm(false)} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "10px 16px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
+            <button onClick={submitApply} disabled={!answerDancerName.trim() || !answerEmail.trim() || !answerPhone.trim()}
+              style={{ background: (answerDancerName.trim() && answerEmail.trim() && answerPhone.trim()) ? accent : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: (answerDancerName.trim() && answerEmail.trim() && answerPhone.trim()) ? "pointer" : "default", color: (answerDancerName.trim() && answerEmail.trim() && answerPhone.trim()) ? onAccent : "rgba(255,255,255,0.3)", padding: "10px 16px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>
+              申請する
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

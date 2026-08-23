@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import type { Cypher, PrivateLesson } from "./lib/types";
 import { fetchCypherById, fetchLessonById } from "./lib/fetchDetail";
-import { joinCypher, cancelCypher, joinLesson, cancelLesson } from "./lib/participation";
+import { joinCypher, cancelCypher, joinLesson, cancelLesson, type EventApplicationAnswers } from "./lib/participation";
 import { showToast } from "./components/Toast";
 import { LoginScreen } from "./components/LoginScreen";
 import { TopScreen, type TopSection } from "./components/TopScreen";
@@ -128,7 +128,7 @@ export default function BakuOdori() {
     }
   };
 
-  const handlePLJoin = async (id: string) => {
+  const handlePLJoin = async (id: string, answers?: EventApplicationAnswers) => {
     if (!user) return;
     if (plJoined.includes(id) || plPending.includes(id)) {
       const { error } = await cancelLesson(user.id, id);
@@ -138,7 +138,7 @@ export default function BakuOdori() {
       setRefreshKey(k => k + 1);
       return;
     }
-    const result = await joinLesson(user.id, id);
+    const result = await joinLesson(user.id, id, answers);
     if ("error" in result) { showToast(result.error); return; }
     if (result.status === "pending") {
       setPlPending(p => [...p, id]);

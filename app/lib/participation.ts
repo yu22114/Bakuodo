@@ -36,10 +36,16 @@ export async function cancelCypher(userId: string, cypherId: string): Promise<{ 
   return {};
 }
 
-export async function joinLesson(userId: string, lessonId: string): Promise<JoinResult> {
+// EVENTの参加申請時だけ必須で答えてもらう項目（レッスンでは使わない）
+export type EventApplicationAnswers = { dancerName: string; email: string; phone: string };
+
+export async function joinLesson(userId: string, lessonId: string, answers?: EventApplicationAnswers): Promise<JoinResult> {
   const { data, error } = await supabase
     .from("pl_participations")
-    .insert({ lesson_id: lessonId, profile_id: userId })
+    .insert({
+      lesson_id: lessonId, profile_id: userId,
+      ...(answers ? { answer_dancer_name: answers.dancerName, answer_email: answers.email, answer_phone: answers.phone } : {}),
+    })
     .select("status")
     .single();
   if (error || !data) {
