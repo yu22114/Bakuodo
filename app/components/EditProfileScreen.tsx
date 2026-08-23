@@ -9,10 +9,11 @@ import { Loading } from "./Loading";
 import { useSwipeBack } from "../lib/useSwipeBack";
 import { AvatarCropper } from "./AvatarCropper";
 
-export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, onBack }: {
+export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, onAccountTypeChange, onBack }: {
   user: SupabaseUser;
   onDancerNameChange?: (name: string) => void;
   onAvatarChange?: (url: string) => void;
+  onAccountTypeChange?: (type: string) => void;
   onBack?: () => void;
 }) {
   const swipeBack = useSwipeBack(onBack);
@@ -125,6 +126,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
     } else {
       setSaved(true);
       if (profile.dancer_name) onDancerNameChange?.(profile.dancer_name);
+      onAccountTypeChange?.(profile.account_type);
     }
   };
 
