@@ -115,6 +115,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [communityMembers, setCommunityMembers] = useState<{ id: string; dancer_name: string; avatar_url: string | null }[]>([]);
   const [communityMembersLoading, setCommunityMembersLoading] = useState(false);
   const [pickCommunityMemberOpen, setPickCommunityMemberOpen] = useState(false);
+  // 追加候補（フォロー中のうち団体用アカウントだけ）。チームの候補とは別に持つ
+  const [communityCandidates, setCommunityCandidates] = useState<{ id: string; dancer_name: string; avatar_url: string | null }[] | null>(null);
   const [qrSaving, setQrSaving] = useState(false);
   const [qrComposite, setQrComposite] = useState<string | null>(null);
 
@@ -370,12 +372,14 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     setCommunityMembersLoading(false);
   };
 
-  // 追加候補（フォロー中のアカウント）はチームと共有できるので、既に取得済みならそのまま使う
+  // マイコミュニティに追加できるのは「団体用」アカウントのみ。チームの候補（全員）とは別に持つ
   const openCommunityMemberPicker = async () => {
     setPickCommunityMemberOpen(true);
-    if (followingCandidates !== null) return;
-    const { data } = await supabase.from("follows").select("following_id, profiles:following_id(dancer_name, avatar_url)").eq("follower_id", currentUserId);
-    setFollowingCandidates((data ?? []).map((r: any) => ({ id: r.following_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN", avatar_url: r.profiles?.avatar_url ?? null })));
+    if (communityCandidates !== null) return;
+    const { data } = await supabase.from("follows").select("following_id, profiles:following_id(dancer_name, avatar_url, account_type)").eq("follower_id", currentUserId);
+    setCommunityCandidates((data ?? [])
+      .filter((r: any) => r.profiles?.account_type === "organization")
+      .map((r: any) => ({ id: r.following_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN", avatar_url: r.profiles?.avatar_url ?? null })));
   };
 
   const addCommunityMember = async (mate: { id: string; dancer_name: string; avatar_url: string | null }) => {
@@ -1034,12 +1038,12 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
               {pickCommunityMemberOpen ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {followingCandidates === null ? (
+                  {communityCandidates === null ? (
                     <Loading />
                   ) : (() => {
-                    const candidates = followingCandidates.filter(f => !communityMembers.some(m => m.id === f.id));
+                    const candidates = communityCandidates.filter(f => !communityMembers.some(m => m.id === f.id));
                     return candidates.length === 0
-                      ? <div style={{ textAlign: "center", padding: "24px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>追加できるアカウントがありません</div>
+                      ? <div style={{ textAlign: "center", padding: "24px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>フォロー中に団体用アカウントがいません</div>
                       : candidates.map(f => (
                           <div key={f.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "6px 4px" }}>
                             {memberAvatar(f)}
