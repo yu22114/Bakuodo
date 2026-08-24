@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, Trash2, Pencil, X, Check, UserPlus } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
@@ -57,6 +57,24 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
   const [editInstructors, setEditInstructors] = useState<DraftInstructor[]>([{ ...EMPTY_INSTRUCTOR }]);
   const [editGenre, setEditGenre] = useState<GenreKey[]>([]);
   const [savingEdit, setSavingEdit] = useState(false);
+  // 個人用アカウントはこのカードに参加申請していないと練習日程の中身を見られない（自動承認）
+  const [isMember, setIsMember] = useState<boolean | null>(isOwn ? true : null);
+  const [applying, setApplying] = useState(false);
+
+  useEffect(() => {
+    if (isOwn) { setIsMember(true); return; }
+    supabase.from("community_board_genre_card_members").select("card_id").eq("card_id", cardState.id).eq("profile_id", user.id).maybeSingle()
+      .then(({ data }) => setIsMember(!!data));
+  }, [cardState.id, isOwn, user.id]);
+
+  const applyToCard = async () => {
+    if (applying) return;
+    setApplying(true);
+    const { error } = await supabase.from("community_board_genre_card_members").insert({ card_id: cardState.id, profile_id: user.id });
+    setApplying(false);
+    if (error) { console.error("community_board_genre_card_members insert error:", error); showToast(`申請に失敗しました: ${error.message}`); return; }
+    setIsMember(true);
+  };
 
   const genreColor = cardState.genre && (GENRE_COLORS as Record<string, string>)[cardState.genre] ? (GENRE_COLORS as Record<string, string>)[cardState.genre] : ACCENT;
   // instructorsが登録されていればそちらを優先。空の古いカードだけ旧フィールドにフォールバック
@@ -149,7 +167,22 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
       </div>
 
       <div className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "20px 16px" }}>
-        <PracticeScheduleList boardId={boardId} cardId={cardState.id} isOwn={isOwn} user={user} members={members} allowAdd={true} />
+        {/* 参加申請していないと練習日程の中身は見られない（作成者は常に見られる） */}
+        {isMember === null ? (
+          <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>読み込み中...</div>
+        ) : isMember ? (
+          <PracticeScheduleList boardId={boardId} cardId={cardState.id} isOwn={isOwn} user={user} members={members} allowAdd={true} />
+        ) : (
+          <div style={{ textAlign: "center", padding: "40px 16px" }}>
+            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.7, marginBottom: "16px" }}>
+              このカードの練習日程を見るには参加申請が必要です。
+            </p>
+            <button onClick={applyToCard} disabled={applying}
+              style={{ padding: "12px 24px", border: "none", borderRadius: "8px", background: ACCENT, color: "#fff", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", opacity: applying ? 0.6 : 1 }}>
+              {applying ? "申請中..." : "参加を申請する"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* カードの編集モーダル。入力項目は作成時と同じ */}
