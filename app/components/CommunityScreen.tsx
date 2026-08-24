@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabase";
 import { GENRES, GENRE_COLORS, genreLabel, toggleGenre, todayStr } from "../lib/constants";
 import type { GenreKey } from "../lib/types";
 import { Loading } from "./Loading";
+import { showToast } from "./Toast";
 import { CommunityBoardCard, type Board } from "./CommunityBoardCard";
 
 type InstructorInput = { name: string; instagram: string };
@@ -119,7 +120,7 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
 
     if (editingId) {
       const { error } = await supabase.from("community_boards").update(fields).eq("id", editingId);
-      if (error) { setCreating(false); return; }
+      if (error) { console.error("community_boards update error:", error); showToast(`保存に失敗しました: ${error.message}`); setCreating(false); return; }
       // 講師は一旦全部消してから今のフォームの内容で入れ直す（作成者しか触れないのでRLS上も問題ない）
       await supabase.from("community_board_instructors").delete().eq("board_id", editingId);
       if (validInstructors.length > 0) {
@@ -142,7 +143,7 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
       .from("community_boards")
       .insert({ ...fields, creator_id: user.id })
       .select("id, title").single();
-    if (error || !data) { setCreating(false); return; }
+    if (error || !data) { console.error("community_boards insert error:", error); showToast(`作成に失敗しました: ${error?.message ?? "不明なエラー"}`); setCreating(false); return; }
     if (validInstructors.length > 0) {
       await supabase.from("community_board_instructors").insert(
         validInstructors.map((ins, i) => ({ board_id: (data as any).id, name: ins.name, instagram: ins.instagram || null, sort_order: i }))
