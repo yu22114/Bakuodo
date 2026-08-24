@@ -228,7 +228,7 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
             {tab === "schedule" ? (
               <PracticeScheduleList boardId={boardId} cardId={cardState.id} isOwn={isOwn} user={user} members={cardMembers} allowAdd={true} />
             ) : (
-              <ChoreographyPartList cardId={cardState.id} isOwn={isOwn} candidates={choreoCandidates} />
+              <ChoreographyPartList cardId={cardState.id} isOwn={isOwn} user={user} candidates={choreoCandidates} />
             )}
           </>
         ) : (

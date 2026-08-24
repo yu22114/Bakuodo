@@ -1,19 +1,22 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Pencil, Check, X } from "lucide-react";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { showToast } from "./Toast";
 
 const ACCENT = "#DC2626";
 
 export type Assignee = { id: string; dancer_name: string; avatar_url: string | null };
-type ChoreoPart = { id: string; title: string; eightCount: number | null; assigneeIds: string[] };
+type ChoreoPart = { id: string; title: string; eightCount: number | null; createdBy: string | null; assigneeIds: string[] };
 
 // 「担当振付」タブの中身：曲・パート名ごとに担当メンバーを紐づける。
-// パートの追加はこのカードを見られる人なら誰でも、編集・削除は作成者だけ
-export function ChoreographyPartList({ cardId, isOwn, candidates }: {
+// パートの追加はこのカードを見られる人なら誰でも。編集・削除は掲示板の作成者、
+// またはそのパートを作った本人だけ
+export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
   cardId: string;
   isOwn: boolean;
+  user: SupabaseUser;
   candidates: Assignee[]; // 担当に選べる人（作成者＋参加申請したユーザー）
 }) {
   const [parts, setParts] = useState<ChoreoPart[] | null>(null);
@@ -33,15 +36,16 @@ export function ChoreographyPartList({ cardId, isOwn, candidates }: {
   const [viewingPartId, setViewingPartId] = useState<string | null>(null);
 
   const fetchParts = async () => {
-    const { data: partRows } = await supabase.from("community_board_choreography_parts").select("id, title, eight_count")
+    const { data: partRows } = await supabase.from("community_board_choreography_parts").select("id, title, eight_count, created_by")
       .eq("card_id", cardId).order("sort_order", { ascending: true }).order("created_at", { ascending: true });
-    const list = (partRows as { id: string; title: string; eight_count: number | null }[] | null) ?? [];
+    const list = (partRows as { id: string; title: string; eight_count: number | null; created_by: string | null }[] | null) ?? [];
     if (list.length === 0) { setParts([]); return; }
     const { data: assigneeRows } = await supabase.from("community_board_choreography_assignees").select("part_id, profile_id").in("part_id", list.map(p => p.id));
     setParts(list.map(p => ({
       id: p.id,
       title: p.title,
       eightCount: p.eight_count,
+      createdBy: p.created_by,
       assigneeIds: (assigneeRows as any[] ?? []).filter(r => r.part_id === p.id).map(r => r.profile_id),
     })));
   };
@@ -57,14 +61,14 @@ export function ChoreographyPartList({ cardId, isOwn, candidates }: {
     setAdding(true);
     const newId = crypto.randomUUID();
     const eightCount = newEightCount ? Number(newEightCount) : null;
-    const { error } = await supabase.from("community_board_choreography_parts").insert({ id: newId, card_id: cardId, title, eight_count: eightCount });
+    const { error } = await supabase.from("community_board_choreography_parts").insert({ id: newId, card_id: cardId, title, eight_count: eightCount, created_by: user.id });
     if (error) { setAdding(false); console.error("community_board_choreography_parts insert error:", error); showToast(`パートの作成に失敗しました: ${error.message}`); return; }
     if (newAssigneeIds.length > 0) {
       const { error: aErr } = await supabase.from("community_board_choreography_assignees").insert(newAssigneeIds.map(pid => ({ part_id: newId, profile_id: pid })));
       if (aErr) console.error("community_board_choreography_assignees insert error:", aErr);
     }
     setAdding(false);
-    setParts(list => [...(list ?? []), { id: newId, title, eightCount, assigneeIds: newAssigneeIds }]);
+    setParts(list => [...(list ?? []), { id: newId, title, eightCount, createdBy: user.id, assigneeIds: newAssigneeIds }]);
     setNewTitle(""); setNewEightCount(""); setNewAssigneeIds([]); setShowAdd(false);
   };
 
@@ -154,7 +158,10 @@ export function ChoreographyPartList({ cardId, isOwn, candidates }: {
         <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", fontFamily: "'Noto Sans JP',sans-serif", padding: "2px 2px 4px" }}>まだ担当振付がありません</div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {parts.map(part => (
+          {parts.map(part => {
+            // 編集・削除できるのは掲示板の作成者、またはこのパートを作った本人
+            const canManage = isOwn || part.createdBy === user.id;
+            return (
             <div key={part.id} style={{ width: "100%", boxSizing: "border-box", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px" }}>
               {editingId === part.id ? (
                 renderForm(editTitle, setEditTitle, editEightCount, setEditEightCount, editAssigneeIds, setEditAssigneeIds, () => setEditingId(null), saveEdit, savingEdit)
@@ -166,7 +173,7 @@ export function ChoreographyPartList({ cardId, isOwn, candidates }: {
                       {part.eightCount != null && <>{part.eightCount}エイト・</>}担当{part.assigneeIds.length}人
                     </div>
                   </div>
-                  {isOwn && (
+                  {canManage && (
                     <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: "2px", flexShrink: 0 }}>
                       <span onClick={() => openEdit(part)} title="編集" style={{ cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px", display: "flex" }}><Pencil size={14} /></span>
                       <span onClick={() => setDeleteTarget(part.id)} title="削除" style={{ cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px", display: "flex" }}><Trash2 size={14} /></span>
@@ -175,7 +182,8 @@ export function ChoreographyPartList({ cardId, isOwn, candidates }: {
                 </button>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
