@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, Plus, Trash2, Pencil, Check, X, Clock, MapPin, Calendar, MessageSquare } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
-import { todayStr, TIME_OPTIONS, endTimeOptions, endTimeLabel, isNextDayEnd, DEFAULT_START_TIME } from "../lib/constants";
+import { todayStr, TIME_OPTIONS, endTimeOptions, endTimeLabel, isNextDayEnd, DEFAULT_START_TIME, GENRES, GENRE_COLORS, genreLabel, toggleGenre } from "../lib/constants";
+import type { GenreKey } from "../lib/types";
 import { useSwipeBack } from "../lib/useSwipeBack";
 import { Loading } from "./Loading";
 import { showToast } from "./Toast";
@@ -18,7 +19,7 @@ function formatJaDate(dateStr: string) {
 }
 
 type BoardDetail = { creator_id: string; subtitle: string | null };
-type GenreCard = { id: string; title: string };
+type GenreCard = { id: string; title: string; instructor_name: string | null; instructor_instagram: string | null; genre: string | null };
 type PracticeSchedule = { id: string; card_id: string | null; practice_date: string; practice_time: string | null; practice_end_time: string | null; place: string | null };
 type Member = { id: string; dancer_name: string; avatar_url: string | null; instagram: string | null; isCreator: boolean };
 type AttendanceStatus = "yes" | "maybe" | "no";
@@ -59,6 +60,9 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   const [genreCards, setGenreCards] = useState<GenreCard[] | null>(null);
   const [showAddCard, setShowAddCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState("");
+  const [newCardInstructorName, setNewCardInstructorName] = useState("");
+  const [newCardInstagram, setNewCardInstagram] = useState("");
+  const [newCardGenre, setNewCardGenre] = useState<GenreKey[]>([]);
   const [addingCard, setAddingCard] = useState(false);
   const [deleteCardTarget, setDeleteCardTarget] = useState<string | null>(null);
   const [deletingCard, setDeletingCard] = useState(false);
@@ -118,7 +122,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
 
   // 練習カードの一覧（作成者がタイトルを入れて作ったもの）
   const fetchGenreCards = async () => {
-    const { data } = await supabase.from("community_board_genre_cards").select("id, title")
+    const { data } = await supabase.from("community_board_genre_cards").select("id, title, instructor_name, instructor_instagram, genre")
       .eq("board_id", board.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true });
     setGenreCards((data as any[]) ?? []);
   };
@@ -182,17 +186,20 @@ export function CommunityBoardScreen({ board, user, onBack }: {
     if (!error) setSchedules(list => list.filter(s => s.id !== id));
   };
 
-  // 練習カードを作る（タイトルだけ入力する。IDは先に用意して読み返しをしない＝RLSのRETURNING問題を避ける）
+  // 練習カードを作る。IDは先に用意して読み返しをしない＝RLSのRETURNING問題を避ける
   const addCard = async () => {
     const title = newCardTitle.trim();
     if (!title || addingCard) return;
     setAddingCard(true);
     const newId = crypto.randomUUID();
-    const { error } = await supabase.from("community_board_genre_cards").insert({ id: newId, board_id: board.id, title });
+    const instructor_name = newCardInstructorName.trim() || null;
+    const instructor_instagram = newCardInstagram.trim() || null;
+    const genre = newCardGenre[0] ?? null;
+    const { error } = await supabase.from("community_board_genre_cards").insert({ id: newId, board_id: board.id, title, instructor_name, instructor_instagram, genre });
     setAddingCard(false);
     if (error) { console.error("community_board_genre_cards insert error:", error); showToast(`カードの作成に失敗しました: ${error.message}`); return; }
-    setGenreCards(list => [...(list ?? []), { id: newId, title }]);
-    setNewCardTitle(""); setShowAddCard(false);
+    setGenreCards(list => [...(list ?? []), { id: newId, title, instructor_name, instructor_instagram, genre }]);
+    setNewCardTitle(""); setNewCardInstructorName(""); setNewCardInstagram(""); setNewCardGenre([]); setShowAddCard(false);
   };
 
   const deleteCard = async () => {
@@ -356,8 +363,23 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                 <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px" }}>
                   <input value={newCardTitle} onChange={e => setNewCardTitle(e.target.value)} placeholder="タイトル（例: Hip-Hopクラス）" maxLength={40} autoFocus
                     style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
-                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "8px" }}>
-                    <button onClick={() => { setShowAddCard(false); setNewCardTitle(""); }} disabled={addingCard} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
+                  <input value={newCardInstructorName} onChange={e => setNewCardInstructorName(e.target.value)} placeholder="講師の名前（任意）" maxLength={30}
+                    style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                  <input value={newCardInstagram} onChange={e => setNewCardInstagram(e.target.value)} placeholder="講師のInstagram URL（任意）" maxLength={200} type="url" inputMode="url" autoCapitalize="none" autoCorrect="off"
+                    style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                  <div style={{ marginTop: "8px" }}>
+                    <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "5px" }}>ジャンル（任意）</label>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                      {GENRES.map(g => { const sel = newCardGenre.includes(g); const col = GENRE_COLORS[g]; return (
+                        <button key={g} onClick={() => setNewCardGenre(list => toggleGenre(list, g))}
+                          style={{ padding: "6px 10px", border: sel ? `1px solid ${col}` : "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                          {genreLabel(g)}
+                        </button>
+                      ); })}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "10px" }}>
+                    <button onClick={() => { setShowAddCard(false); setNewCardTitle(""); setNewCardInstructorName(""); setNewCardInstagram(""); setNewCardGenre([]); }} disabled={addingCard} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
                     <button onClick={addCard} disabled={!newCardTitle.trim() || addingCard} style={{ background: newCardTitle.trim() ? ACCENT : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: newCardTitle.trim() ? "pointer" : "default", color: newCardTitle.trim() ? "#fff" : "rgba(255,255,255,0.3)", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>{addingCard ? "作成中..." : "作成する"}</button>
                   </div>
                 </div>
@@ -372,11 +394,12 @@ export function CommunityBoardScreen({ board, user, onBack }: {
             !isOwn && <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ練習カードがありません</div>
           ) : genreCards.map(card => {
             const cardSchedules = schedules.filter(s => s.card_id === card.id);
+            const genreColor = card.genre && (GENRE_COLORS as Record<string, string>)[card.genre] ? (GENRE_COLORS as Record<string, string>)[card.genre] : ACCENT;
             return (
               <div key={card.id} style={{ marginBottom: "16px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
-                    <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />
+                    <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: genreColor, flexShrink: 0 }} />
                     <span style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.title}</span>
                     {cardSchedules.length > 0 && <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.4)", flexShrink: 0 }}>全{cardSchedules.length}件</span>}
                   </div>
@@ -393,6 +416,16 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                     </div>
                   )}
                 </div>
+                {/* 講師名・Instagram・ジャンルは、設定されているものだけタイトルの下に出す */}
+                {(card.instructor_name || card.instructor_instagram || card.genre) && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "8px", paddingLeft: "14px" }}>
+                    {card.instructor_name && <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)" }}>講師: {card.instructor_name}</span>}
+                    {card.instructor_instagram && (
+                      <a href={card.instructor_instagram} target="_blank" rel="noopener noreferrer" style={{ fontSize: "11px", color: "#A855F7", textDecoration: "none" }}>Instagram</a>
+                    )}
+                    {card.genre && <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "20px", background: `${genreColor}15`, color: genreColor, fontFamily: "'Noto Sans JP',sans-serif" }}>{genreLabel(card.genre)}</span>}
+                  </div>
+                )}
 
                 {isOwn && addingCardId === card.id && renderAddForm()}
 
