@@ -39,6 +39,9 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   const [openCard, setOpenCard] = useState<GenreCard | null>(null);
   // カード一覧に出す「全X件」のための件数だけの集計（詳細は各カードの画面で取る）
   const [scheduleCounts, setScheduleCounts] = useState<Record<string, number>>({});
+  // 個人用アカウントが参加申請済みのカードID一覧（作成者はnullのまま＝全カードにアクセスできる）
+  const [myCardIds, setMyCardIds] = useState<Set<string> | null>(null);
+  const [applyingCardId, setApplyingCardId] = useState<string | null>(null);
 
   // メンバー欄：作成者＋招待された人。両方を取ってきて1つのリストにする
   const fetchMembers = async (creatorId: string) => {
@@ -71,12 +74,19 @@ export function CommunityBoardScreen({ board, user, onBack }: {
     setScheduleCounts(counts);
   };
 
+  // 自分が参加申請済みのカードID一覧（MYBOARDを開いた時点で取得する）
+  const fetchMyCardMemberships = async () => {
+    const { data } = await supabase.from("community_board_genre_card_members").select("card_id").eq("profile_id", user.id);
+    setMyCardIds(new Set((data ?? []).map((r: any) => r.card_id)));
+  };
+
   useEffect(() => {
     async function fetchDetail() {
       const { data } = await supabase.from("community_boards").select("creator_id, subtitle").eq("id", board.id).single();
       if (data) {
         setDetail(data as any);
         fetchMembers((data as any).creator_id);
+        if ((data as any).creator_id !== user.id) fetchMyCardMemberships();
       }
     }
     fetchDetail();
@@ -85,6 +95,21 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   }, [board.id]);
 
   const isOwn = detail?.creator_id === user.id;
+
+  // 参加を申請する。承認は不要ですぐに入れるようになる
+  const applyToCard = async (cardId: string) => {
+    if (applyingCardId) return;
+    setApplyingCardId(cardId);
+    const { error } = await supabase.from("community_board_genre_card_members").insert({ card_id: cardId, profile_id: user.id });
+    setApplyingCardId(null);
+    if (error) { console.error("community_board_genre_card_members insert error:", error); showToast(`申請に失敗しました: ${error.message}`); return; }
+    setMyCardIds(prev => new Set(prev ?? []).add(cardId));
+  };
+
+  // 作成者は全カードが対象。個人用アカウントは参加申請済みのカードだけが「入れるカード」、
+  // それ以外は「参加を申請できるカード」に振り分ける
+  const joinedCards = isOwn ? (genreCards ?? []) : (genreCards ?? []).filter(c => myCardIds?.has(c.id));
+  const unjoinedCards = isOwn ? [] : (genreCards ?? []).filter(c => !myCardIds?.has(c.id));
 
   const updateNewInstructor = (i: number, field: keyof DraftInstructor, value: string) => {
     setNewCardInstructors(list => list.map((ins, idx) => idx === i ? { ...ins, [field]: value } : ins));
@@ -207,14 +232,44 @@ export function CommunityBoardScreen({ board, user, onBack }: {
             </div>
           )}
 
-          {/* 練習カードの一覧。タップするとその中の練習日程を見る画面が開く */}
-          {genreCards === null ? (
+          {/* 個人用アカウント：参加を申請できるカード。タイトル・講師・ジャンルは見えるが中には入れず、
+              申請ボタンだけを出す。申請すると下の「練習カード」一覧に移る */}
+          {!isOwn && genreCards !== null && myCardIds !== null && unjoinedCards.length > 0 && (
+            <div style={{ marginBottom: "16px" }}>
+              <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>参加を申請できるカード</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {unjoinedCards.map(card => {
+                  const genreColor = card.genre && (GENRE_COLORS as Record<string, string>)[card.genre] ? (GENRE_COLORS as Record<string, string>)[card.genre] : "#DC2626";
+                  return (
+                    <div key={card.id} style={{ width: "100%", boxSizing: "border-box", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+                        <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: genreColor, flexShrink: 0 }} />
+                        <span style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.title}</span>
+                      </div>
+                      <div style={{ paddingLeft: "14px" }}>
+                        <InstructorList instructors={card.instructors.length > 0 ? card.instructors : card.instructor_name ? [{ name: card.instructor_name, instagram: card.instructor_instagram }] : []} />
+                      </div>
+                      <button onClick={() => applyToCard(card.id)} disabled={applyingCardId === card.id}
+                        style={{ marginTop: "10px", width: "100%", padding: "9px", border: "none", borderRadius: "8px", background: "#DC2626", color: "#fff", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", opacity: applyingCardId === card.id ? 0.6 : 1 }}>
+                        {applyingCardId === card.id ? "申請中..." : "参加を申請する"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 練習カードの一覧（参加申請済みのカードだけ）。タップするとその中の練習日程を見る画面が開く */}
+          {genreCards === null || (!isOwn && myCardIds === null) ? (
             <Loading />
-          ) : genreCards.length === 0 ? (
-            !isOwn && <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ練習カードがありません</div>
+          ) : joinedCards.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>
+              {isOwn ? "まだ練習カードがありません" : "参加申請したカードはまだありません"}
+            </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {genreCards.map(card => {
+              {joinedCards.map(card => {
                 const genreColor = card.genre && (GENRE_COLORS as Record<string, string>)[card.genre] ? (GENRE_COLORS as Record<string, string>)[card.genre] : "#DC2626";
                 const count = scheduleCounts[card.id] ?? 0;
                 // 背景に敷くジャンル名。ホーム画面のCYPHERカードと同じ仕組み（右下に大きく薄く）
