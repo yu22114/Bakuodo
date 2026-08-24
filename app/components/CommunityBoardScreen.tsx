@@ -106,6 +106,13 @@ export function CommunityBoardScreen({ board, user, onBack }: {
     setMyCardIds(prev => new Set(prev ?? []).add(cardId));
   };
 
+  // 参加申請を取り消す
+  const cancelApplication = async (cardId: string) => {
+    const { error } = await supabase.from("community_board_genre_card_members").delete().eq("card_id", cardId).eq("profile_id", user.id);
+    if (error) { console.error("community_board_genre_card_members delete error:", error); showToast(`取り消しに失敗しました: ${error.message}`); return; }
+    setMyCardIds(prev => { const next = new Set(prev ?? []); next.delete(cardId); return next; });
+  };
+
   // 作成者は全カードが対象。個人用アカウントは参加申請済みのカードだけが「入れるカード」、
   // それ以外は「参加を申請できるカード」に振り分ける
   const joinedCards = isOwn ? (genreCards ?? []) : (genreCards ?? []).filter(c => myCardIds?.has(c.id));
@@ -289,10 +296,15 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                           <span style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.title}</span>
                           {count > 0 && <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.4)", flexShrink: 0 }}>全{count}件</span>}
                         </div>
-                        {isOwn && (
+                        {isOwn ? (
                           <span onClick={e => { e.stopPropagation(); setDeleteCardTarget(card.id); }} title="カードを削除"
                             style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", cursor: "pointer", color: "rgba(255,255,255,0.4)", padding: "5px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                             <Trash2 size={13} />
+                          </span>
+                        ) : (
+                          <span onClick={e => { e.stopPropagation(); cancelApplication(card.id); }} title="参加申請を取り消す"
+                            style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", cursor: "pointer", padding: "5px 8px", flexShrink: 0 }}>
+                            取り消す
                           </span>
                         )}
                       </div>

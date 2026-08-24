@@ -60,12 +60,25 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
   // 個人用アカウントはこのカードに参加申請していないと練習日程の中身を見られない（自動承認）
   const [isMember, setIsMember] = useState<boolean | null>(isOwn ? true : null);
   const [applying, setApplying] = useState(false);
+  // 参加申請したユーザー一覧（練習日程を追加の上に表示する）
+  const [applicants, setApplicants] = useState<{ id: string; dancer_name: string; avatar_url: string | null }[] | null>(null);
 
   useEffect(() => {
     if (isOwn) { setIsMember(true); return; }
     supabase.from("community_board_genre_card_members").select("card_id").eq("card_id", cardState.id).eq("profile_id", user.id).maybeSingle()
       .then(({ data }) => setIsMember(!!data));
   }, [cardState.id, isOwn, user.id]);
+
+  useEffect(() => {
+    async function fetchApplicants() {
+      const { data: memberRows } = await supabase.from("community_board_genre_card_members").select("profile_id").eq("card_id", cardState.id);
+      const ids = (memberRows ?? []).map((r: any) => r.profile_id);
+      if (ids.length === 0) { setApplicants([]); return; }
+      const { data: profileRows } = await supabase.from("profiles").select("id, dancer_name, avatar_url").in("id", ids);
+      setApplicants((profileRows ?? []).map((p: any) => ({ id: p.id, dancer_name: p.dancer_name ?? "UNKNOWN", avatar_url: p.avatar_url ?? null })));
+    }
+    fetchApplicants();
+  }, [cardState.id]);
 
   const applyToCard = async () => {
     if (applying) return;
@@ -171,7 +184,25 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
         {isMember === null ? (
           <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>読み込み中...</div>
         ) : isMember ? (
-          <PracticeScheduleList boardId={boardId} cardId={cardState.id} isOwn={isOwn} user={user} members={members} allowAdd={true} />
+          <>
+            {/* 参加申請したユーザー。練習日程を追加の上に出す */}
+            {applicants && applicants.length > 0 && (
+              <div style={{ marginBottom: "16px" }}>
+                <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>参加申請したユーザー</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+                  {applicants.map(a => (
+                    <div key={a.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", width: "56px" }}>
+                      <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
+                        {a.avatar_url ? <img src={a.avatar_url} alt={a.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : a.dancer_name[0]?.toUpperCase()}
+                      </div>
+                      <span title={a.dancer_name} style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "56px" }}>{a.dancer_name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <PracticeScheduleList boardId={boardId} cardId={cardState.id} isOwn={isOwn} user={user} members={members} allowAdd={true} />
+          </>
         ) : (
           <div style={{ textAlign: "center", padding: "40px 16px" }}>
             <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.7, marginBottom: "16px" }}>
