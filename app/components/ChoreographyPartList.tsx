@@ -1,13 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Pencil, Check } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, X } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { showToast } from "./Toast";
 
 const ACCENT = "#DC2626";
 
 export type Assignee = { id: string; dancer_name: string; avatar_url: string | null };
-type ChoreoPart = { id: string; title: string; assigneeIds: string[] };
+type ChoreoPart = { id: string; title: string; eightCount: number | null; assigneeIds: string[] };
 
 // 「担当振付」タブの中身：曲・パート名ごとに担当メンバーを紐づける。
 // パートの追加はこのカードを見られる人なら誰でも、編集・削除は作成者だけ
@@ -19,24 +19,29 @@ export function ChoreographyPartList({ cardId, isOwn, candidates }: {
   const [parts, setParts] = useState<ChoreoPart[] | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  const [newEightCount, setNewEightCount] = useState("");
   const [newAssigneeIds, setNewAssigneeIds] = useState<string[]>([]);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [editEightCount, setEditEightCount] = useState("");
   const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>([]);
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // タップすると開く「誰が一緒に踊るか」の一覧
+  const [viewingPartId, setViewingPartId] = useState<string | null>(null);
 
   const fetchParts = async () => {
-    const { data: partRows } = await supabase.from("community_board_choreography_parts").select("id, title")
+    const { data: partRows } = await supabase.from("community_board_choreography_parts").select("id, title, eight_count")
       .eq("card_id", cardId).order("sort_order", { ascending: true }).order("created_at", { ascending: true });
-    const list = (partRows as { id: string; title: string }[] | null) ?? [];
+    const list = (partRows as { id: string; title: string; eight_count: number | null }[] | null) ?? [];
     if (list.length === 0) { setParts([]); return; }
     const { data: assigneeRows } = await supabase.from("community_board_choreography_assignees").select("part_id, profile_id").in("part_id", list.map(p => p.id));
     setParts(list.map(p => ({
       id: p.id,
       title: p.title,
+      eightCount: p.eight_count,
       assigneeIds: (assigneeRows as any[] ?? []).filter(r => r.part_id === p.id).map(r => r.profile_id),
     })));
   };
@@ -51,20 +56,22 @@ export function ChoreographyPartList({ cardId, isOwn, candidates }: {
     if (!title || adding) return;
     setAdding(true);
     const newId = crypto.randomUUID();
-    const { error } = await supabase.from("community_board_choreography_parts").insert({ id: newId, card_id: cardId, title });
+    const eightCount = newEightCount ? Number(newEightCount) : null;
+    const { error } = await supabase.from("community_board_choreography_parts").insert({ id: newId, card_id: cardId, title, eight_count: eightCount });
     if (error) { setAdding(false); console.error("community_board_choreography_parts insert error:", error); showToast(`パートの作成に失敗しました: ${error.message}`); return; }
     if (newAssigneeIds.length > 0) {
       const { error: aErr } = await supabase.from("community_board_choreography_assignees").insert(newAssigneeIds.map(pid => ({ part_id: newId, profile_id: pid })));
       if (aErr) console.error("community_board_choreography_assignees insert error:", aErr);
     }
     setAdding(false);
-    setParts(list => [...(list ?? []), { id: newId, title, assigneeIds: newAssigneeIds }]);
-    setNewTitle(""); setNewAssigneeIds([]); setShowAdd(false);
+    setParts(list => [...(list ?? []), { id: newId, title, eightCount, assigneeIds: newAssigneeIds }]);
+    setNewTitle(""); setNewEightCount(""); setNewAssigneeIds([]); setShowAdd(false);
   };
 
   const openEdit = (part: ChoreoPart) => {
     setEditingId(part.id);
     setEditTitle(part.title);
+    setEditEightCount(part.eightCount != null ? String(part.eightCount) : "");
     setEditAssigneeIds(part.assigneeIds);
   };
 
@@ -72,7 +79,8 @@ export function ChoreographyPartList({ cardId, isOwn, candidates }: {
     const title = editTitle.trim();
     if (!title || !editingId || savingEdit) return;
     setSavingEdit(true);
-    const { error } = await supabase.from("community_board_choreography_parts").update({ title }).eq("id", editingId);
+    const eightCount = editEightCount ? Number(editEightCount) : null;
+    const { error } = await supabase.from("community_board_choreography_parts").update({ title, eight_count: eightCount }).eq("id", editingId);
     if (error) { setSavingEdit(false); console.error("community_board_choreography_parts update error:", error); showToast(`保存に失敗しました: ${error.message}`); return; }
     // 担当者は一旦全部消してから今のフォームの内容で入れ直す
     await supabase.from("community_board_choreography_assignees").delete().eq("part_id", editingId);
@@ -81,7 +89,7 @@ export function ChoreographyPartList({ cardId, isOwn, candidates }: {
       if (aErr) { console.error("community_board_choreography_assignees insert error:", aErr); showToast(`担当者の保存に失敗しました: ${aErr.message}`); }
     }
     setSavingEdit(false);
-    setParts(list => (list ?? []).map(p => p.id === editingId ? { ...p, title, assigneeIds: editAssigneeIds } : p));
+    setParts(list => (list ?? []).map(p => p.id === editingId ? { ...p, title, eightCount, assigneeIds: editAssigneeIds } : p));
     setEditingId(null);
   };
 
@@ -94,14 +102,14 @@ export function ChoreographyPartList({ cardId, isOwn, candidates }: {
     setDeleteTarget(null);
   };
 
-  const assigneeName = (id: string) => candidates.find(c => c.id === id)?.dancer_name ?? "UNKNOWN";
-
   const inp: React.CSSProperties = { width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" };
 
-  // パート作成・編集フォーム共通（タイトル＋担当者のチェックリスト）
-  const renderForm = (title: string, setTitle: (v: string) => void, assigneeIds: string[], setAssigneeIds: (v: string[]) => void, onCancel: () => void, onSave: () => void, saving: boolean) => (
+  // パート作成・編集フォーム共通（タイトル・エイト数＋担当者のチェックリスト）
+  const renderForm = (title: string, setTitle: (v: string) => void, eightCount: string, setEightCount: (v: string) => void, assigneeIds: string[], setAssigneeIds: (v: string[]) => void, onCancel: () => void, onSave: () => void, saving: boolean) => (
     <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px" }}>
       <input value={title} onChange={e => setTitle(e.target.value)} placeholder="パート名（例: 1番サビ）" maxLength={40} autoFocus style={inp} />
+      <input value={eightCount} onChange={e => setEightCount(e.target.value.replace(/[^0-9]/g, ""))} placeholder="エイト数（任意）" inputMode="numeric" maxLength={3}
+        style={{ ...inp, marginTop: "6px" }} />
       {candidates.length > 0 && (
         <div style={{ marginTop: "10px" }}>
           <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "6px" }}>担当（任意・複数選べます）</label>
@@ -139,7 +147,7 @@ export function ChoreographyPartList({ cardId, isOwn, candidates }: {
           <button onClick={() => setShowAdd(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", background: "none", border: "1px dashed rgba(255,255,255,0.25)", borderRadius: "8px", padding: "10px", color: "rgba(255,255,255,0.6)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", boxSizing: "border-box" }}>
             <Plus size={14} /> パートを作る
           </button>
-        ) : renderForm(newTitle, setNewTitle, newAssigneeIds, setNewAssigneeIds, () => { setShowAdd(false); setNewTitle(""); setNewAssigneeIds([]); }, addPart, adding)}
+        ) : renderForm(newTitle, setNewTitle, newEightCount, setNewEightCount, newAssigneeIds, setNewAssigneeIds, () => { setShowAdd(false); setNewTitle(""); setNewEightCount(""); setNewAssigneeIds([]); }, addPart, adding)}
       </div>
 
       {parts.length === 0 ? (
@@ -149,27 +157,60 @@ export function ChoreographyPartList({ cardId, isOwn, candidates }: {
           {parts.map(part => (
             <div key={part.id} style={{ width: "100%", boxSizing: "border-box", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px" }}>
               {editingId === part.id ? (
-                renderForm(editTitle, setEditTitle, editAssigneeIds, setEditAssigneeIds, () => setEditingId(null), saveEdit, savingEdit)
+                renderForm(editTitle, setEditTitle, editEightCount, setEditEightCount, editAssigneeIds, setEditAssigneeIds, () => setEditingId(null), saveEdit, savingEdit)
               ) : (
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px" }}>
+                <button onClick={() => setViewingPartId(part.id)} style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px" }}>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{part.title}</div>
                     <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)", marginTop: "4px" }}>
-                      担当: {part.assigneeIds.length > 0 ? part.assigneeIds.map(assigneeName).join("、") : "未定"}
+                      {part.eightCount != null && <>{part.eightCount}エイト・</>}担当{part.assigneeIds.length}人
                     </div>
                   </div>
                   {isOwn && (
-                    <div style={{ display: "flex", gap: "2px", flexShrink: 0 }}>
-                      <button onClick={() => openEdit(part)} title="編集" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px" }}><Pencil size={14} /></button>
-                      <button onClick={() => setDeleteTarget(part.id)} title="削除" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px" }}><Trash2 size={14} /></button>
+                    <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: "2px", flexShrink: 0 }}>
+                      <span onClick={() => openEdit(part)} title="編集" style={{ cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px", display: "flex" }}><Pencil size={14} /></span>
+                      <span onClick={() => setDeleteTarget(part.id)} title="削除" style={{ cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px", display: "flex" }}><Trash2 size={14} /></span>
                     </div>
                   )}
-                </div>
+                </button>
               )}
             </div>
           ))}
         </div>
       )}
+
+      {/* タップすると開く「誰が一緒に踊るか」の一覧 */}
+      {viewingPartId && (() => {
+        const part = parts.find(p => p.id === viewingPartId);
+        if (!part) return null;
+        const assignees = part.assigneeIds.map(id => candidates.find(c => c.id === id)).filter((c): c is Assignee => !!c);
+        return (
+          <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setViewingPartId(null)}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px", maxHeight: "80vh", overflowY: "auto" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>一緒に踊るメンバー</div>
+                <button onClick={() => setViewingPartId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
+              </div>
+              <div style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", marginBottom: "4px" }}>{part.title}</div>
+              {part.eightCount != null && <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "16px" }}>{part.eightCount}エイト</div>}
+              {assignees.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "12px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ担当が決まっていません</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {assignees.map(a => (
+                    <div key={a.id} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <div style={{ width: "34px", height: "34px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
+                        {a.avatar_url ? <img src={a.avatar_url} alt={a.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : a.dancer_name[0]?.toUpperCase()}
+                      </div>
+                      <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{a.dancer_name}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* パートの削除確認モーダル */}
       {deleteTarget && (
