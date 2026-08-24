@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, Plus, Trash2, Pencil, Check, X, Clock, MapPin, Calendar, MessageSquare } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
-import { todayStr, TIME_OPTIONS, endTimeOptions, endTimeLabel, isNextDayEnd, DEFAULT_START_TIME } from "../lib/constants";
+import { todayStr, TIME_OPTIONS, endTimeOptions, endTimeLabel, isNextDayEnd, DEFAULT_START_TIME, GENRES, GENRE_COLORS, genreLabel } from "../lib/constants";
+import type { GenreKey } from "../lib/types";
 import { useSwipeBack } from "../lib/useSwipeBack";
 import { Loading } from "./Loading";
 
@@ -17,7 +18,7 @@ function formatJaDate(dateStr: string) {
 }
 
 type BoardDetail = { creator_id: string; subtitle: string | null };
-type PracticeSchedule = { id: string; practice_date: string; practice_time: string | null; practice_end_time: string | null; place: string | null };
+type PracticeSchedule = { id: string; genre: string | null; practice_date: string; practice_time: string | null; practice_end_time: string | null; place: string | null };
 type Member = { id: string; dancer_name: string; avatar_url: string | null; instagram: string | null; isCreator: boolean };
 type AttendanceStatus = "yes" | "maybe" | "no";
 type Attendance = { status: AttendanceStatus | null; comment: string | null };
@@ -53,7 +54,8 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   const swipeBack = useSwipeBack(onBack);
   const [detail, setDetail] = useState<BoardDetail | null>(null);
   const [schedules, setSchedules] = useState<PracticeSchedule[]>([]);
-  const [showAddSchedule, setShowAddSchedule] = useState(false);
+  // どのジャンルカードで追加フォームを開いているか（練習日程はジャンルカードの中に追加する）
+  const [addingGenre, setAddingGenre] = useState<GenreKey | null>(null);
   const [newDate, setNewDate] = useState("");
   const [newStartTime, setNewStartTime] = useState(DEFAULT_START_TIME);
   const [newEndTime, setNewEndTime] = useState("");
@@ -99,7 +101,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   };
 
   const fetchSchedules = async () => {
-    const { data } = await supabase.from("community_board_practice_schedules").select("id, practice_date, practice_time, practice_end_time, place")
+    const { data } = await supabase.from("community_board_practice_schedules").select("id, genre, practice_date, practice_time, practice_end_time, place")
       .eq("board_id", board.id).order("practice_date", { ascending: true }).order("practice_time", { ascending: true }).order("created_at", { ascending: true });
     const list = (data as any[]) ?? [];
     setSchedules(list);
@@ -148,14 +150,14 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   const isOwn = detail?.creator_id === user.id;
 
   const addSchedule = async () => {
-    if (!newDate || addingSchedule) return;
+    if (!newDate || addingSchedule || !addingGenre) return;
     setAddingSchedule(true);
     const { error } = await supabase.from("community_board_practice_schedules").insert({
-      board_id: board.id, practice_date: newDate, practice_time: newStartTime || null, practice_end_time: newEndTime || null, place: newPlace.trim() || null,
+      board_id: board.id, genre: addingGenre, practice_date: newDate, practice_time: newStartTime || null, practice_end_time: newEndTime || null, place: newPlace.trim() || null,
     });
     setAddingSchedule(false);
     if (!error) {
-      setNewDate(""); setNewStartTime(DEFAULT_START_TIME); setNewEndTime(""); setNewPlace(""); setShowAddSchedule(false);
+      setNewDate(""); setNewStartTime(DEFAULT_START_TIME); setNewEndTime(""); setNewPlace(""); setAddingGenre(null);
       fetchSchedules();
     }
   };
@@ -181,6 +183,98 @@ export function CommunityBoardScreen({ board, user, onBack }: {
     setSavingEdit(false);
     if (!error) { setEditingId(null); fetchSchedules(); }
   };
+
+  // 練習日程カード1件分。ジャンルカードの中と「ジャンル未設定」の欄、両方から使う
+  const renderScheduleCard = (s: PracticeSchedule, i: number) => {
+    // 日にちが過ぎたものは灰色にして終わったことがわかるようにする。
+    // まだ来ていないものは「今後の予定」バッジを出す
+    const isPast = s.practice_date < todayStr();
+    return (
+      <div key={s.id} onClick={() => setViewingScheduleId(s.id)} style={{ width: "100%", boxSizing: "border-box", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px", position: "relative", overflow: "hidden", opacity: isPast ? 0.5 : 1, cursor: "pointer", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+        {!isPast && (
+          <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.12)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>今後の予定</div>
+        )}
+        {/* 番号は一番左に専用の列として配置する（ジャンルカードごとに①から数え直す） */}
+        <div style={{ alignSelf: "stretch", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "12px", borderRight: "1px solid rgba(255,255,255,0.1)", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
+          {circledNumber(i + 1)}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "5px", flex: 1, minWidth: 0, fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap" }}>
+            <Calendar size={12} color="rgba(255,255,255,0.4)" />{formatJaDate(s.practice_date)}
+            {s.practice_time && (
+              <>
+                <Clock size={12} color="rgba(255,255,255,0.4)" style={{ marginLeft: "6px" }} />{formatTimeRange(s.practice_time, s.practice_end_time)}
+              </>
+            )}
+          </div>
+          {s.place && (
+            <div style={{ display: "flex", alignItems: "center", gap: "5px", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <MapPin size={12} color="rgba(255,255,255,0.4)" />{s.place}
+            </div>
+          )}
+          {/* 参加可否（○/△/×）。タップで自分の回答を記録する。横幅いっぱいに均一の四角で並べる */}
+          <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: "6px", marginTop: "4px", width: "100%" }}>
+            {(["yes", "maybe", "no"] as AttendanceStatus[]).map(st => {
+              const meta = STATUS_META[st];
+              const mine = attendances[s.id]?.[user.id]?.status === st;
+              return (
+                <button key={st} onClick={() => setMyAttendance(s.id, st)}
+                  style={{ flex: 1, height: "30px", borderRadius: "6px", border: mine ? `1px solid ${meta.color}` : "1px solid rgba(255,255,255,0.14)", background: mine ? `${meta.color}22` : "transparent", color: mine ? meta.color : "rgba(255,255,255,0.5)", fontSize: "14px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {meta.label}
+                </button>
+              );
+            })}
+          </div>
+          {/* コメント：一言を残す。参加状況の一覧で名前の下に出る */}
+          <button onClick={e => { e.stopPropagation(); openComment(s.id); }}
+            style={{ display: "flex", alignItems: "center", gap: "4px", maxWidth: "100%", marginTop: "2px", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", padding: "2px 0" }}>
+            <MessageSquare size={11} style={{ flexShrink: 0 }} />
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{attendances[s.id]?.[user.id]?.comment || "コメント"}</span>
+          </button>
+        </div>
+        {isOwn && (
+          <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: "2px", flexShrink: 0 }}>
+            <button onClick={() => startEditSchedule(s)} title="編集" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px" }}><Pencil size={14} /></button>
+            <button onClick={() => deleteSchedule(s.id)} title="削除" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px" }}><Trash2 size={14} /></button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // 練習日程の追加フォーム。どのジャンルカードの中に追加するかはaddingGenreが持っている
+  const renderAddForm = () => (
+    <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px", marginBottom: "10px" }}>
+      <input type="date" min={todayStr()} value={newDate} onChange={e => setNewDate(e.target.value)}
+        style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+      {/* 開始・終了時間はCYPHERと同じ仕様：30分刻みのプルダウンで、終了は開始を基準に並べ替え、
+          開始以下の時刻は「翌日」として翌HH:MMで表示する */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginTop: "6px" }}>
+        <div>
+          <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "3px" }}>開始時間</label>
+          <select value={newStartTime} onChange={e => setNewStartTime(e.target.value)}
+            style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }}>
+            <option value="">未設定</option>
+            {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "3px" }}>終了時間</label>
+          <select value={newEndTime} onChange={e => setNewEndTime(e.target.value)}
+            style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }}>
+            <option value="">未設定</option>
+            {endTimeOptions(newStartTime).map(t => <option key={t} value={t}>{endTimeLabel(t, newStartTime)}</option>)}
+          </select>
+        </div>
+      </div>
+      <input value={newPlace} onChange={e => setNewPlace(e.target.value)} placeholder="場所（任意）" maxLength={100}
+        style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "8px" }}>
+        <button onClick={() => { setAddingGenre(null); setNewDate(""); setNewStartTime(DEFAULT_START_TIME); setNewEndTime(""); setNewPlace(""); }} disabled={addingSchedule} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
+        <button onClick={addSchedule} disabled={!newDate || addingSchedule} style={{ background: newDate ? ACCENT : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: newDate ? "pointer" : "default", color: newDate ? "#fff" : "rgba(255,255,255,0.3)", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>{addingSchedule ? "追加中..." : "追加する"}</button>
+      </div>
+    </div>
+  );
 
   return (
     <div {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }}>
@@ -209,110 +303,52 @@ export function CommunityBoardScreen({ board, user, onBack }: {
             <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "16px" }}>メンバー {members.length}人</div>
           )}
 
-          {/* 練習日程を追加するボタン（作成者だけ）。一番上に置く */}
-          {isOwn && (
-            <div style={{ marginBottom: "16px" }}>
-              {!showAddSchedule ? (
-                <button onClick={() => setShowAddSchedule(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", background: "none", border: "1px dashed rgba(255,255,255,0.25)", borderRadius: "8px", padding: "10px", color: "rgba(255,255,255,0.6)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", boxSizing: "border-box" }}>
-                  <Plus size={14} /> 練習日程を追加
-                </button>
-              ) : (
-                <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px" }}>
-                  <input type="date" min={todayStr()} value={newDate} onChange={e => setNewDate(e.target.value)}
-                    style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
-                  {/* 開始・終了時間はCYPHERと同じ仕様：30分刻みのプルダウンで、終了は開始を基準に並べ替え、
-                      開始以下の時刻は「翌日」として翌HH:MMで表示する */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginTop: "6px" }}>
-                    <div>
-                      <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "3px" }}>開始時間</label>
-                      <select value={newStartTime} onChange={e => setNewStartTime(e.target.value)}
-                        style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }}>
-                        <option value="">未設定</option>
-                        {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "3px" }}>終了時間</label>
-                      <select value={newEndTime} onChange={e => setNewEndTime(e.target.value)}
-                        style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }}>
-                        <option value="">未設定</option>
-                        {endTimeOptions(newStartTime).map(t => <option key={t} value={t}>{endTimeLabel(t, newStartTime)}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                  <input value={newPlace} onChange={e => setNewPlace(e.target.value)} placeholder="場所（任意）" maxLength={100}
-                    style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
-                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "8px" }}>
-                    <button onClick={() => { setShowAddSchedule(false); setNewDate(""); setNewStartTime(DEFAULT_START_TIME); setNewEndTime(""); setNewPlace(""); }} disabled={addingSchedule} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
-                    <button onClick={addSchedule} disabled={!newDate || addingSchedule} style={{ background: newDate ? ACCENT : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: newDate ? "pointer" : "default", color: newDate ? "#fff" : "rgba(255,255,255,0.3)", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>{addingSchedule ? "追加中..." : "追加する"}</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* 練習日程カード（1件ごとに独立したカードとして表示。追加ボタンは上に分離した） */}
-          {schedules.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
-              <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)" }}>全{schedules.length}件</div>
-              {schedules.map((s, i) => {
-                // 日にちが過ぎたものは灰色にして終わったことがわかるようにする。
-                // まだ来ていないものは「今後の予定」バッジを出す
-                const isPast = s.practice_date < todayStr();
-                return (
-                <div key={s.id} onClick={() => setViewingScheduleId(s.id)} style={{ width: "100%", boxSizing: "border-box", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px", position: "relative", overflow: "hidden", opacity: isPast ? 0.5 : 1, cursor: "pointer", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }}>
-                  {!isPast && (
-                    <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.12)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>今後の予定</div>
-                  )}
-                  {/* 番号は一番左に専用の列として配置する */}
-                  <div style={{ alignSelf: "stretch", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "12px", borderRight: "1px solid rgba(255,255,255,0.1)", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
-                    {circledNumber(i + 1)}
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "5px", flex: 1, minWidth: 0, fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap" }}>
-                      <Calendar size={12} color="rgba(255,255,255,0.4)" />{formatJaDate(s.practice_date)}
-                      {s.practice_time && (
-                        <>
-                          <Clock size={12} color="rgba(255,255,255,0.4)" style={{ marginLeft: "6px" }} />{formatTimeRange(s.practice_time, s.practice_end_time)}
-                        </>
-                      )}
-                    </div>
-                    {s.place && (
-                      <div style={{ display: "flex", alignItems: "center", gap: "5px", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        <MapPin size={12} color="rgba(255,255,255,0.4)" />{s.place}
-                      </div>
-                    )}
-                    {/* 参加可否（○/△/×）。タップで自分の回答を記録する。横幅いっぱいに均一の四角で並べる */}
-                    <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: "6px", marginTop: "4px", width: "100%" }}>
-                      {(["yes", "maybe", "no"] as AttendanceStatus[]).map(st => {
-                        const meta = STATUS_META[st];
-                        const mine = attendances[s.id]?.[user.id]?.status === st;
-                        return (
-                          <button key={st} onClick={() => setMyAttendance(s.id, st)}
-                            style={{ flex: 1, height: "30px", borderRadius: "6px", border: mine ? `1px solid ${meta.color}` : "1px solid rgba(255,255,255,0.14)", background: mine ? `${meta.color}22` : "transparent", color: mine ? meta.color : "rgba(255,255,255,0.5)", fontSize: "14px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            {meta.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {/* コメント：一言を残す。参加状況の一覧で名前の下に出る */}
-                    <button onClick={e => { e.stopPropagation(); openComment(s.id); }}
-                      style={{ display: "flex", alignItems: "center", gap: "4px", maxWidth: "100%", marginTop: "2px", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", padding: "2px 0" }}>
-                      <MessageSquare size={11} style={{ flexShrink: 0 }} />
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{attendances[s.id]?.[user.id]?.comment || "コメント"}</span>
-                    </button>
+          {/* 練習日程はジャンルごとのカードに分けて表示する。追加もそのジャンルのカードの中で行う */}
+          {GENRES.map(genre => {
+            const genreSchedules = schedules.filter(s => s.genre === genre);
+            const color = GENRE_COLORS[genre];
+            return (
+              <div key={genre} style={{ marginBottom: "16px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: color, flexShrink: 0 }} />
+                    <span style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color }}>{genreLabel(genre)}</span>
+                    {genreSchedules.length > 0 && <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.4)" }}>全{genreSchedules.length}件</span>}
                   </div>
                   {isOwn && (
-                    <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: "2px", flexShrink: 0 }}>
-                      <button onClick={() => startEditSchedule(s)} title="編集" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px" }}><Pencil size={14} /></button>
-                      <button onClick={() => deleteSchedule(s.id)} title="削除" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px" }}><Trash2 size={14} /></button>
-                    </div>
+                    <button onClick={() => { setAddingGenre(g => g === genre ? null : genre); setNewDate(""); setNewStartTime(DEFAULT_START_TIME); setNewEndTime(""); setNewPlace(""); }}
+                      style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", cursor: "pointer", color: "rgba(255,255,255,0.6)", padding: "5px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Plus size={13} />
+                    </button>
                   )}
                 </div>
-                );
-              })}
-            </div>
-          )}
+
+                {isOwn && addingGenre === genre && renderAddForm()}
+
+                {genreSchedules.length === 0 ? (
+                  <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", fontFamily: "'Noto Sans JP',sans-serif", padding: "2px 2px 4px" }}>まだ練習日程がありません</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    {genreSchedules.map((s, i) => renderScheduleCard(s, i))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* ジャンル欄を追加する前に登録された既存の練習日程。ジャンルが無いだけで消してはいない */}
+          {(() => {
+            const noGenre = schedules.filter(s => !s.genre);
+            if (noGenre.length === 0) return null;
+            return (
+              <div style={{ marginBottom: "16px" }}>
+                <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>ジャンル未設定</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {noGenre.map((s, i) => renderScheduleCard(s, i))}
+                </div>
+              </div>
+            );
+          })()}
           </>
         )}
       </div>
