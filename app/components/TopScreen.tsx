@@ -62,10 +62,10 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   const [slideDir, setSlideDir] = useState<1 | -1>(1);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  // 団体用アカウントの時だけSPOTSタブを除いた並び順を使う
-  const visibleSections: readonly TopSection[] = accountType === "organization" ? SECTION_ORDER.filter(s => s !== "spots") : SECTION_ORDER;
+  // 団体用アカウントの時だけSPOTS・P LESSONタブを除いた並び順を使う
+  const visibleSections: readonly TopSection[] = accountType === "organization" ? SECTION_ORDER.filter(s => s !== "spots" && s !== "pl") : SECTION_ORDER;
 
-  // 団体用に切り替えた直後など、SPOTSを表示中のまま隠れてしまう場合は先頭のタブへ逃がす
+  // 団体用に切り替えた直後など、隠れるタブを表示中のまま切り替わった場合は先頭のタブへ逃がす
   useEffect(() => {
     if (!visibleSections.includes(section)) onSectionChange(visibleSections[0]);
   }, [accountType, section]);
