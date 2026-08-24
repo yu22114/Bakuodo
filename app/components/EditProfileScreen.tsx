@@ -17,7 +17,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
   onBack?: () => void;
 }) {
   const swipeBack = useSwipeBack(onBack);
-  const [profile, setProfile] = useState<ProfileState>({ dancer_name: "", genres: [], instagram: "", dance_years: "", age_group: "", gender: "", bio: "", playlist_url: "", team: "", account_type: "individual", community_name: "" });
+  const [profile, setProfile] = useState<ProfileState>({ dancer_name: "", genres: [], instagram: "", dance_years: "", age_group: "", gender: "", bio: "", playlist_url: "", team: "", account_type: "individual" });
   const [isPrivate, setIsPrivate] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -33,7 +33,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
 
   useEffect(() => {
     async function fetchProfile() {
-      const { data } = await supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, bio, playlist_url, team, avatar_url, is_private, account_type, community_name").eq("id", user.id).single();
+      const { data } = await supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, bio, playlist_url, team, avatar_url, is_private, account_type").eq("id", user.id).single();
       if (data) {
         setProfile({
           dancer_name: data.dancer_name ?? "",
@@ -46,7 +46,6 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
           playlist_url: (data as any).playlist_url ?? "",
           team: (data as any).team ?? "",
           account_type: (data as any).account_type === "organization" ? "organization" : "individual",
-          community_name: (data as any).community_name ?? "",
         });
         setAvatarUrl((data as any).avatar_url ?? null);
         setIsPrivate((data as any).is_private ?? false);
@@ -120,7 +119,6 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
       team: profile.team.trim() || null,
       is_private: isPrivate,
       account_type: profile.account_type,
-      community_name: profile.community_name.trim() || null,
     }, { onConflict: "id" });
     if (error) {
       console.error("profile save error:", error);
@@ -204,9 +202,6 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
         </div>
         <div><label style={lbl}>チーム（任意）</label>
           <input style={inp} placeholder="例: w+i&s" value={profile.team} onChange={e => { setProfile(p => ({ ...p, team: e.target.value })); setSaved(false); }} />
-        </div>
-        <div><label style={lbl}>マイコミュニティ（任意）</label>
-          <input style={inp} placeholder="例: 週末サイファー部" value={profile.community_name} onChange={e => { setProfile(p => ({ ...p, community_name: e.target.value })); setSaved(false); }} />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <div><label style={lbl}>ダンス歴（年）</label>

@@ -70,7 +70,6 @@ export interface ProfileState {
   playlist_url: string;
   team: string;
   account_type: "individual" | "organization";
-  community_name: string;
 }
 
 export interface ParticipantProfile {
