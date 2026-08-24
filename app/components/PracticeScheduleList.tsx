@@ -273,9 +273,10 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
         const sched = schedules.find(s => s.id === viewingScheduleId);
         if (!sched) return null;
         const schedAttendance = attendances[viewingScheduleId] ?? {};
-        // ○/△/×それぞれの人数を数える
+        // ○/△/×それぞれの人数を数える。残りは未回答の人数とする
         const counts: Record<AttendanceStatus, number> = { yes: 0, maybe: 0, no: 0 };
         Object.values(schedAttendance).forEach(a => { if (a.status) counts[a.status]++; });
+        const noAnswerCount = Math.max(0, (members ?? []).length - counts.yes - counts.maybe - counts.no);
         return (
           <div style={{ position: "fixed", inset: 0, zIndex: 245, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setViewingScheduleId(null)}>
             <div onClick={e => e.stopPropagation()} style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px", maxHeight: "80vh", overflowY: "auto", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }}>
@@ -295,6 +296,10 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
                     <span style={{ color: "#F0F0F0" }}>{counts[st]}人</span>
                   </div>
                 ))}
+                <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>
+                  <span style={{ color: "rgba(255,255,255,0.4)", fontWeight: 700, fontSize: "11px" }}>未回答</span>
+                  <span style={{ color: "#F0F0F0" }}>{noAnswerCount}人</span>
+                </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {(members ?? []).map(m => {
