@@ -8,6 +8,7 @@ import type { GenreKey } from "../lib/types";
 import { useSwipeBack } from "../lib/useSwipeBack";
 import { showToast } from "./Toast";
 import { PracticeScheduleList, type Member } from "./PracticeScheduleList";
+import { ChoreographyPartList } from "./ChoreographyPartList";
 
 const ACCENT = "#DC2626";
 
@@ -63,6 +64,8 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
   const [applying, setApplying] = useState(false);
   // 参加申請したユーザー一覧（練習日程を追加の上に表示する。参加状況にも使う）
   const [applicants, setApplicants] = useState<{ id: string; dancer_name: string; avatar_url: string | null; instagram: string | null }[] | null>(null);
+  // 練習日程 / 担当振付タブ
+  const [tab, setTab] = useState<"schedule" | "choreo">("schedule");
 
   useEffect(() => {
     if (isOwn) { setIsMember(true); return; }
@@ -101,6 +104,8 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
     ...(members ?? []).filter(m => m.isCreator),
     ...(applicants ?? []).map(a => ({ id: a.id, dancer_name: a.dancer_name, avatar_url: a.avatar_url, instagram: a.instagram, isCreator: false })),
   ];
+  // 担当振付で選べる候補（メンバーと同じ顔ぶれ）
+  const choreoCandidates = cardMembers.map(m => ({ id: m.id, dancer_name: m.dancer_name, avatar_url: m.avatar_url }));
 
   const handleDelete = async () => {
     if (deleting) return;
@@ -209,7 +214,22 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
                 </div>
               </div>
             )}
-            <PracticeScheduleList boardId={boardId} cardId={cardState.id} isOwn={isOwn} user={user} members={cardMembers} allowAdd={true} />
+
+            {/* 練習日程 / 担当振付タブ。参加申請したユーザーの下に置く */}
+            <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "10px", padding: "4px", marginBottom: "16px" }}>
+              {([["schedule", "練習日程"], ["choreo", "担当振付"]] as const).map(([key, label]) => (
+                <button key={key} onClick={() => setTab(key)}
+                  style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "7px", background: tab === key ? "#2A2A2A" : "transparent", color: tab === key ? "#F0F0F0" : "rgba(255,255,255,0.5)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal" }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {tab === "schedule" ? (
+              <PracticeScheduleList boardId={boardId} cardId={cardState.id} isOwn={isOwn} user={user} members={cardMembers} allowAdd={true} />
+            ) : (
+              <ChoreographyPartList cardId={cardState.id} isOwn={isOwn} candidates={choreoCandidates} />
+            )}
           </>
         ) : (
           <div style={{ textAlign: "center", padding: "40px 16px" }}>
