@@ -1,16 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Plus, X, Check, UserPlus } from "lucide-react";
+import { Plus, X, Check } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
-import { GENRES, GENRE_COLORS, genreLabel, toggleGenre, todayStr } from "../lib/constants";
-import type { GenreKey } from "../lib/types";
+import { todayStr } from "../lib/constants";
 import { Loading } from "./Loading";
 import { showToast } from "./Toast";
 import { CommunityBoardCard, type Board } from "./CommunityBoardCard";
-
-type InstructorInput = { name: string; instagram: string };
-const EMPTY_INSTRUCTOR: InstructorInput = { name: "", instagram: "" };
 
 // 「コミュニティ」タブ：みんなが自由に作れる掲示板の一覧。
 // 右上の「＋」でタイトル等を入力して新しい掲示板を作り、タップすると中身（CommunityBoardScreen）が開く
@@ -31,14 +27,10 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
   const [newStartDate, setNewStartDate] = useState("");
   const [newEndDate, setNewEndDate] = useState("");
   const [newVenue, setNewVenue] = useState("");
-  const [newGenres, setNewGenres] = useState<GenreKey[]>([]);
-  const [instructors, setInstructors] = useState<InstructorInput[]>([{ ...EMPTY_INSTRUCTOR }]);
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [followingCandidates, setFollowingCandidates] = useState<{ id: string; dancer_name: string; avatar_url: string | null }[] | null>(null);
-  const [inviteIds, setInviteIds] = useState<string[]>([]);
 
   const fetchBoards = async () => {
     const { data } = await supabase
@@ -64,42 +56,21 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
 
   useEffect(() => { fetchBoards(); fetchCommunityMembers(); }, []);
 
-  // フォロー中のアカウント一覧を取得する（招待の候補。一度取れたら使い回す）
-  const fetchFollowing = async () => {
-    if (followingCandidates !== null) return;
-    const { data } = await supabase.from("follows").select("following_id, profiles:following_id(dancer_name, avatar_url)").eq("follower_id", user.id);
-    setFollowingCandidates((data ?? []).map((r: any) => ({ id: r.following_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN", avatar_url: r.profiles?.avatar_url ?? null })));
-  };
-  const toggleInvite = (id: string) => setInviteIds(list => list.includes(id) ? list.filter(x => x !== id) : [...list, id]);
-
-  const openCreate = () => { setShowCreate(true); fetchFollowing(); };
+  const openCreate = () => { setShowCreate(true); };
 
   const resetForm = () => {
-    setNewTitle(""); setNewSubtitle(""); setNewStartDate(""); setNewEndDate(""); setNewVenue(""); setNewGenres([]);
-    setInstructors([{ ...EMPTY_INSTRUCTOR }]);
-    setInviteIds([]);
+    setNewTitle(""); setNewSubtitle(""); setNewStartDate(""); setNewEndDate(""); setNewVenue("");
   };
-
-  const updateInstructor = (i: number, field: keyof InstructorInput, value: string) => {
-    setInstructors(list => list.map((ins, idx) => idx === i ? { ...ins, [field]: value } : ins));
-  };
-  const addInstructor = () => setInstructors(list => [...list, { ...EMPTY_INSTRUCTOR }]);
-  const removeInstructor = (i: number) => setInstructors(list => list.filter((_, idx) => idx !== i));
 
   // カードの編集ボタン：フォームに既存の内容を詰めて、作成と同じモーダルを編集モードで開く
-  const startEdit = async (b: Board) => {
+  const startEdit = (b: Board) => {
     setEditingId(b.id);
     setNewTitle(b.title);
     setNewSubtitle(b.subtitle ?? "");
     setNewStartDate(b.event_start_date ?? "");
     setNewEndDate(b.event_end_date ?? "");
     setNewVenue(b.venue ?? "");
-    setNewGenres(b.genre ? [b.genre] : []);
-    setInstructors(b.instructors.length > 0 ? b.instructors.map(ins => ({ name: ins.name, instagram: ins.instagram ?? "" })) : [{ ...EMPTY_INSTRUCTOR }]);
     setShowCreate(true);
-    fetchFollowing();
-    const { data } = await supabase.from("community_board_invites").select("user_id").eq("board_id", b.id);
-    setInviteIds((data ?? []).map((r: any) => r.user_id));
   };
 
   const closeModal = () => { setShowCreate(false); setEditingId(null); resetForm(); };
@@ -115,26 +86,11 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
       // 2日目は1日目より後の日を選んだ時だけ意味がある値として保存する
       event_end_date: newEndDate && newEndDate > newStartDate ? newEndDate : null,
       venue: newVenue.trim() || null,
-      genre: newGenres[0] ?? null,
     };
-    // 名前を入れた講師だけ登録する（空欄の行は無視）
-    const validInstructors = instructors.map(ins => ({ name: ins.name.trim(), instagram: ins.instagram.trim() })).filter(ins => ins.name);
 
     if (editingId) {
       const { error } = await supabase.from("community_boards").update(fields).eq("id", editingId);
       if (error) { console.error("community_boards update error:", error); showToast(`保存に失敗しました: ${error.message}`); setCreating(false); return; }
-      // 講師は一旦全部消してから今のフォームの内容で入れ直す（作成者しか触れないのでRLS上も問題ない）
-      await supabase.from("community_board_instructors").delete().eq("board_id", editingId);
-      if (validInstructors.length > 0) {
-        await supabase.from("community_board_instructors").insert(
-          validInstructors.map((ins, i) => ({ board_id: editingId, name: ins.name, instagram: ins.instagram || null, sort_order: i }))
-        );
-      }
-      // 招待リストも同様に一旦全部消してから入れ直す
-      await supabase.from("community_board_invites").delete().eq("board_id", editingId);
-      if (inviteIds.length > 0) {
-        await supabase.from("community_board_invites").insert(inviteIds.map(uid => ({ board_id: editingId, user_id: uid })));
-      }
       setCreating(false);
       closeModal();
       fetchBoards();
@@ -142,20 +98,11 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
     }
 
     // IDは先にこちら側で作って渡す。insertの直後に.select()で読み返すと、
-    // 「招待されている人だけ見える」の閲覧ポリシーが自分自身の閲覧確認にも働いてしまい、
-    // 作成自体が失敗することがあるため（作成直後はまだ招待リストが空で、閲覧ポリシーの
-    // 判定に間に合わないケースがある）、読み返しをせず済むようにする
+    // 閲覧ポリシーの判定が作成直後の自分自身の閲覧確認にも働いてしまい、
+    // 作成自体が失敗することがあるため、読み返しをせず済むようにする
     const newId = crypto.randomUUID();
     const { error } = await supabase.from("community_boards").insert({ ...fields, id: newId, creator_id: user.id });
     if (error) { console.error("community_boards insert error:", error); showToast(`作成に失敗しました: ${error.message}`); setCreating(false); return; }
-    if (validInstructors.length > 0) {
-      await supabase.from("community_board_instructors").insert(
-        validInstructors.map((ins, i) => ({ board_id: newId, name: ins.name, instagram: ins.instagram || null, sort_order: i }))
-      );
-    }
-    if (inviteIds.length > 0) {
-      await supabase.from("community_board_invites").insert(inviteIds.map(uid => ({ board_id: newId, user_id: uid })));
-    }
     setCreating(false);
     closeModal();
     fetchBoards();
@@ -241,17 +188,6 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
               <div><label style={lbl}>サブタイトル（任意）</label>
                 <input value={newSubtitle} onChange={e => setNewSubtitle(e.target.value)} placeholder="例: 〜集大成〜" maxLength={80} style={inp} />
               </div>
-              <div>
-                <label style={lbl}>ジャンル（任意）</label>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "7px" }}>
-                  {GENRES.map(g => { const sel = newGenres.includes(g); const col = GENRE_COLORS[g]; return (
-                    <button key={g} onClick={() => setNewGenres(list => toggleGenre(list, g))}
-                      style={{ padding: "6px 12px", border: sel ? `1px solid ${col}` : "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
-                      {genreLabel(g)}
-                    </button>
-                  ); })}
-                </div>
-              </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                 <div><label style={lbl}>開催日 1日目（任意）</label>
                   <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={newStartDate} onChange={e => { setNewStartDate(e.target.value); if (newEndDate && newEndDate < e.target.value) setNewEndDate(""); }} /></div>
@@ -262,55 +198,6 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
               </div>
               <div><label style={lbl}>公演会場（任意）</label>
                 <input value={newVenue} onChange={e => setNewVenue(e.target.value)} placeholder="例: 渋谷〇〇ホール" maxLength={100} style={inp} />
-              </div>
-
-              <div>
-                <label style={lbl}>講師（任意・複数登録できます）</label>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {instructors.map((ins, i) => (
-                    <div key={i} style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
-                        <input value={ins.name} onChange={e => updateInstructor(i, "name", e.target.value)} placeholder="講師名" maxLength={30} style={inp} />
-                        <div style={{ position: "relative" }}>
-                          <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.4)", fontSize: "13px" }}>@</span>
-                          <input value={ins.instagram} onChange={e => updateInstructor(i, "instagram", e.target.value)} placeholder="Instagram（任意）" maxLength={60} style={{ ...inp, paddingLeft: "26px" }} />
-                        </div>
-                      </div>
-                      {instructors.length > 1 && (
-                        <button onClick={() => removeInstructor(i)} title="この講師を削除" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", padding: "4px", flexShrink: 0 }}><X size={15} /></button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <button onClick={addInstructor} style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "5px", background: "none", border: "1px dashed rgba(255,255,255,0.25)", borderRadius: "6px", padding: "7px 10px", color: "rgba(255,255,255,0.6)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
-                  <UserPlus size={13} /> 講師を追加
-                </button>
-              </div>
-
-              <div>
-                <label style={lbl}>招待するアカウント（フォロー中・任意）</label>
-                {followingCandidates === null ? (
-                  <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif" }}>読み込み中...</div>
-                ) : followingCandidates.length === 0 ? (
-                  <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif" }}>フォロー中のアカウントがいません</div>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", maxHeight: "160px", overflowY: "auto" }}>
-                    {followingCandidates.map(f => {
-                      const sel = inviteIds.includes(f.id);
-                      return (
-                        <button key={f.id} onClick={() => toggleInvite(f.id)} type="button"
-                          style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 8px", borderRadius: "8px", border: sel ? "1px solid #DC2626" : "1px solid rgba(255,255,255,0.1)", background: sel ? "rgba(220,38,38,0.12)" : "transparent", cursor: "pointer", textAlign: "left" }}>
-                          <div style={{ width: "26px", height: "26px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
-                            {f.avatar_url ? <img src={f.avatar_url} alt={f.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : f.dancer_name[0]?.toUpperCase()}
-                          </div>
-                          <span style={{ flex: 1, fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{f.dancer_name}</span>
-                          {sel && <Check size={14} color="#DC2626" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-                <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "5px" }}>招待した人だけがこの掲示板を見られます</div>
               </div>
             </div>
 
