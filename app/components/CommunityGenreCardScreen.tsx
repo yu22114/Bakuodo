@@ -38,7 +38,7 @@ export function InstructorList({ instructors }: { instructors: { name: string; i
 
 // 練習カードをタップして開く画面。中身は練習日程の追加・一覧（PracticeScheduleList）だけ。
 // 閲覧は誰でもできるが、書き換えられるのは掲示板の作成者だけ
-export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, onBack, onDeleted, onUpdated }: {
+export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, onBack, onDeleted, onUpdated, onViewProfile }: {
   card: GenreCard;
   boardId: string;
   isOwn: boolean;
@@ -47,6 +47,7 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
   onBack: () => void;
   onDeleted: (cardId: string) => void; // カード削除後、親のカード一覧から消してもらう
   onUpdated: (card: GenreCard) => void; // カード編集後、親のカード一覧にも反映してもらう
+  onViewProfile?: (id: string) => void;
 }) {
   const swipeBack = useSwipeBack(onBack);
   const [cardState, setCardState] = useState(card);
@@ -191,12 +192,13 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
                 <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>参加申請したユーザー</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
                   {applicants.map(a => (
-                    <div key={a.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", width: "56px" }}>
+                    <button key={a.id} onClick={() => onViewProfile?.(a.id)}
+                      style={{ background: "none", border: "none", cursor: onViewProfile ? "pointer" : "default", padding: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", width: "56px" }}>
                       <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
                         {a.avatar_url ? <img src={a.avatar_url} alt={a.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : a.dancer_name[0]?.toUpperCase()}
                       </div>
                       <span title={a.dancer_name} style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "56px" }}>{a.dancer_name}</span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>

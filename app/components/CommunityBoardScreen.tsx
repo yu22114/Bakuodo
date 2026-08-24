@@ -17,7 +17,7 @@ const EMPTY_INSTRUCTOR: DraftInstructor = { name: "", instagram: "" };
 
 // マイコミュニティのカードを押すと開く画面。中身は練習カードの一覧（タップすると中の練習日程を見られる）。
 // 閲覧は誰でもできるが、書き換えられるのは作成者だけ
-export function CommunityBoardScreen({ board, user, onBack }: {
+export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
   board: { id: string; title: string };
   user: SupabaseUser;
   onBack: () => void;
@@ -239,35 +239,8 @@ export function CommunityBoardScreen({ board, user, onBack }: {
             </div>
           )}
 
-          {/* 個人用アカウント：参加を申請できるカード。タイトル・講師・ジャンルは見えるが中には入れず、
-              申請ボタンだけを出す。申請すると下の「練習カード」一覧に移る */}
-          {!isOwn && genreCards !== null && myCardIds !== null && unjoinedCards.length > 0 && (
-            <div style={{ marginBottom: "16px" }}>
-              <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>参加を申請できるカード</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {unjoinedCards.map(card => {
-                  const genreColor = card.genre && (GENRE_COLORS as Record<string, string>)[card.genre] ? (GENRE_COLORS as Record<string, string>)[card.genre] : "#DC2626";
-                  return (
-                    <div key={card.id} style={{ width: "100%", boxSizing: "border-box", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
-                        <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: genreColor, flexShrink: 0 }} />
-                        <span style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.title}</span>
-                      </div>
-                      <div style={{ paddingLeft: "14px" }}>
-                        <InstructorList instructors={card.instructors.length > 0 ? card.instructors : card.instructor_name ? [{ name: card.instructor_name, instagram: card.instructor_instagram }] : []} />
-                      </div>
-                      <button onClick={() => applyToCard(card.id)} disabled={applyingCardId === card.id}
-                        style={{ marginTop: "10px", width: "100%", padding: "9px", border: "none", borderRadius: "8px", background: "#DC2626", color: "#fff", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", opacity: applyingCardId === card.id ? 0.6 : 1 }}>
-                        {applyingCardId === card.id ? "申請中..." : "参加を申請する"}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* 練習カードの一覧（参加申請済みのカードだけ）。タップするとその中の練習日程を見る画面が開く */}
+          {/* 練習カードの一覧（参加申請済みのカードだけ）。参加中のカードを優先して上に出す。
+              タップするとその中の練習日程を見る画面が開く */}
           {genreCards === null || (!isOwn && myCardIds === null) ? (
             <Loading />
           ) : joinedCards.length === 0 ? (
@@ -319,6 +292,34 @@ export function CommunityBoardScreen({ board, user, onBack }: {
             </div>
           )}
 
+          {/* 個人用アカウント：参加を申請できるカード。参加中のカードより下に置く。
+              タイトル・講師・ジャンルは見えるが中には入れず、申請ボタンだけを出す */}
+          {!isOwn && genreCards !== null && myCardIds !== null && unjoinedCards.length > 0 && (
+            <div style={{ marginTop: "16px" }}>
+              <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>参加を申請できるカード</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {unjoinedCards.map(card => {
+                  const genreColor = card.genre && (GENRE_COLORS as Record<string, string>)[card.genre] ? (GENRE_COLORS as Record<string, string>)[card.genre] : "#DC2626";
+                  return (
+                    <div key={card.id} style={{ width: "100%", boxSizing: "border-box", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+                        <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: genreColor, flexShrink: 0 }} />
+                        <span style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.title}</span>
+                      </div>
+                      <div style={{ paddingLeft: "14px" }}>
+                        <InstructorList instructors={card.instructors.length > 0 ? card.instructors : card.instructor_name ? [{ name: card.instructor_name, instagram: card.instructor_instagram }] : []} />
+                      </div>
+                      <button onClick={() => applyToCard(card.id)} disabled={applyingCardId === card.id}
+                        style={{ marginTop: "10px", width: "100%", padding: "9px", border: "none", borderRadius: "8px", background: "#DC2626", color: "#fff", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", opacity: applyingCardId === card.id ? 0.6 : 1 }}>
+                        {applyingCardId === card.id ? "申請中..." : "参加を申請する"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* 練習カードを作る前に登録された既存の練習日程。カードが無いだけで消してはいない */}
           <PracticeScheduleList boardId={board.id} cardId={null} isOwn={isOwn} user={user} members={members} allowAdd={false} heading="カード未設定" />
           </>
@@ -351,6 +352,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
           onBack={() => { setOpenCard(null); fetchScheduleCounts(); }}
           onDeleted={cardId => setGenreCards(list => (list ?? []).filter(c => c.id !== cardId))}
           onUpdated={updated => setGenreCards(list => (list ?? []).map(c => c.id === updated.id ? updated : c))}
+          onViewProfile={onViewProfile}
         />
       )}
     </div>
