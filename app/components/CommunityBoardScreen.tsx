@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, Plus, Trash2 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
-import { GENRES, GENRE_COLORS, genreLabel, toggleGenre, normalizeInstagramUrl } from "../lib/constants";
+import { GENRES, GENRE_COLORS, genreLabel, toggleGenre, normalizeInstagramUrl, instagramHandle } from "../lib/constants";
 import type { GenreKey } from "../lib/types";
 import { useSwipeBack } from "../lib/useSwipeBack";
 import { Loading } from "./Loading";
@@ -180,29 +180,40 @@ export function CommunityBoardScreen({ board, user, onBack }: {
               {genreCards.map(card => {
                 const genreColor = card.genre && (GENRE_COLORS as Record<string, string>)[card.genre] ? (GENRE_COLORS as Record<string, string>)[card.genre] : "#DC2626";
                 const count = scheduleCounts[card.id] ?? 0;
+                // 背景に敷くジャンル名。ホーム画面のCYPHERカードと同じ仕組み（右下に大きく薄く）
+                const genreText = card.genre ? genreLabel(card.genre).toUpperCase() : "";
                 return (
                   <button key={card.id} onClick={() => setOpenCard(card)}
-                    style={{ width: "100%", boxSizing: "border-box", textAlign: "left", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px", cursor: "pointer" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
-                        <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: genreColor, flexShrink: 0 }} />
-                        <span style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.title}</span>
-                        {count > 0 && <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.4)", flexShrink: 0 }}>全{count}件</span>}
-                      </div>
-                      {isOwn && (
-                        <span onClick={e => { e.stopPropagation(); setDeleteCardTarget(card.id); }} title="カードを削除"
-                          style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", cursor: "pointer", color: "rgba(255,255,255,0.4)", padding: "5px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          <Trash2 size={13} />
-                        </span>
-                      )}
-                    </div>
-                    {/* 講師名・Instagram・ジャンルは、設定されているものだけ出す */}
-                    {(card.instructor_name || card.genre) && (
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginTop: "6px", paddingLeft: "14px" }}>
-                        {card.instructor_name && <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)" }}>講師: {card.instructor_name}</span>}
-                        {card.genre && <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "20px", background: `${genreColor}15`, color: genreColor, fontFamily: "'Noto Sans JP',sans-serif" }}>{genreLabel(card.genre)}</span>}
+                    style={{ width: "100%", boxSizing: "border-box", textAlign: "left", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }}>
+                    {card.genre && (
+                      <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", fontSize: `${Math.round(Math.min(68, Math.round(360 / genreText.length)) * 1.1)}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: genreColor + "40", pointerEvents: "none", userSelect: "none" }}>
+                        {genreText}
                       </div>
                     )}
+                    <div style={{ position: "relative" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+                          <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: genreColor, flexShrink: 0 }} />
+                          <span style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.title}</span>
+                          {count > 0 && <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.4)", flexShrink: 0 }}>全{count}件</span>}
+                        </div>
+                        {isOwn && (
+                          <span onClick={e => { e.stopPropagation(); setDeleteCardTarget(card.id); }} title="カードを削除"
+                            style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", cursor: "pointer", color: "rgba(255,255,255,0.4)", padding: "5px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <Trash2 size={13} />
+                          </span>
+                        )}
+                      </div>
+                      {/* 講師名・その下にInstagramアカウントを表示する。設定されているものだけ出す */}
+                      {card.instructor_name && (
+                        <div style={{ marginTop: "6px", paddingLeft: "14px" }}>
+                          <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)" }}>講師: {card.instructor_name}</div>
+                          {card.instructor_instagram && (
+                            <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#A855F7", marginTop: "2px" }}>@{instagramHandle(card.instructor_instagram)}</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </button>
                 );
               })}

@@ -67,6 +67,16 @@ export function normalizeInstagramUrl(input: string): string | null {
   return handle ? `https://instagram.com/${handle}` : null;
 }
 
+// 保存済みのInstagram URLから「@ユーザー名」表示用のハンドルだけ取り出す
+export function instagramHandle(url: string): string {
+  try {
+    const path = new URL(url).pathname.replace(/^\/+|\/+$/g, "");
+    return path || url;
+  } catch {
+    return url;
+  }
+}
+
 // CYPHER=#DC2626 / LESSON=#2563EB / SPOTS=#16A34A（TopScreenのセクションタブ色）とは
 // 意味の異なる塊なので、ジャンル色に同じ色を使わないようにしている
 export const GENRE_COLORS: Record<GenreKey, string> = {
