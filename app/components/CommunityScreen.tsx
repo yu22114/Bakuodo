@@ -13,11 +13,15 @@ const EMPTY_INSTRUCTOR: InstructorInput = { name: "", instagram: "" };
 
 // 「コミュニティ」タブ：みんなが自由に作れる掲示板の一覧。
 // 右上の「＋」でタイトル等を入力して新しい掲示板を作り、タップすると中身（CommunityBoardScreen）が開く
-export function CommunityScreen({ user, onOpenBoard }: {
+export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
   user: SupabaseUser;
   onOpenBoard: (board: { id: string; title: string }) => void;
+  onViewProfile?: (id: string) => void;
 }) {
   const [boards, setBoards] = useState<Board[] | null>(null);
+  // プロフィール画面の「マイコミュニティ」ボタンで追加したメンバー。この画面の見出しと同じ名前なので、
+  // ここにも一覧を出す（community_membersテーブル。詳細はPublicProfileScreen参照）
+  const [communityMembers, setCommunityMembers] = useState<{ id: string; dancer_name: string; avatar_url: string | null }[] | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newSubtitle, setNewSubtitle] = useState("");
@@ -42,7 +46,20 @@ export function CommunityScreen({ user, onOpenBoard }: {
     setBoards((data as any[])?.map(b => ({ ...b, instructors: b.instructors ?? [] })) ?? []);
   };
 
-  useEffect(() => { fetchBoards(); }, []);
+  // マイコミュニティのメンバー取得（結合クエリだと名前が引けないことがあったため2段階で取る）
+  const fetchCommunityMembers = async () => {
+    const { data: memberRows } = await supabase.from("community_members").select("member_id").eq("profile_id", user.id);
+    if (!memberRows || memberRows.length === 0) { setCommunityMembers([]); return; }
+    const memberIds = memberRows.map((r: any) => r.member_id);
+    const { data: profileRows } = await supabase.from("profiles").select("id, dancer_name, avatar_url").in("id", memberIds);
+    const profileMap = new Map((profileRows ?? []).map((p: any) => [p.id, p]));
+    setCommunityMembers(memberIds.map(id => {
+      const p = profileMap.get(id);
+      return { id, dancer_name: p?.dancer_name ?? "UNKNOWN", avatar_url: p?.avatar_url ?? null };
+    }));
+  };
+
+  useEffect(() => { fetchBoards(); fetchCommunityMembers(); }, []);
 
   // フォロー中のアカウント一覧を取得する（招待の候補。一度取れたら使い回す）
   const fetchFollowing = async () => {
@@ -165,6 +182,20 @@ export function CommunityScreen({ user, onOpenBoard }: {
       </div>
 
       <div className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
+        {/* プロフィール画面の「マイコミュニティ」ボタンで追加したメンバー。1人もいなければ何も出さない */}
+        {communityMembers && communityMembers.length > 0 && (
+          <div style={{ display: "flex", gap: "14px", overflowX: "auto", paddingBottom: "16px", marginBottom: "4px" }}>
+            {communityMembers.map(m => (
+              <button key={m.id} onClick={() => onViewProfile?.(m.id)}
+                style={{ background: "none", border: "none", cursor: onViewProfile ? "pointer" : "default", padding: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: "5px", flexShrink: 0, width: "56px" }}>
+                <div style={{ width: "48px", height: "48px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
+                  {m.avatar_url ? <img src={m.avatar_url} alt={m.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : m.dancer_name[0]?.toUpperCase()}
+                </div>
+                <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "56px" }}>{m.dancer_name}</span>
+              </button>
+            ))}
+          </div>
+        )}
         {boards === null ? (
           <Loading />
         ) : boards.length === 0 ? (
