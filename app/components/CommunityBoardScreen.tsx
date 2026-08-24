@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, Plus, Trash2 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
-import { GENRES, GENRE_COLORS, genreLabel, toggleGenre } from "../lib/constants";
+import { GENRES, GENRE_COLORS, genreLabel, toggleGenre, normalizeInstagramUrl } from "../lib/constants";
 import type { GenreKey } from "../lib/types";
 import { useSwipeBack } from "../lib/useSwipeBack";
 import { Loading } from "./Loading";
@@ -90,7 +90,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
     setAddingCard(true);
     const newId = crypto.randomUUID();
     const instructor_name = newCardInstructorName.trim() || null;
-    const instructor_instagram = newCardInstagram.trim() || null;
+    const instructor_instagram = normalizeInstagramUrl(newCardInstagram);
     const genre = newCardGenre[0] ?? null;
     const { error } = await supabase.from("community_board_genre_cards").insert({ id: newId, board_id: board.id, title, instructor_name, instructor_instagram, genre });
     setAddingCard(false);
@@ -148,7 +148,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                     style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
                   <input value={newCardInstructorName} onChange={e => setNewCardInstructorName(e.target.value)} placeholder="講師の名前（任意）" maxLength={30}
                     style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
-                  <input value={newCardInstagram} onChange={e => setNewCardInstagram(e.target.value)} placeholder="講師のInstagram URL（任意）" maxLength={200} type="url" inputMode="url" autoCapitalize="none" autoCorrect="off"
+                  <input value={newCardInstagram} onChange={e => setNewCardInstagram(e.target.value)} placeholder="講師のInstagram（URLか@ユーザー名・任意）" maxLength={200} autoCapitalize="none" autoCorrect="off"
                     style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
                   <div style={{ marginTop: "8px" }}>
                     <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "5px" }}>ジャンル（任意）</label>

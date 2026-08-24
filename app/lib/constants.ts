@@ -57,6 +57,16 @@ export function genreLabel(g: string): string {
   return g.slice(0, -3).replace(/(.)\1$/, "$1");
 }
 
+// Instagramの入力欄はURLだけでなく「@ユーザー名」「instagram.com/ユーザー名」でも打てるようにし、
+// 保存前にリンクとして機能する完全なURLへそろえる（httpsが付いていないとaタグの相対リンクになって壊れるため）
+export function normalizeInstagramUrl(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const handle = trimmed.replace(/^@/, "").replace(/^(www\.)?instagram\.com\//i, "").replace(/\/+$/, "");
+  return handle ? `https://instagram.com/${handle}` : null;
+}
+
 // CYPHER=#DC2626 / LESSON=#2563EB / SPOTS=#16A34A（TopScreenのセクションタブ色）とは
 // 意味の異なる塊なので、ジャンル色に同じ色を使わないようにしている
 export const GENRE_COLORS: Record<GenreKey, string> = {

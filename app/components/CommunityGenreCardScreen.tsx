@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ChevronLeft, Trash2, Pencil, X, Check } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
-import { GENRES, GENRE_COLORS, genreLabel, toggleGenre } from "../lib/constants";
+import { GENRES, GENRE_COLORS, genreLabel, toggleGenre, normalizeInstagramUrl } from "../lib/constants";
 import type { GenreKey } from "../lib/types";
 import { useSwipeBack } from "../lib/useSwipeBack";
 import { showToast } from "./Toast";
@@ -59,7 +59,7 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
     if (!title || savingEdit) return;
     setSavingEdit(true);
     const instructor_name = editInstructorName.trim() || null;
-    const instructor_instagram = editInstagram.trim() || null;
+    const instructor_instagram = normalizeInstagramUrl(editInstagram);
     const genre = editGenre[0] ?? null;
     const { error } = await supabase.from("community_board_genre_cards").update({ title, instructor_name, instructor_instagram, genre }).eq("id", cardState.id);
     setSavingEdit(false);
@@ -121,7 +121,7 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
               style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
             <input value={editInstructorName} onChange={e => setEditInstructorName(e.target.value)} placeholder="講師の名前（任意）" maxLength={30}
               style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
-            <input value={editInstagram} onChange={e => setEditInstagram(e.target.value)} placeholder="講師のInstagram URL（任意）" maxLength={200} type="url" inputMode="url" autoCapitalize="none" autoCorrect="off"
+            <input value={editInstagram} onChange={e => setEditInstagram(e.target.value)} placeholder="講師のInstagram（URLか@ユーザー名・任意）" maxLength={200} autoCapitalize="none" autoCorrect="off"
               style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
             <div style={{ marginTop: "8px" }}>
               <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "5px" }}>ジャンル（任意）</label>
