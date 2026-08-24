@@ -37,8 +37,6 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
   const [members, setMembers] = useState<Member[] | null>(null);
   // タップして開いている練習カード（もう一段階中に入った画面）
   const [openCard, setOpenCard] = useState<GenreCard | null>(null);
-  // カード一覧に出す「全X件」のための件数だけの集計（詳細は各カードの画面で取る）
-  const [scheduleCounts, setScheduleCounts] = useState<Record<string, number>>({});
   // 個人用アカウントが参加申請済みのカードID一覧（作成者はnullのまま＝全カードにアクセスできる）
   const [myCardIds, setMyCardIds] = useState<Set<string> | null>(null);
   const [applyingCardId, setApplyingCardId] = useState<string | null>(null);
@@ -66,14 +64,6 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
     setGenreCards((data as any[])?.map(c => ({ ...c, instructors: c.instructors ?? [] })) ?? []);
   };
 
-  // カード一覧の「全X件」表示用。日程の中身は見ないのでcard_idだけ軽く取る
-  const fetchScheduleCounts = async () => {
-    const { data } = await supabase.from("community_board_practice_schedules").select("card_id").eq("board_id", board.id);
-    const counts: Record<string, number> = {};
-    (data as any[] ?? []).forEach(r => { if (r.card_id) counts[r.card_id] = (counts[r.card_id] ?? 0) + 1; });
-    setScheduleCounts(counts);
-  };
-
   // 自分が参加申請済みのカードID一覧（MYBOARDを開いた時点で取得する）
   const fetchMyCardMemberships = async () => {
     const { data } = await supabase.from("community_board_genre_card_members").select("card_id").eq("profile_id", user.id);
@@ -91,7 +81,6 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
     }
     fetchDetail();
     fetchGenreCards();
-    fetchScheduleCounts();
   }, [board.id]);
 
   const isOwn = detail?.creator_id === user.id;
@@ -251,7 +240,6 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {joinedCards.map(card => {
                 const genreColor = card.genre && (GENRE_COLORS as Record<string, string>)[card.genre] ? (GENRE_COLORS as Record<string, string>)[card.genre] : "#DC2626";
-                const count = scheduleCounts[card.id] ?? 0;
                 // 背景に敷くジャンル名。ホーム画面のCYPHERカードと同じ仕組み（右下に大きく薄く）
                 const genreText = card.genre ? genreLabel(card.genre).toUpperCase() : "";
                 return (
@@ -267,7 +255,6 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
                         <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
                           <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: genreColor, flexShrink: 0 }} />
                           <span style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.title}</span>
-                          {count > 0 && <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.4)", flexShrink: 0 }}>全{count}件</span>}
                         </div>
                         {isOwn ? (
                           <span onClick={e => { e.stopPropagation(); setDeleteCardTarget(card.id); }} title="カードを削除"
@@ -349,7 +336,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
           isOwn={isOwn}
           user={user}
           members={members}
-          onBack={() => { setOpenCard(null); fetchScheduleCounts(); }}
+          onBack={() => setOpenCard(null)}
           onDeleted={cardId => setGenreCards(list => (list ?? []).filter(c => c.id !== cardId))}
           onUpdated={updated => setGenreCards(list => (list ?? []).map(c => c.id === updated.id ? updated : c))}
           onViewProfile={onViewProfile}
