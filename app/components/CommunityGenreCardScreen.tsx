@@ -1,10 +1,12 @@
 "use client";
 import { useState } from "react";
-import { ChevronLeft, Trash2 } from "lucide-react";
+import { ChevronLeft, Trash2, Pencil, X, Check } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
-import { GENRE_COLORS, genreLabel } from "../lib/constants";
+import { GENRES, GENRE_COLORS, genreLabel, toggleGenre } from "../lib/constants";
+import type { GenreKey } from "../lib/types";
 import { useSwipeBack } from "../lib/useSwipeBack";
+import { showToast } from "./Toast";
 import { PracticeScheduleList, type Member } from "./PracticeScheduleList";
 
 const ACCENT = "#DC2626";
@@ -13,7 +15,7 @@ export type GenreCard = { id: string; title: string; instructor_name: string | n
 
 // 練習カードをタップして開く画面。中身は練習日程の追加・一覧（PracticeScheduleList）だけ。
 // 閲覧は誰でもできるが、書き換えられるのは掲示板の作成者だけ
-export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, onBack, onDeleted }: {
+export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, onBack, onDeleted, onUpdated }: {
   card: GenreCard;
   boardId: string;
   isOwn: boolean;
@@ -21,19 +23,51 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
   members: Member[] | null;
   onBack: () => void;
   onDeleted: (cardId: string) => void; // カード削除後、親のカード一覧から消してもらう
+  onUpdated: (card: GenreCard) => void; // カード編集後、親のカード一覧にも反映してもらう
 }) {
   const swipeBack = useSwipeBack(onBack);
+  const [cardState, setCardState] = useState(card);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editInstructorName, setEditInstructorName] = useState("");
+  const [editInstagram, setEditInstagram] = useState("");
+  const [editGenre, setEditGenre] = useState<GenreKey[]>([]);
+  const [savingEdit, setSavingEdit] = useState(false);
 
-  const genreColor = card.genre && (GENRE_COLORS as Record<string, string>)[card.genre] ? (GENRE_COLORS as Record<string, string>)[card.genre] : ACCENT;
+  const genreColor = cardState.genre && (GENRE_COLORS as Record<string, string>)[cardState.genre] ? (GENRE_COLORS as Record<string, string>)[cardState.genre] : ACCENT;
 
   const handleDelete = async () => {
     if (deleting) return;
     setDeleting(true);
-    const { error } = await supabase.from("community_board_genre_cards").delete().eq("id", card.id);
+    const { error } = await supabase.from("community_board_genre_cards").delete().eq("id", cardState.id);
     setDeleting(false);
-    if (!error) { onDeleted(card.id); onBack(); }
+    if (!error) { onDeleted(cardState.id); onBack(); }
+  };
+
+  const openEdit = () => {
+    setEditTitle(cardState.title);
+    setEditInstructorName(cardState.instructor_name ?? "");
+    setEditInstagram(cardState.instructor_instagram ?? "");
+    setEditGenre(cardState.genre ? [cardState.genre as GenreKey] : []);
+    setShowEdit(true);
+  };
+
+  const saveEdit = async () => {
+    const title = editTitle.trim();
+    if (!title || savingEdit) return;
+    setSavingEdit(true);
+    const instructor_name = editInstructorName.trim() || null;
+    const instructor_instagram = editInstagram.trim() || null;
+    const genre = editGenre[0] ?? null;
+    const { error } = await supabase.from("community_board_genre_cards").update({ title, instructor_name, instructor_instagram, genre }).eq("id", cardState.id);
+    setSavingEdit(false);
+    if (error) { console.error("community_board_genre_cards update error:", error); showToast(`保存に失敗しました: ${error.message}`); return; }
+    const updated = { ...cardState, title, instructor_name, instructor_instagram, genre };
+    setCardState(updated);
+    onUpdated(updated);
+    setShowEdit(false);
   };
 
   return (
@@ -44,30 +78,71 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
             <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
           </button>
           <div style={{ minWidth: 0 }}>
-            <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0", wordBreak: "break-word" }}>{card.title}</h2>
+            <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0", wordBreak: "break-word" }}>{cardState.title}</h2>
             {/* 講師名・Instagram・ジャンルは、設定されているものだけ出す */}
-            {(card.instructor_name || card.instructor_instagram || card.genre) && (
+            {(cardState.instructor_name || cardState.instructor_instagram || cardState.genre) && (
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginTop: "6px" }}>
-                {card.instructor_name && <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)" }}>講師: {card.instructor_name}</span>}
-                {card.instructor_instagram && (
-                  <a href={card.instructor_instagram} target="_blank" rel="noopener noreferrer" style={{ fontSize: "11px", color: "#A855F7", textDecoration: "none" }}>Instagram</a>
+                {cardState.instructor_name && <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)" }}>講師: {cardState.instructor_name}</span>}
+                {cardState.instructor_instagram && (
+                  <a href={cardState.instructor_instagram} target="_blank" rel="noopener noreferrer" style={{ fontSize: "11px", color: "#A855F7", textDecoration: "none" }}>Instagram</a>
                 )}
-                {card.genre && <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "20px", background: `${genreColor}15`, color: genreColor, fontFamily: "'Noto Sans JP',sans-serif" }}>{genreLabel(card.genre)}</span>}
+                {cardState.genre && <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "20px", background: `${genreColor}15`, color: genreColor, fontFamily: "'Noto Sans JP',sans-serif" }}>{genreLabel(cardState.genre)}</span>}
               </div>
             )}
           </div>
         </div>
         {isOwn && (
-          <button onClick={() => setDeleteConfirm(true)} title="カードを削除"
-            style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "rgba(255,255,255,0.6)", padding: "10px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <Trash2 size={16} />
-          </button>
+          <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
+            <button onClick={openEdit} title="カードを編集"
+              style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "rgba(255,255,255,0.6)", padding: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Pencil size={16} />
+            </button>
+            <button onClick={() => setDeleteConfirm(true)} title="カードを削除"
+              style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "rgba(255,255,255,0.6)", padding: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Trash2 size={16} />
+            </button>
+          </div>
         )}
       </div>
 
       <div className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "20px 16px" }}>
-        <PracticeScheduleList boardId={boardId} cardId={card.id} isOwn={isOwn} user={user} members={members} allowAdd={true} />
+        <PracticeScheduleList boardId={boardId} cardId={cardState.id} isOwn={isOwn} user={user} members={members} allowAdd={true} />
       </div>
+
+      {/* カードの編集モーダル。入力項目は作成時と同じ */}
+      {showEdit && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 260, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setShowEdit(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px", maxHeight: "80vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>EDIT CARD</div>
+              <button onClick={() => setShowEdit(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
+            </div>
+            <input value={editTitle} onChange={e => setEditTitle(e.target.value)} placeholder="タイトル（例: Hip-Hopクラス）" maxLength={40} autoFocus
+              style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+            <input value={editInstructorName} onChange={e => setEditInstructorName(e.target.value)} placeholder="講師の名前（任意）" maxLength={30}
+              style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+            <input value={editInstagram} onChange={e => setEditInstagram(e.target.value)} placeholder="講師のInstagram URL（任意）" maxLength={200} type="url" inputMode="url" autoCapitalize="none" autoCorrect="off"
+              style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+            <div style={{ marginTop: "8px" }}>
+              <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "5px" }}>ジャンル（任意）</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                {GENRES.map(g => { const sel = editGenre.includes(g); const col = GENRE_COLORS[g]; return (
+                  <button key={g} onClick={() => setEditGenre(list => toggleGenre(list, g))}
+                    style={{ padding: "6px 10px", border: sel ? `1px solid ${col}` : "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                    {genreLabel(g)}
+                  </button>
+                ); })}
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "16px" }}>
+              <button onClick={() => setShowEdit(false)} disabled={savingEdit} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "8px 14px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
+              <button onClick={saveEdit} disabled={!editTitle.trim() || savingEdit} style={{ background: editTitle.trim() ? ACCENT : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: editTitle.trim() ? "pointer" : "default", color: editTitle.trim() ? "#fff" : "rgba(255,255,255,0.3)", padding: "8px 14px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>
+                <Check size={13} /> {savingEdit ? "保存中..." : "保存する"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* カードの削除確認モーダル */}
       {deleteConfirm && (

@@ -240,6 +240,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
           members={members}
           onBack={() => { setOpenCard(null); fetchScheduleCounts(); }}
           onDeleted={cardId => setGenreCards(list => (list ?? []).filter(c => c.id !== cardId))}
+          onUpdated={updated => setGenreCards(list => (list ?? []).map(c => c.id === updated.id ? updated : c))}
         />
       )}
     </div>
