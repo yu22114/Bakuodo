@@ -39,9 +39,14 @@ const DRAFT_KEY = "bakuodori:post-draft:v1";
 const EMPTY_FORM: FormState = { title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [], description: "", max_members: "", payment: [], studio_fee: "" };
 const EMPTY_PL = { title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [] as string[], description: "", max_members: "", price: "", target_level: "all" };
 
-export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: string) => void; user: SupabaseUser; initialTab?: "cypher" | "pl" | "event" }) {
+export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: { onNav: (s: string) => void; user: SupabaseUser; initialTab?: "cypher" | "pl" | "event"; accountType?: string }) {
   // トップでLESSON/EVENTを見ていたならその作成フォームから始める
   const [tab, setTab] = useState<"cypher" | "pl" | "event">(initialTab);
+  // 団体用アカウントではP LESSONタブを出さない（ホーム画面と同じ扱い）
+  const visibleTabs = (["cypher", "pl", "event"] as const).filter(t => !(accountType === "organization" && t === "pl"));
+  useEffect(() => {
+    if (!visibleTabs.includes(tab)) setTab(visibleTabs[0]);
+  }, [accountType, tab]);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [isPrivate, setIsPrivate] = useState(false);
   const [requiresApproval, setRequiresApproval] = useState(false);
@@ -196,7 +201,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher" }: { onNav: (s: 
         <h2 style={{ margin: "0 0 16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>投稿する</h2>
         {/* タブはホーム画面と同じ、丸い枠の中で選択中だけ浮くセグメント風 */}
         <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "14px", padding: "4px" }}>
-          {([["cypher", "CYPHER", "#DC2626"], ["pl", "P LESSON", "#2563EB"], ["event", "EVENT", "#EAB308"]] as const).map(([key, label, color]) => (
+          {([["cypher", "CYPHER", "#DC2626"], ["pl", "P LESSON", "#2563EB"], ["event", "EVENT", "#EAB308"]] as const).filter(([key]) => visibleTabs.includes(key)).map(([key, label, color]) => (
             <button key={key} onClick={() => setTab(key)}
               style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: tab === key ? "#2A2A2A" : "transparent", boxShadow: tab === key ? "0 1px 4px rgba(255,255,255,0.08)" : "none", color: tab === key ? color : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
               {label}
