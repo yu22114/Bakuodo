@@ -61,8 +61,8 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
   // 個人用アカウントはこのカードに参加申請していないと練習日程の中身を見られない（自動承認）
   const [isMember, setIsMember] = useState<boolean | null>(isOwn ? true : null);
   const [applying, setApplying] = useState(false);
-  // 参加申請したユーザー一覧（練習日程を追加の上に表示する）
-  const [applicants, setApplicants] = useState<{ id: string; dancer_name: string; avatar_url: string | null }[] | null>(null);
+  // 参加申請したユーザー一覧（練習日程を追加の上に表示する。参加状況にも使う）
+  const [applicants, setApplicants] = useState<{ id: string; dancer_name: string; avatar_url: string | null; instagram: string | null }[] | null>(null);
 
   useEffect(() => {
     if (isOwn) { setIsMember(true); return; }
@@ -75,8 +75,8 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
       const { data: memberRows } = await supabase.from("community_board_genre_card_members").select("profile_id").eq("card_id", cardState.id);
       const ids = (memberRows ?? []).map((r: any) => r.profile_id);
       if (ids.length === 0) { setApplicants([]); return; }
-      const { data: profileRows } = await supabase.from("profiles").select("id, dancer_name, avatar_url").in("id", ids);
-      setApplicants((profileRows ?? []).map((p: any) => ({ id: p.id, dancer_name: p.dancer_name ?? "UNKNOWN", avatar_url: p.avatar_url ?? null })));
+      const { data: profileRows } = await supabase.from("profiles").select("id, dancer_name, avatar_url, instagram").in("id", ids);
+      setApplicants((profileRows ?? []).map((p: any) => ({ id: p.id, dancer_name: p.dancer_name ?? "UNKNOWN", avatar_url: p.avatar_url ?? null, instagram: p.instagram ?? null })));
     }
     fetchApplicants();
   }, [cardState.id]);
@@ -95,6 +95,12 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
   const displayInstructors = cardState.instructors.length > 0
     ? cardState.instructors
     : cardState.instructor_name ? [{ name: cardState.instructor_name, instagram: cardState.instructor_instagram }] : [];
+
+  // 参加状況（○/△/×）に出すメンバー：掲示板の作成者＋このカードに参加申請した個人用アカウント
+  const cardMembers: Member[] = [
+    ...(members ?? []).filter(m => m.isCreator),
+    ...(applicants ?? []).map(a => ({ id: a.id, dancer_name: a.dancer_name, avatar_url: a.avatar_url, instagram: a.instagram, isCreator: false })),
+  ];
 
   const handleDelete = async () => {
     if (deleting) return;
@@ -203,7 +209,7 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
                 </div>
               </div>
             )}
-            <PracticeScheduleList boardId={boardId} cardId={cardState.id} isOwn={isOwn} user={user} members={members} allowAdd={true} />
+            <PracticeScheduleList boardId={boardId} cardId={cardState.id} isOwn={isOwn} user={user} members={cardMembers} allowAdd={true} />
           </>
         ) : (
           <div style={{ textAlign: "center", padding: "40px 16px" }}>
