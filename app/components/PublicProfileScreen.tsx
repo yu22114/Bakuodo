@@ -367,6 +367,9 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     const { error } = await supabase.from("community_members").insert({ profile_id: currentUserId, member_id: mate.id });
     if (error) { showToast("追加に失敗しました"); return; }
     setCommunityMembers(m => [...m, mate]);
+    // 追加候補一覧に留まったままだと追加されたことが分かりづらいので、
+    // 名前が並ぶマイコミュニティ本体の画面に戻す
+    setPickCommunityMemberOpen(false);
   };
 
   const removeCommunityMember = async (mateId: string) => {
