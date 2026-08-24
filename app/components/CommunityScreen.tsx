@@ -139,23 +139,25 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("community_boards")
-      .insert({ ...fields, creator_id: user.id })
-      .select("id, title").single();
-    if (error || !data) { console.error("community_boards insert error:", error); showToast(`作成に失敗しました: ${error?.message ?? "不明なエラー"}`); setCreating(false); return; }
+    // IDは先にこちら側で作って渡す。insertの直後に.select()で読み返すと、
+    // 「招待されている人だけ見える」の閲覧ポリシーが自分自身の閲覧確認にも働いてしまい、
+    // 作成自体が失敗することがあるため（作成直後はまだ招待リストが空で、閲覧ポリシーの
+    // 判定に間に合わないケースがある）、読み返しをせず済むようにする
+    const newId = crypto.randomUUID();
+    const { error } = await supabase.from("community_boards").insert({ ...fields, id: newId, creator_id: user.id });
+    if (error) { console.error("community_boards insert error:", error); showToast(`作成に失敗しました: ${error.message}`); setCreating(false); return; }
     if (validInstructors.length > 0) {
       await supabase.from("community_board_instructors").insert(
-        validInstructors.map((ins, i) => ({ board_id: (data as any).id, name: ins.name, instagram: ins.instagram || null, sort_order: i }))
+        validInstructors.map((ins, i) => ({ board_id: newId, name: ins.name, instagram: ins.instagram || null, sort_order: i }))
       );
     }
     if (inviteIds.length > 0) {
-      await supabase.from("community_board_invites").insert(inviteIds.map(uid => ({ board_id: (data as any).id, user_id: uid })));
+      await supabase.from("community_board_invites").insert(inviteIds.map(uid => ({ board_id: newId, user_id: uid })));
     }
     setCreating(false);
     closeModal();
     fetchBoards();
-    onOpenBoard(data as any);
+    onOpenBoard({ id: newId, title });
   };
 
   const handleDelete = async () => {
