@@ -208,6 +208,8 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
       {schedules.length === 0 ? (
         <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", fontFamily: "'Noto Sans JP',sans-serif", padding: "2px 2px 4px" }}>まだ練習日程がありません</div>
       ) : (
+        <>
+        <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>全{schedules.length}件</div>
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {schedules.map((s, i) => {
             // 日にちが過ぎたものは灰色にして終わったことがわかるようにする。
@@ -266,6 +268,7 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
             );
           })}
         </div>
+        </>
       )}
 
       {/* 練習日程を開くと出る、誰が○/△/×を押したかの一覧 */}

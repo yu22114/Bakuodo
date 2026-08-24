@@ -195,7 +195,7 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
             {/* 参加申請したユーザー。練習日程を追加の上に出す */}
             {applicants && applicants.length > 0 && (
               <div style={{ marginBottom: "16px" }}>
-                <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>参加申請したユーザー</div>
+                <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>参加申請したユーザー（{applicants.length}人）</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
                   {applicants.map(a => (
                     <button key={a.id} onClick={() => onViewProfile?.(a.id)}
