@@ -163,8 +163,8 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
     <div>
       {heading && <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>{heading}</div>}
 
-      {/* 練習日程を追加するボタン（作成者だけ、カードに紐づく時だけ） */}
-      {isOwn && allowAdd && (
+      {/* 練習日程を追加するボタン。この掲示板が見られる人なら誰でも追加できる（カードに紐づく時だけ） */}
+      {allowAdd && (
         <div style={{ marginBottom: "12px" }}>
           {!showAddSchedule ? (
             <button onClick={() => setShowAddSchedule(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", background: "none", border: "1px dashed rgba(255,255,255,0.25)", borderRadius: "8px", padding: "10px", color: "rgba(255,255,255,0.6)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", boxSizing: "border-box" }}>
