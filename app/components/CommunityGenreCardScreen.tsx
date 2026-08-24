@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { ChevronLeft, Trash2, Pencil, X, Check } from "lucide-react";
+import { ChevronLeft, Trash2, Pencil, X, Check, UserPlus } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { GENRES, GENRE_COLORS, genreLabel, toggleGenre, normalizeInstagramUrl, instagramHandle } from "../lib/constants";
@@ -11,7 +11,30 @@ import { PracticeScheduleList, type Member } from "./PracticeScheduleList";
 
 const ACCENT = "#DC2626";
 
-export type GenreCard = { id: string; title: string; instructor_name: string | null; instructor_instagram: string | null; genre: string | null };
+export type CardInstructor = { id: string; name: string; instagram: string | null };
+type DraftInstructor = { name: string; instagram: string };
+const EMPTY_INSTRUCTOR: DraftInstructor = { name: "", instagram: "" };
+
+// instructor_name/instructor_instagramは旧仕様（講師1人だけ）の名残。消さずに残し、
+// instructorsが空の古いカードだけ表示にフォールバックで使う
+export type GenreCard = { id: string; title: string; instructor_name: string | null; instructor_instagram: string | null; genre: string | null; instructors: CardInstructor[] };
+
+// 講師名・その下にInstagramアカウントを並べて出す。空なら何も出さない
+export function InstructorList({ instructors }: { instructors: { name: string; instagram: string | null }[] }) {
+  if (instructors.length === 0) return null;
+  return (
+    <div style={{ marginTop: "6px", display: "flex", flexDirection: "column", gap: "6px" }}>
+      {instructors.map((ins, i) => (
+        <div key={i}>
+          <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)" }}>講師: {ins.name}</div>
+          {ins.instagram && (
+            <a href={ins.instagram} target="_blank" rel="noopener noreferrer" style={{ fontSize: "11px", color: "#A855F7", textDecoration: "none", display: "inline-block", marginTop: "2px" }}>@{instagramHandle(ins.instagram)}</a>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // 練習カードをタップして開く画面。中身は練習日程の追加・一覧（PracticeScheduleList）だけ。
 // 閲覧は誰でもできるが、書き換えられるのは掲示板の作成者だけ
@@ -31,12 +54,15 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
   const [deleting, setDeleting] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editTitle, setEditTitle] = useState("");
-  const [editInstructorName, setEditInstructorName] = useState("");
-  const [editInstagram, setEditInstagram] = useState("");
+  const [editInstructors, setEditInstructors] = useState<DraftInstructor[]>([{ ...EMPTY_INSTRUCTOR }]);
   const [editGenre, setEditGenre] = useState<GenreKey[]>([]);
   const [savingEdit, setSavingEdit] = useState(false);
 
   const genreColor = cardState.genre && (GENRE_COLORS as Record<string, string>)[cardState.genre] ? (GENRE_COLORS as Record<string, string>)[cardState.genre] : ACCENT;
+  // instructorsが登録されていればそちらを優先。空の古いカードだけ旧フィールドにフォールバック
+  const displayInstructors = cardState.instructors.length > 0
+    ? cardState.instructors
+    : cardState.instructor_name ? [{ name: cardState.instructor_name, instagram: cardState.instructor_instagram }] : [];
 
   const handleDelete = async () => {
     if (deleting) return;
@@ -48,23 +74,40 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
 
   const openEdit = () => {
     setEditTitle(cardState.title);
-    setEditInstructorName(cardState.instructor_name ?? "");
-    setEditInstagram(cardState.instructor_instagram ?? "");
+    setEditInstructors(
+      cardState.instructors.length > 0 ? cardState.instructors.map(i => ({ name: i.name, instagram: i.instagram ?? "" }))
+      : cardState.instructor_name ? [{ name: cardState.instructor_name, instagram: cardState.instructor_instagram ?? "" }]
+      : [{ ...EMPTY_INSTRUCTOR }]
+    );
     setEditGenre(cardState.genre ? [cardState.genre as GenreKey] : []);
     setShowEdit(true);
   };
+  const updateEditInstructor = (i: number, field: keyof DraftInstructor, value: string) => {
+    setEditInstructors(list => list.map((ins, idx) => idx === i ? { ...ins, [field]: value } : ins));
+  };
+  const addEditInstructor = () => setEditInstructors(list => [...list, { ...EMPTY_INSTRUCTOR }]);
+  const removeEditInstructor = (i: number) => setEditInstructors(list => list.filter((_, idx) => idx !== i));
 
   const saveEdit = async () => {
     const title = editTitle.trim();
     if (!title || savingEdit) return;
     setSavingEdit(true);
-    const instructor_name = editInstructorName.trim() || null;
-    const instructor_instagram = normalizeInstagramUrl(editInstagram);
     const genre = editGenre[0] ?? null;
-    const { error } = await supabase.from("community_board_genre_cards").update({ title, instructor_name, instructor_instagram, genre }).eq("id", cardState.id);
+    const { error } = await supabase.from("community_board_genre_cards").update({ title, genre }).eq("id", cardState.id);
+    if (error) { setSavingEdit(false); console.error("community_board_genre_cards update error:", error); showToast(`保存に失敗しました: ${error.message}`); return; }
+
+    // 講師は一旦全部消してから今のフォームの内容で入れ直す
+    await supabase.from("community_board_genre_card_instructors").delete().eq("card_id", cardState.id);
+    const validInstructors = editInstructors.map(ins => ({ name: ins.name.trim(), instagram: normalizeInstagramUrl(ins.instagram) })).filter(ins => ins.name);
+    const newInstructors: CardInstructor[] = validInstructors.map(ins => ({ id: crypto.randomUUID(), name: ins.name, instagram: ins.instagram }));
+    if (newInstructors.length > 0) {
+      const { error: insErr } = await supabase.from("community_board_genre_card_instructors").insert(
+        newInstructors.map((ins, i) => ({ id: ins.id, card_id: cardState.id, name: ins.name, instagram: ins.instagram, sort_order: i }))
+      );
+      if (insErr) { console.error("community_board_genre_card_instructors insert error:", insErr); showToast(`講師の保存に失敗しました: ${insErr.message}`); }
+    }
     setSavingEdit(false);
-    if (error) { console.error("community_board_genre_cards update error:", error); showToast(`保存に失敗しました: ${error.message}`); return; }
-    const updated = { ...cardState, title, instructor_name, instructor_instagram, genre };
+    const updated = { ...cardState, title, genre, instructors: newInstructors };
     setCardState(updated);
     onUpdated(updated);
     setShowEdit(false);
@@ -88,15 +131,7 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
           </button>
           <div style={{ minWidth: 0 }}>
             <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0", wordBreak: "break-word" }}>{cardState.title}</h2>
-            {/* 講師名、その下にInstagramアカウント。設定されているものだけ出す */}
-            {cardState.instructor_name && (
-              <div style={{ marginTop: "6px" }}>
-                <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)" }}>講師: {cardState.instructor_name}</div>
-                {cardState.instructor_instagram && (
-                  <a href={cardState.instructor_instagram} target="_blank" rel="noopener noreferrer" style={{ fontSize: "11px", color: "#A855F7", textDecoration: "none", display: "inline-block", marginTop: "2px" }}>@{instagramHandle(cardState.instructor_instagram)}</a>
-                )}
-              </div>
-            )}
+            <InstructorList instructors={displayInstructors} />
           </div>
         </div>
         {isOwn && (
@@ -127,11 +162,30 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
             </div>
             <input value={editTitle} onChange={e => setEditTitle(e.target.value)} placeholder="タイトル（例: Hip-Hopクラス）" maxLength={40} autoFocus
               style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
-            <input value={editInstructorName} onChange={e => setEditInstructorName(e.target.value)} placeholder="講師の名前（任意）" maxLength={30}
-              style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
-            <input value={editInstagram} onChange={e => setEditInstagram(e.target.value)} placeholder="講師のInstagram（URLか@ユーザー名・任意）" maxLength={200} autoCapitalize="none" autoCorrect="off"
-              style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
-            <div style={{ marginTop: "8px" }}>
+
+            <div style={{ marginTop: "10px" }}>
+              <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "6px" }}>講師（任意・複数登録できます）</label>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {editInstructors.map((ins, i) => (
+                  <div key={i} style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <input value={ins.name} onChange={e => updateEditInstructor(i, "name", e.target.value)} placeholder="講師名" maxLength={30}
+                        style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                      <input value={ins.instagram} onChange={e => updateEditInstructor(i, "instagram", e.target.value)} placeholder="Instagram（URLか@ユーザー名・任意）" maxLength={200} autoCapitalize="none" autoCorrect="off"
+                        style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                    {editInstructors.length > 1 && (
+                      <button onClick={() => removeEditInstructor(i)} title="この講師を削除" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", padding: "4px", flexShrink: 0 }}><X size={15} /></button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <button onClick={addEditInstructor} style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "5px", background: "none", border: "1px dashed rgba(255,255,255,0.25)", borderRadius: "6px", padding: "7px 10px", color: "rgba(255,255,255,0.6)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                <UserPlus size={13} /> 講師を追加
+              </button>
+            </div>
+
+            <div style={{ marginTop: "10px" }}>
               <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "5px" }}>ジャンル（任意）</label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {GENRES.map(g => { const sel = editGenre.includes(g); const col = GENRE_COLORS[g]; return (

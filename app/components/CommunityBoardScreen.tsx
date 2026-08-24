@@ -1,17 +1,19 @@
 "use client";
 import { useState, useEffect } from "react";
-import { ChevronLeft, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, UserPlus, X } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
-import { GENRES, GENRE_COLORS, genreLabel, toggleGenre, normalizeInstagramUrl, instagramHandle } from "../lib/constants";
+import { GENRES, GENRE_COLORS, genreLabel, toggleGenre, normalizeInstagramUrl } from "../lib/constants";
 import type { GenreKey } from "../lib/types";
 import { useSwipeBack } from "../lib/useSwipeBack";
 import { Loading } from "./Loading";
 import { showToast } from "./Toast";
 import { PracticeScheduleList, type Member } from "./PracticeScheduleList";
-import { CommunityGenreCardScreen, type GenreCard } from "./CommunityGenreCardScreen";
+import { CommunityGenreCardScreen, InstructorList, type GenreCard, type CardInstructor } from "./CommunityGenreCardScreen";
 
 type BoardDetail = { creator_id: string; subtitle: string | null };
+type DraftInstructor = { name: string; instagram: string };
+const EMPTY_INSTRUCTOR: DraftInstructor = { name: "", instagram: "" };
 
 // マイコミュニティのカードを押すと開く画面。中身は練習カードの一覧（タップすると中の練習日程を見られる）。
 // 閲覧は誰でもできるが、書き換えられるのは作成者だけ
@@ -27,8 +29,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   const [genreCards, setGenreCards] = useState<GenreCard[] | null>(null);
   const [showAddCard, setShowAddCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState("");
-  const [newCardInstructorName, setNewCardInstructorName] = useState("");
-  const [newCardInstagram, setNewCardInstagram] = useState("");
+  const [newCardInstructors, setNewCardInstructors] = useState<DraftInstructor[]>([{ ...EMPTY_INSTRUCTOR }]);
   const [newCardGenre, setNewCardGenre] = useState<GenreKey[]>([]);
   const [addingCard, setAddingCard] = useState(false);
   const [deleteCardTarget, setDeleteCardTarget] = useState<string | null>(null);
@@ -55,9 +56,11 @@ export function CommunityBoardScreen({ board, user, onBack }: {
 
   // 練習カードの一覧（作成者がタイトルを入れて作ったもの）
   const fetchGenreCards = async () => {
-    const { data } = await supabase.from("community_board_genre_cards").select("id, title, instructor_name, instructor_instagram, genre")
-      .eq("board_id", board.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true });
-    setGenreCards((data as any[]) ?? []);
+    const { data } = await supabase.from("community_board_genre_cards")
+      .select("id, title, instructor_name, instructor_instagram, genre, instructors:community_board_genre_card_instructors(id, name, instagram, sort_order)")
+      .eq("board_id", board.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true })
+      .order("sort_order", { referencedTable: "community_board_genre_card_instructors", ascending: true });
+    setGenreCards((data as any[])?.map(c => ({ ...c, instructors: c.instructors ?? [] })) ?? []);
   };
 
   // カード一覧の「全X件」表示用。日程の中身は見ないのでcard_idだけ軽く取る
@@ -83,20 +86,35 @@ export function CommunityBoardScreen({ board, user, onBack }: {
 
   const isOwn = detail?.creator_id === user.id;
 
+  const updateNewInstructor = (i: number, field: keyof DraftInstructor, value: string) => {
+    setNewCardInstructors(list => list.map((ins, idx) => idx === i ? { ...ins, [field]: value } : ins));
+  };
+  const addNewInstructor = () => setNewCardInstructors(list => [...list, { ...EMPTY_INSTRUCTOR }]);
+  const removeNewInstructor = (i: number) => setNewCardInstructors(list => list.filter((_, idx) => idx !== i));
+  const resetAddCardForm = () => { setNewCardTitle(""); setNewCardInstructors([{ ...EMPTY_INSTRUCTOR }]); setNewCardGenre([]); };
+
   // 練習カードを作る。IDは先に用意して読み返しをしない＝RLSのRETURNING問題を避ける
   const addCard = async () => {
     const title = newCardTitle.trim();
     if (!title || addingCard) return;
     setAddingCard(true);
     const newId = crypto.randomUUID();
-    const instructor_name = newCardInstructorName.trim() || null;
-    const instructor_instagram = normalizeInstagramUrl(newCardInstagram);
     const genre = newCardGenre[0] ?? null;
-    const { error } = await supabase.from("community_board_genre_cards").insert({ id: newId, board_id: board.id, title, instructor_name, instructor_instagram, genre });
+    const { error } = await supabase.from("community_board_genre_cards").insert({ id: newId, board_id: board.id, title, genre });
+    if (error) { setAddingCard(false); console.error("community_board_genre_cards insert error:", error); showToast(`カードの作成に失敗しました: ${error.message}`); return; }
+
+    // 名前を入れた講師だけ登録する（空欄の行は無視）
+    const validInstructors = newCardInstructors.map(ins => ({ name: ins.name.trim(), instagram: normalizeInstagramUrl(ins.instagram) })).filter(ins => ins.name);
+    const instructors: CardInstructor[] = validInstructors.map(ins => ({ id: crypto.randomUUID(), name: ins.name, instagram: ins.instagram }));
+    if (instructors.length > 0) {
+      const { error: insErr } = await supabase.from("community_board_genre_card_instructors").insert(
+        instructors.map((ins, i) => ({ id: ins.id, card_id: newId, name: ins.name, instagram: ins.instagram, sort_order: i }))
+      );
+      if (insErr) console.error("community_board_genre_card_instructors insert error:", insErr);
+    }
     setAddingCard(false);
-    if (error) { console.error("community_board_genre_cards insert error:", error); showToast(`カードの作成に失敗しました: ${error.message}`); return; }
-    setGenreCards(list => [...(list ?? []), { id: newId, title, instructor_name, instructor_instagram, genre }]);
-    setNewCardTitle(""); setNewCardInstructorName(""); setNewCardInstagram(""); setNewCardGenre([]); setShowAddCard(false);
+    setGenreCards(list => [...(list ?? []), { id: newId, title, instructor_name: null, instructor_instagram: null, genre, instructors }]);
+    resetAddCardForm(); setShowAddCard(false);
   };
 
   const deleteCard = async () => {
@@ -146,11 +164,30 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                 <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px" }}>
                   <input value={newCardTitle} onChange={e => setNewCardTitle(e.target.value)} placeholder="タイトル（例: Hip-Hopクラス）" maxLength={40} autoFocus
                     style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
-                  <input value={newCardInstructorName} onChange={e => setNewCardInstructorName(e.target.value)} placeholder="講師の名前（任意）" maxLength={30}
-                    style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
-                  <input value={newCardInstagram} onChange={e => setNewCardInstagram(e.target.value)} placeholder="講師のInstagram（URLか@ユーザー名・任意）" maxLength={200} autoCapitalize="none" autoCorrect="off"
-                    style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
-                  <div style={{ marginTop: "8px" }}>
+
+                  <div style={{ marginTop: "10px" }}>
+                    <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "6px" }}>講師（任意・複数登録できます）</label>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {newCardInstructors.map((ins, i) => (
+                        <div key={i} style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                            <input value={ins.name} onChange={e => updateNewInstructor(i, "name", e.target.value)} placeholder="講師名" maxLength={30}
+                              style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                            <input value={ins.instagram} onChange={e => updateNewInstructor(i, "instagram", e.target.value)} placeholder="Instagram（URLか@ユーザー名・任意）" maxLength={200} autoCapitalize="none" autoCorrect="off"
+                              style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                          </div>
+                          {newCardInstructors.length > 1 && (
+                            <button onClick={() => removeNewInstructor(i)} title="この講師を削除" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", padding: "4px", flexShrink: 0 }}><X size={15} /></button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={addNewInstructor} style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "5px", background: "none", border: "1px dashed rgba(255,255,255,0.25)", borderRadius: "6px", padding: "7px 10px", color: "rgba(255,255,255,0.6)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                      <UserPlus size={13} /> 講師を追加
+                    </button>
+                  </div>
+
+                  <div style={{ marginTop: "10px" }}>
                     <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "5px" }}>ジャンル（任意）</label>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                       {GENRES.map(g => { const sel = newCardGenre.includes(g); const col = GENRE_COLORS[g]; return (
@@ -162,7 +199,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                     </div>
                   </div>
                   <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "10px" }}>
-                    <button onClick={() => { setShowAddCard(false); setNewCardTitle(""); setNewCardInstructorName(""); setNewCardInstagram(""); setNewCardGenre([]); }} disabled={addingCard} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
+                    <button onClick={() => { setShowAddCard(false); resetAddCardForm(); }} disabled={addingCard} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
                     <button onClick={addCard} disabled={!newCardTitle.trim() || addingCard} style={{ background: newCardTitle.trim() ? "#DC2626" : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: newCardTitle.trim() ? "pointer" : "default", color: newCardTitle.trim() ? "#fff" : "rgba(255,255,255,0.3)", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>{addingCard ? "作成中..." : "作成する"}</button>
                   </div>
                 </div>
@@ -204,15 +241,10 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                           </span>
                         )}
                       </div>
-                      {/* 講師名・その下にInstagramアカウントを表示する。設定されているものだけ出す */}
-                      {card.instructor_name && (
-                        <div style={{ marginTop: "6px", paddingLeft: "14px" }}>
-                          <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)" }}>講師: {card.instructor_name}</div>
-                          {card.instructor_instagram && (
-                            <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#A855F7", marginTop: "2px" }}>@{instagramHandle(card.instructor_instagram)}</div>
-                          )}
-                        </div>
-                      )}
+                      {/* 講師名・その下にInstagramアカウントを表示する。instructorsが空の古いカードは旧フィールドにフォールバック */}
+                      <div style={{ paddingLeft: "14px" }}>
+                        <InstructorList instructors={card.instructors.length > 0 ? card.instructors : card.instructor_name ? [{ name: card.instructor_name, instagram: card.instructor_instagram }] : []} />
+                      </div>
                     </div>
                   </button>
                 );
