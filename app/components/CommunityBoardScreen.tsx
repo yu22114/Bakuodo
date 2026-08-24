@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { ChevronLeft, Plus, Trash2, UserPlus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, UserPlus, X, Check } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { GENRES, GENRE_COLORS, genreLabel, toggleGenre, normalizeInstagramUrl } from "../lib/constants";
@@ -15,15 +15,15 @@ type BoardDetail = { creator_id: string; subtitle: string | null };
 type DraftInstructor = { name: string; instagram: string };
 const EMPTY_INSTRUCTOR: DraftInstructor = { name: "", instagram: "" };
 
-// マイコミュニティのカードを押すと開く画面。中身は練習カードの一覧（タップすると中の練習日程を見られる）。
-// 閲覧は誰でもできるが、書き換えられるのは作成者だけ
+// マイコミュニティのカードを押すと開く画面。
+// 個人用アカウントは、まず参加申請の画面（カードを選んで申請する）を経てから
+// 練習カード一覧（申請済みのカードだけ）に進む。作成者はこの申請画面を挟まず直接カード一覧に入る
 export function CommunityBoardScreen({ board, user, onBack }: {
   board: { id: string; title: string };
   user: SupabaseUser;
   onBack: () => void;
   onViewProfile?: (id: string) => void;
 }) {
-  const swipeBack = useSwipeBack(onBack);
   const [detail, setDetail] = useState<BoardDetail | null>(null);
   // 練習カード（作成者がタイトルを決めて自由に作る。練習日程はこのカードの中に追加する）
   const [genreCards, setGenreCards] = useState<GenreCard[] | null>(null);
@@ -42,6 +42,13 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   // 個人用アカウントが参加申請済みのカードID一覧（作成者はnullのまま＝全カードにアクセスできる）
   const [myCardIds, setMyCardIds] = useState<Set<string> | null>(null);
   const [applyingCardId, setApplyingCardId] = useState<string | null>(null);
+  // MYBOARDと練習カード一覧の間に挟む「参加申請」画面。falseの間はこの申請画面を表示する。
+  // 作成者は申請不要なので、detailが取れた時点で自動的にtrueへ進める
+  const [showCardList, setShowCardList] = useState(false);
+  const isOwn = detail?.creator_id === user.id;
+  // ヘッダーの「戻る」：申請画面ではボード一覧（onBack）、カード一覧では個人用アカウントだけ申請画面に戻る
+  const handleBack = () => { if (!isOwn && showCardList) setShowCardList(false); else onBack(); };
+  const swipeBack = useSwipeBack(handleBack);
 
   // メンバー欄：作成者＋招待された人。両方を取ってきて1つのリストにする
   const fetchMembers = async (creatorId: string) => {
@@ -86,15 +93,15 @@ export function CommunityBoardScreen({ board, user, onBack }: {
       if (data) {
         setDetail(data as any);
         fetchMembers((data as any).creator_id);
-        if ((data as any).creator_id !== user.id) fetchMyCardMemberships();
+        // 作成者は参加申請の画面を挟まず、直接カード一覧に進む
+        if ((data as any).creator_id === user.id) setShowCardList(true);
+        else fetchMyCardMemberships();
       }
     }
     fetchDetail();
     fetchGenreCards();
     fetchScheduleCounts();
   }, [board.id]);
-
-  const isOwn = detail?.creator_id === user.id;
 
   // 参加を申請する。承認は不要ですぐに入れるようになる
   const applyToCard = async (cardId: string) => {
@@ -106,10 +113,8 @@ export function CommunityBoardScreen({ board, user, onBack }: {
     setMyCardIds(prev => new Set(prev ?? []).add(cardId));
   };
 
-  // 作成者は全カードが対象。個人用アカウントは参加申請済みのカードだけが「入れるカード」、
-  // それ以外は「参加を申請できるカード」に振り分ける
+  // 作成者は全カードが対象。個人用アカウントは参加申請済みのカードだけが「入れるカード」
   const joinedCards = isOwn ? (genreCards ?? []) : (genreCards ?? []).filter(c => myCardIds?.has(c.id));
-  const unjoinedCards = isOwn ? [] : (genreCards ?? []).filter(c => !myCardIds?.has(c.id));
 
   const updateNewInstructor = (i: number, field: keyof DraftInstructor, value: string) => {
     setNewCardInstructors(list => list.map((ins, idx) => idx === i ? { ...ins, [field]: value } : ins));
@@ -154,13 +159,16 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   return (
     <div {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }}>
       <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "flex-start", gap: "16px" }}>
-        <button onClick={onBack} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px", flexShrink: 0 }}>
+        <button onClick={handleBack} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px", flexShrink: 0 }}>
           <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
         </button>
         <div style={{ minWidth: 0 }}>
           {/* タイトル・サブタイトルは省略せず全部見えるように折り返す */}
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "8px" }}>
             <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0", wordBreak: "break-word" }}>【{board.title}】</h2>
+            {!isOwn && !showCardList && (
+              <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)" }}>参加申請</span>
+            )}
             {detail?.subtitle && (
               <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.55)", wordBreak: "break-word" }}>{detail.subtitle}</span>
             )}
@@ -171,6 +179,50 @@ export function CommunityBoardScreen({ board, user, onBack }: {
       <div className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "20px 16px" }}>
         {detail === null ? (
           <Loading />
+        ) : !isOwn && !showCardList ? (
+          /* MYBOARDと練習カード一覧の間に挟む参加申請の画面。
+             どのカードがあるか（タイトル・講師・ジャンル）はここで見て、それぞれ申請する */
+          <>
+            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.7, marginBottom: "16px" }}>
+              参加したいカードに申請してください。申請したカードだけ、この先の一覧で練習日程を見られるようになります。
+            </p>
+            {genreCards === null || myCardIds === null ? (
+              <Loading />
+            ) : genreCards.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ練習カードがありません</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {genreCards.map(card => {
+                  const genreColor = card.genre && (GENRE_COLORS as Record<string, string>)[card.genre] ? (GENRE_COLORS as Record<string, string>)[card.genre] : "#DC2626";
+                  const joined = myCardIds.has(card.id);
+                  return (
+                    <div key={card.id} style={{ width: "100%", boxSizing: "border-box", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+                        <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: genreColor, flexShrink: 0 }} />
+                        <span style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.title}</span>
+                      </div>
+                      <div style={{ paddingLeft: "14px" }}>
+                        <InstructorList instructors={card.instructors.length > 0 ? card.instructors : card.instructor_name ? [{ name: card.instructor_name, instagram: card.instructor_instagram }] : []} />
+                      </div>
+                      {joined ? (
+                        <div style={{ marginTop: "10px", width: "100%", padding: "9px", borderRadius: "8px", background: "rgba(22,163,74,0.12)", color: "#16A34A", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", boxSizing: "border-box" }}>
+                          <Check size={14} /> 申請済み
+                        </div>
+                      ) : (
+                        <button onClick={() => applyToCard(card.id)} disabled={applyingCardId === card.id}
+                          style={{ marginTop: "10px", width: "100%", padding: "9px", border: "none", borderRadius: "8px", background: "#DC2626", color: "#fff", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", opacity: applyingCardId === card.id ? 0.6 : 1 }}>
+                          {applyingCardId === card.id ? "申請中..." : "参加を申請する"}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <button onClick={() => setShowCardList(true)} style={{ marginTop: "20px", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer" }}>
+              練習カード一覧へ進む <ChevronRight size={15} />
+            </button>
+          </>
         ) : (
           <>
           {/* メンバー欄：一覧は出さず合計人数だけ表示する */}
@@ -229,34 +281,6 @@ export function CommunityBoardScreen({ board, user, onBack }: {
                   </div>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* 個人用アカウント：参加を申請できるカード。タイトル・講師・ジャンルは見えるが中には入れず、
-              申請ボタンだけを出す。申請すると下の「練習カード」一覧に移る */}
-          {!isOwn && genreCards !== null && myCardIds !== null && unjoinedCards.length > 0 && (
-            <div style={{ marginBottom: "16px" }}>
-              <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>参加を申請できるカード</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {unjoinedCards.map(card => {
-                  const genreColor = card.genre && (GENRE_COLORS as Record<string, string>)[card.genre] ? (GENRE_COLORS as Record<string, string>)[card.genre] : "#DC2626";
-                  return (
-                    <div key={card.id} style={{ width: "100%", boxSizing: "border-box", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
-                        <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: genreColor, flexShrink: 0 }} />
-                        <span style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.title}</span>
-                      </div>
-                      <div style={{ paddingLeft: "14px" }}>
-                        <InstructorList instructors={card.instructors.length > 0 ? card.instructors : card.instructor_name ? [{ name: card.instructor_name, instagram: card.instructor_instagram }] : []} />
-                      </div>
-                      <button onClick={() => applyToCard(card.id)} disabled={applyingCardId === card.id}
-                        style={{ marginTop: "10px", width: "100%", padding: "9px", border: "none", borderRadius: "8px", background: "#DC2626", color: "#fff", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", opacity: applyingCardId === card.id ? 0.6 : 1 }}>
-                        {applyingCardId === card.id ? "申請中..." : "参加を申請する"}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
             </div>
           )}
 
