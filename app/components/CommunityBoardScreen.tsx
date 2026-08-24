@@ -3,10 +3,10 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, Plus, Trash2, Pencil, Check, X, Clock, MapPin, Calendar, MessageSquare } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
-import { todayStr, TIME_OPTIONS, endTimeOptions, endTimeLabel, isNextDayEnd, DEFAULT_START_TIME, GENRES, GENRE_COLORS, genreLabel } from "../lib/constants";
-import type { GenreKey } from "../lib/types";
+import { todayStr, TIME_OPTIONS, endTimeOptions, endTimeLabel, isNextDayEnd, DEFAULT_START_TIME } from "../lib/constants";
 import { useSwipeBack } from "../lib/useSwipeBack";
 import { Loading } from "./Loading";
+import { showToast } from "./Toast";
 
 const ACCENT = "#DC2626";
 
@@ -18,7 +18,8 @@ function formatJaDate(dateStr: string) {
 }
 
 type BoardDetail = { creator_id: string; subtitle: string | null };
-type PracticeSchedule = { id: string; genre: string | null; practice_date: string; practice_time: string | null; practice_end_time: string | null; place: string | null };
+type GenreCard = { id: string; title: string };
+type PracticeSchedule = { id: string; card_id: string | null; practice_date: string; practice_time: string | null; practice_end_time: string | null; place: string | null };
 type Member = { id: string; dancer_name: string; avatar_url: string | null; instagram: string | null; isCreator: boolean };
 type AttendanceStatus = "yes" | "maybe" | "no";
 type Attendance = { status: AttendanceStatus | null; comment: string | null };
@@ -54,8 +55,15 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   const swipeBack = useSwipeBack(onBack);
   const [detail, setDetail] = useState<BoardDetail | null>(null);
   const [schedules, setSchedules] = useState<PracticeSchedule[]>([]);
-  // どのジャンルカードで追加フォームを開いているか（練習日程はジャンルカードの中に追加する）
-  const [addingGenre, setAddingGenre] = useState<GenreKey | null>(null);
+  // 練習カード（作成者がタイトルを決めて自由に作る。練習日程はこのカードの中に追加する）
+  const [genreCards, setGenreCards] = useState<GenreCard[] | null>(null);
+  const [showAddCard, setShowAddCard] = useState(false);
+  const [newCardTitle, setNewCardTitle] = useState("");
+  const [addingCard, setAddingCard] = useState(false);
+  const [deleteCardTarget, setDeleteCardTarget] = useState<string | null>(null);
+  const [deletingCard, setDeletingCard] = useState(false);
+  // どのカードで追加フォームを開いているか
+  const [addingCardId, setAddingCardId] = useState<string | null>(null);
   const [newDate, setNewDate] = useState("");
   const [newStartTime, setNewStartTime] = useState(DEFAULT_START_TIME);
   const [newEndTime, setNewEndTime] = useState("");
@@ -101,11 +109,18 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   };
 
   const fetchSchedules = async () => {
-    const { data } = await supabase.from("community_board_practice_schedules").select("id, genre, practice_date, practice_time, practice_end_time, place")
+    const { data } = await supabase.from("community_board_practice_schedules").select("id, card_id, practice_date, practice_time, practice_end_time, place")
       .eq("board_id", board.id).order("practice_date", { ascending: true }).order("practice_time", { ascending: true }).order("created_at", { ascending: true });
     const list = (data as any[]) ?? [];
     setSchedules(list);
     fetchAttendances(list.map(s => s.id));
+  };
+
+  // 練習カードの一覧（作成者がタイトルを入れて作ったもの）
+  const fetchGenreCards = async () => {
+    const { data } = await supabase.from("community_board_genre_cards").select("id, title")
+      .eq("board_id", board.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true });
+    setGenreCards((data as any[]) ?? []);
   };
 
   useEffect(() => {
@@ -118,6 +133,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
     }
     fetchDetail();
     fetchSchedules();
+    fetchGenreCards();
   }, [board.id]);
 
   // 自分の○/△/×を記録する（同じ日程に既に回答済みなら上書き。コメントは触らないので消えない）
@@ -150,20 +166,46 @@ export function CommunityBoardScreen({ board, user, onBack }: {
   const isOwn = detail?.creator_id === user.id;
 
   const addSchedule = async () => {
-    if (!newDate || addingSchedule || !addingGenre) return;
+    if (!newDate || addingSchedule || !addingCardId) return;
     setAddingSchedule(true);
     const { error } = await supabase.from("community_board_practice_schedules").insert({
-      board_id: board.id, genre: addingGenre, practice_date: newDate, practice_time: newStartTime || null, practice_end_time: newEndTime || null, place: newPlace.trim() || null,
+      board_id: board.id, card_id: addingCardId, practice_date: newDate, practice_time: newStartTime || null, practice_end_time: newEndTime || null, place: newPlace.trim() || null,
     });
     setAddingSchedule(false);
     if (!error) {
-      setNewDate(""); setNewStartTime(DEFAULT_START_TIME); setNewEndTime(""); setNewPlace(""); setAddingGenre(null);
+      setNewDate(""); setNewStartTime(DEFAULT_START_TIME); setNewEndTime(""); setNewPlace(""); setAddingCardId(null);
       fetchSchedules();
     }
   };
   const deleteSchedule = async (id: string) => {
     const { error } = await supabase.from("community_board_practice_schedules").delete().eq("id", id);
     if (!error) setSchedules(list => list.filter(s => s.id !== id));
+  };
+
+  // 練習カードを作る（タイトルだけ入力する。IDは先に用意して読み返しをしない＝RLSのRETURNING問題を避ける）
+  const addCard = async () => {
+    const title = newCardTitle.trim();
+    if (!title || addingCard) return;
+    setAddingCard(true);
+    const newId = crypto.randomUUID();
+    const { error } = await supabase.from("community_board_genre_cards").insert({ id: newId, board_id: board.id, title });
+    setAddingCard(false);
+    if (error) { console.error("community_board_genre_cards insert error:", error); showToast(`カードの作成に失敗しました: ${error.message}`); return; }
+    setGenreCards(list => [...(list ?? []), { id: newId, title }]);
+    setNewCardTitle(""); setShowAddCard(false);
+  };
+
+  const deleteCard = async () => {
+    if (!deleteCardTarget || deletingCard) return;
+    setDeletingCard(true);
+    const { error } = await supabase.from("community_board_genre_cards").delete().eq("id", deleteCardTarget);
+    setDeletingCard(false);
+    if (!error) {
+      // DB側はon delete cascadeで練習日程も一緒に消えるので、手元の一覧も合わせる
+      setGenreCards(list => (list ?? []).filter(c => c.id !== deleteCardTarget));
+      setSchedules(list => list.filter(s => s.card_id !== deleteCardTarget));
+    }
+    setDeleteCardTarget(null);
   };
 
   // 練習日程の編集：カードの✎から開く。入力欄は追加フォームと同じ内容を別モーダルで出す
@@ -242,7 +284,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
     );
   };
 
-  // 練習日程の追加フォーム。どのジャンルカードの中に追加するかはaddingGenreが持っている
+  // 練習日程の追加フォーム。どの練習カードの中に追加するかはaddingCardIdが持っている
   const renderAddForm = () => (
     <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px", marginBottom: "10px" }}>
       <input type="date" min={todayStr()} value={newDate} onChange={e => setNewDate(e.target.value)}
@@ -270,7 +312,7 @@ export function CommunityBoardScreen({ board, user, onBack }: {
       <input value={newPlace} onChange={e => setNewPlace(e.target.value)} placeholder="場所（任意）" maxLength={100}
         style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
       <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "8px" }}>
-        <button onClick={() => { setAddingGenre(null); setNewDate(""); setNewStartTime(DEFAULT_START_TIME); setNewEndTime(""); setNewPlace(""); }} disabled={addingSchedule} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
+        <button onClick={() => { setAddingCardId(null); setNewDate(""); setNewStartTime(DEFAULT_START_TIME); setNewEndTime(""); setNewPlace(""); }} disabled={addingSchedule} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
         <button onClick={addSchedule} disabled={!newDate || addingSchedule} style={{ background: newDate ? ACCENT : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: newDate ? "pointer" : "default", color: newDate ? "#fff" : "rgba(255,255,255,0.3)", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>{addingSchedule ? "追加中..." : "追加する"}</button>
       </div>
     </div>
@@ -303,48 +345,77 @@ export function CommunityBoardScreen({ board, user, onBack }: {
             <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "16px" }}>メンバー {members.length}人</div>
           )}
 
-          {/* 練習日程はジャンルごとのカードに分けて表示する。追加もそのジャンルのカードの中で行う */}
-          {GENRES.map(genre => {
-            const genreSchedules = schedules.filter(s => s.genre === genre);
-            const color = GENRE_COLORS[genre];
+          {/* 練習カードを作る（作成者だけ）。タイトルを自由に決められる */}
+          {isOwn && (
+            <div style={{ marginBottom: "16px" }}>
+              {!showAddCard ? (
+                <button onClick={() => setShowAddCard(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", background: "none", border: "1px dashed rgba(255,255,255,0.25)", borderRadius: "8px", padding: "10px", color: "rgba(255,255,255,0.6)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", boxSizing: "border-box" }}>
+                  <Plus size={14} /> カードを作る
+                </button>
+              ) : (
+                <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px" }}>
+                  <input value={newCardTitle} onChange={e => setNewCardTitle(e.target.value)} placeholder="タイトル（例: Hip-Hopクラス）" maxLength={40} autoFocus
+                    style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "8px" }}>
+                    <button onClick={() => { setShowAddCard(false); setNewCardTitle(""); }} disabled={addingCard} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
+                    <button onClick={addCard} disabled={!newCardTitle.trim() || addingCard} style={{ background: newCardTitle.trim() ? ACCENT : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: newCardTitle.trim() ? "pointer" : "default", color: newCardTitle.trim() ? "#fff" : "rgba(255,255,255,0.3)", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>{addingCard ? "作成中..." : "作成する"}</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 練習日程は練習カードごとに分けて表示する。追加もそのカードの中で行う */}
+          {genreCards === null ? (
+            <Loading />
+          ) : genreCards.length === 0 ? (
+            !isOwn && <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ練習カードがありません</div>
+          ) : genreCards.map(card => {
+            const cardSchedules = schedules.filter(s => s.card_id === card.id);
             return (
-              <div key={genre} style={{ marginBottom: "16px" }}>
+              <div key={card.id} style={{ marginBottom: "16px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: color, flexShrink: 0 }} />
-                    <span style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color }}>{genreLabel(genre)}</span>
-                    {genreSchedules.length > 0 && <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.4)" }}>全{genreSchedules.length}件</span>}
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+                    <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: ACCENT, flexShrink: 0 }} />
+                    <span style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.title}</span>
+                    {cardSchedules.length > 0 && <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.4)", flexShrink: 0 }}>全{cardSchedules.length}件</span>}
                   </div>
                   {isOwn && (
-                    <button onClick={() => { setAddingGenre(g => g === genre ? null : genre); setNewDate(""); setNewStartTime(DEFAULT_START_TIME); setNewEndTime(""); setNewPlace(""); }}
-                      style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", cursor: "pointer", color: "rgba(255,255,255,0.6)", padding: "5px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <Plus size={13} />
-                    </button>
+                    <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
+                      <button onClick={() => { setAddingCardId(id => id === card.id ? null : card.id); setNewDate(""); setNewStartTime(DEFAULT_START_TIME); setNewEndTime(""); setNewPlace(""); }}
+                        style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", cursor: "pointer", color: "rgba(255,255,255,0.6)", padding: "5px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Plus size={13} />
+                      </button>
+                      <button onClick={() => setDeleteCardTarget(card.id)} title="カードを削除"
+                        style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", cursor: "pointer", color: "rgba(255,255,255,0.4)", padding: "5px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   )}
                 </div>
 
-                {isOwn && addingGenre === genre && renderAddForm()}
+                {isOwn && addingCardId === card.id && renderAddForm()}
 
-                {genreSchedules.length === 0 ? (
+                {cardSchedules.length === 0 ? (
                   <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", fontFamily: "'Noto Sans JP',sans-serif", padding: "2px 2px 4px" }}>まだ練習日程がありません</div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    {genreSchedules.map((s, i) => renderScheduleCard(s, i))}
+                    {cardSchedules.map((s, i) => renderScheduleCard(s, i))}
                   </div>
                 )}
               </div>
             );
           })}
 
-          {/* ジャンル欄を追加する前に登録された既存の練習日程。ジャンルが無いだけで消してはいない */}
+          {/* 練習カードを作る前に登録された既存の練習日程。カードが無いだけで消してはいない */}
           {(() => {
-            const noGenre = schedules.filter(s => !s.genre);
-            if (noGenre.length === 0) return null;
+            const noCard = schedules.filter(s => !s.card_id);
+            if (noCard.length === 0) return null;
             return (
               <div style={{ marginBottom: "16px" }}>
-                <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>ジャンル未設定</div>
+                <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>カード未設定</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  {noGenre.map((s, i) => renderScheduleCard(s, i))}
+                  {noCard.map((s, i) => renderScheduleCard(s, i))}
                 </div>
               </div>
             );
@@ -410,6 +481,21 @@ export function CommunityBoardScreen({ board, user, onBack }: {
           </div>
         );
       })()}
+
+      {/* 練習カードの削除確認モーダル */}
+      {deleteCardTarget && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 260, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setDeleteCardTarget(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "12px", padding: "28px 24px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
+            <div style={{ fontSize: "28px", marginBottom: "8px" }}>🗑️</div>
+            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "20px", color: "#F0F0F0", marginBottom: "8px" }}>カードを削除</div>
+            <div style={{ fontSize: "13px", color: "#F0F0F0", marginBottom: "24px", lineHeight: "1.6" }}>削除すると、このカードの中の練習日程もすべて消えます。元に戻せません。本当に削除しますか？</div>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button onClick={() => setDeleteCardTarget(null)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#F0F0F0" }}>キャンセル</button>
+              <button onClick={deleteCard} disabled={deletingCard} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "#DC2626", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>{deletingCard ? "削除中..." : "削除する"}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* コメントを書くモーダル */}
       {commentTarget && (
