@@ -14,10 +14,12 @@ const EMPTY_INSTRUCTOR: InstructorInput = { name: "", instagram: "" };
 
 // 「コミュニティ」タブ：みんなが自由に作れる掲示板の一覧。
 // 右上の「＋」でタイトル等を入力して新しい掲示板を作り、タップすると中身（CommunityBoardScreen）が開く
-export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
+export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType }: {
   user: SupabaseUser;
   onOpenBoard: (board: { id: string; title: string }) => void;
   onViewProfile?: (id: string) => void;
+  // 掲示板の作成（＋ボタン）は団体用アカウントだけ
+  accountType?: string;
 }) {
   const [boards, setBoards] = useState<Board[] | null>(null);
   // プロフィール画面の「マイコミュニティ」ボタンで追加したメンバー。この画面の見出しと同じ名前なので、
@@ -178,10 +180,12 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
         <div>
           <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>マイコミュニティ</h2>
         </div>
-        <button onClick={openCreate} aria-label="掲示板を作る"
-          style={{ background: "#DC2626", border: "none", borderRadius: "10px", cursor: "pointer", width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "4px" }}>
-          <Plus size={20} color="#fff" />
-        </button>
+        {accountType === "organization" && (
+          <button onClick={openCreate} aria-label="掲示板を作る"
+            style={{ background: "#DC2626", border: "none", borderRadius: "10px", cursor: "pointer", width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "4px" }}>
+            <Plus size={20} color="#fff" />
+          </button>
+        )}
       </div>
 
       <div className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
