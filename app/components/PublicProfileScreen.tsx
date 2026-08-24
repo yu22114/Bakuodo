@@ -347,11 +347,26 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     setTeammates(t => t.filter(m => m.id !== mateId));
   };
 
-  // マイコミュニティのメンバー一覧（チームと同じ仕組み、テーブルだけ別）
+  // マイコミュニティのメンバー一覧（チームと同じ仕組み、テーブルだけ別）。
+  // 結合クエリ（profiles:member_id(...)）だと新しいテーブルの関係がうまく解決されず
+  // 名前が取れないことがあったため、member_idを取ってから別クエリでprofilesを引く2段階にする
   const fetchCommunityMembers = async () => {
     setCommunityMembersLoading(true);
-    const { data } = await supabase.from("community_members").select("member_id, profiles:member_id(dancer_name, avatar_url)").eq("profile_id", profileId);
-    setCommunityMembers((data ?? []).map((r: any) => ({ id: r.member_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN", avatar_url: r.profiles?.avatar_url ?? null })));
+    const { data: memberRows, error: memberErr } = await supabase.from("community_members").select("member_id").eq("profile_id", profileId);
+    if (memberErr || !memberRows || memberRows.length === 0) {
+      if (memberErr) console.error("community_members fetch error:", memberErr);
+      setCommunityMembers([]);
+      setCommunityMembersLoading(false);
+      return;
+    }
+    const memberIds = memberRows.map((r: any) => r.member_id);
+    const { data: profileRows, error: profileErr } = await supabase.from("profiles").select("id, dancer_name, avatar_url").in("id", memberIds);
+    if (profileErr) console.error("community member profiles fetch error:", profileErr);
+    const profileMap = new Map((profileRows ?? []).map((p: any) => [p.id, p]));
+    setCommunityMembers(memberIds.map(id => {
+      const p = profileMap.get(id);
+      return { id, dancer_name: p?.dancer_name ?? "UNKNOWN", avatar_url: p?.avatar_url ?? null };
+    }));
     setCommunityMembersLoading(false);
   };
 
