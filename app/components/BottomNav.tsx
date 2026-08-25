@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Home, Plus, Users, User } from "lucide-react";
+import { Home, Heart, Plus, Users, User } from "lucide-react";
 
 export function BottomNav({ current, onNav, onProfileLongPress }: { current: string; onNav: (s: string) => void; onProfileLongPress?: () => void }) {
   // マイページボタンの長押しでアカウント切り替えを開く（団体用・個人用など複数Googleアカウントの使い分け用）
@@ -38,6 +38,7 @@ export function BottomNav({ current, onNav, onProfileLongPress }: { current: str
   // ラベルは画面には出さずアイコンだけ。読み上げ用にaria-labelとしてだけ残す
   const items = [
     { id: "top", icon: <Home size={22} />, label: "ホーム" },
+    { id: "following", icon: <Heart size={22} />, label: "フォロー中" },
     { id: "post", icon: <Plus size={22} />, label: "投稿" },
     { id: "community", icon: <Users size={22} />, label: "コミュニティ" },
     { id: "profile", icon: <User size={22} />, label: "マイページ" },

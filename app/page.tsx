@@ -14,6 +14,7 @@ import { EditProfileScreen } from "./components/EditProfileScreen";
 import { EditCypherScreen } from "./components/EditCypherScreen";
 import { EditLessonScreen } from "./components/EditLessonScreen";
 import { CommunityScreen } from "./components/CommunityScreen";
+import { FollowingActivityScreen } from "./components/FollowingActivityScreen";
 import { CommunityBoardScreen } from "./components/CommunityBoardScreen";
 import { DetailModal } from "./components/DetailModal";
 import { PLDetailModal } from "./components/PLDetailModal";
@@ -279,6 +280,7 @@ export default function BakuOdori() {
         ) : (
           <>
             {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} onPLClick={setPlDetail} onViewProfile={id => setProfileStack(s => [...s, id])} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} section={topSection} onSectionChange={setTopSection} accountType={accountType} />}
+            {screen === "following" && <FollowingActivityScreen user={user} onCardClick={setDetail} onPLClick={setPlDetail} onViewProfile={id => setProfileStack(s => [...s, id])} refreshKey={refreshKey} />}
             {screen === "post"    && <PostScreen onNav={setScreen} user={user} initialTab={topSection === "pl" || topSection === "event" ? topSection : "cypher"} accountType={accountType} />}
             {screen === "profile" && <PublicProfileScreen profileId={user.id} currentUserId={user.id} onEdit={() => setScreen("edit")} onLogout={() => supabase.auth.signOut()} onViewProfile={id => setProfileStack(s => [...s, id])} onCypherClick={openCypherDetail} onLessonClick={openLessonDetail} onEditCypher={id => setEditCypherId(id)} onEditLesson={id => setEditLessonId(id)} />}
             {screen === "community" && <CommunityScreen user={user} onOpenBoard={setBoardTarget} onViewProfile={id => setProfileStack(s => [...s, id])} accountType={accountType} />}
