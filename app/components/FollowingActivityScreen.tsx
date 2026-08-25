@@ -125,16 +125,19 @@ export function FollowingActivityScreen({ user, onCardClick, onPLClick, onViewPr
     return () => { cancelled = true; };
   }, [user.id, refreshKey]);
 
-  // カードの下に「誰が参加しているか」を名前だけで並べる帯
+  // カードの下に「誰が参加しているか」を名前だけで並べる帯。
+  // 画面に収まらない人数は折り返さず、横スクロールで見られるようにする
   const ParticipantStrip = ({ participants }: { participants: FollowedParticipant[] }) => (
-    <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 4px", flexWrap: "wrap" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 4px" }}>
       <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.45)", fontFamily: "'Noto Sans JP',sans-serif", flexShrink: 0 }}>参加</span>
-      {participants.map(p => (
-        <button key={p.profile_id} onClick={() => onViewProfile?.(p.profile_id)}
-          style={{ background: "none", border: "none", cursor: onViewProfile ? "pointer" : "default", padding: 0 }}>
-          <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{p.dancer_name}</span>
-        </button>
-      ))}
+      <div className="bd-scroll" style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "2px" }}>
+        {participants.map(p => (
+          <button key={p.profile_id} onClick={() => onViewProfile?.(p.profile_id)}
+            style={{ flexShrink: 0, background: "none", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "6px", padding: "4px 10px", cursor: onViewProfile ? "pointer" : "default" }}>
+            <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", whiteSpace: "nowrap" }}>{p.dancer_name}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 
