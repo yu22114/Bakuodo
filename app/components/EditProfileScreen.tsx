@@ -17,7 +17,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
   onBack?: () => void;
 }) {
   const swipeBack = useSwipeBack(onBack);
-  const [profile, setProfile] = useState<ProfileState>({ dancer_name: "", genres: [], instagram: "", dance_years: "", age_group: "", gender: "", bio: "", playlist_url: "", team: "", account_type: "individual" });
+  const [profile, setProfile] = useState<ProfileState>({ dancer_name: "", genres: [], instagram: "", dance_years: "", age_group: "", birth_year: "", gender: "", bio: "", playlist_url: "", team: "", account_type: "individual" });
   const [isPrivate, setIsPrivate] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -33,7 +33,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
 
   useEffect(() => {
     async function fetchProfile() {
-      const { data } = await supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, gender, bio, playlist_url, team, avatar_url, is_private, account_type").eq("id", user.id).single();
+      const { data } = await supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, birth_year, gender, bio, playlist_url, team, avatar_url, is_private, account_type").eq("id", user.id).single();
       if (data) {
         setProfile({
           dancer_name: data.dancer_name ?? "",
@@ -41,6 +41,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
           instagram: data.instagram ?? "",
           dance_years: data.dance_years != null ? String(data.dance_years) : "",
           age_group: data.age_group ?? "",
+          birth_year: (data as any).birth_year != null ? String((data as any).birth_year) : "",
           gender: data.gender ?? "",
           bio: (data as any).bio ?? "",
           playlist_url: (data as any).playlist_url ?? "",
@@ -113,6 +114,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
       instagram: profile.instagram || null,
       dance_years: profile.dance_years ? Number(profile.dance_years) : null,
       age_group: profile.age_group || null,
+      birth_year: profile.birth_year ? Number(profile.birth_year) : null,
       gender: profile.gender || null,
       bio: profile.bio.trim() || null,
       playlist_url: profile.playlist_url.trim() || null,
@@ -213,6 +215,12 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
               {["10代", "20代", "30代", "40代", "50代以上"].map(a => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
+        </div>
+        <div><label style={lbl}>生まれた年（西暦・任意）</label>
+          <select style={inp} value={profile.birth_year} onChange={e => { setProfile(p => ({ ...p, birth_year: e.target.value })); setSaved(false); }}>
+            <option value="">未設定</option>
+            {Array.from({ length: new Date().getFullYear() - 1900 + 1 }, (_, i) => new Date().getFullYear() - i).map(y => <option key={y} value={y}>{y}年</option>)}
+          </select>
         </div>
         <div>
           <label style={lbl}>性別（任意）</label>

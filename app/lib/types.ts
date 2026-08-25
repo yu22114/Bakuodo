@@ -65,6 +65,7 @@ export interface ProfileState {
   instagram: string;
   dance_years: string;
   age_group: string;
+  birth_year: string;
   gender: string;
   bio: string;
   playlist_url: string;
