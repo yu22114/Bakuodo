@@ -623,7 +623,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                   {allUsers.filter(u => u.dancer_name.toLowerCase().includes(userSearch.trim().toLowerCase())).map(u => (
-                    <button key={u.id} onClick={() => onViewProfile?.(u.id)}
+                    <button key={u.id} onClick={() => { setShowAllUsers(false); onViewProfile?.(u.id); }}
                       style={{ background: "none", border: "none", cursor: onViewProfile ? "pointer" : "default", padding: "8px 4px", display: "flex", alignItems: "center", gap: "12px", textAlign: "left" }}>
                       <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
                         {u.avatar_url ? <img src={u.avatar_url} alt={u.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : u.dancer_name[0]?.toUpperCase()}
