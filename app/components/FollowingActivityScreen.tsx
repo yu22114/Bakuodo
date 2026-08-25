@@ -133,7 +133,7 @@ export function FollowingActivityScreen({ user, onCardClick, onPLClick, onViewPr
       <div className="bd-scroll" style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "2px" }}>
         {participants.map(p => (
           <button key={p.profile_id} onClick={() => onViewProfile?.(p.profile_id)}
-            style={{ flexShrink: 0, background: "none", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "6px", padding: "4px 10px", cursor: onViewProfile ? "pointer" : "default" }}>
+            style={{ flexShrink: 0, background: "none", border: "none", padding: 0, cursor: onViewProfile ? "pointer" : "default" }}>
             <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", whiteSpace: "nowrap" }}>{p.dancer_name}</span>
           </button>
         ))}
