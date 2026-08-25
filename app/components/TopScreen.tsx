@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, PrivateLesson, GenreKey } from "../lib/types";
@@ -327,13 +327,14 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       {/* ヘッダー */}
       <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
-          {/* 今日の日付は常に出しておく。ロゴを押すと月間カレンダーが開く */}
-          <div style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", letterSpacing: "0.02em" }}>{todayLabel}</div>
+          {/* 今日の日付は常に出しておく。左のカレンダーアイコンを押すと月間カレンダーが開く */}
+          <button onClick={() => { setCalendarMonthOffset(0); setShowCalendar(true); }} aria-label="カレンダーを表示"
+            style={{ justifySelf: "start", background: "none", border: "none", padding: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
+            <Calendar size={18} color="rgba(255,255,255,0.5)" />
+            <span style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", letterSpacing: "0.02em" }}>{todayLabel}</span>
+          </button>
           <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center", animation: "bdLogoRollIn 1.8s cubic-bezier(0.33,1,0.68,1) both" }}>
-            <button onClick={() => { setCalendarMonthOffset(0); setShowCalendar(true); }} aria-label="カレンダーを表示"
-              style={{ background: "none", border: "none", padding: 0, lineHeight: 0, cursor: "pointer" }}>
-              <Logo size={52} />
-            </button>
+            <Logo size={52} />
           </h1>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "4px" }}>
             {/* 検索ボタン */}
