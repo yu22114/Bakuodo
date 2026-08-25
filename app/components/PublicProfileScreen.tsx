@@ -578,7 +578,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           <div style={{ flex: 1 }}>
             <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "12px", color: "#F0F0F0" }}>{name}</h2>
             {/* 名前の位置はそのまま、右寄せにする（右端にくっつきすぎないよう少し余白を空ける） */}
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "18px", marginTop: "5px", paddingRight: "10px" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "18px", marginTop: "5px", paddingRight: "28px" }}>
               {([
                 ["フォロワー", followerCount, () => openFollowSheet("followers")],
                 ["フォロー中", followingCount, () => openFollowSheet("following")],
