@@ -70,22 +70,22 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
 
   const toggleId = (list: string[], id: string) => list.includes(id) ? list.filter(x => x !== id) : [...list, id];
 
-  // 並び替えた結果をDBに反映する（sort_orderを配列の並び順で振り直す）
+  // 並び替えた結果をDBに反映する（sort_orderを配列の並び順で振り直す）。
+  // 直接UPDATEだと「作成者 or 掲示板の作成者」しか通らないので、
+  // 「このカードを見られる人なら誰でも並び替えできる」専用のRPCを使う
   const persistOrder = async (list: ChoreoPart[]) => {
-    const results = await Promise.all(list.map((p, i) =>
-      supabase.from("community_board_choreography_parts").update({ sort_order: i }).eq("id", p.id)
-    ));
-    const err = results.find(r => r.error)?.error;
-    if (err) { console.error("choreography_parts sort_order update error:", err); showToast(`並び替えの保存に失敗しました: ${err.message}`); }
+    const { error } = await supabase.rpc("bd_reorder_choreography_parts", { p_card_id: cardId, p_ordered_ids: list.map(p => p.id) });
+    if (error) { console.error("bd_reorder_choreography_parts error:", error); showToast(`並び替えの保存に失敗しました: ${error.message}`); }
   };
 
   const clearLongPressTimer = () => {
     if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
   };
 
-  // つまみを長押し（450ms）すると並び替えモードが始まる
+  // つまみを長押し（450ms）すると並び替えモードが始まる。
+  // このリストはカードに参加申請したメンバー（or 掲示板の作成者）にしか表示されないので、
+  // ここに来ている時点で誰でも並び替えてよい
   const handleGripPointerDown = (e: React.PointerEvent<HTMLSpanElement>, id: string) => {
-    if (!isOwn) return;
     dragStartYRef.current = e.clientY;
     dragMovedRef.current = false;
     clearLongPressTimer();
@@ -293,23 +293,25 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
                       {part.eightCount != null && <>{part.eightCount}エイト・</>}担当{part.assigneeIds.length}人
                     </div>
                   </div>
-                  {canManage && (
-                    <div onClick={e => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: "2px", flexShrink: 0 }}>
-                      {isOwn && (
-                        <span
-                          onPointerDown={e => handleGripPointerDown(e, part.id)}
-                          onPointerMove={e => handleGripPointerMove(e, part.id)}
-                          onPointerUp={e => handleGripPointerUp(e, part.id)}
-                          onPointerCancel={e => handleGripPointerUp(e, part.id)}
-                          title="長押しで並び替え"
-                          style={{ cursor: "grab", color: "rgba(255,255,255,0.35)", padding: "4px", display: "flex", touchAction: "none" }}>
-                          <GripVertical size={14} />
-                        </span>
-                      )}
-                      <span onClick={() => openEdit(part)} title="編集" style={{ cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px", display: "flex" }}><Pencil size={14} /></span>
-                      <span onClick={() => setDeleteTarget(part.id)} title="削除" style={{ cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px", display: "flex" }}><Trash2 size={14} /></span>
-                    </div>
-                  )}
+                  {/* 並び替えのつまみは、この一覧を見られるメンバーなら誰でも操作できる。
+                      編集・削除は今まで通り作成者/パートを作った本人だけ */}
+                  <div onClick={e => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: "2px", flexShrink: 0 }}>
+                    <span
+                      onPointerDown={e => handleGripPointerDown(e, part.id)}
+                      onPointerMove={e => handleGripPointerMove(e, part.id)}
+                      onPointerUp={e => handleGripPointerUp(e, part.id)}
+                      onPointerCancel={e => handleGripPointerUp(e, part.id)}
+                      title="長押しで並び替え"
+                      style={{ cursor: "grab", color: "rgba(255,255,255,0.35)", padding: "4px", display: "flex", touchAction: "none" }}>
+                      <GripVertical size={14} />
+                    </span>
+                    {canManage && (
+                      <>
+                        <span onClick={() => openEdit(part)} title="編集" style={{ cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px", display: "flex" }}><Pencil size={14} /></span>
+                        <span onClick={() => setDeleteTarget(part.id)} title="削除" style={{ cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px", display: "flex" }}><Trash2 size={14} /></span>
+                      </>
+                    )}
+                  </div>
                 </button>
               )}
             </div>
