@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronLeft, Trash2, Pencil, X, Check, UserPlus } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
@@ -64,8 +64,53 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
   const [applying, setApplying] = useState(false);
   // 参加申請したユーザー一覧（練習日程を追加の上に表示する。参加状況にも使う）
   const [applicants, setApplicants] = useState<{ id: string; dancer_name: string; avatar_url: string | null; instagram: string | null }[] | null>(null);
-  // 練習日程 / 担当振付タブ
+  // 練習日程 / 担当振付タブ。左右スワイプで切り替えられる（TopScreenのタブ切り替えと同じ仕組み）
   const [tab, setTab] = useState<"schedule" | "choreo">("schedule");
+  const [tabSlideDir, setTabSlideDir] = useState<1 | -1>(1);
+  const goToTab = (next: "schedule" | "choreo") => {
+    if (next === tab) return;
+    setTabSlideDir(next === "choreo" ? 1 : -1);
+    setTab(next);
+  };
+  const TAB_ORDER = ["schedule", "choreo"] as const;
+  const slideTab = (dir: 1 | -1) => {
+    const curIdx = TAB_ORDER.indexOf(tab);
+    const nextIdx = curIdx + dir;
+    if (nextIdx < 0 || nextIdx >= TAB_ORDER.length) return;
+    goToTab(TAB_ORDER[nextIdx]);
+  };
+  const tabTouchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const handleTabTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    tabTouchStartRef.current = { x: t.clientX, y: t.clientY };
+  };
+  const handleTabTouchEnd = (e: React.TouchEvent) => {
+    const start = tabTouchStartRef.current;
+    tabTouchStartRef.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    slideTab(dx < 0 ? 1 : -1);
+  };
+  // トラックパッドの2本指横スワイプ用
+  const tabWheelAccumRef = useRef(0);
+  const tabWheelLockRef = useRef(false);
+  const tabWheelResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleTabWheel = (e: React.WheelEvent) => {
+    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+    if (tabWheelLockRef.current) return;
+    tabWheelAccumRef.current += e.deltaX;
+    if (tabWheelResetRef.current) clearTimeout(tabWheelResetRef.current);
+    tabWheelResetRef.current = setTimeout(() => { tabWheelAccumRef.current = 0; }, 150);
+    if (Math.abs(tabWheelAccumRef.current) < 80) return;
+    const dir = tabWheelAccumRef.current > 0 ? 1 : -1;
+    tabWheelAccumRef.current = 0;
+    tabWheelLockRef.current = true;
+    setTimeout(() => { tabWheelLockRef.current = false; }, 500);
+    slideTab(dir);
+  };
 
   useEffect(() => {
     if (isOwn) { setIsMember(true); return; }
@@ -191,12 +236,13 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
         )}
       </div>
 
-      <div className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "20px 16px" }}>
-        {/* 参加申請していないと練習日程の中身は見られない（作成者は常に見られる） */}
-        {isMember === null ? (
-          <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>読み込み中...</div>
-        ) : isMember ? (
-          <>
+      {/* 参加申請していないと練習日程の中身は見られない（作成者は常に見られる） */}
+      {isMember === null ? (
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>読み込み中...</div>
+      ) : isMember ? (
+        <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+          {/* 参加申請したユーザー・タブは固定。ここから下がタブの中身 */}
+          <div style={{ flexShrink: 0, padding: "20px 16px 0" }}>
             {/* 参加申請したユーザー。練習日程を追加の上に出す */}
             {applicants && applicants.length > 0 && (
               <div style={{ marginBottom: "16px" }}>
@@ -218,31 +264,38 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
             {/* 練習日程 / 担当振付タブ。参加申請したユーザーの下に置く */}
             <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "10px", padding: "4px", marginBottom: "16px" }}>
               {([["schedule", "練習日程"], ["choreo", "担当振付"]] as const).map(([key, label]) => (
-                <button key={key} onClick={() => setTab(key)}
+                <button key={key} onClick={() => goToTab(key)}
                   style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "7px", background: tab === key ? "#2A2A2A" : "transparent", color: tab === key ? "#F0F0F0" : "rgba(255,255,255,0.5)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal" }}>
                   {label}
                 </button>
               ))}
             </div>
-
-            {tab === "schedule" ? (
-              <PracticeScheduleList boardId={boardId} cardId={cardState.id} isOwn={isOwn} user={user} members={cardMembers} allowAdd={true} />
-            ) : (
-              <ChoreographyPartList cardId={cardState.id} isOwn={isOwn} user={user} candidates={choreoCandidates} />
-            )}
-          </>
-        ) : (
-          <div style={{ textAlign: "center", padding: "40px 16px" }}>
-            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.7, marginBottom: "16px" }}>
-              このカードの練習日程を見るには参加申請が必要です。
-            </p>
-            <button onClick={applyToCard} disabled={applying}
-              style={{ padding: "12px 24px", border: "none", borderRadius: "8px", background: ACCENT, color: "#fff", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", opacity: applying ? 0.6 : 1 }}>
-              {applying ? "申請中..." : "参加を申請する"}
-            </button>
           </div>
-        )}
-      </div>
+
+          {/* タブの中身。左右スワイプ（トラックパッドの横スクロールも可）で練習日程⇄担当振付を切り替えられる。
+              追加ボタンより下のカード一覧だけが、それぞれのコンポーネント内でスクロールする */}
+          <div onTouchStart={handleTabTouchStart} onTouchEnd={handleTabTouchEnd} onWheel={handleTabWheel}
+            style={{ flex: 1, minHeight: 0, padding: "0 16px 20px", display: "flex", flexDirection: "column" }}>
+            <div key={tab} style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", animation: `${tabSlideDir === 1 ? "bdSlideFromRight" : "bdSlideFromLeft"} 0.2s ease-out` }}>
+              {tab === "schedule" ? (
+                <PracticeScheduleList boardId={boardId} cardId={cardState.id} isOwn={isOwn} user={user} members={cardMembers} allowAdd={true} scrollableList />
+              ) : (
+                <ChoreographyPartList cardId={cardState.id} isOwn={isOwn} user={user} candidates={choreoCandidates} />
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 16px" }}>
+          <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.7, marginBottom: "16px", textAlign: "center" }}>
+            このカードの練習日程を見るには参加申請が必要です。
+          </p>
+          <button onClick={applyToCard} disabled={applying}
+            style={{ padding: "12px 24px", border: "none", borderRadius: "8px", background: ACCENT, color: "#fff", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", opacity: applying ? 0.6 : 1 }}>
+            {applying ? "申請中..." : "参加を申請する"}
+          </button>
+        </div>
+      )}
 
       {/* カードの編集モーダル。入力項目は作成時と同じ */}
       {showEdit && (

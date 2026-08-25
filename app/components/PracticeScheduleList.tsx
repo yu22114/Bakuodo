@@ -42,7 +42,7 @@ function circledNumber(n: number) {
 
 // 1つの練習カード（またはカード未設定欄）の中身：練習日程の追加・一覧・参加可否・コメント。
 // CommunityGenreCardScreen（カード詳細）とCommunityBoardScreen（カード未設定の欄）の両方から使う
-export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, allowAdd, heading, onCountChange }: {
+export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, allowAdd, heading, onCountChange, scrollableList }: {
   boardId: string;
   cardId: string | null; // nullは「カードを作る前に登録された既存の日程」欄
   isOwn: boolean;
@@ -51,6 +51,9 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
   allowAdd: boolean;
   heading?: string;
   onCountChange?: (n: number) => void;
+  // trueだと「追加ボタンは固定、日程カードの一覧だけがスクロールする」レイアウトになる。
+  // CommunityBoardScreenの「カード未設定」欄など、高さが決まっていない場所ではfalse（今まで通り）のまま使う
+  scrollableList?: boolean;
 }) {
   const [schedules, setSchedules] = useState<PracticeSchedule[] | null>(null);
   const [attendances, setAttendances] = useState<Record<string, Record<string, Attendance>>>({});
@@ -159,8 +162,13 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
   if (schedules === null) return allowAdd ? <Loading /> : null;
   if (!allowAdd && schedules.length === 0) return null;
 
+  // scrollableList時は「追加ボタンより上は固定、日程カードの一覧だけスクロール」の2段構成にする
+  const headerStyle: React.CSSProperties = scrollableList ? { flexShrink: 0 } : {};
+  const listWrapStyle: React.CSSProperties = scrollableList ? { flex: 1, minHeight: 0, overflowY: "auto" } : {};
+
   return (
-    <div>
+    <div style={scrollableList ? { display: "flex", flexDirection: "column", height: "100%", minHeight: 0 } : undefined}>
+      <div style={headerStyle}>
       {heading && <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>{heading}</div>}
 
       {/* 練習日程を追加するボタン。この掲示板が見られる人なら誰でも追加できる（カードに紐づく時だけ） */}
@@ -204,7 +212,9 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
           )}
         </div>
       )}
+      </div>
 
+      <div className={scrollableList ? "bd-scroll" : undefined} style={listWrapStyle}>
       {schedules.length === 0 ? (
         <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", fontFamily: "'Noto Sans JP',sans-serif", padding: "2px 2px 4px" }}>まだ練習日程がありません</div>
       ) : (
@@ -267,6 +277,7 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
           })}
         </div>
       )}
+      </div>
 
       {/* 練習日程を開くと出る、誰が○/△/×を押したかの一覧 */}
       {viewingScheduleId && (() => {
