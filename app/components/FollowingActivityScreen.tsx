@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Heart } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import type { Cypher, PrivateLesson, GenreKey } from "../lib/types";
 import { supabase } from "../../lib/supabase";
@@ -126,17 +125,13 @@ export function FollowingActivityScreen({ user, onCardClick, onPLClick, onViewPr
     return () => { cancelled = true; };
   }, [user.id, refreshKey]);
 
-  // カードの下に「誰が参加しているか」を並べる帯
+  // カードの下に「誰が参加しているか」を名前だけで並べる帯
   const ParticipantStrip = ({ participants }: { participants: FollowedParticipant[] }) => (
     <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 4px", flexWrap: "wrap" }}>
-      <Heart size={11} color="#DC2626" fill="#DC2626" style={{ flexShrink: 0 }} />
       <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.45)", fontFamily: "'Noto Sans JP',sans-serif", flexShrink: 0 }}>参加</span>
       {participants.map(p => (
         <button key={p.profile_id} onClick={() => onViewProfile?.(p.profile_id)}
-          style={{ background: "none", border: "none", cursor: onViewProfile ? "pointer" : "default", padding: 0, display: "flex", alignItems: "center", gap: "5px" }}>
-          <div style={{ width: "20px", height: "20px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
-            {p.avatar_url ? <img src={p.avatar_url} alt={p.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : p.dancer_name[0]?.toUpperCase()}
-          </div>
+          style={{ background: "none", border: "none", cursor: onViewProfile ? "pointer" : "default", padding: 0 }}>
           <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>{p.dancer_name}</span>
         </button>
       ))}
@@ -146,9 +141,7 @@ export function FollowingActivityScreen({ user, onCardClick, onPLClick, onViewPr
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
-        <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0", display: "flex", alignItems: "center", gap: "8px" }}>
-          <Heart size={24} color="#DC2626" fill="#DC2626" /> フォロー中
-        </h2>
+        <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>フォロー中</h2>
         <p style={{ margin: "6px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif" }}>
           フォローしている人が参加するCYPHER・EVENTをまとめて見られます
         </p>
