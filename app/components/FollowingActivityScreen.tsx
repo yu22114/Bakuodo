@@ -145,9 +145,6 @@ export function FollowingActivityScreen({ user, onCardClick, onPLClick, onViewPr
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
         <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>フォロー中</h2>
-        <p style={{ margin: "6px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif" }}>
-          フォローしている人が参加するCYPHER・EVENTをまとめて見られます
-        </p>
       </div>
 
       <div className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
