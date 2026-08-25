@@ -343,7 +343,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
           </button>
           {/* ロゴを押すと登録済みユーザーが全員出てくる */}
           <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center", animation: "bdLogoRollIn 1.8s cubic-bezier(0.33,1,0.68,1) both" }}>
-            <button onClick={() => setShowAllUsers(true)} aria-label="ユーザー一覧を表示"
+            <button onClick={() => setShowAllUsers(true)} aria-label="全ユーザーを表示"
               style={{ background: "none", border: "none", padding: 0, lineHeight: 0, cursor: "pointer" }}>
               <Logo size={52} />
             </button>
@@ -598,7 +598,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setShowAllUsers(false)}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "#141414", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px", maxHeight: "80vh", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexShrink: 0 }}>
-              <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", letterSpacing: "0.05em" }}>ユーザー一覧{allUsers ? `（${allUsers.length}人）` : ""}</span>
+              <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", letterSpacing: "0.05em" }}>全ユーザー{allUsers ? `（${allUsers.length}人）` : ""}</span>
               <button onClick={() => setShowAllUsers(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={20} /></button>
             </div>
             <div className="bd-scroll" style={{ overflowY: "auto" }}>
