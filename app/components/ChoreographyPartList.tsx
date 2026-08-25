@@ -1,6 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
-import { Plus, Trash2, Pencil, Check, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Plus, Trash2, Pencil, Check, X, GripVertical } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { showToast } from "./Toast";
@@ -35,6 +35,22 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
   // タップすると開く「誰が一緒に踊るか」の一覧
   const [viewingPartId, setViewingPartId] = useState<string | null>(null);
 
+  // 並び替え（つまみを長押し→ドラッグ）用の状態。掲示板の作成者だけが並び替えできる
+  // （他人が作ったパートのsort_orderまでは更新できないため）
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOffsetY, setDragOffsetY] = useState(0);
+  const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const partsRef = useRef<ChoreoPart[] | null>(null);
+  useEffect(() => { partsRef.current = parts; }, [parts]);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragStartYRef = useRef(0);
+  const dragOriginTopRef = useRef(0);
+  const dragHeightRef = useRef(0);
+  const dragMovedRef = useRef(false);
+  const orderChangedRef = useRef(false);
+  const activePointerIdRef = useRef<number | null>(null);
+  useEffect(() => () => { if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current); }, []);
+
   const fetchParts = async () => {
     const { data: partRows } = await supabase.from("community_board_choreography_parts").select("id, title, eight_count, created_by")
       .eq("card_id", cardId).order("sort_order", { ascending: true }).order("created_at", { ascending: true });
@@ -54,6 +70,94 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
 
   const toggleId = (list: string[], id: string) => list.includes(id) ? list.filter(x => x !== id) : [...list, id];
 
+  // 並び替えた結果をDBに反映する（sort_orderを配列の並び順で振り直す）
+  const persistOrder = async (list: ChoreoPart[]) => {
+    const results = await Promise.all(list.map((p, i) =>
+      supabase.from("community_board_choreography_parts").update({ sort_order: i }).eq("id", p.id)
+    ));
+    const err = results.find(r => r.error)?.error;
+    if (err) { console.error("choreography_parts sort_order update error:", err); showToast(`並び替えの保存に失敗しました: ${err.message}`); }
+  };
+
+  const clearLongPressTimer = () => {
+    if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
+  };
+
+  // つまみを長押し（450ms）すると並び替えモードが始まる
+  const handleGripPointerDown = (e: React.PointerEvent<HTMLSpanElement>, id: string) => {
+    if (!isOwn) return;
+    dragStartYRef.current = e.clientY;
+    dragMovedRef.current = false;
+    clearLongPressTimer();
+    longPressTimerRef.current = setTimeout(() => {
+      if (dragMovedRef.current) return;
+      const el = itemRefs.current.get(id);
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      dragOriginTopRef.current = rect.top;
+      dragHeightRef.current = rect.height;
+      activePointerIdRef.current = e.pointerId;
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
+      orderChangedRef.current = false;
+      setDraggingId(id);
+      setDragOffsetY(0);
+      if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(15);
+    }, 450);
+  };
+
+  // 指を動かした分だけカードを追従させ、隣のカードの中央を超えたら順番を入れ替える
+  const handleGripPointerMove = (e: React.PointerEvent<HTMLSpanElement>, id: string) => {
+    const dy = e.clientY - dragStartYRef.current;
+    if (draggingId !== id) {
+      if (Math.abs(dy) > 10) { clearLongPressTimer(); dragMovedRef.current = true; }
+      return;
+    }
+    e.preventDefault();
+    setDragOffsetY(dy);
+    const draggedCenter = dragOriginTopRef.current + dy + dragHeightRef.current / 2;
+    setParts(list => {
+      if (!list) return list;
+      const idx = list.findIndex(p => p.id === id);
+      if (idx === -1) return list;
+      let swapIdx = -1;
+      if (idx > 0) {
+        const prevEl = itemRefs.current.get(list[idx - 1].id);
+        if (prevEl) {
+          const r = prevEl.getBoundingClientRect();
+          if (draggedCenter < r.top + r.height / 2) swapIdx = idx - 1;
+        }
+      }
+      if (swapIdx === -1 && idx < list.length - 1) {
+        const nextEl = itemRefs.current.get(list[idx + 1].id);
+        if (nextEl) {
+          const r = nextEl.getBoundingClientRect();
+          if (draggedCenter > r.top + r.height / 2) swapIdx = idx + 1;
+        }
+      }
+      if (swapIdx === -1) return list;
+      const next = [...list];
+      [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
+      orderChangedRef.current = true;
+      return next;
+    });
+  };
+
+  const handleGripPointerUp = (e: React.PointerEvent<HTMLSpanElement>, id: string) => {
+    clearLongPressTimer();
+    if (draggingId === id) {
+      if (activePointerIdRef.current != null) {
+        try { e.currentTarget.releasePointerCapture(activePointerIdRef.current); } catch {}
+      }
+      activePointerIdRef.current = null;
+      setDraggingId(null);
+      setDragOffsetY(0);
+      if (orderChangedRef.current) {
+        orderChangedRef.current = false;
+        if (partsRef.current) persistOrder(partsRef.current);
+      }
+    }
+  };
+
   // パートを作る。IDは先に用意して読み返しをしない＝RLSのRETURNING問題を避ける
   const addPart = async () => {
     const title = newTitle.trim();
@@ -61,7 +165,8 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
     setAdding(true);
     const newId = crypto.randomUUID();
     const eightCount = newEightCount ? Number(newEightCount) : null;
-    const { error } = await supabase.from("community_board_choreography_parts").insert({ id: newId, card_id: cardId, title, eight_count: eightCount, created_by: user.id });
+    const sortOrder = parts?.length ?? 0; // 新しいパートは常に一番下に追加する
+    const { error } = await supabase.from("community_board_choreography_parts").insert({ id: newId, card_id: cardId, title, eight_count: eightCount, created_by: user.id, sort_order: sortOrder });
     if (error) { setAdding(false); console.error("community_board_choreography_parts insert error:", error); showToast(`パートの作成に失敗しました: ${error.message}`); return; }
     if (newAssigneeIds.length > 0) {
       const { error: aErr } = await supabase.from("community_board_choreography_assignees").insert(newAssigneeIds.map(pid => ({ part_id: newId, profile_id: pid })));
@@ -165,8 +270,19 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
           {parts.map(part => {
             // 編集・削除できるのは掲示板の作成者、またはこのパートを作った本人
             const canManage = isOwn || part.createdBy === user.id;
+            const dragging = draggingId === part.id;
             return (
-            <div key={part.id} style={{ width: "100%", boxSizing: "border-box", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px" }}>
+            <div key={part.id}
+              ref={el => { if (el) itemRefs.current.set(part.id, el); else itemRefs.current.delete(part.id); }}
+              style={{
+                width: "100%", boxSizing: "border-box", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)",
+                border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px",
+                position: dragging ? "relative" : undefined,
+                zIndex: dragging ? 5 : undefined,
+                transform: dragging ? `translateY(${dragOffsetY}px) scale(1.02)` : undefined,
+                boxShadow: dragging ? "0 10px 26px rgba(0,0,0,0.55)" : undefined,
+                transition: dragging ? "none" : "box-shadow 0.15s ease",
+              }}>
               {editingId === part.id ? (
                 renderForm(editTitle, setEditTitle, editEightCount, setEditEightCount, editAssigneeIds, setEditAssigneeIds, () => setEditingId(null), saveEdit, savingEdit)
               ) : (
@@ -178,7 +294,18 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
                     </div>
                   </div>
                   {canManage && (
-                    <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: "2px", flexShrink: 0 }}>
+                    <div onClick={e => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: "2px", flexShrink: 0 }}>
+                      {isOwn && (
+                        <span
+                          onPointerDown={e => handleGripPointerDown(e, part.id)}
+                          onPointerMove={e => handleGripPointerMove(e, part.id)}
+                          onPointerUp={e => handleGripPointerUp(e, part.id)}
+                          onPointerCancel={e => handleGripPointerUp(e, part.id)}
+                          title="長押しで並び替え"
+                          style={{ cursor: "grab", color: "rgba(255,255,255,0.35)", padding: "4px", display: "flex", touchAction: "none" }}>
+                          <GripVertical size={14} />
+                        </span>
+                      )}
                       <span onClick={() => openEdit(part)} title="編集" style={{ cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px", display: "flex" }}><Pencil size={14} /></span>
                       <span onClick={() => setDeleteTarget(part.id)} title="削除" style={{ cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px", display: "flex" }}><Trash2 size={14} /></span>
                     </div>
