@@ -144,6 +144,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   // ロゴを押すと登録済みユーザー一覧を出す
   const [showAllUsers, setShowAllUsers] = useState(false);
   const [allUsers, setAllUsers] = useState<{ id: string; dancer_name: string; avatar_url: string | null; instagram: string | null }[] | null>(null);
+  const [userSearch, setUserSearch] = useState("");
   useEffect(() => {
     if (!showAllUsers) return;
     supabase.from("profiles").select("id, dancer_name, avatar_url, instagram").order("dancer_name", { ascending: true }).then(({ data }) => {
@@ -343,7 +344,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
           </button>
           {/* ロゴを押すと登録済みユーザーが全員出てくる */}
           <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center", animation: "bdLogoRollIn 1.8s cubic-bezier(0.33,1,0.68,1) both" }}>
-            <button onClick={() => setShowAllUsers(true)} aria-label="全ユーザーを表示"
+            <button onClick={() => { setUserSearch(""); setShowAllUsers(true); }} aria-label="全ユーザーを表示"
               style={{ background: "none", border: "none", padding: 0, lineHeight: 0, cursor: "pointer" }}>
               <Logo size={52} />
             </button>
@@ -593,22 +594,35 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         </div>
       )}
 
-      {/* ロゴから開く、登録済みユーザーの全員一覧 */}
+      {/* ロゴから開く、登録済みユーザーの全員一覧。左右・下は画面端から離して浮かせ、
+          カード面はホーム画面のカードと同じメタリック調のグラデーションにする */}
       {showAllUsers && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setShowAllUsers(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "#141414", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px", maxHeight: "80vh", display: "flex", flexDirection: "column" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "448px", margin: "0 auto", padding: "0 16px 16px", boxSizing: "border-box" }}>
+          <div style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", padding: "24px 20px", maxHeight: "75vh", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexShrink: 0 }}>
               <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", letterSpacing: "0.05em" }}>全ユーザー{allUsers ? `（${allUsers.length}人）` : ""}</span>
               <button onClick={() => setShowAllUsers(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={20} /></button>
             </div>
+            {/* 名前で検索 */}
+            <div style={{ position: "relative", marginBottom: "14px", flexShrink: 0 }}>
+              <Search size={14} color="rgba(255,255,255,0.35)" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)" }} />
+              <input
+                value={userSearch}
+                onChange={e => setUserSearch(e.target.value)}
+                placeholder="名前で検索"
+                style={{ width: "100%", padding: "10px 12px 10px 36px", background: "#1A1A1A", color: "#F0F0F0", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+              />
+              {userSearch && <button onClick={() => setUserSearch("")} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "2px" }}><X size={14} /></button>}
+            </div>
             <div className="bd-scroll" style={{ overflowY: "auto" }}>
               {allUsers === null ? (
                 <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>読み込み中...</div>
-              ) : allUsers.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>ユーザーがいません</div>
+              ) : allUsers.filter(u => u.dancer_name.toLowerCase().includes(userSearch.trim().toLowerCase())).length === 0 ? (
+                <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>{userSearch.trim() ? "該当するユーザーがいません" : "ユーザーがいません"}</div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  {allUsers.map(u => (
+                  {allUsers.filter(u => u.dancer_name.toLowerCase().includes(userSearch.trim().toLowerCase())).map(u => (
                     <button key={u.id} onClick={() => onViewProfile?.(u.id)}
                       style={{ background: "none", border: "none", cursor: onViewProfile ? "pointer" : "default", padding: "8px 4px", display: "flex", alignItems: "center", gap: "12px", textAlign: "left" }}>
                       <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
@@ -623,6 +637,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
                 </div>
               )}
             </div>
+          </div>
           </div>
         </div>
       )}
