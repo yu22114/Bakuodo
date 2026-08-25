@@ -189,7 +189,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "70vh", gap: "16px", background: "#000000" }}>
       <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: postedAccent + "26", border: `2px solid ${postedAccent}`, display: "flex", alignItems: "center", justifyContent: "center" }}><Check size={32} color={postedAccent} /></div>
       <p style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "28px", color: postedAccent, margin: 0 }}>
-        POSTED {tab === "cypher" ? "CYPHER" : tab === "pl" ? "P LESSON" : "EVENT"}!
+        POSTED {tab === "cypher" ? "CYPHER" : tab === "pl" ? "LESSON" : "EVENT"}!
       </p>
     </div>
   );
@@ -201,7 +201,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
         <h2 style={{ margin: "0 0 16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>投稿する</h2>
         {/* タブはホーム画面と同じ、丸い枠の中で選択中だけ浮くセグメント風 */}
         <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "14px", padding: "4px" }}>
-          {([["cypher", "CYPHER", "#DC2626"], ["pl", "P LESSON", "#2563EB"], ["event", "EVENT", "#EAB308"]] as const).filter(([key]) => visibleTabs.includes(key)).map(([key, label, color]) => (
+          {([["cypher", "CYPHER", "#DC2626"], ["pl", "LESSON", "#2563EB"], ["event", "EVENT", "#EAB308"]] as const).filter(([key]) => visibleTabs.includes(key)).map(([key, label, color]) => (
             <button key={key} onClick={() => setTab(key)}
               style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: tab === key ? "#2A2A2A" : "transparent", boxShadow: tab === key ? "0 1px 4px rgba(255,255,255,0.08)" : "none", color: tab === key ? color : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
               {label}

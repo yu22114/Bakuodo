@@ -22,10 +22,9 @@ const SECTION_COLOR: Record<TopSection, string> = {
   event: "#EAB308",
   spots: "#16A34A",
 };
-// pl だけ「P」と「LESSON」の間に少しだけ隙間を空ける（詰まって読みにくいとのフィードバックのため）
 const SECTION_LABEL: Record<TopSection, string> = {
   cypher: "CYPHER",
-  pl: "P LESSON",
+  pl: "LESSON",
   event: "EVENT",
   spots: "SPOTS",
 };
@@ -142,6 +141,15 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   // スポット申請フォーム（載っていない練習場所をユーザーが送る）
   const [spotForm, setSpotForm] = useState<{ name: string; location: string; note: string } | null>(null);
   const [spotSending, setSpotSending] = useState(false);
+  // ロゴを押すと登録済みユーザー一覧を出す
+  const [showAllUsers, setShowAllUsers] = useState(false);
+  const [allUsers, setAllUsers] = useState<{ id: string; dancer_name: string; avatar_url: string | null; instagram: string | null }[] | null>(null);
+  useEffect(() => {
+    if (!showAllUsers) return;
+    supabase.from("profiles").select("id, dancer_name, avatar_url, instagram").order("dancer_name", { ascending: true }).then(({ data }) => {
+      setAllUsers((data as any[])?.map(p => ({ id: p.id, dancer_name: p.dancer_name || "UNKNOWN", avatar_url: p.avatar_url ?? null, instagram: p.instagram ?? null })) ?? []);
+    });
+  }, [showAllUsers]);
 
   useEffect(() => {
     async function fetchCyphers() {
@@ -333,8 +341,12 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             <Calendar size={18} color="rgba(255,255,255,0.5)" />
             <span style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", letterSpacing: "0.02em" }}>{todayLabel}</span>
           </button>
+          {/* ロゴを押すと登録済みユーザーが全員出てくる */}
           <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center", animation: "bdLogoRollIn 1.8s cubic-bezier(0.33,1,0.68,1) both" }}>
-            <Logo size={52} />
+            <button onClick={() => setShowAllUsers(true)} aria-label="ユーザー一覧を表示"
+              style={{ background: "none", border: "none", padding: 0, lineHeight: 0, cursor: "pointer" }}>
+              <Logo size={52} />
+            </button>
           </h1>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "4px" }}>
             {/* 検索ボタン */}
@@ -576,6 +588,40 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ロゴから開く、登録済みユーザーの全員一覧 */}
+      {showAllUsers && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setShowAllUsers(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "#141414", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px", maxHeight: "80vh", display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexShrink: 0 }}>
+              <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", letterSpacing: "0.05em" }}>ユーザー一覧{allUsers ? `（${allUsers.length}人）` : ""}</span>
+              <button onClick={() => setShowAllUsers(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={20} /></button>
+            </div>
+            <div className="bd-scroll" style={{ overflowY: "auto" }}>
+              {allUsers === null ? (
+                <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>読み込み中...</div>
+              ) : allUsers.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>ユーザーがいません</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  {allUsers.map(u => (
+                    <button key={u.id} onClick={() => onViewProfile?.(u.id)}
+                      style={{ background: "none", border: "none", cursor: onViewProfile ? "pointer" : "default", padding: "8px 4px", display: "flex", alignItems: "center", gap: "12px", textAlign: "left" }}>
+                      <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
+                        {u.avatar_url ? <img src={u.avatar_url} alt={u.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : u.dancer_name[0]?.toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <span style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{u.dancer_name}</span>
+                        {u.instagram && <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#A855F7" }}>@{u.instagram}</span>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

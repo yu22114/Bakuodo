@@ -699,7 +699,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                     )}
                     {joinedPlList.length > 0 && (
                       <div style={{ marginBottom: joinedEventList.length > 0 ? "12px" : 0 }}>
-                        <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#2563EB", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#2563EB14", borderRadius: "3px", margin: "0 0 6px 2px" }}>P LESSON</div>
+                        <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#2563EB", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#2563EB14", borderRadius: "3px", margin: "0 0 6px 2px" }}>LESSON</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                           {joinedPlList.map(l => renderJoinedRow(l, "#2563EB", onLessonClick))}
                         </div>
@@ -751,7 +751,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                     )}
                     {hostedPlList.length > 0 && (
                       <div style={{ marginBottom: hostedEventList.length > 0 ? "12px" : 0 }}>
-                        <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#2563EB", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#2563EB14", borderRadius: "3px", margin: "0 0 6px 2px" }}>P LESSON</div>
+                        <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#2563EB", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#2563EB14", borderRadius: "3px", margin: "0 0 6px 2px" }}>LESSON</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                           {hostedPlList.map(l => renderLessonRow(l, false))}
                         </div>
