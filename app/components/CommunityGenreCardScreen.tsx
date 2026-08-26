@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabase";
 import { GENRES, GENRE_COLORS, genreLabel, toggleGenre, normalizeInstagramUrl, instagramHandle } from "../lib/constants";
 import type { GenreKey } from "../lib/types";
 import { useSwipeBack } from "../lib/useSwipeBack";
+import { useSwipeTabs } from "../lib/useSwipeTabs";
 import { showToast } from "./Toast";
 import { PracticeScheduleList, type Member } from "./PracticeScheduleList";
 import { ChoreographyPartList } from "./ChoreographyPartList";
@@ -73,27 +74,18 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
     setTab(next);
   };
   const TAB_ORDER = ["schedule", "choreo"] as const;
+  const canSlideTab = (dir: 1 | -1) => {
+    const nextIdx = TAB_ORDER.indexOf(tab) + dir;
+    return nextIdx >= 0 && nextIdx < TAB_ORDER.length;
+  };
   const slideTab = (dir: 1 | -1) => {
     const curIdx = TAB_ORDER.indexOf(tab);
     const nextIdx = curIdx + dir;
     if (nextIdx < 0 || nextIdx >= TAB_ORDER.length) return;
     goToTab(TAB_ORDER[nextIdx]);
   };
-  const tabTouchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const handleTabTouchStart = (e: React.TouchEvent) => {
-    const t = e.touches[0];
-    tabTouchStartRef.current = { x: t.clientX, y: t.clientY };
-  };
-  const handleTabTouchEnd = (e: React.TouchEvent) => {
-    const start = tabTouchStartRef.current;
-    tabTouchStartRef.current = null;
-    if (!start) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - start.x;
-    const dy = t.clientY - start.y;
-    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    slideTab(dx < 0 ? 1 : -1);
-  };
+  // 指の動きに追従する慣性・跳ね返り（バウンス）付きスワイプ
+  const swipe = useSwipeTabs({ canSwipe: canSlideTab, onSwipe: slideTab });
   // トラックパッドの2本指横スワイプ用
   const tabWheelAccumRef = useRef(0);
   const tabWheelLockRef = useRef(false);
@@ -274,14 +266,16 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
 
           {/* タブの中身。左右スワイプ（トラックパッドの横スクロールも可）で練習日程⇄担当振付を切り替えられる。
               追加ボタンより下のカード一覧だけが、それぞれのコンポーネント内でスクロールする */}
-          <div onTouchStart={handleTabTouchStart} onTouchEnd={handleTabTouchEnd} onWheel={handleTabWheel}
+          <div onTouchStart={swipe.onTouchStart} onTouchMove={swipe.onTouchMove} onTouchEnd={swipe.onTouchEnd} onWheel={handleTabWheel}
             style={{ flex: 1, minHeight: 0, padding: "0 16px 20px", display: "flex", flexDirection: "column" }}>
+            <div style={{ ...swipe.style, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
             <div key={tab} style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", animation: `${tabSlideDir === 1 ? "bdSlideFromRight" : "bdSlideFromLeft"} 0.2s ease-out` }}>
               {tab === "schedule" ? (
                 <PracticeScheduleList boardId={boardId} cardId={cardState.id} isOwn={isOwn} user={user} members={cardMembers} allowAdd={true} scrollableList />
               ) : (
                 <ChoreographyPartList cardId={cardState.id} isOwn={isOwn} user={user} candidates={choreoCandidates} />
               )}
+            </div>
             </div>
           </div>
         </div>

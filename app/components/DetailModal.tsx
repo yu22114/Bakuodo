@@ -8,6 +8,7 @@ import { formatDate, timeUntil, formatEndTime, timeAgo, splitLocation, GENRE_COL
 import { ParticipantBar } from "./ParticipantBar";
 import { showToast } from "./Toast";
 import { useComments } from "../lib/useComments";
+import { hapticTap } from "../lib/haptics";
 
 export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewProfile, user, keepOpenOnJoin }: {
   cypher: Cypher | null;
@@ -171,6 +172,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
               <div style={{ position: "relative", marginTop: "20px" }}>
                 {justJoined && <div aria-hidden="true" style={{ position: "absolute", inset: 0, borderRadius: "6px", border: "2px solid #16A34A", animation: "bdJoinRing 0.7s ease-out", pointerEvents: "none" }} />}
                 <button onClick={() => {
+                  hapticTap();
                   // 「参加する」（承認不要・直接参加）を押した瞬間だけ、閉じる前にエフェクトを一瞬見せる
                   const isDirectJoin = !joined && !pending && !cypher.requires_approval;
                   onJoin(cypher.id);

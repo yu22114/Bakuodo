@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabase";
 import type { PrivateLesson, ParticipantProfile } from "../lib/types";
 import { formatDate, timeUntil, formatEndTime, timeAgo, splitLocation, GENRE_COLORS, genreLabel } from "../lib/constants";
 import { useComments } from "../lib/useComments";
+import { hapticTap } from "../lib/haptics";
 import type { EventApplicationAnswers } from "../lib/participation";
 import { ParticipantBar } from "./ParticipantBar";
 import { showToast } from "./Toast";
@@ -114,6 +115,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
 
   const submitApply = () => {
     if (!answerDancerName.trim() || !answerEmail.trim() || !answerPhone.trim()) return;
+    hapticTap();
     onJoin(lesson.id, { dancerName: answerDancerName.trim(), email: answerEmail.trim(), phone: answerPhone.trim() });
     setShowApplyForm(false);
     if (!keepOpenOnJoin) onClose();
@@ -236,6 +238,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
               <div style={{ position: "relative", marginTop: "20px" }}>
                 {justJoined && <div aria-hidden="true" style={{ position: "absolute", inset: 0, borderRadius: "6px", border: "2px solid #16A34A", animation: "bdJoinRing 0.7s ease-out", pointerEvents: "none" }} />}
                 <button onClick={() => {
+                  hapticTap();
                   // EVENTへの新規申請だけ、先に必須項目を聞くフォームを挟む
                   if (isEvent && !joined && !pending) { setShowApplyForm(true); return; }
                   // 承認不要の直接申し込みを押した瞬間だけ、閉じる前にエフェクトを一瞬見せる

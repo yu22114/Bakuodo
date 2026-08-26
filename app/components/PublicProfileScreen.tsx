@@ -7,6 +7,7 @@ import { formatDate, timeUntil } from "../lib/constants";
 import { GenreBadge } from "./GenreBadge";
 import { Loading } from "./Loading";
 import { showToast } from "./Toast";
+import { useSwipeTabs } from "../lib/useSwipeTabs";
 
 // 「参加/主催」タブの並び順。左右スワイプで隣のタブに切り替える時に使う
 const CYPHER_TAB_ORDER = ["joined", "hosted"] as const;
@@ -42,7 +43,6 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [cypherTab, setCypherTab] = useState<"joined" | "hosted">("joined");
   // 「参加/主催」タブの左右スワイプ切り替え（ホーム画面のタブ切り替えと同じ仕組み）
   const [tabSlideDir, setTabSlideDir] = useState<1 | -1>(1);
-  const tabTouchStartRef = useRef<{ x: number; y: number } | null>(null);
   const tabWheelAccumRef = useRef(0);
   const tabWheelLockRef = useRef(false);
   const tabWheelResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -63,21 +63,15 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     }
     goToCypherTab(CYPHER_TAB_ORDER[nextIdx]);
   };
-  const handleTabTouchStart = (e: React.TouchEvent) => {
-    const t = e.touches[0];
-    tabTouchStartRef.current = { x: t.clientX, y: t.clientY };
+  // slideCypherTabが実際に何か（タブ切り替え or 戻る）を行うかどうかの判定。
+  // 指の動きに追従する慣性・跳ね返り（バウンス）付きスワイプに使う
+  const canSlideCypherTab = (dir: 1 | -1): boolean => {
+    if (!isOwn) return dir === -1;
+    const nextIdx = CYPHER_TAB_ORDER.indexOf(cypherTab) + dir;
+    if (nextIdx < 0 || nextIdx >= CYPHER_TAB_ORDER.length) return dir === -1;
+    return true;
   };
-  const handleTabTouchEnd = (e: React.TouchEvent) => {
-    const start = tabTouchStartRef.current;
-    tabTouchStartRef.current = null;
-    if (!start) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - start.x;
-    const dy = t.clientY - start.y;
-    // 横移動が閾値未満、または縦移動の方が大きい場合はスクロール操作とみなして無視
-    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    slideCypherTab(dx < 0 ? 1 : -1);
-  };
+  const swipe = useSwipeTabs({ canSwipe: canSlideCypherTab, onSwipe: slideCypherTab });
   // トラックパッドの2本指横スワイプはtouchではなくwheel(deltaX)で飛んでくるので別途拾う
   const handleTabWheel = (e: React.WheelEvent) => {
     if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // 縦スクロールは触らない
@@ -676,9 +670,11 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         </div>
       )}
 
-      {/* カード一覧。上下スクロールに加えて、左右スワイプで参加/主催タブを切り替えられる */}
-      <div className="bd-scroll" onTouchStart={handleTabTouchStart} onTouchEnd={handleTabTouchEnd} onWheel={handleTabWheel}
-        style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any, padding: "6px 16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+      {/* カード一覧。上下スクロールに加えて、左右スワイプで参加/主催タブを切り替えられる
+          （指の動きに追従する慣性・跳ね返り付き。端まで行くと「戻る」に一本化する） */}
+      <div className="bd-scroll" onTouchStart={swipe.onTouchStart} onTouchMove={swipe.onTouchMove} onTouchEnd={swipe.onTouchEnd} onWheel={handleTabWheel}
+        style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any, padding: "6px 16px" }}>
+        <div style={{ ...swipe.style, display: "flex", flexDirection: "column", gap: "8px" }}>
         {loading ? (
           <Loading />
         ) : (<>
@@ -789,6 +785,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           {/* 下の固定ナビに隠れないための余白（自分のプロフィールタブ表示時のみ） */}
           {!onBack && <div style={{ height: "80px", flexShrink: 0 }} />}
         </>)}
+        </div>
       </div>
 
       {/* 参加者一覧シート */}

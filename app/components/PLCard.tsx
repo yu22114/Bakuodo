@@ -17,18 +17,24 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
   const { station, venue } = splitLocation(lesson.location);
   const until = timeUntil(lesson.starts_at);
   const [hover, setHover] = useState(false);
+  // 押している間だけ、カードがわずかに傾く（指で押さえた物理カードのような質感）
+  const [pressed, setPressed] = useState(false);
   // イベントもこのカードを使い回す。青(レッスン)と紫(イベント)だけ切り替える
   const accent = lesson.kind === "event" ? "#EAB308" : "#2563EB";
   const color = GENRE_COLORS[lesson.genres[0]] ?? accent;
   const isEnded = until === "終了";
+  const cardTransform = pressed
+    ? "perspective(600px) rotateX(3deg) rotateY(-2deg) scale(0.98)"
+    : hover ? "translateY(-3px)" : "none";
 
   // 登場アニメは外側、ホバーの動きは内側（CypherCardと同じ理由）
   return (
     <div style={{ animation: `bdCardFloatIn 0.45s ease-out ${Math.min(index * 60, 400)}ms both` }}>
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      onPointerDown={() => setPressed(true)} onPointerUp={() => setPressed(false)} onPointerLeave={() => setPressed(false)} onPointerCancel={() => setPressed(false)}
       // タッチ端末はホバーできないので、PCのホバー時と同じ色付き影を@media(hover:none)で常時出す
       className="bd-glow-card-blue"
-      style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: `1px solid ${hover ? accent + "4D" : "rgba(255,255,255,0.14)"}`, borderRadius: "10px", padding: "8px 16px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: (hover ? "0 6px 12px rgba(0,0,0,0.3), 0 18px 36px " + accent + "2E, " : "0 2px 4px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2), ") + "inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.5)", opacity: isEnded ? 0.55 : 1 }}>
+      style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: `1px solid ${hover ? accent + "4D" : "rgba(255,255,255,0.14)"}`, borderRadius: "10px", padding: "8px 16px", cursor: "pointer", transition: `transform ${pressed ? "0.12s" : "0.25s"} ease, box-shadow 0.25s ease`, transform: cardTransform, position: "relative", overflow: "hidden", boxShadow: (hover ? "0 6px 12px rgba(0,0,0,0.3), 0 18px 36px " + accent + "2E, " : "0 2px 4px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2), ") + "inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.5)", opacity: isEnded ? 0.55 : 1 }}>
       {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.12)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
 
       {lesson.genres[0] && (() => {

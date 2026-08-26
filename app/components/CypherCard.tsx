@@ -10,17 +10,23 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
   const { station, venue } = splitLocation(cypher.location);
   const until = timeUntil(cypher.starts_at);
   const [hover, setHover] = useState(false);
+  // 押している間だけ、カードがわずかに傾く（指で押さえた物理カードのような質感）
+  const [pressed, setPressed] = useState(false);
   const color = GENRE_COLORS[cypher.genres[0]] ?? "#DC2626";
   const isEnded = until === "終了";
+  const cardTransform = pressed
+    ? "perspective(600px) rotateX(3deg) rotateY(-2deg) scale(0.98)"
+    : hover ? "translateY(-3px)" : "none";
   // 浮かび上がる登場は外側のdivに持たせる。内側のカードはホバーで動かすので
   // 同じ要素にアニメーションを乗せるとtransformが競合してホバーが効かなくなる
   return (
     <div style={{ animation: `bdCardFloatIn 0.45s ease-out ${Math.min(index * 60, 400)}ms both` }}>
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      onPointerDown={() => setPressed(true)} onPointerUp={() => setPressed(false)} onPointerLeave={() => setPressed(false)} onPointerCancel={() => setPressed(false)}
       // bd-glow-card: タッチ端末はホバーできないので、PCのホバー時と同じ色付き影を
       // @media(hover:none) で常時出す（globals.css相当のスタイルはpage.tsxのstyleタグ）
       className="bd-glow-card"
-      style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: `1px solid ${cypher.hot && !isEnded ? "rgba(220,38,38,0.25)" : "rgba(255,255,255,0.14)"}`, borderRadius: "10px", padding: "8px 16px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: (hover ? `0 6px 12px rgba(0,0,0,0.3), 0 18px 36px ${color}26, ` : "0 2px 4px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2), ") + "inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.5)", opacity: isEnded ? 0.55 : 1, ["--bd-glow" as any]: `${color}26` } as React.CSSProperties}>
+      style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: `1px solid ${cypher.hot && !isEnded ? "rgba(220,38,38,0.25)" : "rgba(255,255,255,0.14)"}`, borderRadius: "10px", padding: "8px 16px", cursor: "pointer", transition: `transform ${pressed ? "0.12s" : "0.25s"} ease, box-shadow 0.25s ease`, transform: cardTransform, position: "relative", overflow: "hidden", boxShadow: (hover ? `0 6px 12px rgba(0,0,0,0.3), 0 18px 36px ${color}26, ` : "0 2px 4px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2), ") + "inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.5)", opacity: isEnded ? 0.55 : 1, ["--bd-glow" as any]: `${color}26` } as React.CSSProperties}>
       {cypher.hot && !isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "#DC2626", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>🔥 HOT</div>}
       {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.12)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
       {cypher.visibility === "private" && !isEnded && !cypher.hot && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(0,0,0,0.65)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>🔒 限定</div>}

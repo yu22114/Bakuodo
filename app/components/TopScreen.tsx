@@ -11,6 +11,7 @@ import { SpotCard } from "./SpotCard";
 import { Logo } from "./Logo";
 import { showToast } from "./Toast";
 import { Loading } from "./Loading";
+import { useSwipeTabs } from "../lib/useSwipeTabs";
 
 export type TopSection = "cypher" | "pl" | "event" | "spots";
 
@@ -59,7 +60,6 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   accountType?: string;
 }) {
   const [slideDir, setSlideDir] = useState<1 | -1>(1);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // 団体用アカウントの時だけSPOTS・P LESSONタブを除いた並び順を使う
   const visibleSections: readonly TopSection[] = accountType === "organization" ? SECTION_ORDER.filter(s => s !== "spots" && s !== "pl") : SECTION_ORDER;
@@ -77,33 +77,23 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     onSectionChange(next);
   };
 
-  const handleContentTouchStart = (e: React.TouchEvent) => {
-    const t = e.touches[0];
-    touchStartRef.current = { x: t.clientX, y: t.clientY };
-  };
-  const handleContentTouchEnd = (e: React.TouchEvent) => {
-    const start = touchStartRef.current;
-    touchStartRef.current = null;
-    if (!start) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - start.x;
-    const dy = t.clientY - start.y;
-    // 横移動が閾値未満、または縦移動の方が大きい場合はスクロール操作とみなして無視
-    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    slideBy(dx < 0 ? 1 : -1);
-  };
-
   // トラックパッドの2本指横スワイプはtouchではなくwheel(deltaX)で飛んでくるので別途拾う
   const wheelAccumRef = useRef(0);
   const wheelLockRef = useRef(false);
   const wheelResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const canSlide = (dir: 1 | -1) => {
+    const nextIdx = visibleSections.indexOf(section) + dir;
+    return nextIdx >= 0 && nextIdx < visibleSections.length;
+  };
   const slideBy = (dir: 1 | -1) => {
     const curIdx = visibleSections.indexOf(section);
     const nextIdx = curIdx + dir;
     if (nextIdx < 0 || nextIdx >= visibleSections.length) return;
     goToSection(visibleSections[nextIdx]);
   };
+  // 指の動きに追従する慣性・跳ね返り（バウンス）付きスワイプ
+  const swipe = useSwipeTabs({ canSwipe: canSlide, onSwipe: slideBy });
 
   const handleContentWheel = (e: React.WheelEvent) => {
     if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // 縦スクロールは触らない
@@ -426,8 +416,11 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     {/* スクロールするのはここだけ。固定ヘッダーの残り高さ分だけ使う。
         カード脇の余白の色でセクションを見分けられるようにする（各タブの色の薄いやつ）。
         リストではなくこの器に色を敷くので、カードが少なくても下まで色が続く */}
-    <div className="bd-scroll bd-glow-bg" onTouchStart={handleContentTouchStart} onTouchEnd={handleContentTouchEnd} onWheel={handleContentWheel}
+    <div className="bd-scroll bd-glow-bg" onTouchStart={swipe.onTouchStart} onTouchMove={swipe.onTouchMove} onTouchEnd={swipe.onTouchEnd} onWheel={handleContentWheel}
       style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any, background: SECTION_BG[section], transition: "background 0.2s" }}>
+      {/* 指の動きに追従する横スワイプ（慣性・跳ね返り）はこのラッパーが担当し、
+          タブが切り替わった後の「その場で現れる」演出は内側のkey={section}が担当する */}
+      <div style={swipe.style}>
       <div key={section} style={{ animation: `${slideDir === 1 ? "bdSlideFromRight" : "bdSlideFromLeft"} 0.2s ease-out` }}>
       {section === "spots" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 16px" }}>
@@ -468,6 +461,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       )}
       {/* 浮き島の下部ナビに隠れないための余白 */}
       <div style={{ height: "80px" }} />
+      </div>
       </div>
     </div>
 
