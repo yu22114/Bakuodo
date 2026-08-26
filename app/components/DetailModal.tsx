@@ -164,7 +164,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
                   }
                 }}
                   style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: justJoined ? "#16A34A" : joined ? "rgba(22,163,74,0.12)" : pending ? "rgba(255,255,255,0.08)" : "#DC2626", color: justJoined ? "#fff" : joined ? "#16A34A" : pending ? "rgba(255,255,255,0.5)" : "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", animation: justJoined ? "bdJoinPop 0.4s ease-out" : undefined }}>
-                  {justJoined ? <>🎉 参加しました！</> : joined ? <><Check size={16} /> 参加済み — キャンセルする</> : pending ? <>申請中... — キャンセルする</> : cypher.requires_approval ? <>📋 参加を申請する</> : <><Zap size={16} /> このサイファーに参加する</>}
+                  {justJoined ? <><Check size={16} /> 参加しました！</> : joined ? <><Check size={16} /> 参加済み — キャンセルする</> : pending ? <>申請中... — キャンセルする</> : cypher.requires_approval ? <>📋 参加を申請する</> : <><Zap size={16} /> このサイファーに参加する</>}
                 </button>
               </div>
             );
