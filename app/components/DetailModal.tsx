@@ -89,8 +89,13 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
                   {label}
                 </div>
                 {/* CYPHERの目印として、レコード画像をジャンル名とは別に、同じ帯の反対側（左下）に
-                    単独で置く。プロフィール画像の丸（40px）と同じ大きさにする */}
-                <img src="/record-mark.png" alt="" aria-hidden="true" style={{ position: "absolute", left: "0", bottom: "2px", width: "40px", height: "40px", pointerEvents: "none" }} />
+                    単独で置く。プロフィール画像の丸（40px）と同じ大きさにする。
+                    押すとSpotifyのプレイリストを新しいタブで開く */}
+                <a href="https://open.spotify.com/playlist/7zCy7LcPFyFlCMnJMiNuc1?si=wYYb0nbiQpKOmA8q572rRA&utm_source=copy-link&pi=_J1g1RA_QxuBv&nd=1&dlsi=9f7ab9f719d5472e"
+                  target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} aria-label="Spotifyでプレイリストを開く"
+                  style={{ position: "absolute", left: "0", bottom: "2px", width: "40px", height: "40px", display: "block" }}>
+                  <img src="/record-mark.png" alt="" style={{ width: "100%", height: "100%" }} />
+                </a>
               </div>
             );
           })()}
