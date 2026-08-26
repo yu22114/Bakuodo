@@ -49,7 +49,13 @@ export function BottomNav({ current, onNav, onProfileLongPress }: { current: str
     <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, display: "flex", justifyContent: "center", padding: "0 16px 16px", pointerEvents: "none", transform: hidden ? "translateY(140%)" : "none", transition: "transform 0.25s ease" }}>
       {/* すりガラス調：うっすら白を乗せてブラーすることで、後ろが透けて見えるガラス板の質感にする。
           上端に薄いハイライトを乗せて、ガラスの縁が光を受けているように見せる */}
-      <div style={{ width: "100%", maxWidth: "448px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "26px", display: "flex", boxShadow: "0 10px 30px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.25)", border: "1px solid rgba(255,255,255,0.18)", pointerEvents: "auto" }}>
+      <div style={{ width: "100%", maxWidth: "448px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "26px", display: "flex", position: "relative", boxShadow: "0 10px 30px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.25)", border: "1px solid rgba(255,255,255,0.18)", pointerEvents: "auto" }}>
+        {/* アクティブ表示のピル。背景の四角自体がヌルッと隣のアイコンへスライドする
+            （各アイコンごとに個別のON/OFFではなく、1枚の板が移動する見せ方）。
+            どのタブにも一致しない画面（プロフィール編集など）の時は消しておく */}
+        <div aria-hidden="true" style={{ position: "absolute", top: "9px", left: 0, width: `${100 / items.length}%`, height: "40px", display: "flex", alignItems: "center", justifyContent: "center", opacity: items.some(i => i.id === current) ? 1 : 0, transform: `translateX(${Math.max(0, items.findIndex(i => i.id === current)) * 100}%)`, transition: "transform 0.32s cubic-bezier(0.34,1.56,0.64,1), opacity 0.15s ease", pointerEvents: "none" }}>
+          <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#2A2A2A", boxShadow: "0 1px 4px rgba(255,255,255,0.08)" }} />
+        </div>
         {items.map(item => {
           const active = current === item.id;
           return (
@@ -60,9 +66,8 @@ export function BottomNav({ current, onNav, onProfileLongPress }: { current: str
               onPointerLeave={clearLongPress}
               onPointerCancel={clearLongPress}
               aria-label={item.id === "profile" && onProfileLongPress ? `${item.label}（長押しでアカウント切り替え）` : item.label}
-              style={{ flex: 1, padding: "9px 0", border: "none", background: "transparent", color: active ? "#fff" : "rgba(255,255,255,0.5)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {/* 選択中の見せ方はホーム画面上部のタブ（CYPHER/P LESSON/EVENT/SPOTS）と同じ仕様に揃える */}
-              <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: active ? "#2A2A2A" : "transparent", boxShadow: active ? "0 1px 4px rgba(255,255,255,0.08)" : "none", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>
+              style={{ flex: 1, padding: "9px 0", border: "none", background: "transparent", position: "relative", zIndex: 1, color: active ? "#fff" : "rgba(255,255,255,0.5)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {item.id === "post" ? (
                   <div style={{ width: "36px", height: "36px", borderRadius: "12px", background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.35)" }}>
                     <Plus size={18} color="#171717" />

@@ -6,6 +6,7 @@ import type { GenreKey } from "../lib/types";
 import { formatDate, timeUntil } from "../lib/constants";
 import { GenreBadge } from "./GenreBadge";
 import { Loading } from "./Loading";
+import { CardSkeleton } from "./CardSkeleton";
 import { showToast } from "./Toast";
 import { useSwipeTabs } from "../lib/useSwipeTabs";
 
@@ -676,7 +677,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any, padding: "6px 16px" }}>
         <div style={{ ...swipe.style, display: "flex", flexDirection: "column", gap: "8px" }}>
         {loading ? (
-          <Loading />
+          <CardSkeleton />
         ) : (<>
           {/* 開催・参加した記録：自分なら参加/主催の2タブ（過去はグレー）、他人なら主催のみ */}
           {isOwn ? (
@@ -791,7 +792,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       {/* 参加者一覧シート */}
       {participantSheet && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setParticipantSheet(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "#141414", borderRadius: "12px 12px 0 0", padding: "24px 20px 40px", maxHeight: "70vh", overflowY: "auto" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "12px 12px 0 0", padding: "24px 20px 40px", maxHeight: "70vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <div>
                 <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "4px" }}>PARTICIPANTS</div>
@@ -822,7 +823,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       {/* フォロワー・フォロー一覧シート */}
       {followSheet && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setFollowSheet(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "360px", background: "#141414", borderRadius: "16px", padding: "24px 20px", maxHeight: "70vh", overflowY: "auto", boxShadow: "0 8px 40px rgba(0,0,0,0.5)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "360px", background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "16px", padding: "24px 20px", maxHeight: "70vh", overflowY: "auto", boxShadow: "0 8px 40px rgba(0,0,0,0.5)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <div>
                 <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "4px" }}>
@@ -859,7 +860,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       {/* EVENT申請の回答一覧（ダンサーネーム・メールアドレス・電話番号）。主催者のこの画面からしか見られない */}
       {answersModal && (
         <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setAnswersModal(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "360px", maxHeight: "80vh", overflowY: "auto" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "360px", maxHeight: "80vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
               <div>
                 <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#EAB308", letterSpacing: "0.15em", marginBottom: "4px" }}>回答内容</div>
@@ -901,7 +902,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       {/* 削除確認モーダル（サイファー・レッスン共通） */}
       {deleteConfirm && (
         <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setDeleteConfirm(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "12px", padding: "28px 24px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "12px", padding: "28px 24px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
             <div style={{ fontSize: "28px", marginBottom: "8px" }}>🗑️</div>
             <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "20px", color: "#F0F0F0", marginBottom: "8px" }}>{deleteConfirm.kind === "cypher" ? "サイファーを削除" : "レッスンを削除"}</div>
             <div style={{ fontSize: "13px", color: "#F0F0F0", marginBottom: "24px", lineHeight: "1.6" }}>削除すると{deleteConfirm.kind === "cypher" ? "参加者" : "申込"}の記録もすべて消えます。開催履歴からも消えます。本当に削除しますか？</div>
@@ -920,7 +921,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         const qrImageSrc = qrComposite || `https://api.qrserver.com/v1/create-qr-code/?size=220x220&ecc=H&data=${encodeURIComponent(profileUrl)}`;
         return (
           <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setShowQR(false)}>
-            <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                 <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>SHARE PROFILE</div>
                 <button onClick={() => setShowQR(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
@@ -959,7 +960,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         );
         return (
           <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={closeTeam}>
-            <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "320px", maxHeight: "70vh", overflowY: "auto", textAlign: "center" }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "320px", maxHeight: "70vh", overflowY: "auto", textAlign: "center" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                 <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>{pickTeammateOpen ? "フォロー中から選ぶ" : "REP"}</div>
                 <button onClick={closeTeam} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
@@ -1028,7 +1029,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         );
         return (
           <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={closeCommunity}>
-            <div onClick={e => e.stopPropagation()} style={{ background: "#141414", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "320px", maxHeight: "70vh", overflowY: "auto", textAlign: "center" }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "320px", maxHeight: "70vh", overflowY: "auto", textAlign: "center" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                 <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>{pickCommunityMemberOpen ? "フォロー中から選ぶ" : "マイコミュニティ"}</div>
                 <button onClick={closeCommunity} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>

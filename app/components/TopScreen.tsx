@@ -10,7 +10,7 @@ import { PLCard } from "./PLCard";
 import { SpotCard } from "./SpotCard";
 import { Logo } from "./Logo";
 import { showToast } from "./Toast";
-import { Loading } from "./Loading";
+import { CardSkeleton } from "./CardSkeleton";
 import { useSwipeTabs } from "../lib/useSwipeTabs";
 
 export type TopSection = "cypher" | "pl" | "event" | "spots";
@@ -441,7 +441,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         return (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px" }}>
           {loading && all.length === 0
-            ? <Loading />
+            ? <CardSkeleton />
             : !loading && all.length === 0
               ? <div style={{ textAlign: "center", padding: "40px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ{noun}がありません</div>
               : !loading && shown.length === 0
@@ -453,7 +453,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px" }}>
           {/* 再フェッチ中は既存リストを出したままにする（全画面LOADINGのちらつき防止） */}
           {loading && cyphers.length === 0
-            ? <Loading />
+            ? <CardSkeleton />
             : !loading && filtered.length === 0
               ? <div style={{ textAlign: "center", padding: "40px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>条件に合うサイファーがありません</div>
               : filtered.map((c, i) => <CypherCard key={c.id} cypher={c} index={i} onClick={() => onCardClick(c)} />)}
@@ -468,7 +468,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     {/* スポット申請フォーム */}
       {spotForm && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setSpotForm(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "#141414", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px", maxHeight: "85vh", overflowY: "auto" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px", maxHeight: "85vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", letterSpacing: "0.05em" }}>スポットを申請する</span>
               <button onClick={() => setSpotForm(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={20} /></button>
@@ -494,7 +494,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     {/* 検索ドロワー */}
       {searchOpen && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setSearchOpen(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "#141414", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px", maxHeight: "85vh", overflowY: "auto" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px", maxHeight: "85vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <SlidersHorizontal size={18} color="#F0F0F0" />
@@ -560,7 +560,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     {/* ロゴを押すと開く月間カレンダー。今日が何日かを一目で確認するだけのもの */}
       {showCalendar && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setShowCalendar(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "#141414", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <button onClick={() => setCalendarMonthOffset(o => o - 1)} aria-label="前の月" style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><ChevronLeft size={20} /></button>

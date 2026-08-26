@@ -128,7 +128,7 @@ export function AvatarCropper({ file, onCancel, onConfirm }: {
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
-      <div style={{ background: "#141414", borderRadius: "16px", padding: "20px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
+      <div style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "16px", padding: "20px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
         <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "14px" }}>写真の範囲を選ぶ</div>
 
         <div

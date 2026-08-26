@@ -5,7 +5,7 @@ import type { Cypher, PrivateLesson, GenreKey } from "../lib/types";
 import { supabase } from "../../lib/supabase";
 import { CypherCard } from "./CypherCard";
 import { PLCard } from "./PLCard";
-import { Loading } from "./Loading";
+import { CardSkeleton } from "./CardSkeleton";
 
 type FollowedParticipant = { profile_id: string; dancer_name: string; avatar_url: string | null };
 
@@ -149,7 +149,7 @@ export function FollowingActivityScreen({ user, onCardClick, onPLClick, onViewPr
 
       <div className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
         {loading ? (
-          <Loading />
+          <CardSkeleton />
         ) : cyphers.length === 0 && events.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 16px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", lineHeight: 1.7 }}>
             フォロー中の人が参加しているCYPHER・EVENTはまだありません
