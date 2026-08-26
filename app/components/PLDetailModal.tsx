@@ -4,7 +4,7 @@ import { Clock, MapPin, User, X, Check, BookOpen, Share2 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { PrivateLesson, ParticipantProfile } from "../lib/types";
-import { formatDate, timeUntil, formatEndTime, timeAgo, splitLocation } from "../lib/constants";
+import { formatDate, timeUntil, formatEndTime, timeAgo, splitLocation, GENRE_COLORS, genreLabel } from "../lib/constants";
 import { useComments } from "../lib/useComments";
 import type { EventApplicationAnswers } from "../lib/participation";
 import { GenreBadge } from "./GenreBadge";
@@ -95,6 +95,8 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   // EVENTの黄色は白文字だと読みにくいので、accentを背景に敷く箇所だけ文字色を切り替える
   const onAccent = isEvent ? "#171717" : "#fff";
   const noun = isEvent ? "イベント" : "レッスン";
+  // ホーム画面のカードと同じ、背景に敷く色付きジャンル名
+  const genreColor = GENRE_COLORS[lesson.genres[0]] ?? accent;
 
   const isFull = !joined && !pending && lesson.max_members !== null && participantsFetched && participants.length >= lesson.max_members;
   // 定員に達した後も申請自体は通るので、承認待ち＝キャンセル待ちの人がいるかどうか（EVENTのみ表示）
@@ -123,16 +125,28 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
     <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", padding: "0 12px 12px", boxSizing: "border-box" }} onClick={onClose}>
       {/* ホーム画面のカードと同じメタリックな質感にそろえる。左右下に少し余白を持たせて浮かせる */}
       <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", maxHeight: "88vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 -4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
-        <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "5px", background: accent, borderRadius: "4px", padding: "2px 8px", marginBottom: "6px" }}>
-              <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: onAccent, fontWeight: "bold" }}>{isEvent ? "EVENT" : "PRIVATE LESSON"}</span>
+        <div style={{ padding: "20px 20px 0", flexShrink: 0, position: "relative", overflow: "hidden" }}>
+          {/* ホーム画面のカードと同じ、背景に敷く色付きのジャンル名（カードを開いた時も見せる） */}
+          {lesson.genres[0] && (() => {
+            const label = genreLabel(lesson.genres[0]).toUpperCase();
+            return (
+              <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-6px", fontSize: `${Math.round(Math.min(56, Math.round(280 / label.length)))}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: genreColor + "40", pointerEvents: "none", userSelect: "none" }}>
+                {label}
+              </div>
+            );
+          })()}
+          {/* 中身は背景文字より上に置く（position指定がないと背景文字の下に隠れる） */}
+          <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "5px", background: accent, borderRadius: "4px", padding: "2px 8px", marginBottom: "6px" }}>
+                <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: onAccent, fontWeight: "bold" }}>{isEvent ? "EVENT" : "PRIVATE LESSON"}</span>
+              </div>
+              <h2 style={{ margin: 0, fontSize: "24px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", lineHeight: 1.1 }}>{lesson.title}</h2>
             </div>
-            <h2 style={{ margin: 0, fontSize: "24px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", lineHeight: 1.1 }}>{lesson.title}</h2>
-          </div>
-          <div style={{ display: "flex", flexShrink: 0, marginLeft: "12px" }}>
-            <button onClick={handleShare} title="共有" style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Share2 size={19} /></button>
-            <button onClick={onClose} style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><X size={22} /></button>
+            <div style={{ display: "flex", flexShrink: 0, marginLeft: "12px" }}>
+              <button onClick={handleShare} title="共有" style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Share2 size={19} /></button>
+              <button onClick={onClose} style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><X size={22} /></button>
+            </div>
           </div>
         </div>
 

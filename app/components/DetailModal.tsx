@@ -4,7 +4,7 @@ import { Clock, MapPin, User, X, Check, Zap, Share2 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, ParticipantProfile } from "../lib/types";
-import { formatDate, timeUntil, formatEndTime, timeAgo, splitLocation } from "../lib/constants";
+import { formatDate, timeUntil, formatEndTime, timeAgo, splitLocation, GENRE_COLORS, genreLabel } from "../lib/constants";
 import { GenreBadge } from "./GenreBadge";
 import { ParticipantBar } from "./ParticipantBar";
 import { showToast } from "./Toast";
@@ -29,6 +29,8 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
   const { station, venue } = splitLocation(cypher.location);
   const isEnded = timeUntil(cypher.starts_at) === "終了";
   const isOwn = organizerId === user?.id;
+  // ホーム画面のカードと同じ、背景に敷く色付きジャンル名
+  const genreColor = GENRE_COLORS[cypher.genres[0]] ?? "#DC2626";
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
   // 「このサイファーに参加する」を押した直後だけ、参加できたことを示すエフェクトを一瞬見せる
@@ -72,10 +74,22 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
     <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", padding: "0 12px 12px", boxSizing: "border-box" }} onClick={onClose}>
       {/* ホーム画面のカードと同じメタリックな質感にそろえる。左右下に少し余白を持たせて浮かせる */}
       <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", maxHeight: "88vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 -4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
-        <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0, borderRadius: "12px 12px 0 0" }}>
-          <h2 style={{ margin: 0, fontSize: "24px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", lineHeight: 1.1, flex: 1 }}>{cypher.title}</h2>
-          <button onClick={handleShare} title="共有" style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Share2 size={19} /></button>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><X size={22} /></button>
+        <div style={{ padding: "20px 20px 0", flexShrink: 0, position: "relative", overflow: "hidden", borderRadius: "12px 12px 0 0" }}>
+          {/* ホーム画面のカードと同じ、背景に敷く色付きのジャンル名（カードを開いた時も見せる） */}
+          {cypher.genres[0] && (() => {
+            const label = genreLabel(cypher.genres[0]).toUpperCase();
+            return (
+              <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-6px", fontSize: `${Math.round(Math.min(56, Math.round(280 / label.length)))}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: genreColor + "40", pointerEvents: "none", userSelect: "none" }}>
+                {label}
+              </div>
+            );
+          })()}
+          {/* 中身は背景文字より上に置く（position指定がないと背景文字の下に隠れる） */}
+          <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <h2 style={{ margin: 0, fontSize: "24px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", lineHeight: 1.1, flex: 1 }}>{cypher.title}</h2>
+            <button onClick={handleShare} title="共有" style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Share2 size={19} /></button>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><X size={22} /></button>
+          </div>
         </div>
         <div style={{ overflowY: "auto", padding: "8px 20px 0", flex: 1 }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
