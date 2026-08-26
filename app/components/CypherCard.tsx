@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Clock, MapPin, Disc3 } from "lucide-react";
+import { Clock, MapPin } from "lucide-react";
 import type { Cypher } from "../lib/types";
 import { GENRE_COLORS, genreLabel, formatDate, dateBadgeParts, timeUntil, formatEndTime, splitLocation } from "../lib/constants";
 
@@ -37,12 +37,6 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
           </div>
         );
       })()}
-      {/* CYPHERの目印として、レコード（ターンテーブル盤）のマークをジャンル名とは別に、
-          カード右上に単独で置く。ジャンルの色・文字数には連動させない固定サイズ・固定色。
-          HOT/終了/限定バッジと同じ角なので、それらが出ている時は重ならないよう隠す */}
-      {!isEnded && !cypher.hot && cypher.visibility !== "private" && (
-        <Disc3 aria-hidden="true" size={15} color="rgba(255,255,255,0.28)" style={{ position: "absolute", top: "8px", right: "10px", pointerEvents: "none" }} />
-      )}
       {/* 開催日時はチケットの半券風にカード左端へ張り付ける。
           カード自体のpadding(11px 16px)より外側にはみ出させたいので、
           この2つは中身のラッパーではなくカード直下（position:relativeの基準）に置く。
