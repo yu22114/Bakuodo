@@ -1,10 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Plus, X, Check } from "lucide-react";
+import { Plus, X, Check, LayoutGrid } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { todayStr } from "../lib/constants";
 import { CardSkeleton } from "./CardSkeleton";
+import { EmptyState } from "./EmptyState";
+import { useScrollShadow } from "../lib/useScrollShadow";
 import { showToast } from "./Toast";
 import { CommunityBoardCard, type Board } from "./CommunityBoardCard";
 
@@ -18,6 +20,8 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
   accountType?: string;
 }) {
   const [boards, setBoards] = useState<Board[] | null>(null);
+  // 一覧をスクロールした時、固定ヘッダーの下にうっすら影を出す
+  const scrollShadow = useScrollShadow<HTMLDivElement>();
   // プロフィール画面の「マイコミュニティ」ボタンで追加したメンバー。この画面の見出しと同じ名前なので、
   // ここにも一覧を出す（community_membersテーブル。詳細はPublicProfileScreen参照）
   const [communityMembers, setCommunityMembers] = useState<{ id: string; dancer_name: string; avatar_url: string | null; instagram: string | null; bio: string | null }[] | null>(null);
@@ -123,19 +127,19 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
 
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+      <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "flex-start", justifyContent: "space-between", boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
         <div>
           <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>マイコミュニティ</h2>
         </div>
         {accountType === "organization" && (
           <button onClick={openCreate} aria-label="掲示板を作る"
-            style={{ background: "#DC2626", border: "none", borderRadius: "10px", cursor: "pointer", width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "4px" }}>
+            style={{ background: "linear-gradient(135deg, #DC2626, #A61B1B)", border: "none", borderRadius: "10px", cursor: "pointer", width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "4px" }}>
             <Plus size={20} color="#fff" />
           </button>
         )}
       </div>
 
-      <div className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
+      <div ref={scrollShadow.ref} className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
         {/* プロフィール画面の「マイコミュニティ」ボタンで追加したメンバー。1人もいなければ何も出さない。
             名前だけでなくInstagram・一言（自己紹介）も見えるよう、アイコンの並びではなく縦のカードにする */}
         {communityMembers && communityMembers.length > 0 && (
@@ -158,9 +162,7 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
         {boards === null ? (
           <CardSkeleton />
         ) : boards.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "60px 16px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>
-            まだ掲示板がありません。右上の＋から作ってみましょう
-          </div>
+          <EmptyState icon={LayoutGrid} padding="60px 16px">まだ掲示板がありません。右上の＋から作ってみましょう</EmptyState>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {boards.map(b => (
@@ -218,7 +220,7 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
             <div style={{ fontSize: "13px", color: "#F0F0F0", marginBottom: "24px", lineHeight: "1.6" }}>削除すると投稿・練習内容もすべて消えます。元に戻せません。本当に削除しますか？</div>
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={() => setDeleteTarget(null)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#F0F0F0" }}>キャンセル</button>
-              <button onClick={handleDelete} disabled={deleting} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "#DC2626", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>{deleting ? "削除中..." : "削除する"}</button>
+              <button onClick={handleDelete} disabled={deleting} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #DC2626, #A61B1B)", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>{deleting ? "削除中..." : "削除する"}</button>
             </div>
           </div>
         </div>

@@ -92,6 +92,8 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   // イベントもこのモーダルを使い回す。色と呼び方だけ切り替える
   const isEvent = lesson.kind === "event";
   const accent = isEvent ? "#EAB308" : "#2563EB";
+  // 参加ボタンだけ、わずかにグラデーションを効かせて立体感を出す
+  const accentGradient = isEvent ? "linear-gradient(135deg, #EAB308, #B7950B)" : "linear-gradient(135deg, #2563EB, #1D4ED8)";
   // EVENTの黄色は白文字だと読みにくいので、accentを背景に敷く箇所だけ文字色を切り替える
   const onAccent = isEvent ? "#171717" : "#fff";
   const noun = isEvent ? "イベント" : "レッスン";
@@ -251,7 +253,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
                     onClose();
                   }
                 }}
-                  style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: justJoined ? "#16A34A" : joined ? "rgba(22,163,74,0.12)" : pending ? "rgba(255,255,255,0.08)" : accent, color: justJoined ? "#fff" : joined ? "#16A34A" : pending ? "rgba(255,255,255,0.5)" : onAccent, fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", animation: justJoined ? "bdJoinPop 0.4s ease-out" : undefined }}>
+                  style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: justJoined ? "#16A34A" : joined ? "rgba(22,163,74,0.12)" : pending ? "rgba(255,255,255,0.08)" : accentGradient, color: justJoined ? "#fff" : joined ? "#16A34A" : pending ? "rgba(255,255,255,0.5)" : onAccent, fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", animation: justJoined ? "bdJoinPop 0.4s ease-out" : undefined }}>
                   {justJoined ? <><Check size={16} /> 申し込みました！</> : joined ? <><Check size={16} /> 申込済み — キャンセルする</> : pending ? <>申請中... — キャンセルする</> : lesson.requires_approval ? <>📋 {isEvent ? "参加" : "受講"}を申請する</> : <><BookOpen size={16} /> この{noun}に申し込む</>}
                 </button>
               </div>

@@ -117,6 +117,8 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
   const plAccent = isEvent ? "#EAB308" : "#2563EB";
   // EVENTの黄色は白文字だと読みにくいので、plAccentを背景に敷く箇所だけ文字色を切り替える
   const onPlAccent = isEvent ? "#171717" : "#fff";
+  // 投稿ボタンだけ、わずかにグラデーションを効かせて立体感を出す
+  const plAccentGradient = isEvent ? "linear-gradient(135deg, #EAB308, #B7950B)" : "linear-gradient(135deg, #2563EB, #1D4ED8)";
   // 投稿完了演出の色。タブごとの色（CYPHER=赤・P LESSON=青・EVENT=黄）に合わせる
   const postedAccent = tab === "cypher" ? "#DC2626" : plAccent;
   const plNoun = isEvent ? "イベント" : "レッスン";
@@ -200,14 +202,21 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
       <div style={{ flexShrink: 0, padding: "24px 16px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
         <h2 style={{ margin: "0 0 16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>投稿する</h2>
         {/* タブはホーム画面と同じ、丸い枠の中で選択中だけ浮くセグメント風 */}
-        <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "14px", padding: "4px" }}>
-          {([["cypher", "CYPHER", "#DC2626"], ["pl", "LESSON", "#2563EB"], ["event", "EVENT", "#EAB308"]] as const).filter(([key]) => visibleTabs.includes(key)).map(([key, label, color]) => (
-            <button key={key} onClick={() => setTab(key)}
-              style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: tab === key ? "#2A2A2A" : "transparent", boxShadow: tab === key ? "0 1px 4px rgba(255,255,255,0.08)" : "none", color: tab === key ? color : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
-              {label}
-            </button>
-          ))}
-        </div>
+        {(() => {
+          const shownTabs = ([["cypher", "CYPHER", "#DC2626"], ["pl", "LESSON", "#2563EB"], ["event", "EVENT", "#EAB308"]] as const).filter(([key]) => visibleTabs.includes(key));
+          return (
+            <div style={{ display: "flex", background: "#1A1A1A", borderRadius: "14px", padding: "4px", position: "relative" }}>
+              {/* 選択中を示す背景の板がヌルッと隣のタブへ移動する（下バーと同じ仕組み） */}
+              <div aria-hidden="true" style={{ position: "absolute", top: "4px", left: "4px", bottom: "4px", width: `calc((100% - 8px) / ${shownTabs.length})`, borderRadius: "10px", background: "#2A2A2A", boxShadow: "0 1px 4px rgba(255,255,255,0.08)", transform: `translateX(${Math.max(0, shownTabs.findIndex(([key]) => key === tab)) * 100}%)`, transition: "transform 0.32s cubic-bezier(0.34,1.56,0.64,1)", pointerEvents: "none" }} />
+              {shownTabs.map(([key, label, color]) => (
+                <button key={key} onClick={() => setTab(key)}
+                  style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: "transparent", position: "relative", zIndex: 1, color: tab === key ? color : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "color 0.15s" }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          );
+        })()}
       </div>
       <div className="bd-scroll bd-glow-bg" style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any, background: TAB_BG[tab], transition: "background 0.2s", padding: "20px 16px", display: "flex", flexDirection: "column", gap: "16px" }}>
         {error && <div style={{ padding: "10px 12px", background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: "6px", color: "#DC2626", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>{error}</div>}
@@ -264,7 +273,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
             <div><div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold" }}>📋 参加承認制</div><div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginTop: "3px" }}>ONにすると参加に主催者の承認が必要になります</div></div>
             <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: requiresApproval ? "#DC2626" : "rgba(255,255,255,0.16)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}><div style={{ position: "absolute", top: "3px", left: requiresApproval ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.4)", transition: "left 0.2s" }} /></div>
           </button>
-          <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: canPost ? "#DC2626" : "rgba(255,255,255,0.08)", color: canPost ? "#fff" : "rgba(255,255,255,0.3)", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: canPost ? "pointer" : "not-allowed", opacity: loading ? 0.6 : 1 }}>
+          <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: canPost ? "linear-gradient(135deg, #DC2626, #A61B1B)" : "rgba(255,255,255,0.08)", color: canPost ? "#fff" : "rgba(255,255,255,0.3)", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: canPost ? "pointer" : "not-allowed", opacity: loading ? 0.6 : 1 }}>
             <Zap size={15} style={{ display: "inline", marginRight: "8px", verticalAlign: "middle" }} />
             {loading ? "投稿中..." : "サイファーを投稿する"}
           </button>
@@ -312,7 +321,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
             <div><div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold" }}>📋 申込承認制</div><div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginTop: "3px" }}>ONにすると申込に{isEvent ? "主催者" : "講師"}の承認が必要になります</div></div>
             <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: plRequiresApproval ? plAccent : "rgba(255,255,255,0.16)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}><div style={{ position: "absolute", top: "3px", left: plRequiresApproval ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.4)", transition: "left 0.2s" }} /></div>
           </button>
-          <button onClick={handleSubmitPL} disabled={loading} style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: canPostPL ? plAccent : "rgba(255,255,255,0.08)", color: canPostPL ? onPlAccent : "rgba(255,255,255,0.3)", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: canPostPL ? "pointer" : "not-allowed", opacity: loading ? 0.6 : 1 }}>
+          <button onClick={handleSubmitPL} disabled={loading} style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: canPostPL ? plAccentGradient : "rgba(255,255,255,0.08)", color: canPostPL ? onPlAccent : "rgba(255,255,255,0.3)", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: canPostPL ? "pointer" : "not-allowed", opacity: loading ? 0.6 : 1 }}>
             <BookOpen size={15} style={{ display: "inline", marginRight: "8px", verticalAlign: "middle" }} />
             {loading ? "投稿中..." : `${plNoun}を投稿する`}
           </button>

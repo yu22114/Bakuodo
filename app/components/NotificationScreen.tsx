@@ -133,7 +133,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
                 {(n.type === "follow_request" || n.type === "join_request") && (
                   <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
                     <button onClick={() => handleApprove(n.id, actor?.id, n.type, cypher?.id, lesson?.id)} disabled={actionLoading === n.id}
-                      style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", background: "#DC2626", border: "none", borderRadius: "6px", color: "#fff", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", cursor: "pointer", opacity: actionLoading === n.id ? 0.6 : 1 }}>
+                      style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", background: "linear-gradient(135deg, #DC2626, #A61B1B)", border: "none", borderRadius: "6px", color: "#fff", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", cursor: "pointer", opacity: actionLoading === n.id ? 0.6 : 1 }}>
                       <Check size={11} /> 承認
                     </button>
                     <button onClick={() => handleReject(n.id, actor?.id, n.type, cypher?.id, lesson?.id)} disabled={actionLoading === n.id}

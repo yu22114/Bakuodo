@@ -254,10 +254,12 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
             )}
 
             {/* 練習日程 / 担当振付タブ。参加申請したユーザーの下に置く */}
-            <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "10px", padding: "4px", marginBottom: "16px" }}>
+            <div style={{ display: "flex", background: "#1A1A1A", borderRadius: "10px", padding: "4px", marginBottom: "16px", position: "relative" }}>
+              {/* 選択中を示す背景の板がヌルッと隣のタブへ移動する（下バーと同じ仕組み） */}
+              <div aria-hidden="true" style={{ position: "absolute", top: "4px", left: "4px", bottom: "4px", width: "calc((100% - 8px) / 2)", borderRadius: "7px", background: "#2A2A2A", transform: `translateX(${TAB_ORDER.indexOf(tab) * 100}%)`, transition: "transform 0.32s cubic-bezier(0.34,1.56,0.64,1)", pointerEvents: "none" }} />
               {([["schedule", "練習日程"], ["choreo", "担当振付"]] as const).map(([key, label]) => (
                 <button key={key} onClick={() => goToTab(key)}
-                  style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "7px", background: tab === key ? "#2A2A2A" : "transparent", color: tab === key ? "#F0F0F0" : "rgba(255,255,255,0.5)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal" }}>
+                  style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "7px", background: "transparent", position: "relative", zIndex: 1, color: tab === key ? "#F0F0F0" : "rgba(255,255,255,0.5)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal" }}>
                   {label}
                 </button>
               ))}
@@ -354,7 +356,7 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
             <div style={{ fontSize: "13px", color: "#F0F0F0", marginBottom: "24px", lineHeight: "1.6" }}>削除すると、このカードの中の練習日程もすべて消えます。元に戻せません。本当に削除しますか？</div>
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={() => setDeleteConfirm(false)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#F0F0F0" }}>キャンセル</button>
-              <button onClick={handleDelete} disabled={deleting} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "#DC2626", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>{deleting ? "削除中..." : "削除する"}</button>
+              <button onClick={handleDelete} disabled={deleting} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #DC2626, #A61B1B)", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>{deleting ? "削除中..." : "削除する"}</button>
             </div>
           </div>
         </div>

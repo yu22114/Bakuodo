@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus, ChevronLeft, ChevronRight, Calendar, MapPinOff, CalendarX, SearchX } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, PrivateLesson, GenreKey } from "../lib/types";
@@ -11,7 +11,9 @@ import { SpotCard } from "./SpotCard";
 import { Logo } from "./Logo";
 import { showToast } from "./Toast";
 import { CardSkeleton } from "./CardSkeleton";
+import { EmptyState } from "./EmptyState";
 import { useSwipeTabs } from "../lib/useSwipeTabs";
+import { useScrollShadow } from "../lib/useScrollShadow";
 
 export type TopSection = "cypher" | "pl" | "event" | "spots";
 
@@ -94,6 +96,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   };
   // 指の動きに追従する慣性・跳ね返り（バウンス）付きスワイプ
   const swipe = useSwipeTabs({ canSwipe: canSlide, onSwipe: slideBy });
+  // 下の一覧をスクロールした時、固定ヘッダーの下にうっすら影を出す
+  const scrollShadow = useScrollShadow<HTMLDivElement>();
 
   const handleContentWheel = (e: React.WheelEvent) => {
     if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // 縦スクロールは触らない
@@ -321,8 +325,9 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     // 画面全体をビューポート高さで固定し、下の「固定ヘッダー＋スクロール領域」に分ける。
     // 浮き島の下部ナビは position:fixed で別レイヤーなのでここでは特に気にしなくていい
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-    {/* ヘッダー〜タブ〜ジャンルチップはスクロールしない固定エリア */}
-    <div style={{ flexShrink: 0 }}>
+    {/* ヘッダー〜タブ〜ジャンルチップはスクロールしない固定エリア。
+        下の一覧がスクロールして中身が隠れている時だけ、うっすら影を出す */}
+    <div style={{ flexShrink: 0, boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
       {/* ヘッダー */}
       <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
@@ -363,10 +368,13 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
 
       {/* セクション切り替え：四角い下線タブから、丸い枠の中で選択中だけ浮くセグメント風に */}
       <div style={{ padding: "10px 16px", background: "#0D0D0D", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "14px", padding: "4px" }}>
+        <div style={{ display: "flex", background: "#1A1A1A", borderRadius: "14px", padding: "4px", position: "relative" }}>
+          {/* 選択中を示す背景の板。個別にON/OFFするのではなく、1枚がヌルッと隣のタブへ移動する
+              （下バーのアクティブ表示と同じ仕組み） */}
+          <div aria-hidden="true" style={{ position: "absolute", top: "4px", left: "4px", bottom: "4px", width: `calc((100% - 8px) / ${visibleSections.length})`, borderRadius: "10px", background: "#2A2A2A", boxShadow: "0 1px 4px rgba(255,255,255,0.08)", transform: `translateX(${Math.max(0, visibleSections.indexOf(section)) * 100}%)`, transition: "transform 0.32s cubic-bezier(0.34,1.56,0.64,1)", pointerEvents: "none" }} />
           {visibleSections.map(key => { const label = SECTION_LABEL[key]; const color = SECTION_COLOR[key]; return (
             <button key={key} onClick={() => goToSection(key)}
-              style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: section === key ? "#2A2A2A" : "transparent", boxShadow: section === key ? "0 1px 4px rgba(255,255,255,0.08)" : "none", color: section === key ? color : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "all 0.15s" }}>
+              style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: "transparent", position: "relative", zIndex: 1, color: section === key ? color : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "color 0.15s" }}>
               {/* 選んでいるタブだけ、文字を1つずつ左から順に上下させてウェーブっぽく見せる。
                   タブを選んだ時に1回だけ流れる（選び直すまで繰り返さない） */}
               {section === key
@@ -416,7 +424,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     {/* スクロールするのはここだけ。固定ヘッダーの残り高さ分だけ使う。
         カード脇の余白の色でセクションを見分けられるようにする（各タブの色の薄いやつ）。
         リストではなくこの器に色を敷くので、カードが少なくても下まで色が続く */}
-    <div className="bd-scroll bd-glow-bg" onTouchStart={swipe.onTouchStart} onTouchMove={swipe.onTouchMove} onTouchEnd={swipe.onTouchEnd} onWheel={handleContentWheel}
+    <div ref={scrollShadow.ref} className="bd-scroll bd-glow-bg" onTouchStart={swipe.onTouchStart} onTouchMove={swipe.onTouchMove} onTouchEnd={swipe.onTouchEnd} onWheel={handleContentWheel}
       style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any, background: SECTION_BG[section], transition: "background 0.2s" }}>
       {/* 指の動きに追従する横スワイプ（慣性・跳ね返り）はこのラッパーが担当し、
           タブが切り替わった後の「その場で現れる」演出は内側のkey={section}が担当する */}
@@ -425,7 +433,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       {section === "spots" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 16px" }}>
           {sortedSpots.length === 0
-            ? <div style={{ textAlign: "center", padding: "40px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>スポット情報はまだありません</div>
+            ? <EmptyState icon={MapPinOff}>スポット情報はまだありません</EmptyState>
             : sortedSpots.map(s => <SpotCard key={s.id} spot={s} user={user} userLocation={userLocation} onViewProfile={id => onViewProfile?.(id)} />)}
           {/* 載っていない練習場所をユーザーから教えてもらう窓口 */}
           <button onClick={() => setSpotForm({ name: "", location: "", note: "" })}
@@ -443,9 +451,9 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
           {loading && all.length === 0
             ? <CardSkeleton />
             : !loading && all.length === 0
-              ? <div style={{ textAlign: "center", padding: "40px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ{noun}がありません</div>
+              ? <EmptyState icon={CalendarX}>まだ{noun}がありません</EmptyState>
               : !loading && shown.length === 0
-                ? <div style={{ textAlign: "center", padding: "40px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>条件に合う{noun}がありません</div>
+                ? <EmptyState icon={SearchX}>条件に合う{noun}がありません</EmptyState>
                 : shown.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => onPLClick(l)} />)}
         </div>
         );
@@ -455,7 +463,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
           {loading && cyphers.length === 0
             ? <CardSkeleton />
             : !loading && filtered.length === 0
-              ? <div style={{ textAlign: "center", padding: "40px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>条件に合うサイファーがありません</div>
+              ? <EmptyState icon={SearchX}>条件に合うサイファーがありません</EmptyState>
               : filtered.map((c, i) => <CypherCard key={c.id} cypher={c} index={i} onClick={() => onCardClick(c)} />)}
         </div>
       )}
@@ -544,7 +552,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             </div>
 
             <button onClick={() => setSearchOpen(false)}
-              style={{ width: "100%", padding: "14px", border: "none", borderRadius: "8px", background: "#DC2626", color: "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer" }}>
+              style={{ width: "100%", padding: "14px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #DC2626, #A61B1B)", color: "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer" }}>
               {postCount}件 表示する
             </button>
             {activeFilterCount > 0 && (
@@ -613,7 +621,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
               {allUsers === null ? (
                 <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>読み込み中...</div>
               ) : allUsers.filter(u => u.dancer_name.toLowerCase().includes(userSearch.trim().toLowerCase())).length === 0 ? (
-                <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>{userSearch.trim() ? "該当するユーザーがいません" : "ユーザーがいません"}</div>
+                <EmptyState icon={SearchX} padding="40px 16px">{userSearch.trim() ? "該当するユーザーがいません" : "ユーザーがいません"}</EmptyState>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                   {allUsers.filter(u => u.dancer_name.toLowerCase().includes(userSearch.trim().toLowerCase())).map(u => (

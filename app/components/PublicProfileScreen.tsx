@@ -1,14 +1,16 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText, MessageCircle, Music, Download, UserPlus, ClipboardList, Mail, Phone } from "lucide-react";
+import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText, MessageCircle, Music, Download, UserPlus, ClipboardList, Mail, Phone, CalendarX } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import type { GenreKey } from "../lib/types";
 import { formatDate, timeUntil } from "../lib/constants";
 import { GenreBadge } from "./GenreBadge";
 import { Loading } from "./Loading";
 import { CardSkeleton } from "./CardSkeleton";
+import { EmptyState } from "./EmptyState";
 import { showToast } from "./Toast";
 import { useSwipeTabs } from "../lib/useSwipeTabs";
+import { useScrollShadow } from "../lib/useScrollShadow";
 
 // 「参加/主催」タブの並び順。左右スワイプで隣のタブに切り替える時に使う
 const CYPHER_TAB_ORDER = ["joined", "hosted"] as const;
@@ -73,6 +75,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     return true;
   };
   const swipe = useSwipeTabs({ canSwipe: canSlideCypherTab, onSwipe: slideCypherTab });
+  // カード一覧をスクロールした時、固定ヘッダーの下にうっすら影を出す
+  const scrollShadow = useScrollShadow<HTMLDivElement>();
   // トラックパッドの2本指横スワイプはtouchではなくwheel(deltaX)で飛んでくるので別途拾う
   const handleTabWheel = (e: React.WheelEvent) => {
     if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // 縦スクロールは触らない
@@ -512,7 +516,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       {/* ヘッダー。Instagramと同じ並びにする：
           上段＝アイコンと数字が横並び、その下に名前、いちばん下に横長のボタン
           「参加/主催」より下のカード一覧だけがスクロールするよう、ここは固定（flexShrink:0） */}
-      <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", flexShrink: 0 }}>
+      <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", flexShrink: 0, boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: "4px" }}>
           {onBack ? (
             <button onClick={onBack} style={{ justifySelf: "start", background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>
@@ -660,10 +664,12 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       {/* 参加/主催 切り替えタブ。ここは固定し、下のカード一覧だけがスクロールする */}
       {!loading && isOwn && (
         <div style={{ padding: "6px 16px 0", flexShrink: 0 }}>
-          <div style={{ display: "flex", gap: "4px", background: "#1A1A1A", borderRadius: "12px", padding: "3px" }}>
+          <div style={{ display: "flex", background: "#1A1A1A", borderRadius: "12px", padding: "3px", position: "relative" }}>
+            {/* 選択中を示す背景の板がヌルッと隣のタブへ移動する（下バーと同じ仕組み） */}
+            <div aria-hidden="true" style={{ position: "absolute", top: "3px", left: "3px", bottom: "3px", width: "calc((100% - 6px) / 2)", borderRadius: "9px", background: "#2A2A2A", boxShadow: "0 1px 4px rgba(255,255,255,0.08)", transform: `translateX(${CYPHER_TAB_ORDER.indexOf(cypherTab) * 100}%)`, transition: "transform 0.32s cubic-bezier(0.34,1.56,0.64,1)", pointerEvents: "none" }} />
             {(["joined", "hosted"] as const).map(t => (
               <button key={t} onClick={() => goToCypherTab(t)}
-                style={{ flex: 1, padding: "5px 4px", border: "none", borderRadius: "9px", background: cypherTab === t ? "#2A2A2A" : "transparent", boxShadow: cypherTab === t ? "0 1px 4px rgba(255,255,255,0.08)" : "none", color: cypherTab === t ? "#F0F0F0" : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: cypherTab === t ? "bold" : "normal", transition: "all 0.15s" }}>
+                style={{ flex: 1, padding: "5px 4px", border: "none", borderRadius: "9px", background: "transparent", position: "relative", zIndex: 1, color: cypherTab === t ? "#F0F0F0" : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: cypherTab === t ? "bold" : "normal", transition: "color 0.15s" }}>
                 {t === "joined" ? "参加" : "主催"}
               </button>
             ))}
@@ -673,7 +679,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
       {/* カード一覧。上下スクロールに加えて、左右スワイプで参加/主催タブを切り替えられる
           （指の動きに追従する慣性・跳ね返り付き。端まで行くと「戻る」に一本化する） */}
-      <div className="bd-scroll" onTouchStart={swipe.onTouchStart} onTouchMove={swipe.onTouchMove} onTouchEnd={swipe.onTouchEnd} onWheel={handleTabWheel}
+      <div ref={scrollShadow.ref} className="bd-scroll" onTouchStart={swipe.onTouchStart} onTouchMove={swipe.onTouchMove} onTouchEnd={swipe.onTouchEnd} onWheel={handleTabWheel}
         style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any, padding: "6px 16px" }}>
         <div style={{ ...swipe.style, display: "flex", flexDirection: "column", gap: "8px" }}>
         {loading ? (
@@ -685,7 +691,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             {cypherTab === "joined" ? (
               // 参加タブも主催タブと同じくCYPHER / P LESSON / EVENTで見出しを分けて表示する
               joinedCyphers.length === 0 && joinedLessons.length === 0
-                ? <div style={{ textAlign: "center", padding: "32px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ参加しているサイファー・レッスンはありません</div>
+                ? <EmptyState icon={CalendarX} padding="32px">まだ参加しているサイファー・レッスンはありません</EmptyState>
                 : (<>
                     {joinedCyphers.length > 0 && (
                       <div style={{ marginBottom: (joinedPlList.length > 0 || joinedEventList.length > 0) ? "12px" : 0 }}>
@@ -715,7 +721,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             ) : (
               // 主催タブ：CYPHER / P LESSON / EVENT を種類ごとに見出しを分けて表示する
               hostedCyphers.length === 0 && hostedLessons.length === 0
-                ? <div style={{ textAlign: "center", padding: "32px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ主催しているサイファー・レッスンはありません</div>
+                ? <EmptyState icon={CalendarX} padding="32px">まだ主催しているサイファー・レッスンはありません</EmptyState>
                 : (<>
                     {hostedCyphers.length > 0 && (
                       <div style={{ marginBottom: (hostedPlList.length > 0 || hostedEventList.length > 0) ? "12px" : 0 }}>
@@ -768,7 +774,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             </div>
           ) : (
             hostedCyphers.length === 0 && hostedLessons.length === 0
-              ? <div style={{ textAlign: "center", padding: "40px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>まだ主催しているサイファー・レッスンはありません</div>
+              ? <EmptyState icon={CalendarX}>まだ主催しているサイファー・レッスンはありません</EmptyState>
               : hostedCyphers.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   {hostedCyphers.map(c => { const { date, time } = formatDate(c.starts_at); const ended = timeUntil(c.starts_at) === "終了"; return (
                     <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding: "10px 14px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: onCypherClick ? "pointer" : "default" }}>
@@ -908,7 +914,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             <div style={{ fontSize: "13px", color: "#F0F0F0", marginBottom: "24px", lineHeight: "1.6" }}>削除すると{deleteConfirm.kind === "cypher" ? "参加者" : "申込"}の記録もすべて消えます。開催履歴からも消えます。本当に削除しますか？</div>
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={() => setDeleteConfirm(null)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#F0F0F0" }}>キャンセル</button>
-              <button onClick={handleDelete} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "#DC2626", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>削除する</button>
+              <button onClick={handleDelete} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #DC2626, #A61B1B)", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>削除する</button>
             </div>
           </div>
         </div>

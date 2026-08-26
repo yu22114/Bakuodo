@@ -176,7 +176,7 @@ export function AvatarCropper({ file, onCancel, onConfirm }: {
             <X size={14} /> キャンセル
           </button>
           <button onClick={handleConfirm} disabled={saving || !natural}
-            style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "#DC2626", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", color: "#fff", fontWeight: "bold", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", opacity: saving ? 0.6 : 1 }}>
+            style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #DC2626, #A61B1B)", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", color: "#fff", fontWeight: "bold", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", opacity: saving ? 0.6 : 1 }}>
             <Check size={14} /> {saving ? "処理中..." : "この範囲で保存"}
           </button>
         </div>

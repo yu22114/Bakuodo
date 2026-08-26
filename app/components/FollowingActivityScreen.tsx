@@ -1,11 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
+import { Heart } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import type { Cypher, PrivateLesson, GenreKey } from "../lib/types";
 import { supabase } from "../../lib/supabase";
 import { CypherCard } from "./CypherCard";
 import { PLCard } from "./PLCard";
 import { CardSkeleton } from "./CardSkeleton";
+import { EmptyState } from "./EmptyState";
+import { useScrollShadow } from "../lib/useScrollShadow";
 
 type FollowedParticipant = { profile_id: string; dancer_name: string; avatar_url: string | null };
 
@@ -19,6 +22,8 @@ export function FollowingActivityScreen({ user, onCardClick, onPLClick, onViewPr
   refreshKey?: number;
 }) {
   const [loading, setLoading] = useState(true);
+  // 一覧をスクロールした時、固定ヘッダーの下にうっすら影を出す
+  const scrollShadow = useScrollShadow<HTMLDivElement>();
   const [cyphers, setCyphers] = useState<{ cypher: Cypher; participants: FollowedParticipant[] }[]>([]);
   const [events, setEvents] = useState<{ lesson: PrivateLesson; participants: FollowedParticipant[] }[]>([]);
 
@@ -143,17 +148,15 @@ export function FollowingActivityScreen({ user, onCardClick, onPLClick, onViewPr
 
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
+      <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
         <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>フォロー中</h2>
       </div>
 
-      <div className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
+      <div ref={scrollShadow.ref} className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
         {loading ? (
           <CardSkeleton />
         ) : cyphers.length === 0 && events.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "60px 16px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", lineHeight: 1.7 }}>
-            フォロー中の人が参加しているCYPHER・EVENTはまだありません
-          </div>
+          <EmptyState icon={Heart} padding="60px 16px">フォロー中の人が参加しているCYPHER・EVENTはまだありません</EmptyState>
         ) : (
           <>
             {cyphers.length > 0 && (

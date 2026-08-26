@@ -1,12 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
-import { ChevronLeft, Plus, Trash2, UserPlus, X } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, UserPlus, X, LayoutGrid } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { GENRES, GENRE_COLORS, genreLabel, toggleGenre, normalizeInstagramUrl } from "../lib/constants";
 import type { GenreKey } from "../lib/types";
 import { useSwipeBack } from "../lib/useSwipeBack";
+import { useScrollShadow } from "../lib/useScrollShadow";
 import { Loading } from "./Loading";
+import { CardSkeleton } from "./CardSkeleton";
+import { EmptyState } from "./EmptyState";
 import { showToast } from "./Toast";
 import { PracticeScheduleList, type Member } from "./PracticeScheduleList";
 import { CommunityGenreCardScreen, InstructorList, type GenreCard, type CardInstructor } from "./CommunityGenreCardScreen";
@@ -24,6 +27,8 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
   onViewProfile?: (id: string) => void;
 }) {
   const swipeBack = useSwipeBack(onBack);
+  // 一覧をスクロールした時、固定ヘッダーの下にうっすら影を出す
+  const scrollShadow = useScrollShadow<HTMLDivElement>();
   const [detail, setDetail] = useState<BoardDetail | null>(null);
   // 練習カード（作成者がタイトルを決めて自由に作る。練習日程はこのカードの中に追加する）
   const [genreCards, setGenreCards] = useState<GenreCard[] | null>(null);
@@ -149,7 +154,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
 
   return (
     <div {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }}>
-      <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "flex-start", gap: "16px" }}>
+      <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "flex-start", gap: "16px", boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
         <button onClick={onBack} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px", flexShrink: 0 }}>
           <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
         </button>
@@ -164,7 +169,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
         </div>
       </div>
 
-      <div className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "20px 16px" }}>
+      <div ref={scrollShadow.ref} className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "20px 16px" }}>
         {detail === null ? (
           <Loading />
         ) : (
@@ -231,11 +236,11 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
           {/* 練習カードの一覧（参加申請済みのカードだけ）。参加中のカードを優先して上に出す。
               タップするとその中の練習日程を見る画面が開く */}
           {genreCards === null || (!isOwn && myCardIds === null) ? (
-            <Loading />
+            <CardSkeleton />
           ) : joinedCards.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>
+            <EmptyState icon={LayoutGrid} padding="40px 16px">
               {isOwn ? "まだ練習カードがありません" : "参加申請したカードはまだありません"}
-            </div>
+            </EmptyState>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {joinedCards.map(card => {
@@ -297,7 +302,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
                         <InstructorList instructors={card.instructors.length > 0 ? card.instructors : card.instructor_name ? [{ name: card.instructor_name, instagram: card.instructor_instagram }] : []} />
                       </div>
                       <button onClick={() => applyToCard(card.id)} disabled={applyingCardId === card.id}
-                        style={{ marginTop: "10px", width: "100%", padding: "9px", border: "none", borderRadius: "8px", background: "#DC2626", color: "#fff", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", opacity: applyingCardId === card.id ? 0.6 : 1 }}>
+                        style={{ marginTop: "10px", width: "100%", padding: "9px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #DC2626, #A61B1B)", color: "#fff", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", opacity: applyingCardId === card.id ? 0.6 : 1 }}>
                         {applyingCardId === card.id ? "申請中..." : "参加を申請する"}
                       </button>
                     </div>
@@ -322,7 +327,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
             <div style={{ fontSize: "13px", color: "#F0F0F0", marginBottom: "24px", lineHeight: "1.6" }}>削除すると、このカードの中の練習日程もすべて消えます。元に戻せません。本当に削除しますか？</div>
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={() => setDeleteCardTarget(null)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#F0F0F0" }}>キャンセル</button>
-              <button onClick={deleteCard} disabled={deletingCard} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "#DC2626", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>{deletingCard ? "削除中..." : "削除する"}</button>
+              <button onClick={deleteCard} disabled={deletingCard} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #DC2626, #A61B1B)", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>{deletingCard ? "削除中..." : "削除する"}</button>
             </div>
           </div>
         </div>
