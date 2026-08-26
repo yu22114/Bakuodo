@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, MapPin, User, X, Check, Zap, Share2, Disc3, Trash2 } from "lucide-react";
+import { Clock, MapPin, User, X, Check, Zap, Share2, Trash2 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, ParticipantProfile } from "../lib/types";
@@ -88,9 +88,9 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
                 <div aria-hidden="true" style={{ position: "absolute", right: "0", bottom: "-6px", fontSize: `${Math.round(Math.min(56, Math.round(280 / label.length)))}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: genreColor + "40", pointerEvents: "none", userSelect: "none" }}>
                   {label}
                 </div>
-                {/* CYPHERの目印として、レコード（ターンテーブル盤）のマークをジャンル名とは別に、
-                    同じ帯の反対側（左下）に単独で置く。プロフィール画像の丸（40px）と同じ大きさにする */}
-                <Disc3 aria-hidden="true" size={40} color="rgba(255,255,255,0.28)" style={{ position: "absolute", left: "0", bottom: "2px", pointerEvents: "none" }} />
+                {/* CYPHERの目印として、レコード画像をジャンル名とは別に、同じ帯の反対側（左下）に
+                    単独で置く。プロフィール画像の丸（40px）と同じ大きさにする */}
+                <img src="/record-mark.png" alt="" aria-hidden="true" style={{ position: "absolute", left: "0", bottom: "2px", width: "40px", height: "40px", pointerEvents: "none" }} />
               </div>
             );
           })()}
