@@ -31,17 +31,18 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
         // 長い名前（ALL STYLE など）が右で切れないよう、文字数に応じて小さくする
         const label = genreLabel(cypher.genres[0]).toUpperCase();
         // 左側の縁取りでジャンル色を出さなくなった代わりに、この背景ジャンル名を1.1倍大きくして目立たせる
-        const fontSize = Math.round(Math.min(68, Math.round(360 / label.length)) * 1.1);
         return (
-          <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", display: "flex", alignItems: "flex-end", gap: "4px", pointerEvents: "none", userSelect: "none" }}>
-            {/* CYPHERの目印として、ジャンル名の左横にレコード（ターンテーブル盤）のマークを添える */}
-            <Disc3 size={Math.round(fontSize * 0.32)} color={color + "40"} style={{ flexShrink: 0, marginBottom: `${Math.round(fontSize * 0.14)}px` }} />
-            <span style={{ fontSize: `${fontSize}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: color + "40" }}>
-              {label}
-            </span>
+          <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", fontSize: `${Math.round(Math.min(68, Math.round(360 / label.length)) * 1.1)}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: color + "40", pointerEvents: "none", userSelect: "none" }}>
+            {label}
           </div>
         );
       })()}
+      {/* CYPHERの目印として、レコード（ターンテーブル盤）のマークをジャンル名とは別に、
+          カード右上に単独で置く。ジャンルの色・文字数には連動させない固定サイズ・固定色。
+          HOT/終了/限定バッジと同じ角なので、それらが出ている時は重ならないよう隠す */}
+      {!isEnded && !cypher.hot && cypher.visibility !== "private" && (
+        <Disc3 aria-hidden="true" size={15} color="rgba(255,255,255,0.28)" style={{ position: "absolute", top: "8px", right: "10px", pointerEvents: "none" }} />
+      )}
       {/* 開催日時はチケットの半券風にカード左端へ張り付ける。
           カード自体のpadding(11px 16px)より外側にはみ出させたいので、
           この2つは中身のラッパーではなくカード直下（position:relativeの基準）に置く。
