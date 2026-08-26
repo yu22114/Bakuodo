@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, MapPin, User, X, Check, Zap, Share2 } from "lucide-react";
+import { Clock, MapPin, User, X, Check, Zap, Share2, Disc3 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, ParticipantProfile } from "../lib/types";
@@ -83,10 +83,15 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
               ヘッダーの下の専用の帯に置く */}
           {cypher.genres[0] && (() => {
             const label = genreLabel(cypher.genres[0]).toUpperCase();
+            const fontSize = Math.round(Math.min(56, Math.round(280 / label.length)));
             return (
               <div style={{ position: "relative", overflow: "hidden", height: "44px", marginBottom: "4px" }}>
-                <div aria-hidden="true" style={{ position: "absolute", right: "0", bottom: "-6px", fontSize: `${Math.round(Math.min(56, Math.round(280 / label.length)))}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: genreColor + "40", pointerEvents: "none", userSelect: "none" }}>
-                  {label}
+                <div aria-hidden="true" style={{ position: "absolute", right: "0", bottom: "-6px", display: "flex", alignItems: "flex-end", gap: "4px", pointerEvents: "none", userSelect: "none" }}>
+                  {/* CYPHERの目印として、ジャンル名の左横にレコード（ターンテーブル盤）のマークを添える */}
+                  <Disc3 size={Math.round(fontSize * 0.32)} color={genreColor + "40"} style={{ flexShrink: 0, marginBottom: `${Math.round(fontSize * 0.14)}px` }} />
+                  <span style={{ fontSize: `${fontSize}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: genreColor + "40" }}>
+                    {label}
+                  </span>
                 </div>
               </div>
             );

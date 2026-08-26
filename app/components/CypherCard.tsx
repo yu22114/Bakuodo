@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Clock, MapPin } from "lucide-react";
+import { Clock, MapPin, Disc3 } from "lucide-react";
 import type { Cypher } from "../lib/types";
 import { GENRE_COLORS, genreLabel, formatDate, dateBadgeParts, timeUntil, formatEndTime, splitLocation } from "../lib/constants";
 
@@ -31,9 +31,14 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
         // 長い名前（ALL STYLE など）が右で切れないよう、文字数に応じて小さくする
         const label = genreLabel(cypher.genres[0]).toUpperCase();
         // 左側の縁取りでジャンル色を出さなくなった代わりに、この背景ジャンル名を1.1倍大きくして目立たせる
+        const fontSize = Math.round(Math.min(68, Math.round(360 / label.length)) * 1.1);
         return (
-          <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", fontSize: `${Math.round(Math.min(68, Math.round(360 / label.length)) * 1.1)}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: color + "40", pointerEvents: "none", userSelect: "none" }}>
-            {label}
+          <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", display: "flex", alignItems: "flex-end", gap: "4px", pointerEvents: "none", userSelect: "none" }}>
+            {/* CYPHERの目印として、ジャンル名の左横にレコード（ターンテーブル盤）のマークを添える */}
+            <Disc3 size={Math.round(fontSize * 0.32)} color={color + "40"} style={{ flexShrink: 0, marginBottom: `${Math.round(fontSize * 0.14)}px` }} />
+            <span style={{ fontSize: `${fontSize}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: color + "40" }}>
+              {label}
+            </span>
           </div>
         );
       })()}
