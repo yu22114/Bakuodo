@@ -31,6 +31,8 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
   const isOwn = organizerId === user?.id;
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
+  // 「このサイファーに参加する」を押した直後だけ、参加できたことを示すエフェクトを一瞬見せる
+  const [justJoined, setJustJoined] = useState(false);
   // コメントの取得・投稿はレッスン側と同じ処理を使う
   const { comments, commentText, setCommentText, posting, postComment } = useComments({ cypherId }, user);
 
@@ -148,10 +150,23 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
                 定員に達しています（{participants.length}/{cypher.max_members}人）
               </div>
             ) : (
-              <button onClick={() => { onJoin(cypher.id); if (!joined && !pending && !keepOpenOnJoin) onClose(); }}
-                style={{ marginTop: "20px", width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: joined ? "rgba(22,163,74,0.12)" : pending ? "rgba(255,255,255,0.08)" : "#DC2626", color: joined ? "#16A34A" : pending ? "rgba(255,255,255,0.5)" : "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-                {joined ? <><Check size={16} /> 参加済み — キャンセルする</> : pending ? <>申請中... — キャンセルする</> : cypher.requires_approval ? <>📋 参加を申請する</> : <><Zap size={16} /> このサイファーに参加する</>}
-              </button>
+              <div style={{ position: "relative", marginTop: "20px" }}>
+                {justJoined && <div aria-hidden="true" style={{ position: "absolute", inset: 0, borderRadius: "6px", border: "2px solid #16A34A", animation: "bdJoinRing 0.7s ease-out", pointerEvents: "none" }} />}
+                <button onClick={() => {
+                  // 「参加する」（承認不要・直接参加）を押した瞬間だけ、閉じる前にエフェクトを一瞬見せる
+                  const isDirectJoin = !joined && !pending && !cypher.requires_approval;
+                  onJoin(cypher.id);
+                  if (isDirectJoin) {
+                    setJustJoined(true);
+                    setTimeout(() => { setJustJoined(false); if (!keepOpenOnJoin) onClose(); }, 700);
+                  } else if (!joined && !pending && !keepOpenOnJoin) {
+                    onClose();
+                  }
+                }}
+                  style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: justJoined ? "#16A34A" : joined ? "rgba(22,163,74,0.12)" : pending ? "rgba(255,255,255,0.08)" : "#DC2626", color: justJoined ? "#fff" : joined ? "#16A34A" : pending ? "rgba(255,255,255,0.5)" : "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", animation: justJoined ? "bdJoinPop 0.4s ease-out" : undefined }}>
+                  {justJoined ? <>🎉 参加しました！</> : joined ? <><Check size={16} /> 参加済み — キャンセルする</> : pending ? <>申請中... — キャンセルする</> : cypher.requires_approval ? <>📋 参加を申請する</> : <><Zap size={16} /> このサイファーに参加する</>}
+                </button>
+              </div>
             );
           })())}
 

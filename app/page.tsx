@@ -243,6 +243,10 @@ export default function BakuOdori() {
         @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
         @keyframes bdSlideFromRight{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
         @keyframes bdSlideFromLeft{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:translateX(0)}}
+        /* 「参加する」ボタンを押した瞬間の演出。ボタン自体は軽くポップし、
+           周りの縁が輪になって外へ広がりながら消える */
+        @keyframes bdJoinPop{0%{transform:scale(0.88)}55%{transform:scale(1.05)}100%{transform:scale(1)}}
+        @keyframes bdJoinRing{0%{transform:scale(1);opacity:0.7}100%{transform:scale(1.12);opacity:0}}
         /* 画面を開いた時、ロゴが左から転がってきて中央に止まる。
            回転量は「移動距離÷半径」に合わせると滑らず転がって見えるので、
            ロゴのサイズごとに角度を変える（同じ距離なら大きい球ほど回転は少ない） */

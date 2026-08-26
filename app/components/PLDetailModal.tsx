@@ -30,6 +30,8 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
 }) {
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
+  // 「この◯◯に申し込む」を押した直後だけ、参加できたことを示すエフェクトを一瞬見せる
+  const [justJoined, setJustJoined] = useState(false);
   // EVENTのみ：定員に達した後も申請自体は受け付けているので、承認待ちの人を「キャンセル待ち」として見せる
   const [pendingParticipants, setPendingParticipants] = useState<ParticipantProfile[]>([]);
   // EVENTは申請前にダンサーネーム・メールアドレス・電話番号を必須で答えてもらう
@@ -219,14 +221,25 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
                 定員に達しています（{participants.length}/{lesson.max_members}人）
               </div>
             ) : (
-              <button onClick={() => {
-                // EVENTへの新規申請だけ、先に必須項目を聞くフォームを挟む
-                if (isEvent && !joined && !pending) { setShowApplyForm(true); return; }
-                onJoin(lesson.id); if (!joined && !pending && !keepOpenOnJoin) onClose();
-              }}
-                style={{ marginTop: "20px", width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: joined ? "rgba(22,163,74,0.12)" : pending ? "rgba(255,255,255,0.08)" : accent, color: joined ? "#16A34A" : pending ? "rgba(255,255,255,0.5)" : onAccent, fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-                {joined ? <><Check size={16} /> 申込済み — キャンセルする</> : pending ? <>申請中... — キャンセルする</> : lesson.requires_approval ? <>📋 {isEvent ? "参加" : "受講"}を申請する</> : <><BookOpen size={16} /> この{noun}に申し込む</>}
-              </button>
+              <div style={{ position: "relative", marginTop: "20px" }}>
+                {justJoined && <div aria-hidden="true" style={{ position: "absolute", inset: 0, borderRadius: "6px", border: "2px solid #16A34A", animation: "bdJoinRing 0.7s ease-out", pointerEvents: "none" }} />}
+                <button onClick={() => {
+                  // EVENTへの新規申請だけ、先に必須項目を聞くフォームを挟む
+                  if (isEvent && !joined && !pending) { setShowApplyForm(true); return; }
+                  // 承認不要の直接申し込みを押した瞬間だけ、閉じる前にエフェクトを一瞬見せる
+                  const isDirectJoin = !joined && !pending && !lesson.requires_approval;
+                  onJoin(lesson.id);
+                  if (isDirectJoin) {
+                    setJustJoined(true);
+                    setTimeout(() => { setJustJoined(false); if (!keepOpenOnJoin) onClose(); }, 700);
+                  } else if (!joined && !pending && !keepOpenOnJoin) {
+                    onClose();
+                  }
+                }}
+                  style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: justJoined ? "#16A34A" : joined ? "rgba(22,163,74,0.12)" : pending ? "rgba(255,255,255,0.08)" : accent, color: justJoined ? "#fff" : joined ? "#16A34A" : pending ? "rgba(255,255,255,0.5)" : onAccent, fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", animation: justJoined ? "bdJoinPop 0.4s ease-out" : undefined }}>
+                  {justJoined ? <>🎉 申し込みました！</> : joined ? <><Check size={16} /> 申込済み — キャンセルする</> : pending ? <>申請中... — キャンセルする</> : lesson.requires_approval ? <>📋 {isEvent ? "参加" : "受講"}を申請する</> : <><BookOpen size={16} /> この{noun}に申し込む</>}
+                </button>
+              </div>
             )
           )}
           <div style={{ marginTop: "28px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "20px" }}>
