@@ -89,8 +89,8 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
                   {label}
                 </div>
                 {/* CYPHERの目印として、レコード（ターンテーブル盤）のマークをジャンル名とは別に、
-                    同じ帯の反対側（左下）に単独で置く。ジャンルの色・文字数には連動させない固定表示 */}
-                <Disc3 aria-hidden="true" size={16} color="rgba(255,255,255,0.28)" style={{ position: "absolute", left: "0", bottom: "6px", pointerEvents: "none" }} />
+                    同じ帯の反対側（左下）に単独で置く。プロフィール画像の丸（40px）と同じ大きさにする */}
+                <Disc3 aria-hidden="true" size={40} color="rgba(255,255,255,0.28)" style={{ position: "absolute", left: "0", bottom: "2px", pointerEvents: "none" }} />
               </div>
             );
           })()}
