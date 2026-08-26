@@ -229,8 +229,12 @@ export default function BakuOdori() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
-        body,html{background:#000000;color:#F0F0F0;-webkit-font-smoothing:antialiased}
+        body,html{background:#0A0A0A;color:#F0F0F0;-webkit-font-smoothing:antialiased}
         ::-webkit-scrollbar{display:none}
+        /* ベタ塗りの黒だと安っぽく見えるので、画面全体にごく薄いフィルム粒子（ノイズ）を敷いて
+           質感を出す。SVGのfeTurbulenceでノイズ画像を作り、透明度を極端に低くして重ねるだけ。
+           z-index:-1で常に一番奥（他のUIより後ろ）に固定する */
+        .bd-grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0.05;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
         /* 一覧だけはスクロールバーを出す。中身が多いほどつまみが小さくなるので、
            今どのへんを見ているかが分かる。太さと色だけ指定して動きは端末任せ */
         .bd-scroll::-webkit-scrollbar{display:block;width:6px}
@@ -274,7 +278,8 @@ export default function BakuOdori() {
         .bd-glow-bg { background-size: 220% 220% !important; animation: bdGlowDrift 18s ease-in-out infinite; }
       `}</style>
 
-      <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#000000" }}>
+      <div className="bd-grain" />
+      <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#0A0A0A" }}>
         {authLoading ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
             <Loading size={64} />
@@ -306,7 +311,7 @@ export default function BakuOdori() {
               </div>
             )}
             {editCypherId && (
-              <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>
+              <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#0A0A0A", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>
                 <EditCypherScreen
                   cypherId={editCypherId}
                   user={user}
@@ -316,7 +321,7 @@ export default function BakuOdori() {
               </div>
             )}
             {editLessonId && (
-              <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>
+              <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#0A0A0A", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>
                 <EditLessonScreen
                   lessonId={editLessonId}
                   user={user}
