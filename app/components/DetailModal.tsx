@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, MapPin, User, X, Check, Zap, Share2, Disc3 } from "lucide-react";
+import { Clock, MapPin, User, X, Check, Zap, Share2, Disc3, Trash2 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, ParticipantProfile } from "../lib/types";
@@ -35,7 +35,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
   // 「このサイファーに参加する」を押した直後だけ、参加できたことを示すエフェクトを一瞬見せる
   const [justJoined, setJustJoined] = useState(false);
   // コメントの取得・投稿はレッスン側と同じ処理を使う
-  const { comments, commentText, setCommentText, posting, postComment } = useComments({ cypherId }, user);
+  const { comments, commentText, setCommentText, posting, postComment, deleteComment } = useComments({ cypherId }, user);
 
   useEffect(() => {
     async function fetchParticipants() {
@@ -207,6 +207,10 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
                       </div>
                       <p style={{ margin: 0, fontSize: "13px", color: "#F0F0F0", lineHeight: 1.5 }}>{c.content}</p>
                     </div>
+                    {/* 書いた本人だけ削除できる */}
+                    {user && c.profile.id === user.id && (
+                      <button onClick={() => deleteComment(c.id)} title="削除" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px", flexShrink: 0 }}><Trash2 size={14} /></button>
+                    )}
                   </div>
                 ))}
               </div>

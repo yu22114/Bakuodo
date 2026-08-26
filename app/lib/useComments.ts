@@ -48,5 +48,14 @@ export function useComments(target: { cypherId: string } | { lessonId: string },
     setPosting(false);
   };
 
-  return { comments, commentText, setCommentText, posting, postComment };
+  // 書いた本人だけ削除できる（sql/2026-08-26_comments_delete.sql）
+  const deleteComment = async (commentId: string) => {
+    const prev = comments;
+    setComments(c => c.filter(x => x.id !== commentId)); // 先に消して、失敗したら戻す
+    const { error } = await supabase.from("comments").delete().eq("id", commentId);
+    if (error) setComments(prev);
+    return error;
+  };
+
+  return { comments, commentText, setCommentText, posting, postComment, deleteComment };
 }

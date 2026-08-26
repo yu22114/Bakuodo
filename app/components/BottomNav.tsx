@@ -47,8 +47,9 @@ export function BottomNav({ current, onNav, onProfileLongPress }: { current: str
     // 外側はビューポート全幅の透明レイヤー（中央寄せのためだけ）。
     // pointerEvents:none にして、島の外の余白部分はタップをすり抜けさせる
     <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, display: "flex", justifyContent: "center", padding: "0 16px 16px", pointerEvents: "none", transform: hidden ? "translateY(140%)" : "none", transition: "transform 0.25s ease" }}>
-      {/* 透明度は最大（背景色なし）。ぼかしだけでガラス感を出す */}
-      <div style={{ width: "100%", maxWidth: "448px", background: "rgba(20,20,20,0)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "26px", display: "flex", boxShadow: "0 10px 30px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.12)", pointerEvents: "auto" }}>
+      {/* すりガラス調：うっすら白を乗せてブラーすることで、後ろが透けて見えるガラス板の質感にする。
+          上端に薄いハイライトを乗せて、ガラスの縁が光を受けているように見せる */}
+      <div style={{ width: "100%", maxWidth: "448px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "26px", display: "flex", boxShadow: "0 10px 30px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.25)", border: "1px solid rgba(255,255,255,0.18)", pointerEvents: "auto" }}>
         {items.map(item => {
           const active = current === item.id;
           return (

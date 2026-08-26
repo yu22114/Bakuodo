@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, MapPin, User, X, Check, BookOpen, Share2 } from "lucide-react";
+import { Clock, MapPin, User, X, Check, BookOpen, Share2, Trash2 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { PrivateLesson, ParticipantProfile } from "../lib/types";
@@ -40,7 +40,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   const [answerPhone, setAnswerPhone] = useState("");
   const lessonId = lesson?.id;
   // コメントの取得・投稿はサイファー側と同じ処理を使う（commentsテーブル共通）
-  const { comments, commentText, setCommentText, posting, postComment } = useComments({ lessonId: lessonId ?? "" }, user);
+  const { comments, commentText, setCommentText, posting, postComment, deleteComment } = useComments({ lessonId: lessonId ?? "" }, user);
 
   useEffect(() => {
     if (!lessonId) return;
@@ -276,6 +276,10 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
                       </div>
                       <p style={{ margin: 0, fontSize: "13px", color: "#F0F0F0", lineHeight: 1.5 }}>{c.content}</p>
                     </div>
+                    {/* 書いた本人だけ削除できる */}
+                    {user && c.profile.id === user.id && (
+                      <button onClick={() => deleteComment(c.id)} title="削除" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px", flexShrink: 0 }}><Trash2 size={14} /></button>
+                    )}
                   </div>
                 ))}
               </div>
