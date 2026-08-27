@@ -241,7 +241,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
           {/* Safariはinput[type=date]にwidth:100%を反映しないことがあるため、
               flexコンテナ+flex:1で他の入力欄と横幅を揃える */}
           <div><label style={lbl}>日付 <span style={{ color: "#DC2626" }}>*</span></label>
-            <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
+            <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={form.date} onChange={e => { const v = e.target.value; if (v && v < todayStr()) return; setForm(f => ({ ...f, date: v })); }} /></div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <div><label style={lbl}>開始時間</label>
@@ -281,7 +281,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
           <div><label style={lbl}>最寄り駅 <span style={{ color: plAccent }}>*</span></label><StationSearch value={plForm.station} onChange={v => setPlForm(f => ({ ...f, station: v }))} inputStyle={inp} /></div>
           <div><label style={lbl}>会場・スタジオ名・部屋番号</label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={plForm.studio} onChange={e => setPlForm(f => ({ ...f, studio: e.target.value }))} /></div>
           <div><label style={lbl}>日付 <span style={{ color: plAccent }}>*</span></label>
-            <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={plForm.date} onChange={e => setPlForm(f => ({ ...f, date: e.target.value }))} /></div>
+            <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={plForm.date} onChange={e => { const v = e.target.value; if (v && v < todayStr()) return; setPlForm(f => ({ ...f, date: v })); }} /></div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <div><label style={lbl}>開始時間</label>
@@ -326,8 +326,9 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
             {loading ? "投稿中..." : `${plNoun}を投稿する`}
           </button>
         </>)}
-        {/* 浮き島の下部ナビに隠れないための余白（TopScreenと同じ） */}
-        <div style={{ height: "80px" }} />
+        {/* 浮き島の下部ナビに隠れないための余白。投稿するボタンが際どく隠れて
+            見えることがあったので、他画面より少し多めに取る */}
+        <div style={{ height: "110px" }} />
       </div>
     </div>
   );
