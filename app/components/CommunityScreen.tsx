@@ -148,13 +148,18 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
             {communityMembers.map(m => (
               <button key={m.id} onClick={() => onViewProfile?.(m.id)}
-                style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", cursor: onViewProfile ? "pointer" : "default", padding: "10px 12px", display: "flex", alignItems: "center", gap: "10px", textAlign: "left" }}>
-                <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
-                  {m.avatar_url ? <img src={m.avatar_url} alt={m.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : m.dancer_name[0]?.toUpperCase()}
+                style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: "12px", cursor: onViewProfile ? "pointer" : "default", padding: "12px 14px", display: "flex", alignItems: "center", gap: "12px", textAlign: "left", boxShadow: "0 4px 14px rgba(168,85,247,0.18), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+                {/* アバターにストーリーリング風のグラデーション枠を付けて華やかにする */}
+                <div style={{ width: "46px", height: "46px", borderRadius: "50%", padding: "2px", background: "linear-gradient(135deg, #A855F7, #EC4899, #F59E0B)", flexShrink: 0 }}>
+                  <div style={{ width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden", background: "#1A1A1A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
+                    {m.avatar_url ? <img src={m.avatar_url} alt={m.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : m.dancer_name[0]?.toUpperCase()}
+                  </div>
                 </div>
-                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <span style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{m.dancer_name}</span>
-                  {m.instagram && <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#A855F7" }}>@{m.instagram}</span>}
+                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <span style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{m.dancer_name}</span>
+                  {m.instagram && (
+                    <span style={{ display: "inline-flex", alignItems: "center", width: "fit-content", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", padding: "2px 9px", borderRadius: "20px", background: "linear-gradient(180deg, color-mix(in srgb, #A855F7 55%, white 45%), color-mix(in srgb, #A855F7 55%, white 15%))", boxShadow: "0 2px 5px rgba(168,85,247,0.3), inset 0 1px 0 rgba(255,255,255,0.5)", color: "color-mix(in srgb, #A855F7 100%, black 35%)" }}>@{m.instagram}</span>
+                  )}
                   {m.bio && <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.bio}</span>}
                 </div>
               </button>
