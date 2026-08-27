@@ -54,7 +54,7 @@ export function BottomNav({ current, onNav, onProfileLongPress }: { current: str
             （各アイコンごとに個別のON/OFFではなく、1枚の板が移動する見せ方）。
             どのタブにも一致しない画面（プロフィール編集など）の時は消しておく */}
         <div aria-hidden="true" style={{ position: "absolute", top: "9px", left: 0, width: `${100 / items.length}%`, height: "40px", display: "flex", alignItems: "center", justifyContent: "center", opacity: items.some(i => i.id === current) ? 1 : 0, transform: `translateX(${Math.max(0, items.findIndex(i => i.id === current)) * 100}%)`, transition: "transform 0.32s cubic-bezier(0.34,1.56,0.64,1), opacity 0.15s ease", pointerEvents: "none" }}>
-          <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#2A2A2A", boxShadow: "0 1px 4px rgba(255,255,255,0.08)" }} />
+          <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "linear-gradient(180deg, #3a3a3a, #232323)", boxShadow: "0 3px 8px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15)" }} />
         </div>
         {items.map(item => {
           const active = current === item.id;

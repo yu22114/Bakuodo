@@ -667,9 +667,10 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       {/* 参加/主催 切り替えタブ。ここは固定し、下のカード一覧だけがスクロールする */}
       {!loading && isOwn && (
         <div style={{ padding: "6px 16px 0", flexShrink: 0 }}>
-          <div style={{ display: "flex", background: "#1A1A1A", borderRadius: "12px", padding: "3px", position: "relative" }}>
-            {/* 選択中を示す背景の板がヌルッと隣のタブへ移動する（下バーと同じ仕組み） */}
-            <div aria-hidden="true" style={{ position: "absolute", top: "3px", left: "3px", bottom: "3px", width: "calc((100% - 6px) / 2)", borderRadius: "9px", background: "#2A2A2A", boxShadow: "0 1px 4px rgba(255,255,255,0.08)", transform: `translateX(${CYPHER_TAB_ORDER.indexOf(cypherTab) * 100}%)`, transition: "transform 0.32s cubic-bezier(0.34,1.56,0.64,1)", pointerEvents: "none" }} />
+          <div style={{ display: "flex", background: "#1A1A1A", borderRadius: "12px", padding: "3px", position: "relative", boxShadow: "inset 0 2px 5px rgba(0,0,0,0.4)" }}>
+            {/* 選択中を示す背景の板がヌルッと隣のタブへ移動する（下バーと同じ仕組み）。
+                溝に浮かぶ板のように立体感を付ける */}
+            <div aria-hidden="true" style={{ position: "absolute", top: "3px", left: "3px", bottom: "3px", width: "calc((100% - 6px) / 2)", borderRadius: "9px", background: "linear-gradient(180deg, #3a3a3a, #232323)", boxShadow: "0 3px 8px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15)", transform: `translateX(${CYPHER_TAB_ORDER.indexOf(cypherTab) * 100}%)`, transition: "transform 0.32s cubic-bezier(0.34,1.56,0.64,1)", pointerEvents: "none" }} />
             {(["joined", "hosted"] as const).map(t => (
               <button key={t} onClick={() => goToCypherTab(t)}
                 style={{ flex: 1, padding: "5px 4px", border: "none", borderRadius: "9px", background: "transparent", position: "relative", zIndex: 1, color: cypherTab === t ? "#F0F0F0" : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: cypherTab === t ? "bold" : "normal", transition: "color 0.15s" }}>

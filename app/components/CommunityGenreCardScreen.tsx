@@ -254,9 +254,10 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
             )}
 
             {/* 練習日程 / 担当振付タブ。参加申請したユーザーの下に置く */}
-            <div style={{ display: "flex", background: "#1A1A1A", borderRadius: "10px", padding: "4px", marginBottom: "16px", position: "relative" }}>
-              {/* 選択中を示す背景の板がヌルッと隣のタブへ移動する（下バーと同じ仕組み） */}
-              <div aria-hidden="true" style={{ position: "absolute", top: "4px", left: "4px", bottom: "4px", width: "calc((100% - 8px) / 2)", borderRadius: "7px", background: "#2A2A2A", transform: `translateX(${TAB_ORDER.indexOf(tab) * 100}%)`, transition: "transform 0.32s cubic-bezier(0.34,1.56,0.64,1)", pointerEvents: "none" }} />
+            <div style={{ display: "flex", background: "#1A1A1A", borderRadius: "10px", padding: "4px", marginBottom: "16px", position: "relative", boxShadow: "inset 0 2px 5px rgba(0,0,0,0.4)" }}>
+              {/* 選択中を示す背景の板がヌルッと隣のタブへ移動する（下バーと同じ仕組み）。
+                  溝に浮かぶ板のように立体感を付ける */}
+              <div aria-hidden="true" style={{ position: "absolute", top: "4px", left: "4px", bottom: "4px", width: "calc((100% - 8px) / 2)", borderRadius: "7px", background: "linear-gradient(180deg, #3a3a3a, #232323)", boxShadow: "0 3px 8px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15)", transform: `translateX(${TAB_ORDER.indexOf(tab) * 100}%)`, transition: "transform 0.32s cubic-bezier(0.34,1.56,0.64,1)", pointerEvents: "none" }} />
               {([["schedule", "練習日程"], ["choreo", "担当振付"]] as const).map(([key, label]) => (
                 <button key={key} onClick={() => goToTab(key)}
                   style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "7px", background: "transparent", position: "relative", zIndex: 1, color: tab === key ? "#F0F0F0" : "rgba(255,255,255,0.5)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal" }}>
