@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText, MessageCircle, Music, Download, UserPlus, ClipboardList, Mail, Phone, CalendarX } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import type { GenreKey } from "../lib/types";
-import { formatDate, timeUntil } from "../lib/constants";
+import { formatDate, timeUntil, GENRE_COLORS } from "../lib/constants";
 import { GenreBadge } from "./GenreBadge";
 import { Loading } from "./Loading";
 import { CardSkeleton } from "./CardSkeleton";
@@ -35,6 +35,9 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   type JoinedLesson = { id: string; title: string; starts_at: string; location: string; kind: "lesson" | "event"; organizer_name: string };
 
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  // このプロフィールの「得意ジャンル」（先頭に登録したもの）の色を、アバターやフォローボタンの
+  // アクセント色にする。ジャンル未設定なら今まで通りの赤にフォールバック
+  const profileAccent = (profileData?.genres[0] && GENRE_COLORS[profileData.genres[0]]) || "#DC2626";
   const [followStatus, setFollowStatus] = useState<"none" | "pending" | "accepted">("none");
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
@@ -568,7 +571,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
         {/* アバターは左、名前とその真下に数字（開催が先頭）を右側にまとめる */}
         <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
-          <div style={{ width: "82px", height: "82px", borderRadius: "50%", background: "linear-gradient(135deg,#DC2626,#F87171)", border: "3px solid #141414", boxShadow: "0 2px 10px rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
+          <div style={{ width: "82px", height: "82px", borderRadius: "50%", background: `linear-gradient(135deg, ${profileAccent}, color-mix(in srgb, ${profileAccent} 100%, white 40%))`, border: "3px solid #141414", boxShadow: "0 2px 10px rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
             {profileData?.avatar_url
               ? <img src={profileData.avatar_url} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               : <span style={{ fontSize: "30px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#fff" }}>{name[0]?.toUpperCase() ?? "?"}</span>
@@ -655,7 +658,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           </div>
         ) : currentUserId && (
           <button onClick={handleFollow} disabled={followLoading}
-            style={{ width: "100%", marginTop: "8px", padding: "8px", border: followStatus !== "none" ? "1px solid rgba(255,255,255,0.16)" : "none", borderRadius: "8px", background: followStatus !== "none" ? "transparent" : "#DC2626", color: followStatus !== "none" ? "rgba(255,255,255,0.55)" : "#fff", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer", opacity: followLoading ? 0.6 : 1 }}>
+            style={{ width: "100%", marginTop: "8px", padding: "8px", border: followStatus !== "none" ? "1px solid rgba(255,255,255,0.16)" : "none", borderRadius: "8px", background: followStatus !== "none" ? "transparent" : `linear-gradient(135deg, ${profileAccent}, color-mix(in srgb, ${profileAccent} 100%, black 35%))`, color: followStatus !== "none" ? "rgba(255,255,255,0.55)" : "#fff", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer", opacity: followLoading ? 0.6 : 1 }}>
             {followStatus === "accepted" ? "フォロー中" : followStatus === "pending" ? "申請中..." : (profileData?.is_private ? "🔒 申請する" : "フォローする")}
           </button>
         )}

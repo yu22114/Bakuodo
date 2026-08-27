@@ -235,6 +235,10 @@ export default function BakuOdori() {
            質感を出す。SVGのfeTurbulenceでノイズ画像を作り、透明度を極端に低くして重ねるだけ。
            z-index:-1で常に一番奥（他のUIより後ろ）に固定する */
         .bd-grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0.05;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+        /* ストリートのフライヤー/ポスターにあるような、スプレーでかすれた質感をボタンなどに少しだけ足す。
+           .bd-grainより粗い（baseFrequency高め・コントラスト強め）ノイズを、mix-blend-modeで重ねるだけ */
+        .bd-spray{position:relative;overflow:hidden}
+        .bd-spray::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0.22;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='s'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch' result='n'/%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 2.4 -1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23s)'/%3E%3C/svg%3E")}
         /* 入力欄にフォーカスした時、ふわっと光るリングを出す。アプリ全体の
            input/textarea/selectに一括で効かせる（file・range・checkbox・radioは対象外）。
            borderは各コンポーネントがinline styleで指定しているため、ここだけ!importantで上書きする */
