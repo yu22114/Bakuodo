@@ -20,7 +20,7 @@ function GenreStrip({ value, onChange }: { value: string; onChange: (g: (typeof 
         const col = GENRE_COLORS[g];
         return (
           <button key={g} ref={sel ? selectedRef : undefined} type="button" onClick={() => onChange(g)}
-            style={{ flexShrink: 0, padding: "6px 12px", border: sel ? `1px solid ${col}` : "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", whiteSpace: "nowrap" }}>
+            style={{ flexShrink: 0, padding: "6px 12px", border: sel ? "none" : "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", background: sel ? `linear-gradient(180deg, ${col}, color-mix(in srgb, ${col} 100%, black 25%))` : "transparent", boxShadow: sel ? `0 3px 7px ${col}55, inset 0 1px 0 rgba(255,255,255,0.35)` : "inset 0 1px 3px rgba(0,0,0,0.3)", color: sel ? "#fff" : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", whiteSpace: "nowrap", fontWeight: sel ? "bold" : "normal" }}>
             {genreLabel(g)}
           </button>
         );
