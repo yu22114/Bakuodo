@@ -279,15 +279,20 @@ export default function BakuOdori() {
           .bd-glow-card { box-shadow: 0 6px 12px rgba(0,0,0,0.05), 0 18px 36px var(--bd-glow, transparent) !important; }
           .bd-glow-card-blue { box-shadow: 0 6px 12px rgba(0,0,0,0.05), 0 18px 36px rgba(37,99,235,0.18) !important; }
         }
-        /* カード裏の光がゆっくり漂うように、大きめに敷いた背景の位置を動かし続ける。
+        /* カード裏の光が縦横無尽に動き回るように、大きめに敷いた背景の位置を
+           あちこちの角へ飛ばしながらループさせる。
            background(ショートハンド)を毎回inlineで指定し直すのでposition/sizeは
            !importantで固定しないと初期値に戻されてしまう */
         @keyframes bdGlowDrift {
-          0%   { background-position: 15% -10%; }
-          50%  { background-position: 85% 40%; }
-          100% { background-position: 15% -10%; }
+          0%   { background-position: 10% -10%; }
+          18%  { background-position: 90% 5%; }
+          36%  { background-position: 95% 90%; }
+          54%  { background-position: 5% 95%; }
+          72%  { background-position: 60% 45%; }
+          88%  { background-position: 15% 20%; }
+          100% { background-position: 10% -10%; }
         }
-        .bd-glow-bg { background-size: 220% 220% !important; animation: bdGlowDrift 6s ease-in-out infinite; }
+        .bd-glow-bg { background-size: 220% 220% !important; animation: bdGlowDrift 5s ease-in-out infinite; }
       `}</style>
 
       <div className="bd-grain" />
