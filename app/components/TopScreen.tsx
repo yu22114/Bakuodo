@@ -340,8 +340,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     {/* ヘッダー〜タブ〜ジャンルチップはスクロールしない固定エリア。
         下の一覧がスクロールして中身が隠れている時だけ、うっすら影を出す */}
     <div style={{ flexShrink: 0, boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
-      {/* ヘッダー */}
-      <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
+      {/* ヘッダー。ここだけすりガラス調にする（タブ・ジャンルチップは今まで通り） */}
+      <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.06)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
           {/* 今日の日付は常に出しておく。左のカレンダーアイコンを押すと月間カレンダーが開く */}
           <button onClick={() => { setCalendarMonthOffset(0); setShowCalendar(true); }} aria-label="カレンダーを表示"
