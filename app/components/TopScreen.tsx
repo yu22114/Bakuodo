@@ -37,10 +37,10 @@ const SECTION_LABEL: Record<TopSection, string> = {
 // 実際に動かすのは .bd-glow-bg（page.tsx側のkeyframes）で、背景を広めに敷いた上で
 // background-positionをゆっくりループさせている
 const SECTION_BG: Record<TopSection, string> = {
-  cypher: "radial-gradient(circle at center, rgba(220,38,38,0.55), rgba(220,38,38,0.1) 45%, #000000 75%)",
-  pl: "radial-gradient(circle at center, rgba(37,99,235,0.55), rgba(37,99,235,0.1) 45%, #000000 75%)",
-  event: "radial-gradient(circle at center, rgba(234,179,8,0.55), rgba(234,179,8,0.1) 45%, #000000 75%)",
-  spots: "radial-gradient(circle at center, rgba(22,163,74,0.55), rgba(22,163,74,0.1) 45%, #000000 75%)",
+  cypher: "radial-gradient(circle at center, rgba(220,38,38,0.75) 0%, rgba(220,38,38,0.12) 26%, #000000 50%)",
+  pl: "radial-gradient(circle at center, rgba(37,99,235,0.75) 0%, rgba(37,99,235,0.12) 26%, #000000 50%)",
+  event: "radial-gradient(circle at center, rgba(234,179,8,0.75) 0%, rgba(234,179,8,0.12) 26%, #000000 50%)",
+  spots: "radial-gradient(circle at center, rgba(22,163,74,0.75) 0%, rgba(22,163,74,0.12) 26%, #000000 50%)",
 };
 
 export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell, section, onSectionChange, accountType }: {
