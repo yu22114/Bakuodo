@@ -149,7 +149,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
             <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
           </button>
         )}
-        <h2 style={{ margin: 0, fontFamily: "'RocknRoll One','Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>ダンサー設定</h2>
+        <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>ダンサー設定</h2>
       </div>
       <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: "20px" }}>
         {/* アバター写真 */}
