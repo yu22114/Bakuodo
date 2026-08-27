@@ -336,8 +336,10 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   return (
     // 画面全体をビューポート高さで固定し、下の「固定ヘッダー＋スクロール領域」に分ける。
     // 浮き島の下部ナビは position:fixed で別レイヤーなのでここでは特に気にしなくていい
-    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div className="bd-glow-bg" style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden", background: SECTION_BG[section], transition: "background 0.2s" }}>
     {/* ヘッダー〜タブ〜ジャンルチップはスクロールしない固定エリア。
+        奥の光が画面全体に効くよう、この固定エリアの背景も透過させて
+        親（上のdiv）の光をそのまま透かして見せる。
         下の一覧がスクロールして中身が隠れている時だけ、うっすら影を出す */}
     <div style={{ flexShrink: 0, boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
       {/* ヘッダー。ここだけすりガラス調にする（タブ・ジャンルチップは今まで通り） */}
@@ -379,7 +381,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       </div>
 
       {/* セクション切り替え：四角い下線タブから、丸い枠の中で選択中だけ浮くセグメント風に */}
-      <div style={{ padding: "10px 16px", background: "#0D0D0D", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+      <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div style={{ display: "flex", background: "#1A1A1A", borderRadius: "14px", padding: "4px", position: "relative", boxShadow: "inset 0 2px 5px rgba(0,0,0,0.4)" }}>
           {/* 選択中を示す背景の板。個別にON/OFFするのではなく、1枚がヌルッと隣のタブへ移動する
               （下バーのアクティブ表示と同じ仕組み）。溝に浮かぶ板のように立体感を付ける */}
@@ -402,7 +404,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
 
       {/* ジャンルチップ（横スクロール）。CYPHER/LESSON共通 */}
       {section !== "spots" && (
-        <div style={{ display: "flex", gap: "6px", padding: "10px 16px", overflowX: "auto", scrollbarWidth: "none", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
+        <div style={{ display: "flex", gap: "6px", padding: "10px 16px", overflowX: "auto", scrollbarWidth: "none", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           {(["ALL", ...GENRES] as (GenreKey | "ALL")[]).map(g => {
             const sel = g === "ALL" ? selectedGenres.length === 0 : selectedGenres.includes(g as GenreKey);
             // ALLは「絞り込みなし」であって特定のジャンル/セクションではないので、
@@ -423,7 +425,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       {section !== "spots" && activeFilterCount > 0 && (() => {
         const accent = SECTION_COLOR[section];
         return (
-          <div style={{ display: "flex", padding: "4px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", alignItems: "center" }}>
+          <div style={{ display: "flex", padding: "4px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", alignItems: "center" }}>
             <button onClick={() => { setSelectedGenres([]); setSpecificDate(""); setAreaText(""); }}
               style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px", background: `${accent}14`, border: `1px solid ${accent}33`, borderRadius: "12px", padding: "2px 8px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: accent, cursor: "pointer" }}>
               <X size={9} /> フィルター解除
@@ -436,8 +438,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     {/* スクロールするのはここだけ。固定ヘッダーの残り高さ分だけ使う。
         カード脇の余白の色でセクションを見分けられるようにする（各タブの色の薄いやつ）。
         リストではなくこの器に色を敷くので、カードが少なくても下まで色が続く */}
-    <div ref={scrollShadow.ref} className="bd-scroll bd-glow-bg" onTouchStart={swipe.onTouchStart} onTouchMove={swipe.onTouchMove} onTouchEnd={swipe.onTouchEnd} onWheel={handleContentWheel}
-      style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any, background: SECTION_BG[section], transition: "background 0.2s" }}>
+    <div ref={scrollShadow.ref} className="bd-scroll" onTouchStart={swipe.onTouchStart} onTouchMove={swipe.onTouchMove} onTouchEnd={swipe.onTouchEnd} onWheel={handleContentWheel}
+      style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any }}>
       {/* 指の動きに追従する横スワイプ（慣性・跳ね返り）はこのラッパーが担当し、
           タブが切り替わった後の「その場で現れる」演出は内側のkey={section}が担当する */}
       <div style={swipe.style}>
