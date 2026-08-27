@@ -600,16 +600,15 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         )}
 
         {/* Instagram・プレイリストは横幅を半分にして、残りにその他項目のバッジを並べる */}
-        {profileData && (profileData.instagram || profileData.playlist_url || profileData.team || profileData.age_group || profileData.birth_year != null || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
+        {profileData && (profileData.instagram || profileData.playlist_url || profileData.team || profileData.age_group || profileData.birth_year != null || profileData.dance_years != null || profileData.genres.length > 0) && (
           <div style={{ marginTop: "8px", display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "flex-start" }}>
             {/* 他項目のバッジを先に、Instagram・プレイリストは下の行に表示する */}
-            {(profileData.team || profileData.age_group || profileData.birth_year != null || profileData.dance_years != null || profileData.gender || profileData.genres.length > 0) && (
+            {(profileData.team || profileData.age_group || profileData.birth_year != null || profileData.dance_years != null || profileData.genres.length > 0) && (
               <div style={{ flexBasis: "100%", display: "flex", flexWrap: "wrap", alignContent: "flex-start", gap: "6px" }}>
                 {profileData.team && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.team}</span>}
                 {profileData.birth_year != null && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{String(profileData.birth_year).slice(-2)}生</span>}
                 {profileData.age_group && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.age_group}</span>}
                 {profileData.dance_years != null && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>歴{profileData.dance_years}年</span>}
-                {profileData.gender && <span style={{ fontSize: "11px", padding: "3px 9px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{profileData.gender}</span>}
                 {profileData.genres.map(g => <GenreBadge key={g} genre={g} />)}
               </div>
             )}
