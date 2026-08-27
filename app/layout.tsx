@@ -23,8 +23,9 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* 900は日付バッジの太字表示用、Playfair Displayはカード背景のジャンル文字用に追加 */}
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Playfair+Display:ital,wght@0,900;1,900&display=swap" rel="stylesheet" />
+        {/* 900は日付バッジの太字表示用、Playfair Displayはカード背景のジャンル文字用、
+            RocknRoll Oneは画面タイトル（「フォロー中」など）用に追加 */}
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Playfair+Display:ital,wght@0,900;1,900&family=RocknRoll+One&display=swap" rel="stylesheet" />
       </head>
       <body>{children}<ToastHost /></body>
     </html>

@@ -200,7 +200,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <div style={{ flexShrink: 0, padding: "24px 16px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D" }}>
-        <h2 style={{ margin: "0 0 16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>投稿する</h2>
+        <h2 style={{ margin: "0 0 16px", fontFamily: "'RocknRoll One','Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>投稿する</h2>
         {/* タブはホーム画面と同じ、丸い枠の中で選択中だけ浮くセグメント風 */}
         {(() => {
           const shownTabs = ([["cypher", "CYPHER", "#DC2626"], ["pl", "LESSON", "#2563EB"], ["event", "EVENT", "#EAB308"]] as const).filter(([key]) => visibleTabs.includes(key));

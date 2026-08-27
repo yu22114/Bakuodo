@@ -235,6 +235,16 @@ export default function BakuOdori() {
            質感を出す。SVGのfeTurbulenceでノイズ画像を作り、透明度を極端に低くして重ねるだけ。
            z-index:-1で常に一番奥（他のUIより後ろ）に固定する */
         .bd-grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0.05;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+        /* 入力欄にフォーカスした時、ふわっと光るリングを出す。アプリ全体の
+           input/textarea/selectに一括で効かせる（file・range・checkbox・radioは対象外）。
+           borderは各コンポーネントがinline styleで指定しているため、ここだけ!importantで上書きする */
+        input:not([type="file"]):not([type="range"]):not([type="checkbox"]):not([type="radio"]):focus,
+        textarea:focus, select:focus {
+          outline: none;
+          border-color: #DC2626 !important;
+          box-shadow: 0 0 0 3px rgba(220,38,38,0.25), 0 0 14px rgba(220,38,38,0.3);
+          transition: box-shadow 0.2s ease, border-color 0.2s ease;
+        }
         /* 一覧だけはスクロールバーを出す。中身が多いほどつまみが小さくなるので、
            今どのへんを見ているかが分かる。太さと色だけ指定して動きは端末任せ */
         .bd-scroll::-webkit-scrollbar{display:block;width:6px}
@@ -251,6 +261,8 @@ export default function BakuOdori() {
            周りの縁が輪になって外へ広がりながら消える */
         @keyframes bdJoinPop{0%{transform:scale(0.88)}55%{transform:scale(1.05)}100%{transform:scale(1)}}
         @keyframes bdJoinRing{0%{transform:scale(1);opacity:0.7}100%{transform:scale(1.12);opacity:0}}
+        /* 通知の未読バッジ。新着が増えた瞬間だけ一瞬拡大して戻る */
+        @keyframes bdBadgePulse{0%{transform:translate(4px,-4px) scale(1)}40%{transform:translate(4px,-4px) scale(1.45)}100%{transform:translate(4px,-4px) scale(1)}}
         /* 画面を開いた時、ロゴが左から転がってきて中央に止まる。
            回転量は「移動距離÷半径」に合わせると滑らず転がって見えるので、
            ロゴのサイズごとに角度を変える（同じ距離なら大きい球ほど回転は少ない） */

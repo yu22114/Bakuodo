@@ -90,7 +90,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
           <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
         </button>
         <div>
-          <h2 style={{ margin: 0, fontSize: "28px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.05em", color: "#F0F0F0" }}>お知らせ</h2>
+          <h2 style={{ margin: 0, fontSize: "28px", fontFamily: "'RocknRoll One','Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.05em", color: "#F0F0F0" }}>お知らせ</h2>
         </div>
       </div>
       <div style={{ paddingBottom: "80px" }}>

@@ -62,6 +62,18 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   accountType?: string;
 }) {
   const [slideDir, setSlideDir] = useState<1 | -1>(1);
+  // 未読通知バッジ：件数が増えた瞬間だけ一瞬拡大させる
+  const [badgePulsing, setBadgePulsing] = useState(false);
+  const prevUnreadCountRef = useRef(unreadCount);
+  useEffect(() => {
+    if (unreadCount > prevUnreadCountRef.current) {
+      setBadgePulsing(true);
+      const t = setTimeout(() => setBadgePulsing(false), 500);
+      prevUnreadCountRef.current = unreadCount;
+      return () => clearTimeout(t);
+    }
+    prevUnreadCountRef.current = unreadCount;
+  }, [unreadCount]);
 
   // 団体用アカウントの時だけSPOTS・P LESSONタブを除いた並び順を使う
   const visibleSections: readonly TopSection[] = accountType === "organization" ? SECTION_ORDER.filter(s => s !== "spots" && s !== "pl") : SECTION_ORDER;
@@ -357,7 +369,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             <button onClick={onBell} style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "6px" }}>
               <Bell size={22} color="rgba(255,255,255,0.5)" />
               {unreadCount > 0 && (
-                <span style={{ position: "absolute", top: "2px", right: "2px", background: "#DC2626", color: "#fff", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", minWidth: "16px", height: "16px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", transform: "translate(4px,-4px)", lineHeight: 1 }}>
+                <span style={{ position: "absolute", top: "2px", right: "2px", background: "#DC2626", color: "#fff", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", minWidth: "16px", height: "16px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", transform: "translate(4px,-4px)", lineHeight: 1, animation: badgePulsing ? "bdBadgePulse 0.5s ease-out" : undefined }}>
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
