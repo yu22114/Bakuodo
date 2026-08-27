@@ -139,7 +139,9 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
         )}
       </div>
 
-      <div ref={scrollShadow.ref} className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
+      {/* ホーム画面と同じ、縦横無尽に動く後光っぽい光。マイコミュニティは紫
+          （このアプリで既にInstagramリンクなどに使っている「つながり」の色） */}
+      <div ref={scrollShadow.ref} className="bd-scroll bd-glow-bg" style={{ flex: 1, overflowY: "auto", padding: "16px", backgroundColor: "#0A0A0A", backgroundImage: "radial-gradient(circle at center, rgba(168,85,247,0.9) 0%, rgba(168,85,247,0.08) 16%, transparent 32%)" }}>
         {/* プロフィール画面の「マイコミュニティ」ボタンで追加したメンバー。1人もいなければ何も出さない。
             名前だけでなくInstagram・一言（自己紹介）も見えるよう、アイコンの並びではなく縦のカードにする */}
         {communityMembers && communityMembers.length > 0 && (
