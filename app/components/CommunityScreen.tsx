@@ -148,7 +148,7 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
             {communityMembers.map(m => (
               <button key={m.id} onClick={() => onViewProfile?.(m.id)}
-                style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: "12px", cursor: onViewProfile ? "pointer" : "default", padding: "12px 14px", display: "flex", alignItems: "center", gap: "12px", textAlign: "left", boxShadow: "0 4px 14px rgba(168,85,247,0.18), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+                style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(168,85,247,0.4)", borderRadius: "12px", cursor: onViewProfile ? "pointer" : "default", padding: "12px 14px", display: "flex", alignItems: "center", gap: "12px", textAlign: "left", boxShadow: "0 6px 22px rgba(168,85,247,0.4), 0 2px 8px rgba(168,85,247,0.3), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
                 <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
                   {m.avatar_url ? <img src={m.avatar_url} alt={m.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : m.dancer_name[0]?.toUpperCase()}
                 </div>
