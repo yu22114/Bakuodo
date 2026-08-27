@@ -206,7 +206,7 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
           );
         })()}
         <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", minWidth: 0, position: "relative" }}>
-          <button onClick={onBack} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px", flexShrink: 0 }}>
+          <button onClick={onBack} style={{ background: "linear-gradient(180deg, #303030, #1c1c1c)", boxShadow: "0 3px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px", flexShrink: 0 }}>
             <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
           </button>
           <div style={{ minWidth: 0 }}>

@@ -522,7 +522,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", flexShrink: 0, boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: "4px" }}>
           {onBack ? (
-            <button onClick={onBack} style={{ justifySelf: "start", background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>
+            <button onClick={onBack} style={{ justifySelf: "start", background: "linear-gradient(180deg, #303030, #1c1c1c)", boxShadow: "0 3px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>
               <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
             </button>
           ) : <div />}
