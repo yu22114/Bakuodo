@@ -9,7 +9,7 @@ import { Loading } from "./Loading";
 const ACCENT = "#DC2626";
 
 export type Member = { id: string; dancer_name: string; avatar_url: string | null; instagram: string | null; isCreator: boolean };
-type PracticeSchedule = { id: string; practice_date: string; practice_time: string | null; practice_end_time: string | null; place: string | null };
+type PracticeSchedule = { id: string; practice_date: string; practice_time: string | null; practice_end_time: string | null; place: string | null; created_by: string | null };
 type AttendanceStatus = "yes" | "maybe" | "no";
 type Attendance = { status: AttendanceStatus | null; comment: string | null };
 
@@ -86,7 +86,7 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
   };
 
   const fetchSchedules = async () => {
-    let query = supabase.from("community_board_practice_schedules").select("id, practice_date, practice_time, practice_end_time, place").eq("board_id", boardId);
+    let query = supabase.from("community_board_practice_schedules").select("id, practice_date, practice_time, practice_end_time, place, created_by").eq("board_id", boardId);
     query = cardId ? query.eq("card_id", cardId) : query.is("card_id", null);
     const { data } = await query.order("practice_date", { ascending: true }).order("practice_time", { ascending: true }).order("created_at", { ascending: true });
     const list = (data as any[]) ?? [];
@@ -128,7 +128,7 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
     if (!newDate || addingSchedule || !cardId) return;
     setAddingSchedule(true);
     const { error } = await supabase.from("community_board_practice_schedules").insert({
-      board_id: boardId, card_id: cardId, practice_date: newDate, practice_time: newStartTime || null, practice_end_time: newEndTime || null, place: newPlace.trim() || null,
+      board_id: boardId, card_id: cardId, practice_date: newDate, practice_time: newStartTime || null, practice_end_time: newEndTime || null, place: newPlace.trim() || null, created_by: user.id,
     });
     setAddingSchedule(false);
     if (!error) {
@@ -223,6 +223,8 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
             // 日にちが過ぎたものは灰色にして終わったことがわかるようにする。
             // まだ来ていないものは「今後の予定」バッジを出す
             const isPast = s.practice_date < todayStr();
+            // 編集・削除できるのは掲示板の作成者、またはこの日程を追加した本人
+            const canManage = isOwn || s.created_by === user.id;
             return (
               <div key={s.id} onClick={() => setViewingScheduleId(s.id)} style={{ width: "100%", boxSizing: "border-box", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px", position: "relative", overflow: "hidden", opacity: isPast ? 0.5 : 1, cursor: "pointer", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }}>
                 {!isPast && (
@@ -266,7 +268,7 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
                     <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{attendances[s.id]?.[user.id]?.comment || "コメント"}</span>
                   </button>
                 </div>
-                {isOwn && (
+                {canManage && (
                   <div onClick={e => e.stopPropagation()} style={{ display: "flex", gap: "2px", flexShrink: 0 }}>
                     <button onClick={() => startEditSchedule(s)} title="編集" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px" }}><Pencil size={14} /></button>
                     <button onClick={() => deleteSchedule(s.id)} title="削除" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px" }}><Trash2 size={14} /></button>
