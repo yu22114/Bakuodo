@@ -152,7 +152,9 @@ export function FollowingActivityScreen({ user, onCardClick, onPLClick, onViewPr
         <h2 style={{ margin: 0, fontFamily: "'RocknRoll One','Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>フォロー中</h2>
       </div>
 
-      <div ref={scrollShadow.ref} className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
+      {/* ホーム画面の後光っぽい光と同じ仕組み（.bd-glow-bgがbackground-positionを動かす）。
+          ここはCYPHER・EVENTが混ざって並ぶ画面なので、単色ではなく赤・青・黄の3色を重ねる */}
+      <div ref={scrollShadow.ref} className="bd-scroll bd-glow-bg" style={{ flex: 1, overflowY: "auto", padding: "16px", backgroundColor: "#0A0A0A", backgroundImage: "radial-gradient(circle at 22% 28%, rgba(220,38,38,0.9) 0%, rgba(220,38,38,0.08) 16%, transparent 32%), radial-gradient(circle at 75% 55%, rgba(37,99,235,0.9) 0%, rgba(37,99,235,0.08) 16%, transparent 32%), radial-gradient(circle at 45% 85%, rgba(234,179,8,0.9) 0%, rgba(234,179,8,0.08) 16%, transparent 32%)" }}>
         {loading ? (
           <CardSkeleton />
         ) : cyphers.length === 0 && events.length === 0 ? (
