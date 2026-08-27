@@ -342,8 +342,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         親（上のdiv）の光をそのまま透かして見せる。
         下の一覧がスクロールして中身が隠れている時だけ、うっすら影を出す */}
     <div style={{ flexShrink: 0, boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
-      {/* ヘッダー。ここだけすりガラス調にする（タブ・ジャンルチップは今まで通り） */}
-      <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.06)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)" }}>
+      {/* ヘッダー。ガラス調はやめて、グラデーション＋影で浮き上がったふっくらした帯にする */}
+      <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "linear-gradient(180deg, #242424, #161616)", boxShadow: "0 4px 10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
           {/* 今日の日付は常に出しておく。左のカレンダーアイコンを押すと月間カレンダーが開く */}
           <button onClick={() => { setCalendarMonthOffset(0); setShowCalendar(true); }} aria-label="カレンダーを表示"
