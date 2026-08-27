@@ -149,7 +149,7 @@ export function FollowingActivityScreen({ user, onCardClick, onPLClick, onViewPr
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.06)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
-        <h2 style={{ margin: 0, fontFamily: "'RocknRoll One','Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>フォロー中</h2>
+        <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>フォロー中</h2>
       </div>
 
       {/* ホーム画面の後光っぽい光と同じ仕組み（.bd-glow-bgがbackground-positionを動かす）。
