@@ -222,20 +222,6 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
             {Array.from({ length: new Date().getFullYear() - 1900 + 1 }, (_, i) => new Date().getFullYear() - i).map(y => <option key={y} value={y}>{y}年</option>)}
           </select>
         </div>
-        <div>
-          <label style={lbl}>性別（任意）</label>
-          <div style={{ display: "flex", gap: "8px" }}>
-            {["男性", "女性", "その他", "未回答"].map(g => {
-              const sel = profile.gender === g;
-              return (
-                <button key={g} onClick={() => { setProfile(p => ({ ...p, gender: p.gender === g ? "" : g })); setSaved(false); }}
-                  style={{ padding: "8px 12px", border: sel ? "1px solid #DC2626" : "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", background: sel ? "rgba(220,38,38,0.1)" : "transparent", color: sel ? "#DC2626" : "rgba(255,255,255,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
-                  {g}
-                </button>
-              );
-            })}
-          </div>
-        </div>
         <div><label style={lbl}>Instagram（任意）</label>
           <div style={{ position: "relative" }}>
             <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#F0F0F0", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif" }}>@</span>
