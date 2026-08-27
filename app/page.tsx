@@ -279,20 +279,51 @@ export default function BakuOdori() {
           .bd-glow-card { box-shadow: 0 6px 12px rgba(0,0,0,0.05), 0 18px 36px var(--bd-glow, transparent) !important; }
           .bd-glow-card-blue { box-shadow: 0 6px 12px rgba(0,0,0,0.05), 0 18px 36px rgba(37,99,235,0.18) !important; }
         }
-        /* カード裏の光が縦横無尽に動き回るように、大きめに敷いた背景の位置を
-           あちこちの角へ飛ばしながらループさせる。
+        /* カード裏の光が縦横無尽に、かつ角のない滑らかな曲線を描いて動き回るように、
+           リサージュ曲線（周波数比2:3）を細かく刻んでキーフレーム化した。
+           点の数を多く・移動をlinearにすることで、直線区間を感じさせず曲線に見せている。
            background(ショートハンド)を毎回inlineで指定し直すのでposition/sizeは
            !importantで固定しないと初期値に戻されてしまう */
         @keyframes bdGlowDrift {
-          0%   { background-position: 10% -10%; }
-          18%  { background-position: 90% 5%; }
-          36%  { background-position: 95% 90%; }
-          54%  { background-position: 5% 95%; }
-          72%  { background-position: 60% 45%; }
-          88%  { background-position: 15% 20%; }
-          100% { background-position: 10% -10%; }
+          0%      { background-position: 50% 92%; }
+          2.778%  { background-position: 64.4% 86.4%; }
+          5.556%  { background-position: 77% 71%; }
+          8.333%  { background-position: 86.4% 50%; }
+          11.111% { background-position: 91.4% 29%; }
+          13.889% { background-position: 91.4% 13.6%; }
+          16.667% { background-position: 86.4% 8%; }
+          19.444% { background-position: 77% 13.6%; }
+          22.222% { background-position: 64.4% 29%; }
+          25%     { background-position: 50% 50%; }
+          27.778% { background-position: 35.6% 71%; }
+          30.556% { background-position: 23% 86.4%; }
+          33.333% { background-position: 13.6% 92%; }
+          36.111% { background-position: 8.6% 86.4%; }
+          38.889% { background-position: 8.6% 71%; }
+          41.667% { background-position: 13.6% 50%; }
+          44.444% { background-position: 23% 29%; }
+          47.222% { background-position: 35.6% 13.6%; }
+          50%     { background-position: 50% 8%; }
+          52.778% { background-position: 64.4% 13.6%; }
+          55.556% { background-position: 77% 29%; }
+          58.333% { background-position: 86.4% 50%; }
+          61.111% { background-position: 91.4% 71%; }
+          63.889% { background-position: 91.4% 86.4%; }
+          66.667% { background-position: 86.4% 92%; }
+          69.444% { background-position: 77% 86.4%; }
+          72.222% { background-position: 64.4% 71%; }
+          75%     { background-position: 50% 50%; }
+          77.778% { background-position: 35.6% 29%; }
+          80.556% { background-position: 23% 13.6%; }
+          83.333% { background-position: 13.6% 8%; }
+          86.111% { background-position: 8.6% 13.6%; }
+          88.889% { background-position: 8.6% 29%; }
+          91.667% { background-position: 13.6% 50%; }
+          94.444% { background-position: 23% 71%; }
+          97.222% { background-position: 35.6% 86.4%; }
+          100%    { background-position: 50% 92%; }
         }
-        .bd-glow-bg { background-size: 220% 220% !important; animation: bdGlowDrift 5s ease-in-out infinite; }
+        .bd-glow-bg { background-size: 220% 220% !important; animation: bdGlowDrift 16s linear infinite; }
       `}</style>
 
       <div className="bd-grain" />
