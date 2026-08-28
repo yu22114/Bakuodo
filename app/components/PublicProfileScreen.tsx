@@ -541,7 +541,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             {isOwn && (
               <div style={{ position: "relative" }}>
                 <button onClick={() => setMenuOpen(m => !m)}
-                  style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", cursor: "pointer", padding: "8px 10px", display: "flex", alignItems: "center", color: "#F0F0F0" }}>
+                  style={{ background: "none", border: "none", borderRadius: "8px", cursor: "pointer", padding: "8px 10px", display: "flex", alignItems: "center", color: "#F0F0F0" }}>
                   <Menu size={16} />
                 </button>
                 {menuOpen && (<>
