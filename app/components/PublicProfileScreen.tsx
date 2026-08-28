@@ -617,7 +617,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 INSTAGRAM/SPOTIFYなどのラベル文字は出さない */}
             {profileData.instagram && (
               <a href={`https://instagram.com/${profileData.instagram}`} target="_blank" rel="noopener noreferrer"
-                style={{ flex: "0 1 calc(50% - 4px)", minWidth: "130px", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "6px 10px", borderRadius: "8px", border: "1px solid rgba(168,85,247,0.35)", textDecoration: "none", background: "rgba(168,85,247,0.1)" }}>
+                style={{ flex: "0 1 calc(50% - 4px)", minWidth: "130px", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "6px 10px", borderRadius: "8px", border: "1px solid rgba(56,189,248,0.35)", textDecoration: "none", background: "rgba(56,189,248,0.1)" }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <rect x="1" y="1" width="22" height="22" rx="6" stroke="#38BDF8" strokeWidth="1.8" fill="none"/>
                   <circle cx="12" cy="12" r="4.2" stroke="#38BDF8" strokeWidth="1.8" fill="none"/>
