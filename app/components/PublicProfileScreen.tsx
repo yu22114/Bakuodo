@@ -597,7 +597,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
               : <span style={{ fontSize: "30px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#fff" }}>{name[0]?.toUpperCase() ?? "?"}</span>
             }
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, marginTop: "14px" }}>
             <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "12px", color: "#F0F0F0" }}>{name}</h2>
             {/* 名前の位置はそのまま、右寄せにする（右端にくっつきすぎないよう少し余白を空ける） */}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "18px", marginTop: "5px", paddingRight: "28px" }}>
