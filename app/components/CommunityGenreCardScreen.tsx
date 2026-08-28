@@ -195,7 +195,7 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
 
   return (
     <div {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 160, background: "#000000", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }}>
-      <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "0.5px solid rgba(255,255,255,0.14)", background: "#0D0D0D", display: "flex", alignItems: "flex-start", gap: "16px", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
+      <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "flex-start", gap: "16px", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
         {/* 背景に敷くジャンル名。ホーム画面のCYPHERカードと同じ仕組み（右側に大きく薄く色付き） */}
         {cardState.genre && (() => {
           const genreText = genreLabel(cardState.genre).toUpperCase();
@@ -303,7 +303,7 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
               <button onClick={() => setShowEdit(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
             </div>
             <input value={editTitle} onChange={e => setEditTitle(e.target.value)} placeholder="タイトル（例: Hip-Hopクラス）" maxLength={40} autoFocus
-              style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+              style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
 
             <div style={{ marginTop: "10px" }}>
               <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "6px" }}>講師（任意・複数登録できます）</label>
@@ -312,9 +312,9 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
                   <div key={i} style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                     <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
                       <input value={ins.name} onChange={e => updateEditInstructor(i, "name", e.target.value)} placeholder="講師名" maxLength={30}
-                        style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                        style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
                       <input value={ins.instagram} onChange={e => updateEditInstructor(i, "instagram", e.target.value)} placeholder="Instagram（URLか@ユーザー名・任意）" maxLength={200} autoCapitalize="none" autoCorrect="off"
-                        style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                        style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
                     </div>
                     {editInstructors.length > 1 && (
                       <button onClick={() => removeEditInstructor(i)} title="この講師を削除" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", padding: "4px", flexShrink: 0 }}><X size={15} /></button>
@@ -332,7 +332,7 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {GENRES.map(g => { const sel = editGenre.includes(g); const col = GENRE_COLORS[g]; return (
                   <button key={g} onClick={() => setEditGenre(list => toggleGenre(list, g))}
-                    style={{ padding: "6px 10px", border: sel ? `1px solid ${col}` : "0.5px solid rgba(255,255,255,0.2)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                    style={{ padding: "6px 10px", border: sel ? `1px solid ${col}` : "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
                     {genreLabel(g)}
                   </button>
                 ); })}
@@ -356,7 +356,7 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
             <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "20px", color: "#F0F0F0", marginBottom: "8px" }}>カードを削除</div>
             <div style={{ fontSize: "13px", color: "#F0F0F0", marginBottom: "24px", lineHeight: "1.6" }}>削除すると、このカードの中の練習日程もすべて消えます。元に戻せません。本当に削除しますか？</div>
             <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={() => setDeleteConfirm(false)} style={{ flex: 1, padding: "12px", border: "0.5px solid rgba(255,255,255,0.24)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#F0F0F0" }}>キャンセル</button>
+              <button onClick={() => setDeleteConfirm(false)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#F0F0F0" }}>キャンセル</button>
               <button onClick={handleDelete} disabled={deleting} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #DC2626, #A61B1B)", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>{deleting ? "削除中..." : "削除する"}</button>
             </div>
           </div>

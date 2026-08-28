@@ -179,16 +179,16 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
               <Plus size={14} /> 練習日程を追加
             </button>
           ) : (
-            <div style={{ background: "#141414", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "8px", padding: "10px" }}>
+            <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px" }}>
               <input type="date" min={todayStr()} value={newDate} onChange={e => setNewDate(e.target.value)}
-                style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
               {/* 開始・終了時間はCYPHERと同じ仕様：30分刻みのプルダウンで、終了は開始を基準に並べ替え、
                   開始以下の時刻は「翌日」として翌HH:MMで表示する */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginTop: "6px" }}>
                 <div>
                   <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "3px" }}>開始時間</label>
                   <select value={newStartTime} onChange={e => setNewStartTime(e.target.value)}
-                    style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }}>
+                    style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }}>
                     <option value="">未設定</option>
                     {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
@@ -196,14 +196,14 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
                 <div>
                   <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "3px" }}>終了時間</label>
                   <select value={newEndTime} onChange={e => setNewEndTime(e.target.value)}
-                    style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }}>
+                    style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }}>
                     <option value="">未設定</option>
                     {endTimeOptions(newStartTime).map(t => <option key={t} value={t}>{endTimeLabel(t, newStartTime)}</option>)}
                   </select>
                 </div>
               </div>
               <input value={newPlace} onChange={e => setNewPlace(e.target.value)} placeholder="場所（任意）" maxLength={100}
-                style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "8px" }}>
                 <button onClick={() => { setShowAddSchedule(false); setNewDate(""); setNewStartTime(DEFAULT_START_TIME); setNewEndTime(""); setNewPlace(""); }} disabled={addingSchedule} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
                 <button onClick={addSchedule} disabled={!newDate || addingSchedule} style={{ background: newDate ? ACCENT : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: newDate ? "pointer" : "default", color: newDate ? "#fff" : "rgba(255,255,255,0.3)", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>{addingSchedule ? "追加中..." : "追加する"}</button>
@@ -226,12 +226,12 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
             // 編集・削除できるのは掲示板の作成者、またはこの日程を追加した本人
             const canManage = isOwn || s.created_by === user.id;
             return (
-              <div key={s.id} onClick={() => setViewingScheduleId(s.id)} style={{ width: "100%", boxSizing: "border-box", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px", position: "relative", overflow: "hidden", opacity: isPast ? 0.5 : 1, cursor: "pointer", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+              <div key={s.id} onClick={() => setViewingScheduleId(s.id)} style={{ width: "100%", boxSizing: "border-box", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px", position: "relative", overflow: "hidden", opacity: isPast ? 0.5 : 1, cursor: "pointer", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }}>
                 {!isPast && (
                   <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.12)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>今後の予定</div>
                 )}
                 {/* 番号は一番左に専用の列として配置する */}
-                <div style={{ alignSelf: "stretch", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "12px", borderRight: "0.5px solid rgba(255,255,255,0.16)", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
+                <div style={{ alignSelf: "stretch", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "12px", borderRight: "1px solid rgba(255,255,255,0.1)", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
                   {circledNumber(i + 1)}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "5px", flex: 1, minWidth: 0, fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>
@@ -255,7 +255,7 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
                       const mine = attendances[s.id]?.[user.id]?.status === st;
                       return (
                         <button key={st} onClick={() => setMyAttendance(s.id, st)}
-                          style={{ flex: 1, height: "30px", borderRadius: "6px", border: mine ? `1px solid ${meta.color}` : "0.5px solid rgba(255,255,255,0.2)", background: mine ? `${meta.color}22` : "transparent", color: mine ? meta.color : "rgba(255,255,255,0.5)", fontSize: "14px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          style={{ flex: 1, height: "30px", borderRadius: "6px", border: mine ? `1px solid ${meta.color}` : "1px solid rgba(255,255,255,0.14)", background: mine ? `${meta.color}22` : "transparent", color: mine ? meta.color : "rgba(255,255,255,0.5)", fontSize: "14px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           {meta.label}
                         </button>
                       );
@@ -292,7 +292,7 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
         const noAnswerCount = Math.max(0, (members ?? []).length - counts.yes - counts.maybe - counts.no);
         return (
           <div style={{ position: "fixed", inset: 0, zIndex: 245, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setViewingScheduleId(null)}>
-            <div onClick={e => e.stopPropagation()} style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px", maxHeight: "80vh", overflowY: "auto", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px", maxHeight: "80vh", overflowY: "auto", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
                 <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>参加状況</div>
                 <button onClick={() => setViewingScheduleId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
@@ -302,7 +302,7 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
                 {sched.practice_time && <>・{formatTimeRange(sched.practice_time, sched.practice_end_time)}</>}
               </div>
               {/* ○/△/×それぞれの人数 */}
-              <div style={{ display: "flex", gap: "14px", marginBottom: "16px", paddingBottom: "14px", borderBottom: "0.5px solid rgba(255,255,255,0.14)" }}>
+              <div style={{ display: "flex", gap: "14px", marginBottom: "16px", paddingBottom: "14px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                 {(["yes", "maybe", "no"] as AttendanceStatus[]).map(st => (
                   <div key={st} style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>
                     <span style={{ color: STATUS_META[st].color, fontWeight: 700, fontSize: "15px" }}>{STATUS_META[st].label}</span>
@@ -353,7 +353,7 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
               <button onClick={() => setCommentTarget(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
             </div>
             <input value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="一言コメント" maxLength={60} autoFocus
-              style={{ width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+              style={{ width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "16px" }}>
               <button onClick={() => setCommentTarget(null)} disabled={savingComment} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "8px 14px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
               <button onClick={saveComment} disabled={savingComment} style={{ background: ACCENT, border: "none", borderRadius: "8px", cursor: "pointer", color: "#fff", padding: "8px 14px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>
@@ -373,12 +373,12 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
               <button onClick={() => setEditingId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
             </div>
             <input type="date" min={todayStr()} value={editDate} onChange={e => setEditDate(e.target.value)}
-              style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+              style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginTop: "6px" }}>
               <div>
                 <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "3px" }}>開始時間</label>
                 <select value={editStartTime} onChange={e => setEditStartTime(e.target.value)}
-                  style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }}>
+                  style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }}>
                   <option value="">未設定</option>
                   {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
@@ -386,14 +386,14 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
               <div>
                 <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "3px" }}>終了時間</label>
                 <select value={editEndTime} onChange={e => setEditEndTime(e.target.value)}
-                  style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }}>
+                  style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }}>
                   <option value="">未設定</option>
                   {endTimeOptions(editStartTime).map(t => <option key={t} value={t}>{endTimeLabel(t, editStartTime)}</option>)}
                 </select>
               </div>
             </div>
             <input value={editPlace} onChange={e => setEditPlace(e.target.value)} placeholder="場所（任意）" maxLength={100}
-              style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+              style={{ width: "100%", marginTop: "6px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "16px" }}>
               <button onClick={() => setEditingId(null)} disabled={savingEdit} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "8px 14px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
               <button onClick={saveEditSchedule} disabled={!editDate || savingEdit} style={{ background: editDate ? ACCENT : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: editDate ? "pointer" : "default", color: editDate ? "#fff" : "rgba(255,255,255,0.3)", padding: "8px 14px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>

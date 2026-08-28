@@ -154,7 +154,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
 
   return (
     <div {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }}>
-      <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "0.5px solid rgba(255,255,255,0.14)", background: "#0D0D0D", display: "flex", alignItems: "flex-start", gap: "16px", boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
+      <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "flex-start", gap: "16px", boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
         <button onClick={onBack} style={{ background: "linear-gradient(180deg, #303030, #1c1c1c)", boxShadow: "0 3px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px", flexShrink: 0 }}>
           <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
         </button>
@@ -187,9 +187,9 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
                   <Plus size={14} /> カードを作る
                 </button>
               ) : (
-                <div style={{ background: "#141414", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "8px", padding: "10px" }}>
+                <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px" }}>
                   <input value={newCardTitle} onChange={e => setNewCardTitle(e.target.value)} placeholder="タイトル（例: Hip-Hopクラス）" maxLength={40} autoFocus
-                    style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                    style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
 
                   <div style={{ marginTop: "10px" }}>
                     <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "6px" }}>講師（任意・複数登録できます）</label>
@@ -198,9 +198,9 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
                         <div key={i} style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
                             <input value={ins.name} onChange={e => updateNewInstructor(i, "name", e.target.value)} placeholder="講師名" maxLength={30}
-                              style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                              style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
                             <input value={ins.instagram} onChange={e => updateNewInstructor(i, "instagram", e.target.value)} placeholder="Instagram（URLか@ユーザー名・任意）" maxLength={200} autoCapitalize="none" autoCorrect="off"
-                              style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                              style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
                           </div>
                           {newCardInstructors.length > 1 && (
                             <button onClick={() => removeNewInstructor(i)} title="この講師を削除" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", padding: "4px", flexShrink: 0 }}><X size={15} /></button>
@@ -218,7 +218,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                       {GENRES.map(g => { const sel = newCardGenre.includes(g); const col = GENRE_COLORS[g]; return (
                         <button key={g} onClick={() => setNewCardGenre(list => toggleGenre(list, g))}
-                          style={{ padding: "6px 10px", border: sel ? `1px solid ${col}` : "0.5px solid rgba(255,255,255,0.2)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                          style={{ padding: "6px 10px", border: sel ? `1px solid ${col}` : "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
                           {genreLabel(g)}
                         </button>
                       ); })}
@@ -249,7 +249,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
                 const genreText = card.genre ? genreLabel(card.genre).toUpperCase() : "";
                 return (
                   <button key={card.id} onClick={() => setOpenCard(card)}
-                    style={{ width: "100%", boxSizing: "border-box", textAlign: "left", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "10px", padding: "14px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }}>
+                    style={{ width: "100%", boxSizing: "border-box", textAlign: "left", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }}>
                     {card.genre && (
                       <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", fontSize: `${Math.round(Math.min(68, Math.round(360 / genreText.length)) * 1.1)}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: genreColor + "40", pointerEvents: "none", userSelect: "none" }}>
                         {genreText}
@@ -263,12 +263,12 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
                         </div>
                         {isOwn ? (
                           <span onClick={e => { e.stopPropagation(); setDeleteCardTarget(card.id); }} title="カードを削除"
-                            style={{ background: "none", border: "0.5px solid rgba(255,255,255,0.24)", borderRadius: "6px", cursor: "pointer", color: "rgba(255,255,255,0.4)", padding: "5px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", cursor: "pointer", color: "rgba(255,255,255,0.4)", padding: "5px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                             <Trash2 size={13} />
                           </span>
                         ) : (
                           <span onClick={e => { e.stopPropagation(); cancelApplication(card.id); }} title="参加申請を取り消す"
-                            style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(255,255,255,0.24)", borderRadius: "6px", cursor: "pointer", padding: "5px 8px", flexShrink: 0 }}>
+                            style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", cursor: "pointer", padding: "5px 8px", flexShrink: 0 }}>
                             取り消す
                           </span>
                         )}
@@ -293,7 +293,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
                 {unjoinedCards.map(card => {
                   const genreColor = card.genre && (GENRE_COLORS as Record<string, string>)[card.genre] ? (GENRE_COLORS as Record<string, string>)[card.genre] : "#DC2626";
                   return (
-                    <div key={card.id} style={{ width: "100%", boxSizing: "border-box", background: "#141414", border: "0.5px solid rgba(255,255,255,0.16)", borderRadius: "10px", padding: "14px 16px" }}>
+                    <div key={card.id} style={{ width: "100%", boxSizing: "border-box", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
                         <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: genreColor, flexShrink: 0 }} />
                         <span style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.title}</span>
@@ -326,7 +326,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
             <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "20px", color: "#F0F0F0", marginBottom: "8px" }}>カードを削除</div>
             <div style={{ fontSize: "13px", color: "#F0F0F0", marginBottom: "24px", lineHeight: "1.6" }}>削除すると、このカードの中の練習日程もすべて消えます。元に戻せません。本当に削除しますか？</div>
             <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={() => setDeleteCardTarget(null)} style={{ flex: 1, padding: "12px", border: "0.5px solid rgba(255,255,255,0.24)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#F0F0F0" }}>キャンセル</button>
+              <button onClick={() => setDeleteCardTarget(null)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#F0F0F0" }}>キャンセル</button>
               <button onClick={deleteCard} disabled={deletingCard} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #DC2626, #A61B1B)", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>{deletingCard ? "削除中..." : "削除する"}</button>
             </div>
           </div>

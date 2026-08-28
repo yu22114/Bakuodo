@@ -85,7 +85,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
 
   return (
     <div {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>
-      <div style={{ padding: "32px 16px 20px", borderBottom: "0.5px solid rgba(255,255,255,0.14)", background: "#0D0D0D", display: "flex", alignItems: "center", gap: "16px" }}>
+      <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "center", gap: "16px" }}>
         <button onClick={onBack} style={{ background: "linear-gradient(180deg, #303030, #1c1c1c)", boxShadow: "0 3px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px", flexShrink: 0 }}>
           <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
         </button>
@@ -108,7 +108,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
           const actorName = actor?.dancer_name ?? "UNKNOWN";
           const cypherTitle = cypher?.title ?? lesson?.title ?? "サイファー";
           return (
-            <div key={n.id} style={{ padding: "14px 16px", borderBottom: "0.5px solid rgba(255,255,255,0.14)", background: n.read ? "transparent" : "rgba(220,38,38,0.06)", display: "flex", alignItems: "center", gap: "12px" }}>
+            <div key={n.id} style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: n.read ? "transparent" : "rgba(220,38,38,0.06)", display: "flex", alignItems: "center", gap: "12px" }}>
               <button onClick={() => actor?.id && onViewProfile?.(actor.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}>
                 <div style={{ width: "38px", height: "38px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
                   {actor?.avatar_url
@@ -137,7 +137,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
                       <Check size={11} /> 承認
                     </button>
                     <button onClick={() => handleReject(n.id, actor?.id, n.type, cypher?.id, lesson?.id)} disabled={actionLoading === n.id}
-                      style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", background: "transparent", border: "0.5px solid rgba(255,255,255,0.24)", borderRadius: "6px", color: "#F0F0F0", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", opacity: actionLoading === n.id ? 0.6 : 1 }}>
+                      style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", color: "#F0F0F0", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", opacity: actionLoading === n.id ? 0.6 : 1 }}>
                       <X size={11} /> 拒否
                     </button>
                   </div>

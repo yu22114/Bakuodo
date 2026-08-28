@@ -75,7 +75,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
     onSaved();
   };
 
-  const inp: React.CSSProperties = { width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" };
+  const inp: React.CSSProperties = { width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" };
   const lbl: React.CSSProperties = { display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.15em", color: "#F0F0F0", marginBottom: "6px", textTransform: "uppercase" as const };
 
   if (loading) return (
@@ -86,7 +86,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
 
   return (
     <div {...swipeBack} style={{ paddingBottom: "80px", background: "#000000" }}>
-      <div style={{ padding: "24px 16px 16px", borderBottom: "0.5px solid rgba(255,255,255,0.14)", background: "#0D0D0D", display: "flex", alignItems: "center", gap: "16px" }}>
+      <div style={{ padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "center", gap: "16px" }}>
         <button onClick={onBack} style={{ background: "linear-gradient(180deg, #303030, #1c1c1c)", boxShadow: "0 3px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px", flexShrink: 0 }}>
           <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
         </button>
@@ -121,7 +121,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
           <label style={lbl}>ジャンル</label>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "7px" }}>
             {GENRES.map(g => { const sel = form.genres.includes(g); const col = GENRE_COLORS[g]; return (
-              <button key={g} onClick={() => toggleGenre(g)} style={{ padding: "6px 12px", border: sel ? "none" : "0.5px solid rgba(255,255,255,0.2)", borderRadius: "20px", background: sel ? `linear-gradient(180deg, color-mix(in srgb, ${col} 55%, white 45%), color-mix(in srgb, ${col} 55%, white 15%))` : "transparent", boxShadow: sel ? `0 3px 7px ${col}33, inset 0 1px 0 rgba(255,255,255,0.5)` : "inset 0 1px 3px rgba(0,0,0,0.3)", color: sel ? `color-mix(in srgb, ${col} 100%, black 35%)` : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: sel ? "bold" : "normal" }}>{genreLabel(g)}</button>
+              <button key={g} onClick={() => toggleGenre(g)} style={{ padding: "6px 12px", border: sel ? "none" : "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", background: sel ? `linear-gradient(180deg, color-mix(in srgb, ${col} 55%, white 45%), color-mix(in srgb, ${col} 55%, white 15%))` : "transparent", boxShadow: sel ? `0 3px 7px ${col}33, inset 0 1px 0 rgba(255,255,255,0.5)` : "inset 0 1px 3px rgba(0,0,0,0.3)", color: sel ? `color-mix(in srgb, ${col} 100%, black 35%)` : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: sel ? "bold" : "normal" }}>{genreLabel(g)}</button>
             ); })}
           </div>
         </div>
@@ -131,7 +131,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
           <div><label style={lbl}>スタジオ代（円・合計）</label><input style={inp} type="number" min="0" placeholder="例: 6000" value={form.studio_fee} onChange={e => setForm(f => ({ ...f, studio_fee: e.target.value }))} /></div>
         </div>
         <button onClick={() => setIsPrivate(v => !v)}
-          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#141414", border: "0.5px solid rgba(255,255,255,0.16)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
+          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
           <div>
             <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold" }}>
               🔒 フォロワー限定
@@ -145,7 +145,7 @@ export function EditCypherScreen({ cypherId, user, onBack, onSaved }: {
           </div>
         </button>
         <button onClick={() => setRequiresApproval(v => !v)}
-          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#141414", border: "0.5px solid rgba(255,255,255,0.16)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
+          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
           <div>
             <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold" }}>
               📋 参加承認制

@@ -172,7 +172,7 @@ export function AvatarCropper({ file, onCancel, onConfirm }: {
 
         <div style={{ display: "flex", gap: "10px", marginTop: "18px" }}>
           <button onClick={onCancel} disabled={saving}
-            style={{ flex: 1, padding: "12px", border: "0.5px solid rgba(255,255,255,0.24)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", color: "#F0F0F0", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+            style={{ flex: 1, padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", color: "#F0F0F0", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
             <X size={14} /> キャンセル
           </button>
           <button onClick={handleConfirm} disabled={saving || !natural}

@@ -127,7 +127,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
     <>
     <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", padding: "0 12px 12px", boxSizing: "border-box" }} onClick={onClose}>
       {/* ホーム画面のカードと同じメタリックな質感にそろえる。左右下に少し余白を持たせて浮かせる */}
-      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "16px", maxHeight: "88vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 -4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", maxHeight: "88vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 -4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
         <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0 }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: "5px", background: accent, borderRadius: "4px", padding: "2px 8px", marginBottom: "6px" }}>
@@ -171,7 +171,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
               <Clock size={14} color="rgba(255,255,255,0.45)" /> {date} {time}{lesson.ends_at ? `〜${formatEndTime(lesson.starts_at, lesson.ends_at)}` : ""}
             </div>
             {/* 地図へ飛べるのはここだけ。押せる場所だと分かるよう枠で囲う（DetailModalと同じ） */}
-            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lesson.location)}`} target="_blank" rel="noopener noreferrer" style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", textDecoration: "none", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "8px", padding: "10px 12px", minHeight: "44px", background: "#1A1A1A" }}>
+            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lesson.location)}`} target="_blank" rel="noopener noreferrer" style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", textDecoration: "none", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px 12px", minHeight: "44px", background: "#1A1A1A" }}>
               <MapPin size={14} color="rgba(255,255,255,0.45)" />
               <span style={{ flex: 1 }}>
                 {venue || (station && `${station}駅`)}
@@ -186,7 +186,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
           <ParticipantBar count={participantsFetched ? participants.length : lesson.participant_count} max={lesson.max_members} />
 
           {lesson.price != null && (
-            <div style={{ marginTop: "16px", padding: "12px 14px", background: "rgba(255,255,255,0.05)", border: "0.5px solid rgba(255,255,255,0.16)", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ marginTop: "16px", padding: "12px 14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>料金</div>
               <div style={{ fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>¥{lesson.price.toLocaleString()}</div>
             </div>
@@ -260,7 +260,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
               </div>
             )
           )}
-          <div style={{ marginTop: "28px", borderTop: "0.5px solid rgba(255,255,255,0.16)", paddingTop: "20px" }}>
+          <div style={{ marginTop: "28px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "20px" }}>
             <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "14px" }}>コメント{comments.length > 0 ? ` (${comments.length})` : ""}</div>
             {comments.length === 0 ? (
               <p style={{ fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginBottom: "16px" }}>まだコメントはありません</p>
@@ -295,7 +295,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
         </div>
 
         {/* 入力欄はDetailModalと同じく下に固定 */}
-        <div style={{ padding: "12px 16px 24px", borderTop: "0.5px solid rgba(255,255,255,0.16)", background: "#141414", display: "flex", gap: "8px", alignItems: "flex-end" }}>
+        <div style={{ padding: "12px 16px 24px", borderTop: "1px solid rgba(255,255,255,0.1)", background: "#141414", display: "flex", gap: "8px", alignItems: "flex-end" }}>
           <textarea
             value={commentText}
             onChange={e => setCommentText(e.target.value)}
@@ -303,7 +303,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
             placeholder="コメントを入力..."
             rows={1}
             maxLength={200}
-            style={{ flex: 1, resize: "none", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "20px", padding: "10px 14px", fontSize: "13px", fontFamily: "inherit", color: "#F0F0F0", background: "#1A1A1A", outline: "none", lineHeight: 1.5 }}
+            style={{ flex: 1, resize: "none", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", padding: "10px 14px", fontSize: "13px", fontFamily: "inherit", color: "#F0F0F0", background: "#1A1A1A", outline: "none", lineHeight: 1.5 }}
           />
           <button
             onClick={postComment}
@@ -318,24 +318,24 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
     {/* EVENT申請前の必須項目フォーム */}
     {showApplyForm && (
       <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setShowApplyForm(false)}>
-        <div onClick={e => e.stopPropagation()} style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px" }}>
+        <div onClick={e => e.stopPropagation()} style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px" }}>
           <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "8px" }}>参加申請</div>
           <p style={{ margin: "0 0 16px", fontSize: "11px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.6 }}>この回答は作成者以外に表示されません。</p>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <div>
               <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "4px" }}>ダンサーネーム</label>
               <input value={answerDancerName} onChange={e => setAnswerDancerName(e.target.value)} maxLength={50}
-                style={{ width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                style={{ width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
             </div>
             <div>
               <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "4px" }}>メールアドレス</label>
               <input type="email" value={answerEmail} onChange={e => setAnswerEmail(e.target.value)} maxLength={200}
-                style={{ width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                style={{ width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
             </div>
             <div>
               <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "4px" }}>電話番号</label>
               <input type="tel" value={answerPhone} onChange={e => setAnswerPhone(e.target.value)} maxLength={20}
-                style={{ width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                style={{ width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
             </div>
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "18px" }}>

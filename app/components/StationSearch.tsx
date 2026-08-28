@@ -20,10 +20,10 @@ export function StationSearch({ value, onChange, inputStyle }: { value: string; 
     <div style={{ position: "relative" }}>
       <input style={inputStyle} placeholder="例: 渋谷、新宿" value={value} onChange={e => { onChange(e.target.value); setOpen(true); }} onBlur={() => setTimeout(() => setOpen(false), 150)} />
       {open && suggestions.length > 0 && (
-        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#1E1E1E", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", boxShadow: "0 4px 12px rgba(0,0,0,0.4)", zIndex: 50, overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#1E1E1E", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", boxShadow: "0 4px 12px rgba(0,0,0,0.4)", zIndex: 50, overflow: "hidden" }}>
           {suggestions.map(s => (
             <button key={s} onMouseDown={() => { onChange(s); setOpen(false); }}
-              style={{ width: "100%", padding: "10px 12px", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", borderBottom: "0.5px solid rgba(255,255,255,0.14)" }}>
+              style={{ width: "100%", padding: "10px 12px", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               {s}駅
             </button>
           ))}

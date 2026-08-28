@@ -82,10 +82,10 @@ export function SpotCard({ spot, user, userLocation, onViewProfile }: {
 
   return (
     // 写真の上に白をかぶせて、文字が読める濃さまで薄めている
-    <div style={{ background: "#141414", border: "0.5px solid rgba(255,255,255,0.16)", borderLeft: `3px solid ${checkins.length > 0 ? "#16A34A" : "rgba(255,255,255,0.15)"}`, borderRadius: "10px", overflow: "hidden", transition: "border-left-color 0.3s",
+    <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderLeft: `3px solid ${checkins.length > 0 ? "#16A34A" : "rgba(255,255,255,0.15)"}`, borderRadius: "10px", overflow: "hidden", transition: "border-left-color 0.3s",
       backgroundImage: photo ? `linear-gradient(rgba(0,0,0,0.72), rgba(0,0,0,0.86)), url(/${encodeURIComponent(photo)}.jpg)` : undefined,
       backgroundSize: "cover", backgroundPosition: "center" }}>
-      <div style={{ padding: "14px 16px 12px", borderBottom: checkins.length > 0 ? "0.5px solid rgba(255,255,255,0.14)" : "none" }}>
+      <div style={{ padding: "14px 16px 12px", borderBottom: checkins.length > 0 ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
           <div style={{ flex: 1 }}>
             {distance !== null && (
