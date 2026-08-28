@@ -127,19 +127,6 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
 
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      {/* プロフィール画面のヘッダーと同じ、フラットな地色＋スクロール時だけ影が出る作りに揃える */}
-      <div style={{ flexShrink: 0, padding: "16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "flex-start", justifyContent: "space-between", boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
-        <div>
-          <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>マイコミュニティ</h2>
-        </div>
-        {accountType === "organization" && (
-          <button onClick={openCreate} aria-label="掲示板を作る"
-            style={{ background: "linear-gradient(135deg, #DC2626, #A61B1B)", border: "none", borderRadius: "10px", cursor: "pointer", width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "4px" }}>
-            <Plus size={20} color="#fff" />
-          </button>
-        )}
-      </div>
-
       {/* ホーム画面と同じ、縦横無尽に動く後光っぽい光。マイコミュニティは紫
           （このアプリで既にInstagramリンクなどに使っている「つながり」の色） */}
       <div ref={scrollShadow.ref} className="bd-scroll bd-glow-bg" style={{ flex: 1, overflowY: "auto", padding: "16px", backgroundColor: "#0A0A0A", backgroundImage: "radial-gradient(circle at center, rgba(168,85,247,0.9) 0%, rgba(168,85,247,0.08) 16%, transparent 32%)" }}>
@@ -165,7 +152,7 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
         {boards === null ? (
           <CardSkeleton />
         ) : boards.length === 0 ? (
-          <EmptyState icon={LayoutGrid} padding="60px 16px">まだ掲示板がありません。右上の＋から作ってみましょう</EmptyState>
+          <EmptyState icon={LayoutGrid} padding="60px 16px">まだ掲示板がありません。右下の＋から作ってみましょう</EmptyState>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {boards.map(b => (
@@ -209,6 +196,19 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
             <button onClick={handleSubmit} disabled={!newTitle.trim() || creating}
               style={{ marginTop: "18px", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "10px", border: "none", borderRadius: "8px", background: newTitle.trim() ? "#DC2626" : "rgba(255,255,255,0.08)", color: newTitle.trim() ? "#fff" : "rgba(255,255,255,0.3)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "bold", cursor: newTitle.trim() ? "pointer" : "default" }}>
               <Check size={14} /> {creating ? (editingId ? "保存中..." : "作成中...") : (editingId ? "保存する" : "作成する")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 掲示板を作るボタン。ヘッダーを無くした代わりに、右下に浮かぶ丸ボタンとして残す
+          （下部ナビと同じく外側は全幅の透明レイヤーにして中央寄せだけ担わせる） */}
+      {accountType === "organization" && (
+        <div style={{ position: "fixed", bottom: "88px", left: 0, right: 0, zIndex: 40, display: "flex", justifyContent: "center", pointerEvents: "none" }}>
+          <div style={{ width: "100%", maxWidth: "480px", display: "flex", justifyContent: "flex-end", padding: "0 16px" }}>
+            <button onClick={openCreate} aria-label="掲示板を作る"
+              style={{ pointerEvents: "auto", background: "linear-gradient(135deg, #DC2626, #A61B1B)", border: "none", borderRadius: "50%", cursor: "pointer", width: "52px", height: "52px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(220,38,38,0.4), 0 2px 6px rgba(0,0,0,0.3)" }}>
+              <Plus size={24} color="#fff" />
             </button>
           </div>
         </div>
