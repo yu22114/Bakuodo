@@ -690,10 +690,10 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       {/* 参加/主催 切り替えタブ。ここは固定し、下のカード一覧だけがスクロールする */}
       {!loading && showJoinedTab && (
         <div style={{ padding: "6px 16px 0", flexShrink: 0 }}>
-          <div style={{ display: "flex", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", borderRadius: "12px", padding: "3px", position: "relative", boxShadow: "inset 0 2px 5px rgba(0,0,0,0.4)" }}>
+          <div style={{ display: "flex", background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", borderRadius: "12px", padding: "3px", position: "relative", boxShadow: "inset 0 2px 5px rgba(0,0,0,0.4)" }}>
             {/* 選択中を示す背景の板がヌルッと隣のタブへ移動する（下バーと同じ仕組み）。
                 溝に浮かぶ板のように立体感を付ける */}
-            <div aria-hidden="true" style={{ position: "absolute", top: "3px", left: "3px", bottom: "3px", width: "calc((100% - 6px) / 2)", borderRadius: "9px", background: "linear-gradient(150deg, #4a4a4a 0%, #363636 25%, #404040 48%, #2c2c2c 70%, #464646 100%)", boxShadow: "0 3px 8px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15)", transform: `translateX(${CYPHER_TAB_ORDER.indexOf(cypherTab) * 100}%)`, transition: "transform 0.4s cubic-bezier(0.22,1,0.36,1)", pointerEvents: "none" }} />
+            <div aria-hidden="true" style={{ position: "absolute", top: "3px", left: "3px", bottom: "3px", width: "calc((100% - 6px) / 2)", borderRadius: "9px", background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.18) 46%, rgba(255,255,255,0.03) 58%, transparent 72%), linear-gradient(150deg, #4a4a4a 0%, #363636 25%, #404040 48%, #2c2c2c 70%, #464646 100%)", boxShadow: "0 3px 8px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15)", transform: `translateX(${CYPHER_TAB_ORDER.indexOf(cypherTab) * 100}%)`, transition: "transform 0.4s cubic-bezier(0.22,1,0.36,1)", pointerEvents: "none" }} />
             {(["joined", "hosted"] as const).map(t => (
               <button key={t} onClick={() => goToCypherTab(t)}
                 style={{ flex: 1, padding: "5px 4px", border: "none", borderRadius: "9px", background: "transparent", position: "relative", zIndex: 1, color: cypherTab === t ? "#F0F0F0" : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: cypherTab === t ? "bold" : "normal", transition: "color 0.15s" }}>
