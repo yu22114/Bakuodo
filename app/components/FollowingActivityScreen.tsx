@@ -159,7 +159,7 @@ export function FollowingActivityScreen({ user, onCardClick, onPLClick, onViewPr
           <>
             {cyphers.length > 0 && (
               <div style={{ marginBottom: events.length > 0 ? "24px" : 0 }}>
-                <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", letterSpacing: "0.1em", marginBottom: "10px" }}>CYPHER</div>
+                <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#DC2626", letterSpacing: "0.1em", marginBottom: "10px" }}>CYPHER</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {cyphers.map(({ cypher, participants }, i) => (
                     <div key={cypher.id} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -172,7 +172,7 @@ export function FollowingActivityScreen({ user, onCardClick, onPLClick, onViewPr
             )}
             {events.length > 0 && (
               <div>
-                <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", letterSpacing: "0.1em", marginBottom: "10px" }}>EVENT</div>
+                <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#EAB308", letterSpacing: "0.1em", marginBottom: "10px" }}>EVENT</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {events.map(({ lesson, participants }, i) => (
                     <div key={lesson.id} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
