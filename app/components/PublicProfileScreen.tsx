@@ -41,6 +41,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [followStatus, setFollowStatus] = useState<"none" | "pending" | "accepted">("none");
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
+  // フレンド＝お互いにフォローし合っている（相互フォロー）人数
+  const [friendCount, setFriendCount] = useState(0);
   const [followLoading, setFollowLoading] = useState(false);
   const [hostedCyphers, setHostedCyphers] = useState<HostedCypher[]>([]);
   const [hostedLessons, setHostedLessons] = useState<HostedLesson[]>([]);
@@ -102,7 +104,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [answers, setAnswers] = useState<{ profile_id: string; dancer_name: string; avatar_url: string | null; answer_dancer_name: string | null; answer_email: string | null; answer_phone: string | null }[] | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
-  const [followSheet, setFollowSheet] = useState<{ type: "followers" | "following"; users: { id: string; dancer_name: string; avatar_url: string | null }[] } | null>(null);
+  const [followSheet, setFollowSheet] = useState<{ type: "followers" | "following" | "friends"; users: { id: string; dancer_name: string; avatar_url: string | null }[] } | null>(null);
   const [followSheetLoading, setFollowSheetLoading] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [showTeam, setShowTeam] = useState(false);
@@ -232,7 +234,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   useEffect(() => {
     async function fetchAll() {
       setLoading(true);
-      const [profileRes, hostedRes, hostedLessonsRes, allPartsRes, allPlPartsRes, followersRes, followingRes] = await Promise.all([
+      const [profileRes, hostedRes, hostedLessonsRes, allPartsRes, allPlPartsRes, followersRes, followingRes, myFollowersIdsRes, myFollowingIdsRes] = await Promise.all([
         supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, birth_year, gender, bio, playlist_url, team, avatar_url, is_private, account_type").eq("id", profileId).single(),
         supabase.from("cyphers").select("id, title, starts_at, location").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("private_lessons").select("id, title, starts_at, location, kind").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
@@ -240,6 +242,9 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         supabase.from("pl_participations").select("lesson_id"),
         supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", profileId).eq("status", "accepted"),
         supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", profileId),
+        // フレンド（相互フォロー）計算用：自分をフォローしてくれている人／自分がフォローしている人のID一覧
+        supabase.from("follows").select("follower_id").eq("following_id", profileId).eq("status", "accepted"),
+        supabase.from("follows").select("following_id").eq("follower_id", profileId).eq("status", "accepted"),
       ]);
       if (profileRes.data) {
         const d = profileRes.data as any;
@@ -247,6 +252,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       }
       setFollowerCount(followersRes.count ?? 0);
       setFollowingCount(followingRes.count ?? 0);
+      const myFollowerIds = new Set((myFollowersIdsRes.data ?? []).map((r: any) => r.follower_id));
+      setFriendCount((myFollowingIdsRes.data ?? []).filter((r: any) => myFollowerIds.has(r.following_id)).length);
       if (!isOwn && currentUserId) {
         const { data: myFollow } = await supabase.from("follows").select("id, status").eq("follower_id", currentUserId).eq("following_id", profileId).maybeSingle();
         setFollowStatus((myFollow as any)?.status === "accepted" ? "accepted" : (myFollow as any)?.status === "pending" ? "pending" : "none");
@@ -310,15 +317,24 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     setFollowLoading(false);
   };
 
-  const openFollowSheet = async (type: "followers" | "following") => {
+  const openFollowSheet = async (type: "followers" | "following" | "friends") => {
     setFollowSheetLoading(true);
     setFollowSheet({ type, users: [] });
     if (type === "followers") {
       const { data } = await supabase.from("follows").select("follower_id, profiles:follower_id(dancer_name, avatar_url)").eq("following_id", profileId);
       setFollowSheet({ type, users: (data ?? []).map((r: any) => ({ id: r.follower_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN", avatar_url: r.profiles?.avatar_url ?? null })) });
-    } else {
+    } else if (type === "following") {
       const { data } = await supabase.from("follows").select("following_id, profiles:following_id(dancer_name, avatar_url)").eq("follower_id", profileId);
       setFollowSheet({ type, users: (data ?? []).map((r: any) => ({ id: r.following_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN", avatar_url: r.profiles?.avatar_url ?? null })) });
+    } else {
+      // フレンド＝相互フォロー。自分がフォローしている人のうち、向こうも自分をフォローしている人だけに絞る
+      const [followersRes, followingRes] = await Promise.all([
+        supabase.from("follows").select("follower_id").eq("following_id", profileId).eq("status", "accepted"),
+        supabase.from("follows").select("following_id, profiles:following_id(dancer_name, avatar_url)").eq("follower_id", profileId).eq("status", "accepted"),
+      ]);
+      const followerIds = new Set((followersRes.data ?? []).map((r: any) => r.follower_id));
+      const friends = (followingRes.data ?? []).filter((r: any) => followerIds.has(r.following_id));
+      setFollowSheet({ type, users: friends.map((r: any) => ({ id: r.following_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN", avatar_url: r.profiles?.avatar_url ?? null })) });
     }
     setFollowSheetLoading(false);
   };
@@ -584,6 +600,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
               {([
                 ["フォロワー", followerCount, () => openFollowSheet("followers")],
                 ["フォロー中", followingCount, () => openFollowSheet("following")],
+                ["フレンド", friendCount, () => openFollowSheet("friends")],
               ] as const).map(([label, count, onClick]) => (
                 <button key={label} onClick={onClick}
                   style={{ background: "none", border: "none", padding: "4px 6px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
@@ -836,10 +853,10 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <div>
                 <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "4px" }}>
-                  {followSheet.type === "followers" ? "FOLLOWERS" : "FOLLOWING"}
+                  {followSheet.type === "followers" ? "FOLLOWERS" : followSheet.type === "following" ? "FOLLOWING" : "FRIENDS"}
                 </div>
                 <div style={{ fontSize: "22px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
-                  {followSheet.type === "followers" ? "フォロワー" : "フォロー中"}
+                  {followSheet.type === "followers" ? "フォロワー" : followSheet.type === "following" ? "フォロー中" : "フレンド"}
                 </div>
               </div>
               <button onClick={() => setFollowSheet(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={20} /></button>
