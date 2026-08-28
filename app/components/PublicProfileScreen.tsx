@@ -234,7 +234,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   useEffect(() => {
     async function fetchAll() {
       setLoading(true);
-      const [profileRes, hostedRes, hostedLessonsRes, allPartsRes, allPlPartsRes, followersRes, followingRes, myFollowersIdsRes, myFollowingIdsRes] = await Promise.all([
+      const [profileRes, hostedRes, hostedLessonsRes, allPartsRes, allPlPartsRes, followersRes, followingRes] = await Promise.all([
         supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, birth_year, gender, bio, playlist_url, team, avatar_url, is_private, account_type").eq("id", profileId).single(),
         supabase.from("cyphers").select("id, title, starts_at, location").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("private_lessons").select("id, title, starts_at, location, kind").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
@@ -242,18 +242,21 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         supabase.from("pl_participations").select("lesson_id"),
         supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", profileId).eq("status", "accepted"),
         supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", profileId),
-        // フレンド（相互フォロー）計算用：自分をフォローしてくれている人／自分がフォローしている人のID一覧
-        supabase.from("follows").select("follower_id").eq("following_id", profileId).eq("status", "accepted"),
-        supabase.from("follows").select("following_id").eq("follower_id", profileId).eq("status", "accepted"),
       ]);
       if (profileRes.data) {
         const d = profileRes.data as any;
-        setProfileData({ dancer_name: d.dancer_name ?? "", genres: (d.genres ?? []) as GenreKey[], instagram: d.instagram ?? null, dance_years: d.dance_years ?? null, age_group: d.age_group ?? null, birth_year: d.birth_year ?? null, gender: d.gender ?? null, bio: d.bio ?? null, playlist_url: d.playlist_url ?? null, team: d.team ?? null, avatar_url: d.avatar_url ?? null, is_private: d.is_private ?? false, account_type: (d as any).account_type ?? "individual" });
+        const genres = (d.genres ?? []) as GenreKey[];
+        setProfileData({ dancer_name: d.dancer_name ?? "", genres, instagram: d.instagram ?? null, dance_years: d.dance_years ?? null, age_group: d.age_group ?? null, birth_year: d.birth_year ?? null, gender: d.gender ?? null, bio: d.bio ?? null, playlist_url: d.playlist_url ?? null, team: d.team ?? null, avatar_url: d.avatar_url ?? null, is_private: d.is_private ?? false, account_type: (d as any).account_type ?? "individual" });
+        // フレンド＝得意ジャンルが1つでも重なっている人（自分以外）。フォローの有無は問わない
+        if (genres.length > 0) {
+          const { data: sameGenreRows } = await supabase.from("profiles").select("genres").neq("id", profileId);
+          setFriendCount((sameGenreRows ?? []).filter((p: any) => (p.genres ?? []).some((g: string) => genres.includes(g as GenreKey))).length);
+        } else {
+          setFriendCount(0);
+        }
       }
       setFollowerCount(followersRes.count ?? 0);
       setFollowingCount(followingRes.count ?? 0);
-      const myFollowerIds = new Set((myFollowersIdsRes.data ?? []).map((r: any) => r.follower_id));
-      setFriendCount((myFollowingIdsRes.data ?? []).filter((r: any) => myFollowerIds.has(r.following_id)).length);
       if (!isOwn && currentUserId) {
         const { data: myFollow } = await supabase.from("follows").select("id, status").eq("follower_id", currentUserId).eq("following_id", profileId).maybeSingle();
         setFollowStatus((myFollow as any)?.status === "accepted" ? "accepted" : (myFollow as any)?.status === "pending" ? "pending" : "none");
@@ -327,14 +330,15 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       const { data } = await supabase.from("follows").select("following_id, profiles:following_id(dancer_name, avatar_url)").eq("follower_id", profileId);
       setFollowSheet({ type, users: (data ?? []).map((r: any) => ({ id: r.following_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN", avatar_url: r.profiles?.avatar_url ?? null })) });
     } else {
-      // フレンド＝相互フォロー。自分がフォローしている人のうち、向こうも自分をフォローしている人だけに絞る
-      const [followersRes, followingRes] = await Promise.all([
-        supabase.from("follows").select("follower_id").eq("following_id", profileId).eq("status", "accepted"),
-        supabase.from("follows").select("following_id, profiles:following_id(dancer_name, avatar_url)").eq("follower_id", profileId).eq("status", "accepted"),
-      ]);
-      const followerIds = new Set((followersRes.data ?? []).map((r: any) => r.follower_id));
-      const friends = (followingRes.data ?? []).filter((r: any) => followerIds.has(r.following_id));
-      setFollowSheet({ type, users: friends.map((r: any) => ({ id: r.following_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN", avatar_url: r.profiles?.avatar_url ?? null })) });
+      // フレンド＝得意ジャンルが1つでも重なっている人（フォローの有無は問わない）
+      const genres = profileData?.genres ?? [];
+      if (genres.length === 0) {
+        setFollowSheet({ type, users: [] });
+      } else {
+        const { data } = await supabase.from("profiles").select("id, dancer_name, avatar_url, genres").neq("id", profileId);
+        const friends = (data ?? []).filter((p: any) => (p.genres ?? []).some((g: string) => genres.includes(g as GenreKey)));
+        setFollowSheet({ type, users: friends.map((p: any) => ({ id: p.id, dancer_name: p.dancer_name ?? "UNKNOWN", avatar_url: p.avatar_url ?? null })) });
+      }
     }
     setFollowSheetLoading(false);
   };
