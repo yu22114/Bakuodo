@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus, ChevronLeft, ChevronRight, Calendar, MapPinOff, CalendarX, SearchX } from "lucide-react";
+import { Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus, ChevronLeft, ChevronRight, MapPinOff, CalendarX, SearchX } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, PrivateLesson, GenreKey } from "../lib/types";
@@ -347,8 +347,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
           {/* 今日の日付は常に出しておく。左のカレンダーアイコンを押すと月間カレンダーが開く */}
           <button onClick={() => { setCalendarMonthOffset(0); setShowCalendar(true); }} aria-label="カレンダーを表示"
-            style={{ justifySelf: "start", background: "none", border: "none", padding: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
-            <Calendar size={18} color="rgba(255,255,255,0.5)" />
+            style={{ justifySelf: "start", background: "none", border: "none", padding: "6px", cursor: "pointer", display: "flex", alignItems: "center" }}>
             <span style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", letterSpacing: "0.02em" }}>{todayLabel}</span>
           </button>
           {/* ロゴを押すと登録済みユーザーが全員出てくる */}
