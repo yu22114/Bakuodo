@@ -48,8 +48,9 @@ export function BottomNav({ current, onNav, onProfileLongPress }: { current: str
     // pointerEvents:none にして、島の外の余白部分はタップをすり抜けさせる
     <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, display: "flex", justifyContent: "center", padding: "0 16px 16px", pointerEvents: "none", transform: hidden ? "translateY(140%)" : "none", transition: "transform 0.25s ease" }}>
       {/* すりガラス調：うっすら白を乗せてブラーすることで、後ろが透けて見えるガラス板の質感にする。
+          ホーム画面の奥で動く色つきの光がちゃんと透けて見えるよう、ブラー・彩度を強めにする。
           上端に薄いハイライトを乗せて、ガラスの縁が光を受けているように見せる */}
-      <div style={{ width: "100%", maxWidth: "448px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "26px", display: "flex", position: "relative", boxShadow: "0 10px 30px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.25)", border: "1px solid rgba(255,255,255,0.18)", pointerEvents: "auto" }}>
+      <div style={{ width: "100%", maxWidth: "448px", background: "rgba(255,255,255,0.1)", backdropFilter: "blur(28px) saturate(220%)", WebkitBackdropFilter: "blur(28px) saturate(220%)", borderRadius: "26px", display: "flex", position: "relative", boxShadow: "0 10px 30px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3)", border: "1px solid rgba(255,255,255,0.2)", pointerEvents: "auto" }}>
         {/* アクティブ表示のピル。背景の四角自体がヌルッと隣のアイコンへスライドする
             （各アイコンごとに個別のON/OFFではなく、1枚の板が移動する見せ方）。
             どのタブにも一致しない画面（プロフィール編集など）の時は消しておく */}
