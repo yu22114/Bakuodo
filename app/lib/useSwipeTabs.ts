@@ -57,16 +57,16 @@ export function useSwipeTabs({ canSwipe, onSwipe }: {
       }, 200);
       return;
     }
-    // 閾値未満・または端：弾んで元の位置へ戻る
+    // 閾値未満・または端：落ち着いた動きで元の位置へ戻る
     setTransitionMode("bounce");
     setOffset(0);
-    setTimeout(() => setTransitionMode("none"), 320);
+    setTimeout(() => setTransitionMode("none"), 400);
   };
 
   const style: React.CSSProperties = {
     transform: offset !== 0 ? `translateX(${offset}px)` : undefined,
     transition:
-      transitionMode === "bounce" ? "transform 0.32s cubic-bezier(0.34,1.56,0.64,1)" :
+      transitionMode === "bounce" ? "transform 0.4s cubic-bezier(0.22,1,0.36,1)" :
       transitionMode === "complete" ? "transform 0.2s cubic-bezier(0.4,0,1,1)" :
       "none",
   };

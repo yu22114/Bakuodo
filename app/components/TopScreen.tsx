@@ -343,7 +343,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         下の一覧がスクロールして中身が隠れている時だけ、うっすら影を出す */}
     <div style={{ flexShrink: 0, boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
       {/* ヘッダー。ガラス調はやめて、グラデーション＋影で浮き上がったふっくらした帯にする */}
-      <div style={{ padding: "16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "linear-gradient(180deg, #242424, #161616)", boxShadow: "0 4px 10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
+      <div style={{ padding: "16px 16px", borderBottom: "0.5px solid rgba(255,255,255,0.14)", background: "linear-gradient(180deg, #242424, #161616)", boxShadow: "0 4px 10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
           {/* 今日の日付は常に出しておく。左のカレンダーアイコンを押すと月間カレンダーが開く */}
           <button onClick={() => { setCalendarMonthOffset(0); setShowCalendar(true); }} aria-label="カレンダーを表示"
@@ -381,11 +381,11 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       </div>
 
       {/* セクション切り替え：四角い下線タブから、丸い枠の中で選択中だけ浮くセグメント風に */}
-      <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+      <div style={{ padding: "10px 16px", borderBottom: "0.5px solid rgba(255,255,255,0.14)" }}>
         <div style={{ display: "flex", background: "#1A1A1A", borderRadius: "14px", padding: "4px", position: "relative", boxShadow: "inset 0 2px 5px rgba(0,0,0,0.4)" }}>
           {/* 選択中を示す背景の板。個別にON/OFFするのではなく、1枚がヌルッと隣のタブへ移動する
               （下バーのアクティブ表示と同じ仕組み）。溝に浮かぶ板のように立体感を付ける */}
-          <div aria-hidden="true" style={{ position: "absolute", top: "4px", left: "4px", bottom: "4px", width: `calc((100% - 8px) / ${visibleSections.length})`, borderRadius: "10px", background: "linear-gradient(180deg, #3a3a3a, #232323)", boxShadow: "0 3px 8px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15)", transform: `translateX(${Math.max(0, visibleSections.indexOf(section)) * 100}%)`, transition: "transform 0.32s cubic-bezier(0.34,1.56,0.64,1)", pointerEvents: "none" }} />
+          <div aria-hidden="true" style={{ position: "absolute", top: "4px", left: "4px", bottom: "4px", width: `calc((100% - 8px) / ${visibleSections.length})`, borderRadius: "10px", background: "linear-gradient(180deg, #3a3a3a, #232323)", boxShadow: "0 3px 8px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15)", transform: `translateX(${Math.max(0, visibleSections.indexOf(section)) * 100}%)`, transition: "transform 0.4s cubic-bezier(0.22,1,0.36,1)", pointerEvents: "none" }} />
           {visibleSections.map(key => { const label = SECTION_LABEL[key]; const color = SECTION_COLOR[key]; return (
             <button key={key} onClick={() => goToSection(key)}
               style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: "transparent", position: "relative", zIndex: 1, color: section === key ? color : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "color 0.15s" }}>
@@ -404,7 +404,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
 
       {/* ジャンルチップ（横スクロール）。CYPHER/LESSON共通 */}
       {section !== "spots" && (
-        <div style={{ display: "flex", gap: "6px", padding: "10px 16px", overflowX: "auto", scrollbarWidth: "none", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <div style={{ display: "flex", gap: "6px", padding: "10px 16px", overflowX: "auto", scrollbarWidth: "none", borderBottom: "0.5px solid rgba(255,255,255,0.14)" }}>
           {(["ALL", ...GENRES] as (GenreKey | "ALL")[]).map(g => {
             const sel = g === "ALL" ? selectedGenres.length === 0 : selectedGenres.includes(g as GenreKey);
             // ALLは「絞り込みなし」であって特定のジャンル/セクションではないので、
@@ -412,7 +412,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             const col = g === "ALL" ? "#F0F0F0" : GENRE_COLORS[g as GenreKey];
             return (
               <button key={g} onClick={() => setSelectedGenres(prev => g === "ALL" ? [] : prev.includes(g as GenreKey) ? prev.filter(x => x !== g) : [...prev, g as GenreKey])}
-                style={{ flexShrink: 0, padding: "5px 12px", border: sel ? "none" : "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", background: sel ? `linear-gradient(180deg, color-mix(in srgb, ${col} 55%, white 45%), color-mix(in srgb, ${col} 55%, white 15%))` : "transparent", boxShadow: sel ? `0 3px 7px ${col}33, inset 0 1px 0 rgba(255,255,255,0.5)` : "inset 0 1px 3px rgba(0,0,0,0.3)", color: sel ? (g === "ALL" ? "#000" : `color-mix(in srgb, ${col} 100%, black 35%)`) : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: sel ? "bold" : "normal" }}>
+                style={{ flexShrink: 0, padding: "5px 12px", border: sel ? "none" : "0.5px solid rgba(255,255,255,0.2)", borderRadius: "20px", background: sel ? `linear-gradient(180deg, color-mix(in srgb, ${col} 55%, white 45%), color-mix(in srgb, ${col} 55%, white 15%))` : "transparent", boxShadow: sel ? `0 3px 7px ${col}33, inset 0 1px 0 rgba(255,255,255,0.5)` : "inset 0 1px 3px rgba(0,0,0,0.3)", color: sel ? (g === "ALL" ? "#000" : `color-mix(in srgb, ${col} 100%, black 35%)`) : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: sel ? "bold" : "normal" }}>
                 {genreLabel(g)}
               </button>
             );
@@ -425,7 +425,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       {section !== "spots" && activeFilterCount > 0 && (() => {
         const accent = SECTION_COLOR[section];
         return (
-          <div style={{ display: "flex", padding: "4px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", alignItems: "center" }}>
+          <div style={{ display: "flex", padding: "4px 16px", borderBottom: "0.5px solid rgba(255,255,255,0.14)", alignItems: "center" }}>
             <button onClick={() => { setSelectedGenres([]); setSpecificDate(""); setAreaText(""); }}
               style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px", background: `${accent}14`, border: `1px solid ${accent}33`, borderRadius: "12px", padding: "2px 8px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: accent, cursor: "pointer" }}>
               <X size={9} /> フィルター解除
@@ -571,7 +571,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             </button>
             {activeFilterCount > 0 && (
               <button onClick={() => { setSelectedGenres([]); setSpecificDate(""); setAreaText(""); setSearchOpen(false); }}
-                style={{ width: "100%", marginTop: "10px", padding: "12px", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                style={{ width: "100%", marginTop: "10px", padding: "12px", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
                 フィルターをリセット
               </button>
             )}
@@ -615,7 +615,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       {showAllUsers && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setShowAllUsers(false)}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "448px", margin: "0 auto", padding: "0 16px 16px", boxSizing: "border-box" }}>
-          <div style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", padding: "24px 20px", maxHeight: "75vh", display: "flex", flexDirection: "column" }}>
+          <div style={{ background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "16px", padding: "24px 20px", maxHeight: "75vh", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexShrink: 0 }}>
               <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", letterSpacing: "0.05em" }}>全ユーザー{allUsers ? `（${allUsers.length}人）` : ""}</span>
               <button onClick={() => setShowAllUsers(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={20} /></button>

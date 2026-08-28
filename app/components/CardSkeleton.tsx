@@ -10,7 +10,7 @@ export function CardSkeleton({ count = 3 }: { count?: number }) {
       {Array.from({ length: count }, (_, i) => (
         <div key={i} style={{
           height: "84px", borderRadius: "10px",
-          border: "1px solid rgba(255,255,255,0.1)",
+          border: "0.5px solid rgba(255,255,255,0.16)",
           background: "linear-gradient(90deg, #171717 25%, #262626 37%, #171717 63%)",
           backgroundSize: "400% 100%",
           animation: "bdShimmer 1.6s ease-in-out infinite",

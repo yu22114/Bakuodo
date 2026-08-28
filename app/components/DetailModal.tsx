@@ -73,7 +73,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", padding: "0 12px 12px", boxSizing: "border-box" }} onClick={onClose}>
       {/* ホーム画面のカードと同じメタリックな質感にそろえる。左右下に少し余白を持たせて浮かせる */}
-      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", maxHeight: "88vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 -4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "16px", maxHeight: "88vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 -4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
         <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0, borderRadius: "12px 12px 0 0" }}>
           <h2 style={{ margin: 0, fontSize: "24px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", lineHeight: 1.1, flex: 1 }}>{cypher.title}</h2>
           <button onClick={handleShare} title="共有" style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Share2 size={19} /></button>
@@ -113,7 +113,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cypher.location)}`}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", textDecoration: "none", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px 12px", minHeight: "44px", background: "#1A1A1A" }}
+              style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", textDecoration: "none", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "8px", padding: "10px 12px", minHeight: "44px", background: "#1A1A1A" }}
             >
               <MapPin size={14} color="rgba(255,255,255,0.45)" />
               <span style={{ flex: 1 }}>
@@ -130,7 +130,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
             const count = participantsFetched ? participants.length : cypher.participant_count;
             const perPerson = count > 0 ? Math.ceil(cypher.studio_fee / count) : null;
             return (
-              <div style={{ marginTop: "16px", padding: "12px 14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ marginTop: "16px", padding: "12px 14px", background: "rgba(255,255,255,0.05)", border: "0.5px solid rgba(255,255,255,0.16)", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>スタジオ代（合計 ¥{cypher.studio_fee.toLocaleString()}）</div>
                 <div style={{ fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
                   {perPerson != null
@@ -191,7 +191,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
             );
           })())}
 
-          <div style={{ marginTop: "28px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "20px" }}>
+          <div style={{ marginTop: "28px", borderTop: "0.5px solid rgba(255,255,255,0.16)", paddingTop: "20px" }}>
             <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "14px" }}>コメント{comments.length > 0 ? ` (${comments.length})` : ""}</div>
             {comments.length === 0 ? (
               <p style={{ fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginBottom: "16px" }}>まだコメントはありません</p>
@@ -225,7 +225,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
         </div>
 
         {user ? (
-        <div style={{ padding: "12px 16px 24px", borderTop: "1px solid rgba(255,255,255,0.1)", background: "#141414", display: "flex", gap: "8px", alignItems: "flex-end" }}>
+        <div style={{ padding: "12px 16px 24px", borderTop: "0.5px solid rgba(255,255,255,0.16)", background: "#141414", display: "flex", gap: "8px", alignItems: "flex-end" }}>
           <textarea
             value={commentText}
             onChange={e => setCommentText(e.target.value)}
@@ -233,7 +233,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
             placeholder="コメントを入力..."
             rows={1}
             maxLength={200}
-            style={{ flex: 1, resize: "none", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", padding: "10px 14px", fontSize: "13px", fontFamily: "inherit", color: "#F0F0F0", background: "#1A1A1A", outline: "none", lineHeight: 1.5 }}
+            style={{ flex: 1, resize: "none", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "20px", padding: "10px 14px", fontSize: "13px", fontFamily: "inherit", color: "#F0F0F0", background: "#1A1A1A", outline: "none", lineHeight: 1.5 }}
           />
           <button
             onClick={postComment}
@@ -243,7 +243,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
           </button>
         </div>
         ) : (
-        <div style={{ padding: "14px 16px 24px", borderTop: "1px solid rgba(255,255,255,0.1)", background: "#141414", textAlign: "center", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
+        <div style={{ padding: "14px 16px 24px", borderTop: "0.5px solid rgba(255,255,255,0.16)", background: "#141414", textAlign: "center", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
           コメントや参加にはログインが必要です
         </div>
         )}

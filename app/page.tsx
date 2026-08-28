@@ -327,7 +327,7 @@ export default function BakuOdori() {
           97.222% { background-position: 35.6% 86.4%; }
           100%    { background-position: 50% 92%; }
         }
-        .bd-glow-bg { background-size: 220% 220% !important; animation: bdGlowDrift 16s linear infinite; }
+        .bd-glow-bg { background-size: 220% 220% !important; animation: bdGlowDrift 26s linear infinite; }
       `}</style>
 
       <div className="bd-grain" />

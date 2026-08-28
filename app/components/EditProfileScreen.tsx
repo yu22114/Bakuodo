@@ -132,7 +132,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
     }
   };
 
-  const inp: React.CSSProperties = { width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" };
+  const inp: React.CSSProperties = { width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", color: "#F0F0F0", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" };
   const lbl: React.CSSProperties = { display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.15em", color: "#F0F0F0", marginBottom: "6px", textTransform: "uppercase" as const };
 
   if (loading) return (
@@ -143,7 +143,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
 
   return (
     <div {...swipeBack} style={{ paddingBottom: "80px", background: "#000000" }}>
-      <div style={{ padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "center", gap: "16px" }}>
+      <div style={{ padding: "24px 16px 16px", borderBottom: "0.5px solid rgba(255,255,255,0.14)", background: "#0D0D0D", display: "flex", alignItems: "center", gap: "16px" }}>
         {onBack && (
           <button onClick={onBack} style={{ background: "linear-gradient(180deg, #303030, #1c1c1c)", boxShadow: "0 3px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px", flexShrink: 0 }}>
             <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
@@ -171,12 +171,12 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
           </label>
         </div>
         {avatarError && <div style={{ padding: "8px 12px", background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: "6px", color: "#DC2626", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", textAlign: "center" }}>{avatarError}</div>}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", background: "#141414", border: "0.5px solid rgba(255,255,255,0.16)", borderRadius: "8px" }}>
           {user.user_metadata?.avatar_url && <img src={user.user_metadata.avatar_url} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />}
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold" }}>{user.user_metadata?.full_name ?? "ダンサー"}</div>
           </div>
-          <button onClick={handleSignOut} style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "4px", color: "#F0F0F0", cursor: "pointer", padding: "6px 10px", display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif" }}>
+          <button onClick={handleSignOut} style={{ background: "none", border: "0.5px solid rgba(255,255,255,0.24)", borderRadius: "4px", color: "#F0F0F0", cursor: "pointer", padding: "6px 10px", display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif" }}>
             <LogOut size={12} /> ログアウト
           </button>
         </div>
@@ -189,7 +189,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
               const sel = profile.account_type === value;
               return (
                 <button key={value} onClick={() => { setProfile(p => ({ ...p, account_type: value })); setSaved(false); }}
-                  style={{ flex: 1, padding: "10px", border: sel ? "1px solid #DC2626" : "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", background: sel ? "rgba(220,38,38,0.1)" : "transparent", color: sel ? "#DC2626" : "rgba(255,255,255,0.5)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: sel ? "bold" : "normal", cursor: "pointer" }}>
+                  style={{ flex: 1, padding: "10px", border: sel ? "1px solid #DC2626" : "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", background: sel ? "rgba(220,38,38,0.1)" : "transparent", color: sel ? "#DC2626" : "rgba(255,255,255,0.5)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: sel ? "bold" : "normal", cursor: "pointer" }}>
                   {label}
                 </button>
               );
@@ -235,7 +235,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
           <label style={lbl}>得意ジャンル</label>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
             {GENRES.map(g => { const sel = profile.genres.includes(g); const col = GENRE_COLORS[g]; return (
-              <button key={g} onClick={() => toggleGenre(g)} style={{ padding: "10px", border: sel ? `1px solid ${col}` : "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", background: sel ? `${col}12` : "#141414", color: sel ? col : "rgba(255,255,255,0.45)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <button key={g} onClick={() => toggleGenre(g)} style={{ padding: "10px", border: sel ? `1px solid ${col}` : "0.5px solid rgba(255,255,255,0.2)", borderRadius: "6px", background: sel ? `${col}12` : "#141414", color: sel ? col : "rgba(255,255,255,0.45)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 {g}{sel && <Check size={11} />}
               </button>
             ); })}
@@ -243,7 +243,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
         </div>
         {/* 鍵アカ設定 */}
         <button onClick={() => { setIsPrivate(v => !v); setSaved(false); }}
-          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
+          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#141414", border: "0.5px solid rgba(255,255,255,0.16)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
           <div>
             <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", display: "flex", alignItems: "center", gap: "6px" }}>
               🔒 鍵アカウント
