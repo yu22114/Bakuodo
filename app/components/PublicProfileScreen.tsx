@@ -49,6 +49,9 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [joinedCyphers, setJoinedCyphers] = useState<JoinedCypher[]>([]);
   const [joinedLessons, setJoinedLessons] = useState<JoinedLesson[]>([]);
   const [cypherTab, setCypherTab] = useState<"joined" | "hosted">("joined");
+  // 団体用アカウントは「参加」する側ではなく主催する側なので、自分のプロフィールでも
+  // 参加タブは出さず主催タブだけにする（他人のプロフィールを見る時と同じ扱い）
+  const showJoinedTab = isOwn && profileData?.account_type !== "organization";
   // 「参加/主催」タブの左右スワイプ切り替え（ホーム画面のタブ切り替えと同じ仕組み）
   const [tabSlideDir, setTabSlideDir] = useState<1 | -1>(1);
   const tabWheelAccumRef = useRef(0);
@@ -60,9 +63,9 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     setCypherTab(next);
   };
   const slideCypherTab = (dir: 1 | -1) => {
-    // タブがない（他人のプロフィール、またはタブの一番左）で右スワイプしたら
-    // 一つ前の画面に戻る（「戻る」ボタンがある画面共通の仕様）
-    if (!isOwn) { if (dir === -1) onBack?.(); return; }
+    // タブがない（他人のプロフィール・団体用アカウント本人、またはタブの一番左）で
+    // 右スワイプしたら一つ前の画面に戻る（「戻る」ボタンがある画面共通の仕様）
+    if (!showJoinedTab) { if (dir === -1) onBack?.(); return; }
     const curIdx = CYPHER_TAB_ORDER.indexOf(cypherTab);
     const nextIdx = curIdx + dir;
     if (nextIdx < 0 || nextIdx >= CYPHER_TAB_ORDER.length) {
@@ -74,7 +77,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   // slideCypherTabが実際に何か（タブ切り替え or 戻る）を行うかどうかの判定。
   // 指の動きに追従する慣性・跳ね返り（バウンス）付きスワイプに使う
   const canSlideCypherTab = (dir: 1 | -1): boolean => {
-    if (!isOwn) return dir === -1;
+    if (!showJoinedTab) return dir === -1;
     const nextIdx = CYPHER_TAB_ORDER.indexOf(cypherTab) + dir;
     if (nextIdx < 0 || nextIdx >= CYPHER_TAB_ORDER.length) return dir === -1;
     return true;
@@ -685,7 +688,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       </div>
 
       {/* 参加/主催 切り替えタブ。ここは固定し、下のカード一覧だけがスクロールする */}
-      {!loading && isOwn && (
+      {!loading && showJoinedTab && (
         <div style={{ padding: "6px 16px 0", flexShrink: 0 }}>
           <div style={{ display: "flex", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", borderRadius: "12px", padding: "3px", position: "relative", boxShadow: "inset 0 2px 5px rgba(0,0,0,0.4)" }}>
             {/* 選択中を示す背景の板がヌルッと隣のタブへ移動する（下バーと同じ仕組み）。
@@ -712,7 +715,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           {/* 開催・参加した記録：自分なら参加/主催の2タブ（過去はグレー）、他人なら主催のみ */}
           {isOwn ? (
             <div key={cypherTab} style={{ animation: `${tabSlideDir === 1 ? "bdSlideFromRight" : "bdSlideFromLeft"} 0.2s ease-out` }}>
-            {cypherTab === "joined" ? (
+            {showJoinedTab && cypherTab === "joined" ? (
               // 参加タブも主催タブと同じくCYPHER / P LESSON / EVENTで見出しを分けて表示する
               joinedCyphers.length === 0 && joinedLessons.length === 0
                 ? <EmptyState icon={CalendarX} padding="32px">まだ参加しているサイファー・レッスンはありません</EmptyState>
