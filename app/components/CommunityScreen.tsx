@@ -127,8 +127,8 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
 
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      {/* ガラス調はやめて、フォロー中と同じグラデーション＋影で浮き上がったふっくらした帯にする */}
-      <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "linear-gradient(180deg, #242424, #161616)", display: "flex", alignItems: "flex-start", justifyContent: "space-between", boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)" : "0 4px 10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
+      {/* プロフィール画面のヘッダーと同じ、フラットな地色＋スクロール時だけ影が出る作りに揃える */}
+      <div style={{ flexShrink: 0, padding: "16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "flex-start", justifyContent: "space-between", boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
         <div>
           <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>マイコミュニティ</h2>
         </div>
