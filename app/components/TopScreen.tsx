@@ -342,8 +342,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         親（上のdiv）の光をそのまま透かして見せる。
         下の一覧がスクロールして中身が隠れている時だけ、うっすら影を出す */}
     <div style={{ flexShrink: 0, boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
-      {/* ヘッダー。ガラス調はやめて、グラデーション＋影で浮き上がったふっくらした帯にする */}
-      <div style={{ padding: "16px 16px", borderBottom: "0.5px solid rgba(255,255,255,0.14)", background: "linear-gradient(180deg, #242424, #161616)", boxShadow: "0 4px 10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
+      {/* ヘッダー。タブ・ジャンルチップと同じく背景を透過させ、奥の光を見せる */}
+      <div style={{ padding: "16px 16px", borderBottom: "0.5px solid rgba(255,255,255,0.14)" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
           {/* 今日の日付は常に出しておく。左のカレンダーアイコンを押すと月間カレンダーが開く */}
           <button onClick={() => { setCalendarMonthOffset(0); setShowCalendar(true); }} aria-label="カレンダーを表示"
@@ -411,7 +411,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             // CYPHERタブと同じ色を使わず中立な色にする
             const col = g === "ALL" ? "#F0F0F0" : GENRE_COLORS[g as GenreKey];
             return (
-              <button key={g} onClick={() => setSelectedGenres(prev => g === "ALL" ? [] : prev.includes(g as GenreKey) ? prev.filter(x => x !== g) : [...prev, g as GenreKey])}
+              <button key={g} onClick={() => setSelectedGenres(prev => g === "ALL" ? [] : prev.includes(g as GenreKey) ? [] : [g as GenreKey])}
                 style={{ flexShrink: 0, padding: "5px 12px", border: sel ? "none" : "0.5px solid rgba(255,255,255,0.2)", borderRadius: "20px", background: sel ? `linear-gradient(180deg, color-mix(in srgb, ${col} 55%, white 45%), color-mix(in srgb, ${col} 55%, white 15%))` : "transparent", boxShadow: sel ? `0 3px 7px ${col}33, inset 0 1px 0 rgba(255,255,255,0.5)` : "inset 0 1px 3px rgba(0,0,0,0.3)", color: sel ? (g === "ALL" ? "#000" : `color-mix(in srgb, ${col} 100%, black 35%)`) : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: sel ? "bold" : "normal" }}>
                 {genreLabel(g)}
               </button>
