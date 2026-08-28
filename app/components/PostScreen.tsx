@@ -205,10 +205,10 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
         {(() => {
           const shownTabs = ([["cypher", "CYPHER", "#DC2626"], ["pl", "LESSON", "#2563EB"], ["event", "EVENT", "#EAB308"]] as const).filter(([key]) => visibleTabs.includes(key));
           return (
-            <div style={{ display: "flex", background: "#1A1A1A", borderRadius: "14px", padding: "4px", position: "relative", boxShadow: "inset 0 2px 5px rgba(0,0,0,0.4)" }}>
+            <div style={{ display: "flex", background: "linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", borderRadius: "14px", padding: "4px", position: "relative", boxShadow: "inset 0 2px 5px rgba(0,0,0,0.4)" }}>
               {/* 選択中を示す背景の板がヌルッと隣のタブへ移動する（下バーと同じ仕組み）。
-                  溝に浮かぶ板のように立体感を付ける */}
-              <div aria-hidden="true" style={{ position: "absolute", top: "4px", left: "4px", bottom: "4px", width: `calc((100% - 8px) / ${shownTabs.length})`, borderRadius: "10px", background: "linear-gradient(180deg, #3a3a3a, #232323)", boxShadow: "0 3px 8px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15)", transform: `translateX(${Math.max(0, shownTabs.findIndex(([key]) => key === tab)) * 100}%)`, transition: "transform 0.4s cubic-bezier(0.22,1,0.36,1)", pointerEvents: "none" }} />
+                  トラックと同じ斜めグラデーションを一段明るくして、溝に浮かぶ金属板のような立体感を付ける */}
+              <div aria-hidden="true" style={{ position: "absolute", top: "4px", left: "4px", bottom: "4px", width: `calc((100% - 8px) / ${shownTabs.length})`, borderRadius: "10px", background: "linear-gradient(150deg, #4a4a4a 0%, #363636 25%, #404040 48%, #2c2c2c 70%, #464646 100%)", boxShadow: "0 3px 8px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15)", transform: `translateX(${Math.max(0, shownTabs.findIndex(([key]) => key === tab)) * 100}%)`, transition: "transform 0.4s cubic-bezier(0.22,1,0.36,1)", pointerEvents: "none" }} />
               {shownTabs.map(([key, label, color]) => (
                 <button key={key} onClick={() => setTab(key)}
                   style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: "transparent", position: "relative", zIndex: 1, color: tab === key ? color : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: tab === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "color 0.15s" }}>
