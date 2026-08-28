@@ -63,7 +63,7 @@ export function CommunityBoardCard({ board: b, isOwn, onClick, onEdit, onDelete 
           <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "6px" }}>
             {b.instructors.map(ins => (
               <span key={ins.id} style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
-                {ins.name}{ins.instagram && <span style={{ color: "#A855F7" }}> @{ins.instagram}</span>}
+                {ins.name}{ins.instagram && <span style={{ color: "#38BDF8" }}> @{ins.instagram}</span>}
               </span>
             ))}
           </div>

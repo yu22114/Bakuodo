@@ -646,7 +646,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
                       </div>
                       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
                         <span style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{u.dancer_name}</span>
-                        {u.instagram && <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#A855F7" }}>@{u.instagram}</span>}
+                        {u.instagram && <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#38BDF8" }}>@{u.instagram}</span>}
                       </div>
                     </button>
                   ))}

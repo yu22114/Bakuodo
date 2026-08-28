@@ -64,7 +64,7 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
           <div style={{ fontSize: "12px", color: "#F0F0F0", marginTop: "2px", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
             {/* Instagramを設定している主催者は名前ではなくアカウント名を出す */}
             {cypher.organizer.instagram
-              ? <span>by <span style={{ color: "#A855F7" }}>@{cypher.organizer.instagram}</span></span>
+              ? <span>by <span style={{ color: "#38BDF8" }}>@{cypher.organizer.instagram}</span></span>
               : <span>by {cypher.organizer.dancer_name}</span>}
           </div>
         </div>

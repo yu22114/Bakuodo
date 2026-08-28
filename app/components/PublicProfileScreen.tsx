@@ -533,7 +533,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 Rep
               </button>
             )}
-            <button onClick={() => { setShowCommunity(true); fetchCommunityMembers(); }} style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", cursor: "pointer", padding: "6px 14px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold" }}>
+            <button onClick={() => { setShowCommunity(true); fetchCommunityMembers(); }} style={{ background: "none", border: "1px solid rgba(168,85,247,0.5)", borderRadius: "8px", cursor: "pointer", padding: "6px 14px", color: "#A855F7", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold" }}>
               マイコミュニティ
             </button>
           </div>
@@ -619,11 +619,11 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
               <a href={`https://instagram.com/${profileData.instagram}`} target="_blank" rel="noopener noreferrer"
                 style={{ flex: "0 1 calc(50% - 4px)", minWidth: "130px", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "6px 10px", borderRadius: "8px", border: "1px solid rgba(168,85,247,0.35)", textDecoration: "none", background: "rgba(168,85,247,0.1)" }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="1" y="1" width="22" height="22" rx="6" stroke="#A855F7" strokeWidth="1.8" fill="none"/>
-                  <circle cx="12" cy="12" r="4.2" stroke="#A855F7" strokeWidth="1.8" fill="none"/>
-                  <circle cx="17.2" cy="6.8" r="1.1" fill="#A855F7"/>
+                  <rect x="1" y="1" width="22" height="22" rx="6" stroke="#38BDF8" strokeWidth="1.8" fill="none"/>
+                  <circle cx="12" cy="12" r="4.2" stroke="#38BDF8" strokeWidth="1.8" fill="none"/>
+                  <circle cx="17.2" cy="6.8" r="1.1" fill="#38BDF8"/>
                 </svg>
-                <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#A855F7", fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>@{profileData.instagram}</span>
+                <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#38BDF8", fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>@{profileData.instagram}</span>
               </a>
             )}
             {profileData.playlist_url && (() => {

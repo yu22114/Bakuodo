@@ -64,7 +64,7 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
           <div style={{ fontSize: "12px", color: "#F0F0F0", marginTop: "2px", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
             {/* Instagramを設定している主催者は名前ではなくアカウント名を出す */}
             {lesson.organizer.instagram
-              ? <span>by <span style={{ color: "#A855F7" }}>@{lesson.organizer.instagram}</span></span>
+              ? <span>by <span style={{ color: "#38BDF8" }}>@{lesson.organizer.instagram}</span></span>
               : <span>by {lesson.organizer.dancer_name}</span>}
           </div>
         </div>

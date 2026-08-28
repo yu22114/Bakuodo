@@ -30,7 +30,7 @@ export function InstructorList({ instructors }: { instructors: { name: string; i
         <div key={i}>
           <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)" }}>講師: {ins.name}</div>
           {ins.instagram && (
-            <a href={ins.instagram} target="_blank" rel="noopener noreferrer" style={{ fontSize: "11px", color: "#A855F7", textDecoration: "none", display: "inline-block", marginTop: "2px" }}>@{instagramHandle(ins.instagram)}</a>
+            <a href={ins.instagram} target="_blank" rel="noopener noreferrer" style={{ fontSize: "11px", color: "#38BDF8", textDecoration: "none", display: "inline-block", marginTop: "2px" }}>@{instagramHandle(ins.instagram)}</a>
           )}
         </div>
       ))}
