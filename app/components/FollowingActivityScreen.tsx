@@ -148,11 +148,6 @@ export function FollowingActivityScreen({ user, onCardClick, onPLClick, onViewPr
 
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      {/* ガラス調はやめて、ホーム画面と同じグラデーション＋影で浮き上がったふっくらした帯にする */}
-      <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "0.5px solid rgba(255,255,255,0.14)", background: "linear-gradient(180deg, #242424, #161616)", boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)" : "0 4px 10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
-        <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "32px", color: "#F0F0F0" }}>フォロー中</h2>
-      </div>
-
       {/* ホーム画面の後光っぽい光と同じ仕組み（.bd-glow-bgがbackground-positionを動かす）。
           ここはCYPHER・EVENTが混ざって並ぶ画面なので、単色ではなく赤・青・黄の3色を重ねる */}
       <div ref={scrollShadow.ref} className="bd-scroll bd-glow-bg" style={{ flex: 1, overflowY: "auto", padding: "16px", backgroundColor: "#0A0A0A", backgroundImage: "radial-gradient(circle at 22% 28%, rgba(220,38,38,0.9) 0%, rgba(220,38,38,0.08) 16%, transparent 32%), radial-gradient(circle at 75% 55%, rgba(37,99,235,0.9) 0%, rgba(37,99,235,0.08) 16%, transparent 32%), radial-gradient(circle at 45% 85%, rgba(234,179,8,0.9) 0%, rgba(234,179,8,0.08) 16%, transparent 32%)" }}>
