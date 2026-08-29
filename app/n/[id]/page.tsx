@@ -17,10 +17,10 @@ async function fetchMeta(id: string) {
   return data;
 }
 
-// サーバーはUTCで動くため、JSTに寄せてから表示用に整形する
-function formatJst(iso: string): string {
+// サーバーはUTCで動くため、JSTに寄せてから表示用に整形する。NUMBERは時刻を持たないので日付だけ出す
+function formatJstDate(iso: string): string {
   const d = new Date(new Date(iso).getTime() + 9 * 3600 * 1000);
-  return `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+  return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
 }
 
 export async function generateMetadata(
@@ -29,7 +29,7 @@ export async function generateMetadata(
   const { id } = await params;
   const n = await fetchMeta(id);
   if (!n) return { title: "爆踊 | 今日、ここで、踊ろう。" };
-  const description = `${formatJst(n.starts_at)}〜 @ ${n.location} — このNUMBERに参加しよう`;
+  const description = `${formatJstDate(n.starts_at)}〜 @ ${n.location} — このNUMBERに参加しよう`;
   return {
     title: `${n.title} | 爆踊`,
     description,

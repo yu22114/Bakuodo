@@ -1,10 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, MapPin, User, X, Check, Zap, Share2, Pencil, Trash2 } from "lucide-react";
+import { Calendar, MapPin, User, X, Check, Zap, Share2, Pencil, Trash2 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { DanceNumber, ParticipantProfile } from "../lib/types";
-import { formatDate, timeUntil, formatEndTime, splitLocation, GENRE_COLORS, genreLabel } from "../lib/constants";
+import { dateBadgeParts, timeUntil, GENRE_COLORS, genreLabel } from "../lib/constants";
 import { ParticipantBar } from "./ParticipantBar";
 import { showToast } from "./Toast";
 import { hapticTap } from "../lib/haptics";
@@ -40,9 +40,10 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
   const numberId = number.id;
   const organizerId = number.organizer.id;
 
-  const { date, time } = formatDate(number.starts_at);
-  const { station, venue } = splitLocation(number.location);
-  const isEnded = timeUntil(number.starts_at) === "終了";
+  const start = dateBadgeParts(number.starts_at);
+  const end = number.ends_at ? dateBadgeParts(number.ends_at) : null;
+  // 複数日にまたがる練習期間なので、「終了」判定は2日目（あれば）を基準にする
+  const isEnded = timeUntil(number.ends_at ?? number.starts_at) === "終了";
   const isOwn = organizerId === user?.id;
   const genreColor = GENRE_COLORS[number.genres[0]] ?? "#EC4899";
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
@@ -103,7 +104,10 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
               style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
               <User size={14} color="rgba(255,255,255,0.45)" /> 主催: {number.organizer.dancer_name}
             </button>
-            <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center" }}><Clock size={14} color="rgba(255,255,255,0.45)" /> {date} {time}{number.ends_at ? `〜${formatEndTime(number.starts_at, number.ends_at)}` : ""}</div>
+            <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center" }}>
+              <Calendar size={14} color="rgba(255,255,255,0.45)" />
+              {start.month}/{start.day}({start.weekday}){end ? `〜${end.month}/${end.day}(${end.weekday})` : ""}
+            </div>
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(number.location)}`}
               target="_blank"
@@ -111,30 +115,12 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
               style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", textDecoration: "none", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px 12px", minHeight: "44px", background: "#1A1A1A" }}
             >
               <MapPin size={14} color="rgba(255,255,255,0.45)" />
-              <span style={{ flex: 1 }}>
-                {venue || (station && `${station}駅`)}
-                {venue && station && ` ${station}駅`}
-              </span>
+              <span style={{ flex: 1 }}>{number.location}</span>
               <span style={{ fontSize: "11px", color: "#5B9BFF", fontWeight: 700, flexShrink: 0 }}>地図を開く →</span>
             </a>
           </div>
           {number.description && <p style={{ fontSize: "13px", color: "#F0F0F0", lineHeight: 1.7, marginBottom: "20px", fontFamily: "'Noto Sans JP',sans-serif" }}>{number.description}</p>}
           <ParticipantBar count={participantsFetched ? participants.length : number.participant_count} max={number.max_members} />
-
-          {number.studio_fee != null && (() => {
-            const count = participantsFetched ? participants.length : number.participant_count;
-            const perPerson = count > 0 ? Math.ceil(number.studio_fee / count) : null;
-            return (
-              <div style={{ marginTop: "16px", padding: "12px 14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>スタジオ代（合計 ¥{number.studio_fee.toLocaleString()}）</div>
-                <div style={{ fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
-                  {perPerson != null
-                    ? <>¥{perPerson.toLocaleString()}<span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}> /人</span></>
-                    : <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>人数未定</span>}
-                </div>
-              </div>
-            );
-          })()}
 
           {participants.length > 0 && (
             <div style={{ marginTop: "16px" }}>

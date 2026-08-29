@@ -53,6 +53,9 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
   const [requiresApproval, setRequiresApproval] = useState(false);
   // NUMBERフォーム用（限定公開・承認制がないのでトグルは持たない）
   const [numberForm, setNumberForm] = useState<FormState>(EMPTY_FORM);
+  // NUMBERの開催日は、マイコミュニティの掲示板作成と同じ「1日目・2日目」の範囲指定にする
+  // （numberForm.dateを1日目として使い回し、2日目だけ別で持つ）
+  const [numberEndDate, setNumberEndDate] = useState("");
   // PLフォーム用
   const [plForm, setPlForm] = useState(EMPTY_PL);
   const [plIsPrivate, setPlIsPrivate] = useState(false);
@@ -80,6 +83,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
         const d = JSON.parse(raw);
         if (d.form) setForm({ ...EMPTY_FORM, ...d.form });
         if (d.numberForm) setNumberForm({ ...EMPTY_FORM, ...d.numberForm });
+        if (d.numberEndDate) setNumberEndDate(d.numberEndDate);
         if (d.plForm) setPlForm({ ...EMPTY_PL, ...d.plForm });
         setIsPrivate(!!d.isPrivate);
         setRequiresApproval(!!d.requiresApproval);
@@ -96,14 +100,14 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
     if (!draftLoaded) return;
     try {
       if (!hasContent(form, numberForm, plForm)) { localStorage.removeItem(DRAFT_KEY); return; }
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, numberForm, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval }));
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, numberForm, numberEndDate, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval }));
     } catch { /* 保存できなくても入力は続けられるようにする */ }
-  }, [draftLoaded, form, numberForm, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval]);
+  }, [draftLoaded, form, numberForm, numberEndDate, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval]);
 
   const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch {} };
 
   const discardDraft = () => {
-    setForm(EMPTY_FORM); setNumberForm(EMPTY_FORM); setPlForm(EMPTY_PL);
+    setForm(EMPTY_FORM); setNumberForm(EMPTY_FORM); setNumberEndDate(""); setPlForm(EMPTY_PL);
     setIsPrivate(false); setRequiresApproval(false);
     setPlIsPrivate(false); setPlRequiresApproval(false);
     setDraftRestored(false);
@@ -117,7 +121,8 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
 
   // 必須項目（最寄り駅・日付）が埋まっているか
   const canPost = !!(form.date && form.station);
-  const canPostNumber = !!(numberForm.date && numberForm.station);
+  // NUMBERはマイコミュニティの掲示板作成と同じ考え方：イベント名と開催日（1日目）が必須
+  const canPostNumber = !!(numberForm.title.trim() && numberForm.date);
   const canPostPL = !!(plForm.date && plForm.station);
   // イベントはレッスンと同じフォーム・同じテーブルを使い、kindと文言・色だけ変える
   const isEvent = tab === "event";
@@ -163,22 +168,24 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
     setTimeout(() => onNav("top"), 1400);
   };
 
-  // NUMBERの投稿。限定公開・参加承認制がない分、handleSubmit（CYPHER）よりシンプル
+  // NUMBERの投稿。マイコミュニティの掲示板作成と同じ「イベント名＋開催日（1日目・2日目）」の形にする。
+  // 最寄り駅・スタジオ代・時刻は持たない分、handleSubmit（CYPHER）よりシンプル
   const handleSubmitNumber = async () => {
     if (!canPostNumber) return;
     if (numberForm.date < todayStr()) { setError("過去の日付は投稿できません"); return; }
-    if (numberForm.station.length > 50 || numberForm.title.length > 100 || numberForm.description.length > 1000) {
+    if (numberForm.title.length > 100 || numberForm.description.length > 1000) {
       setError("入力が長すぎます"); return;
     }
     setLoading(true); setError("");
-    const starts_at = numberForm.start_time ? `${numberForm.date}T${numberForm.start_time}:00+09:00` : `${numberForm.date}T00:00:00+09:00`;
-    const endDate = numberForm.end_time && isNextDayEnd(numberForm.end_time, numberForm.start_time) ? getNextDate(numberForm.date) : numberForm.date;
-    const ends_at = numberForm.end_time ? `${endDate}T${numberForm.end_time}:00+09:00` : null;
-    const location = numberForm.studio ? `${numberForm.station} ${numberForm.studio}` : numberForm.station;
-    const title = numberForm.title.trim() || numberForm.studio || location;
+    const title = numberForm.title.trim();
+    const starts_at = `${numberForm.date}T00:00:00+09:00`;
+    // 2日目は1日目より後の日を選んだ時だけ意味がある値として保存する（マイコミュニティと同じ考え方）
+    const ends_at = numberEndDate && numberEndDate > numberForm.date ? `${numberEndDate}T23:59:59+09:00` : null;
+    // 会場が空欄ならイベント名だけを場所欄に入れる（locationはnot null制約のため）
+    const location = numberForm.studio.trim() || title;
     const { data: numberRow, error: nErr } = await supabase
       .from("numbers")
-      .insert({ title, location, description: numberForm.description, starts_at, ends_at, max_members: numberForm.max_members ? Number(numberForm.max_members) : null, organizer_id: user.id, studio_fee: numberForm.studio_fee ? Number(numberForm.studio_fee) : null })
+      .insert({ title, location, description: numberForm.description, starts_at, ends_at, max_members: numberForm.max_members ? Number(numberForm.max_members) : null, organizer_id: user.id })
       .select().single();
     if (nErr || !numberRow) { console.error("number insert error:", nErr); setError(`投稿に失敗しました。エラー: ${nErr?.message ?? "不明"}`); setLoading(false); return; }
     if (numberForm.genres.length > 0) {
@@ -275,33 +282,22 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
         )}
 
         {tab === "number" ? (<>
-          <div><label style={lbl}>最寄り駅 <span style={{ color: "#EC4899" }}>*</span></label><StationSearch value={numberForm.station} onChange={v => setNumberForm(f => ({ ...f, station: v }))} inputStyle={inp} /></div>
-          <div><label style={lbl}>会場・スタジオ名・部屋番号</label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={numberForm.studio} onChange={e => setNumberForm(f => ({ ...f, studio: e.target.value }))} /></div>
-          <div><label style={lbl}>日付 <span style={{ color: "#EC4899" }}>*</span></label>
-            <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={numberForm.date} onChange={e => { const v = e.target.value; if (v && v < todayStr()) return; setNumberForm(f => ({ ...f, date: v })); }} /></div>
-          </div>
+          <div><label style={lbl}>イベント名 <span style={{ color: "#EC4899" }}>*</span></label><input style={inp} placeholder="例: 〇〇ダンスショーケース" maxLength={100} value={numberForm.title} onChange={e => setNumberForm(f => ({ ...f, title: e.target.value }))} /></div>
+          {/* 想定練習期間：マイコミュニティの掲示板作成と同じ「1日目・2日目」の範囲指定 */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-            <div><label style={lbl}>開始時間</label>
-              <select style={inp} value={numberForm.start_time} onChange={e => setNumberForm(f => ({ ...f, start_time: e.target.value }))}>
-                {START_TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
+            <div><label style={lbl}>想定練習期間 1日目 <span style={{ color: "#EC4899" }}>*</span></label>
+              <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={numberForm.date} onChange={e => { const v = e.target.value; if (v && v < todayStr()) return; setNumberForm(f => ({ ...f, date: v })); if (numberEndDate && numberEndDate < v) setNumberEndDate(""); }} /></div>
             </div>
-            <div><label style={lbl}>終了時間</label>
-              <select style={inp} value={numberForm.end_time} onChange={e => setNumberForm(f => ({ ...f, end_time: e.target.value }))}>
-                <option value="">未設定</option>
-                {endTimeOptions(numberForm.start_time).map(t => <option key={t} value={t}>{endTimeLabel(t, numberForm.start_time)}</option>)}
-              </select>
+            <div><label style={lbl}>2日目 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label>
+              <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={numberForm.date || todayStr()} value={numberEndDate} onChange={e => setNumberEndDate(e.target.value)} disabled={!numberForm.date} /></div>
             </div>
           </div>
-          <div><label style={lbl}>作品名 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={numberForm.title} onChange={e => setNumberForm(f => ({ ...f, title: e.target.value }))} /></div>
+          <div><label style={lbl}>会場 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={numberForm.studio} onChange={e => setNumberForm(f => ({ ...f, studio: e.target.value }))} /></div>
           <div><label style={lbl}>ジャンル</label>
             <GenreStrip value={numberForm.genres[0] ?? ""} onChange={toggleNumberGenre} />
           </div>
           <div><label style={lbl}>詳細説明</label><textarea style={{ ...inp, minHeight: "80px", resize: "vertical" } as React.CSSProperties} placeholder="参加者へのメッセージ..." value={numberForm.description} onChange={e => setNumberForm(f => ({ ...f, description: e.target.value }))} /></div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-            <div><label style={lbl}>参加定員</label><input style={inp} type="number" min="1" placeholder="空欄 = 無制限" value={numberForm.max_members} onChange={e => setNumberForm(f => ({ ...f, max_members: e.target.value }))} /></div>
-            <div><label style={lbl}>スタジオ代（円・合計）</label><input style={inp} type="number" min="0" placeholder="例: 6000" value={numberForm.studio_fee} onChange={e => setNumberForm(f => ({ ...f, studio_fee: e.target.value }))} /></div>
-          </div>
+          <div><label style={lbl}>想定人数</label><input style={inp} type="number" min="1" placeholder="空欄 = 未定" value={numberForm.max_members} onChange={e => setNumberForm(f => ({ ...f, max_members: e.target.value }))} /></div>
           <button onClick={handleSubmitNumber} disabled={loading} className={canPostNumber ? "bd-spray" : undefined} style={{ width: "100%", padding: "20px 14px", border: "none", borderRadius: "6px", background: canPostNumber ? "linear-gradient(135deg, #EC4899, #BE185D)" : "rgba(255,255,255,0.08)", color: canPostNumber ? "#fff" : "rgba(255,255,255,0.3)", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: canPostNumber ? "pointer" : "not-allowed", opacity: loading ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
             <Zap size={15} />
             {loading ? "投稿中..." : "NUMBERを投稿する"}

@@ -1,19 +1,18 @@
 "use client";
 import { useState } from "react";
-import { Clock, MapPin } from "lucide-react";
+import { Calendar, MapPin } from "lucide-react";
 import type { DanceNumber } from "../lib/types";
-import { GENRE_COLORS, genreLabel, formatDate, dateBadgeParts, timeUntil, formatEndTime, splitLocation } from "../lib/constants";
+import { GENRE_COLORS, genreLabel, dateBadgeParts, timeUntil } from "../lib/constants";
 
-// CypherCardとほぼ同じ作り（限定公開バッジがない以外は同じ）。NUMBERは振付作品の投稿用
+// CypherCardとほぼ同じ作り。時刻ではなく想定練習期間（日付の範囲）を持つ点が異なる
 export function NumberCard({ number, onClick, index = 0 }: { number: DanceNumber; onClick: () => void; index?: number }) {
-  const { time } = formatDate(number.starts_at);
   const { month, day, weekday } = dateBadgeParts(number.starts_at);
-  const { station, venue } = splitLocation(number.location);
-  const until = timeUntil(number.starts_at);
+  const endParts = number.ends_at ? dateBadgeParts(number.ends_at) : null;
+  // 複数日にまたがる練習期間なので、「終了」判定は2日目（あれば）を基準にする
+  const isEnded = timeUntil(number.ends_at ?? number.starts_at) === "終了";
   const [hover, setHover] = useState(false);
   const [pressed, setPressed] = useState(false);
   const color = GENRE_COLORS[number.genres[0]] ?? "#EC4899";
-  const isEnded = until === "終了";
   const cardTransform = pressed
     ? "perspective(600px) rotateX(3deg) rotateY(-2deg) scale(0.98)"
     : hover ? "translateY(-3px)" : "none";
@@ -59,24 +58,18 @@ export function NumberCard({ number, onClick, index = 0 }: { number: DanceNumber
           <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", whiteSpace: "nowrap" }}>
             {number.participant_count}{number.max_members ? `/${number.max_members}` : ""}人
           </span>
-          {number.studio_fee != null && (
-            <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", whiteSpace: "nowrap" }}>
-              {number.participant_count > 0 ? `¥${Math.ceil(number.studio_fee / number.participant_count).toLocaleString()}/人` : `¥${number.studio_fee.toLocaleString()}`}
-            </span>
-          )}
         </div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <Clock size={11} color="rgba(255,255,255,0.4)" />
-          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{time}{number.ends_at ? `〜${formatEndTime(number.starts_at, number.ends_at)}` : ""}</span>
-        </div>
+        {endParts && (
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Calendar size={11} color="rgba(255,255,255,0.4)" />
+            <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>〜{endParts.month}/{endParts.day}({endParts.weekday})</span>
+          </div>
+        )}
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <MapPin size={11} color="rgba(255,255,255,0.4)" />
-          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
-            {venue || (station && `${station}駅`)}
-            {venue && station && ` ${station}駅`}
-          </span>
+          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{number.location}</span>
         </div>
       </div>
       </div>
