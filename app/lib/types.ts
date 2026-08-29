@@ -12,6 +12,18 @@ export type GenreKey =
   | "Jazz"
   | "Freestyle";
 
+// EVENTだけが持つJUDGE・DJ・MC。フォロー中のアカウントから選んだ場合はprofile_idが入り、
+// アプリ未登録の人をInstagramで手入力した場合はinstagramだけが入る
+export type StaffRole = "judge" | "dj" | "mc";
+export interface EventStaffMember {
+  id: string;
+  role: StaffRole;
+  profile_id: string | null;
+  dancer_name: string | null;
+  avatar_url: string | null;
+  instagram: string | null;
+}
+
 export interface Cypher {
   id: string;
   title: string;
@@ -71,6 +83,8 @@ export interface PrivateLesson {
   image_url: string | null;
   // 添付画像（複数枚）。1枚目がimage_url（カード表紙のサムネイル）と同じ画像になる
   image_urls: string[];
+  // JUDGE・DJ・MC（EVENTだけが持つ。LESSONは常に空配列）
+  staff: EventStaffMember[];
 }
 
 export interface FormState {

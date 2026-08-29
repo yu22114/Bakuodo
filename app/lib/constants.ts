@@ -1,4 +1,4 @@
-import type { GenreKey } from "./types";
+import type { GenreKey, StaffRole } from "./types";
 
 // スポットのチェックイン有効時間（時間）— ここを変えるだけで全体に反映
 export const SPOT_CHECKIN_HOURS = 3;
@@ -27,6 +27,10 @@ export const GENRES: GenreKey[] = [
   "Hip-Hop",
   "All Style",
 ];
+
+// EVENTだけが持つJUDGE・DJ・MC
+export const STAFF_ROLES: StaffRole[] = ["judge", "dj", "mc"];
+export const STAFF_ROLE_LABELS: Record<StaffRole, string> = { judge: "JUDGE", dj: "DJ", mc: "MC" };
 
 // LESSON・EVENT・NUMBERの投稿・絞り込みだけで使う拡張ジャンル一覧。
 // CYPHERは従来通りGENRES（8種）のまま。All Styleは一番右（最後）に来るよう並び替える

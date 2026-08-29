@@ -4,7 +4,7 @@ import { Clock, MapPin, User, X, Check, BookOpen, Share2, Trash2 } from "lucide-
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { PrivateLesson, ParticipantProfile } from "../lib/types";
-import { formatDate, timeUntil, formatEndTime, timeAgo, splitLocation } from "../lib/constants";
+import { formatDate, timeUntil, formatEndTime, timeAgo, splitLocation, STAFF_ROLES, STAFF_ROLE_LABELS, instagramHandle } from "../lib/constants";
 import { useComments } from "../lib/useComments";
 import { hapticTap } from "../lib/haptics";
 import type { EventApplicationAnswers } from "../lib/participation";
@@ -182,6 +182,38 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
               <span style={{ fontSize: "11px", color: accent, fontWeight: 700, flexShrink: 0 }}>地図を開く →</span>
             </a>
           </div>
+
+          {/* JUDGE・DJ・MC（EVENTだけ）。フォロー中から選ばれた人はタップでプロフィールへ、
+              Instagram手入力の人は@ハンドルでリンクだけ出す */}
+          {isEvent && lesson.staff.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
+              {STAFF_ROLES.map(role => {
+                const members = lesson.staff.filter(s => s.role === role);
+                if (members.length === 0) return null;
+                return (
+                  <div key={role} style={{ display: "flex", gap: "10px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "flex-start" }}>
+                    <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", minWidth: "34px", marginTop: "2px", flexShrink: 0 }}>{STAFF_ROLE_LABELS[role]}</span>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                      {members.map(m => m.profile_id ? (
+                        <button key={m.id} onClick={() => onViewProfile(m.profile_id!)}
+                          style={{ display: "flex", alignItems: "center", gap: "5px", padding: "4px 8px 4px 4px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", border: "none", cursor: "pointer", color: "#F0F0F0", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif" }}>
+                          <span style={{ width: "18px", height: "18px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", fontWeight: 700, flexShrink: 0 }}>
+                            {m.avatar_url ? <img src={m.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : m.dancer_name?.[0]?.toUpperCase()}
+                          </span>
+                          {m.dancer_name}
+                        </button>
+                      ) : m.instagram ? (
+                        <a key={m.id} href={m.instagram} target="_blank" rel="noopener noreferrer"
+                          style={{ padding: "4px 10px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#38BDF8", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", textDecoration: "none" }}>
+                          @{instagramHandle(m.instagram)}
+                        </a>
+                      ) : null)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {lesson.description && <p style={{ fontSize: "13px", color: "#F0F0F0", lineHeight: 1.7, marginBottom: "20px", fontFamily: "'Noto Sans JP',sans-serif" }}>{lesson.description}</p>}
 

@@ -81,13 +81,22 @@ export async function fetchLessonById(lessonId: string): Promise<PrivateLesson |
   const { data: row } = await supabase.from("private_lessons").select(`
     id, title, organizer_id, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval, kind, image_url, image_urls,
     profiles:organizer_id ( dancer_name, avatar_url, instagram ),
-    pl_genres ( genres:genre_id ( name ) )
+    pl_genres ( genres:genre_id ( name ) ),
+    pl_staff ( id, role, profile_id, instagram, sort_order, profiles:profile_id ( dancer_name, avatar_url ) )
   `).eq("id", lessonId).single();
   if (!row) return null;
   const name = (row as any).profiles?.dancer_name ?? "UNKNOWN";
   const genres: GenreKey[] = ((row as any).pl_genres ?? [])
     .map((cg: any) => cg.genres?.name as GenreKey)
     .filter(Boolean);
+  const staff = ((row as any).pl_staff ?? [])
+    .slice()
+    .sort((a: any, b: any) => a.sort_order - b.sort_order)
+    .map((s: any) => ({
+      id: s.id, role: s.role, profile_id: s.profile_id,
+      dancer_name: s.profiles?.dancer_name ?? null, avatar_url: s.profiles?.avatar_url ?? null,
+      instagram: s.instagram ?? null,
+    }));
   const { count } = await supabase
     .from("pl_participations").select("id", { count: "exact", head: true })
     .eq("lesson_id", lessonId).eq("status", "approved");
@@ -107,6 +116,7 @@ export async function fetchLessonById(lessonId: string): Promise<PrivateLesson |
     image_url: (row as any).image_url ?? null,
     // image_urlsを足す前の投稿はimage_urlしか持たないので、無ければそれを1枚目として扱う
     image_urls: (row as any).image_urls?.length ? (row as any).image_urls : ((row as any).image_url ? [(row as any).image_url] : []),
+    staff,
     genres,
     organizer: { id: (row as any).organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: (row as any).profiles?.avatar_url ?? null, instagram: (row as any).profiles?.instagram ?? null },
     participant_count: count ?? 0,
