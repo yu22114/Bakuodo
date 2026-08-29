@@ -4,7 +4,8 @@ import { Calendar, MapPin, User, X, Check, Zap, Share2, Pencil, Trash2, Star, Bo
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { DanceNumber, ParticipantProfile } from "../lib/types";
-import { dateBadgeParts, timeUntil } from "../lib/constants";
+import { dateBadgeParts, timeUntil, timeAgo } from "../lib/constants";
+import { useComments } from "../lib/useComments";
 import { ParticipantBar } from "./ParticipantBar";
 import { showToast } from "./Toast";
 import { hapticTap } from "../lib/haptics";
@@ -187,6 +188,8 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
   const [justJoined, setJustJoined] = useState(false);
   // ストーリーズ用画像の作成中（少し時間がかかるため連打防止も兼ねる）
   const [storyLoading, setStoryLoading] = useState(false);
+  // コメントの取得・投稿はサイファー・レッスンと同じ処理を使う（commentsテーブル共通）
+  const { comments, commentText, setCommentText, posting, postComment, deleteComment } = useComments({ numberId }, user);
 
   useEffect(() => {
     async function fetchParticipants() {
@@ -259,7 +262,7 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
           <button onClick={handleShare} title="共有" style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Share2 size={19} /></button>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><X size={22} /></button>
         </div>
-        <div style={{ overflowY: "auto", padding: "8px 20px 20px", flex: 1 }}>
+        <div style={{ overflowY: "auto", padding: "8px 20px 0", flex: 1 }}>
           {/* カード表紙ではジャンル名を背景に大きく出しているが、詳細画面ではあえて出さない。
               複数枚ある時は横スワイプで見せ、右上に「1/3」のように枚数を出す */}
           {number.image_urls.length > 0 && (
@@ -379,6 +382,58 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
               </button>
             </div>
           )}
+
+          <div style={{ marginTop: "28px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "20px" }}>
+            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "14px" }}>コメント{comments.length > 0 ? ` (${comments.length})` : ""}</div>
+            {comments.length === 0 ? (
+              <p style={{ fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginBottom: "16px" }}>まだコメントはありません</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "16px" }}>
+                {comments.map(c => (
+                  <div key={c.id} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                    <button onClick={() => c.profile.id && onViewProfile(c.profile.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}>
+                      <div style={{ width: "30px", height: "30px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
+                        {c.profile.avatar_url
+                          ? <img src={c.profile.avatar_url} alt={c.profile.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          : c.profile.dancer_name[0]?.toUpperCase() ?? "?"}
+                      </div>
+                    </button>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "3px" }}>
+                        <span style={{ fontSize: "12px", fontWeight: "bold", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{c.profile.dancer_name}</span>
+                        <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif" }}>{timeAgo(c.created_at)}</span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: "13px", color: "#F0F0F0", lineHeight: 1.5 }}>{c.content}</p>
+                    </div>
+                    {/* 書いた本人だけ削除できる */}
+                    {user && c.profile.id === user.id && (
+                      <button onClick={() => deleteComment(c.id)} title="削除" style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", padding: "4px", flexShrink: 0 }}><Trash2 size={14} /></button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div style={{ height: "32px" }} />
+        </div>
+
+        {/* 入力欄はPLDetailModalと同じく下に固定 */}
+        <div style={{ padding: "12px 16px 24px", borderTop: "1px solid rgba(255,255,255,0.1)", background: "#141414", display: "flex", gap: "8px", alignItems: "flex-end" }}>
+          <textarea
+            value={commentText}
+            onChange={e => setCommentText(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); postComment(); } }}
+            placeholder="コメントを入力..."
+            rows={1}
+            maxLength={200}
+            style={{ flex: 1, resize: "none", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", padding: "10px 14px", fontSize: "13px", fontFamily: "inherit", color: "#F0F0F0", background: "#1A1A1A", outline: "none", lineHeight: 1.5 }}
+          />
+          <button
+            onClick={postComment}
+            disabled={!commentText.trim() || posting}
+            style={{ width: "38px", height: "38px", borderRadius: "50%", background: commentText.trim() ? "#EC4899" : "rgba(255,255,255,0.12)", border: "none", cursor: commentText.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.2s" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+          </button>
         </div>
       </div>
 

@@ -11,11 +11,11 @@ export type Comment = {
 
 const SELECT = "id, content, created_at, profile:profile_id(id, dancer_name, avatar_url)";
 
-// サイファーとレッスン（イベント）で同じcommentsテーブルを使う。
-// どちらの画面から呼ばれたかは、渡された方のIDで決まる
-export function useComments(target: { cypherId: string } | { lessonId: string }, user: SupabaseUser | null) {
-  const key = "cypherId" in target ? target.cypherId : target.lessonId;
-  const column = "cypherId" in target ? "cypher_id" : "lesson_id";
+// サイファー・レッスン（イベント）・NUMBERで同じcommentsテーブルを使う。
+// どの画面から呼ばれたかは、渡された方のIDで決まる
+export function useComments(target: { cypherId: string } | { lessonId: string } | { numberId: string }, user: SupabaseUser | null) {
+  const key = "cypherId" in target ? target.cypherId : "lessonId" in target ? target.lessonId : target.numberId;
+  const column = "cypherId" in target ? "cypher_id" : "lessonId" in target ? "lesson_id" : "number_id";
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState("");
   const [posting, setPosting] = useState(false);
