@@ -26,6 +26,22 @@ export interface Cypher {
   studio_fee: number | null;
 }
 
+// NUMBER（振付作品）。CYPHERとほぼ同じ形だが、限定公開・参加承認制は持たない
+export interface DanceNumber {
+  id: string;
+  title: string;
+  starts_at: string;
+  ends_at: string | null;
+  location: string;
+  genres: GenreKey[];
+  organizer: { id: string; dancer_name: string; avatar: string; avatar_url: string | null; instagram: string | null };
+  participant_count: number;
+  max_members: number | null;
+  description: string;
+  hot: boolean;
+  studio_fee: number | null;
+}
+
 export interface PrivateLesson {
   id: string;
   // レッスンとイベントは同じテーブル・同じ参加まわりを使い、この列だけで見分ける

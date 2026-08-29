@@ -36,6 +36,29 @@ export async function cancelCypher(userId: string, cypherId: string): Promise<{ 
   return {};
 }
 
+// NUMBERは承認制がないので、参加は単純なINSERT/DELETEだけで完結する（statusは扱わない）
+export async function joinNumber(userId: string, numberId: string): Promise<{ error?: string }> {
+  const { error } = await supabase
+    .from("number_participations")
+    .insert({ number_id: numberId, profile_id: userId });
+  if (error) {
+    console.error("number join error:", error);
+    return { error: mapJoinError(error.message) };
+  }
+  return {};
+}
+
+export async function cancelNumber(userId: string, numberId: string): Promise<{ error?: string }> {
+  const { error } = await supabase
+    .from("number_participations").delete()
+    .eq("number_id", numberId).eq("profile_id", userId);
+  if (error) {
+    console.error("number cancel error:", error);
+    return { error: "キャンセルに失敗しました" };
+  }
+  return {};
+}
+
 // EVENTの参加申請時だけ必須で答えてもらう項目（レッスンでは使わない）
 export type EventApplicationAnswers = { dancerName: string; email: string; phone: string };
 

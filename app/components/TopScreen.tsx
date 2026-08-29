@@ -3,10 +3,11 @@ import { useState, useEffect, useRef } from "react";
 import { Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus, ChevronLeft, ChevronRight, MapPinOff, CalendarX, SearchX } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
-import type { Cypher, PrivateLesson, GenreKey } from "../lib/types";
+import type { Cypher, PrivateLesson, DanceNumber, GenreKey } from "../lib/types";
 import { GENRES, GENRE_COLORS, genreLabel, timeUntil, formatDate, formatEndTime, calcDistanceM } from "../lib/constants";
 import { CypherCard } from "./CypherCard";
 import { PLCard } from "./PLCard";
+import { NumberCard } from "./NumberCard";
 import { SpotCard } from "./SpotCard";
 import { Logo } from "./Logo";
 import { showToast } from "./Toast";
@@ -15,17 +16,20 @@ import { EmptyState } from "./EmptyState";
 import { useSwipeTabs } from "../lib/useSwipeTabs";
 import { useScrollShadow } from "../lib/useScrollShadow";
 
-export type TopSection = "cypher" | "pl" | "event" | "spots";
+export type TopSection = "number" | "cypher" | "pl" | "event" | "spots";
 
-// タブの並び順・色・ラベル。EVENTはレッスンと同じ仕組みで動く（DBのkind列で見分ける）
-const SECTION_ORDER = ["cypher", "pl", "event", "spots"] as const;
+// タブの並び順・色・ラベル。NUMBERを一番左、CYPHERを真ん中にする。
+// EVENTはレッスンと同じ仕組みで動く（DBのkind列で見分ける）
+const SECTION_ORDER = ["number", "pl", "cypher", "event", "spots"] as const;
 const SECTION_COLOR: Record<TopSection, string> = {
+  number: "#EC4899",
   cypher: "#DC2626",
   pl: "#2563EB",
   event: "#EAB308",
   spots: "#16A34A",
 };
 const SECTION_LABEL: Record<TopSection, string> = {
+  number: "NUMBER",
   cypher: "CYPHER",
   pl: "LESSON",
   event: "EVENT",
@@ -37,16 +41,18 @@ const SECTION_LABEL: Record<TopSection, string> = {
 // 実際に動かすのは .bd-glow-bg（page.tsx側のkeyframes）で、背景を広めに敷いた上で
 // background-positionをゆっくりループさせている
 const SECTION_BG: Record<TopSection, string> = {
+  number: "radial-gradient(circle at center, rgba(236,72,153,0.9) 0%, rgba(236,72,153,0.08) 16%, #000000 32%)",
   cypher: "radial-gradient(circle at center, rgba(220,38,38,0.9) 0%, rgba(220,38,38,0.08) 16%, #000000 32%)",
   pl: "radial-gradient(circle at center, rgba(37,99,235,0.9) 0%, rgba(37,99,235,0.08) 16%, #000000 32%)",
   event: "radial-gradient(circle at center, rgba(234,179,8,0.9) 0%, rgba(234,179,8,0.08) 16%, #000000 32%)",
   spots: "radial-gradient(circle at center, rgba(22,163,74,0.9) 0%, rgba(22,163,74,0.08) 16%, #000000 32%)",
 };
 
-export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell, section, onSectionChange, accountType }: {
+export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onViewProfile, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell, section, onSectionChange, accountType }: {
   onNav: (s: string) => void;
   onCardClick: (c: Cypher) => void;
   onPLClick: (l: PrivateLesson) => void;
+  onNumberClick: (n: DanceNumber) => void;
   onViewProfile?: (id: string) => void;
   user: SupabaseUser;
   refreshKey: number;
@@ -128,6 +134,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
   };
   const [spots, setSpots] = useState<{ id: string; name: string; location: string; description: string | null; latitude: number | null; longitude: number | null }[]>([]);
   const [cyphers, setCyphers] = useState<Cypher[]>([]);
+  const [numbers, setNumbers] = useState<DanceNumber[]>([]);
   const [lessons, setLessons] = useState<PrivateLesson[]>([]);
   const [events, setEvents] = useState<PrivateLesson[]>([]);
   const [loading, setLoading] = useState(true);
@@ -205,6 +212,32 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
       });
       setCyphers(shaped);
 
+      // NUMBERフェッチ（限定公開・承認制がないのでcyphersよりシンプル）
+      const [numberRes, numberCountRes] = await Promise.all([
+        supabase
+          .from("numbers")
+          .select(`
+            id, title, organizer_id, starts_at, ends_at, location, description, max_members, studio_fee,
+            profiles:organizer_id ( dancer_name, avatar_url, instagram ),
+            number_genres ( genres:genre_id ( name ) )
+          `)
+          .or(`starts_at.gte.${oneHourAgo},ends_at.gte.${now}`)
+          .order("starts_at"),
+        supabase.from("number_participant_counts").select("number_id, participant_count"),
+      ]);
+      if (numberRes.data) {
+        const numberCountMap: Record<string, number> = {};
+        (numberCountRes.data ?? []).forEach((p: any) => { numberCountMap[p.number_id] = p.participant_count ?? 0; });
+        const shapedNumbers: DanceNumber[] = numberRes.data.map((row: any) => {
+          const name = row.profiles?.dancer_name ?? "UNKNOWN";
+          const genres: GenreKey[] = (row.number_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
+          const count = numberCountMap[row.id] ?? 0;
+          return { id: row.id, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, studio_fee: row.studio_fee ?? null, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null, instagram: row.profiles?.instagram ?? null }, participant_count: count, hot: count >= 5 };
+        });
+        shapedNumbers.sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+        setNumbers(shapedNumbers);
+      }
+
       // PLフェッチ
       const [plRes, plCountRes] = await Promise.all([
         supabase.from("private_lessons").select(`
@@ -248,6 +281,20 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
     }
     if (areaText.trim()) {
       if (!c.location.toLowerCase().includes(areaText.trim().toLowerCase())) return false;
+    }
+    return true;
+  });
+
+  // NUMBER側もサイファーと同じ条件で絞り込む（ジャンル/日付/エリア）
+  const filteredNumbers = numbers.filter(n => {
+    if (selectedGenres.length > 0 && !selectedGenres.some(g => n.genres.includes(g))) return false;
+    if (specificDate) {
+      const d = new Date(n.starts_at);
+      const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      if (dStr !== specificDate) return false;
+    }
+    if (areaText.trim()) {
+      if (!n.location.toLowerCase().includes(areaText.trim().toLowerCase())) return false;
     }
     return true;
   });
@@ -316,7 +363,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
         return dA - dB;
       })
     : spots;
-  const postCount = section === "pl" ? filteredLessons.length : section === "event" ? filteredEvents.length : filtered.length;
+  const postCount = section === "pl" ? filteredLessons.length : section === "event" ? filteredEvents.length : section === "number" ? filteredNumbers.length : filtered.length;
 
   // ヘッダー左上に出す今日の日付。ロゴだけだと寂しいので添える
   const today = new Date();
@@ -471,7 +518,17 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
                 : shown.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => onPLClick(l)} />)}
         </div>
         );
-      })() : (
+      })() : section === "number" ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px" }}>
+          {loading && numbers.length === 0
+            ? <CardSkeleton />
+            : !loading && numbers.length === 0
+              ? <EmptyState icon={CalendarX}>まだNUMBERがありません</EmptyState>
+              : !loading && filteredNumbers.length === 0
+                ? <EmptyState icon={SearchX}>条件に合うNUMBERがありません</EmptyState>
+                : filteredNumbers.map((n, i) => <NumberCard key={n.id} number={n} index={i} onClick={() => onNumberClick(n)} />)}
+        </div>
+      ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px" }}>
           {/* 再フェッチ中は既存リストを出したままにする（全画面LOADINGのちらつき防止） */}
           {loading && cyphers.length === 0
@@ -520,7 +577,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onViewProfile, user, 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <SlidersHorizontal size={18} color="#F0F0F0" />
-                <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", letterSpacing: "0.05em" }}>{section === "pl" ? "プライベートレッスンを検索" : section === "event" ? "イベントを検索" : "サイファーを検索"}</span>
+                <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", letterSpacing: "0.05em" }}>{section === "pl" ? "プライベートレッスンを検索" : section === "event" ? "イベントを検索" : section === "number" ? "NUMBERを検索" : "サイファーを検索"}</span>
               </div>
               <button onClick={() => setSearchOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={20} /></button>
             </div>
