@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus, ChevronLeft, ChevronRight, MapPinOff, CalendarX, SearchX } from "lucide-react";
+import { Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus, ChevronLeft, ChevronRight, MapPinOff, CalendarX, SearchX, Bookmark } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, PrivateLesson, DanceNumber, GenreKey } from "../lib/types";
@@ -48,7 +48,7 @@ const SECTION_BG: Record<TopSection, string> = {
   spots: "radial-gradient(circle at center, rgba(22,163,74,0.9) 0%, rgba(22,163,74,0.08) 16%, #000000 32%)",
 };
 
-export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onViewProfile, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell, section, onSectionChange, accountType }: {
+export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onViewProfile, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell, section, onSectionChange, accountType, savedEventIds, savedNumberIds }: {
   onNav: (s: string) => void;
   onCardClick: (c: Cypher) => void;
   onPLClick: (l: PrivateLesson) => void;
@@ -66,8 +66,12 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
   onSectionChange: (s: TopSection) => void;
   // 団体用アカウントではSPOTS機能を使わないため、タブごと隠す
   accountType?: string;
+  // 「気になる」（参加とは別の軽いブックマーク）。EVENT・NUMBERだけが持つ
+  savedEventIds?: string[];
+  savedNumberIds?: string[];
 }) {
   const [slideDir, setSlideDir] = useState<1 | -1>(1);
+  const [showSaved, setShowSaved] = useState(false);
   // 未読通知バッジ：件数が増えた瞬間だけ一瞬拡大させる
   const [badgePulsing, setBadgePulsing] = useState(false);
   const prevUnreadCountRef = useRef(unreadCount);
@@ -407,6 +411,10 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
             </button>
           </h1>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "4px" }}>
+            {/* 気になるリスト。参加とは別にブックマークしたEVENT・NUMBERの一覧を出す */}
+            <button onClick={() => setShowSaved(true)} style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "6px" }}>
+              <Bookmark size={22} color="#FFFFFF" />
+            </button>
             {/* 検索ボタン */}
             <button onClick={() => setSearchOpen(true)} style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "6px" }}>
               <Search size={22} color={activeFilterCount > 0 ? "#DC2626" : "#FFFFFF"} />
@@ -638,6 +646,33 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
           </div>
         </div>
       )}
+
+      {/* 気になるリスト。参加とは別にブックマークしたEVENT・NUMBERの一覧（終了したものはリストから静かに消える） */}
+      {showSaved && (() => {
+        const savedEventCards = events.filter(e => (savedEventIds ?? []).includes(e.id));
+        const savedNumberCards = numbers.filter(n => (savedNumberIds ?? []).includes(n.id));
+        return (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setShowSaved(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px", maxHeight: "85vh", overflowY: "auto" }} className="bd-scroll">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Bookmark size={18} color="#F0F0F0" />
+                <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", letterSpacing: "0.05em" }}>気になる</span>
+              </div>
+              <button onClick={() => setShowSaved(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={20} /></button>
+            </div>
+            {savedEventCards.length === 0 && savedNumberCards.length === 0 ? (
+              <EmptyState icon={Bookmark} padding="40px 16px">まだ「気になる」に追加したEVENT・NUMBERはありません</EmptyState>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                {savedEventCards.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => { setShowSaved(false); onPLClick(l); }} />)}
+                {savedNumberCards.map((n, i) => <NumberCard key={n.id} number={n} index={i} onClick={() => { setShowSaved(false); onNumberClick(n); }} />)}
+              </div>
+            )}
+          </div>
+        </div>
+        );
+      })()}
 
     {/* ロゴを押すと開く月間カレンダー。今日が何日かを一目で確認するだけのもの */}
       {showCalendar && (
