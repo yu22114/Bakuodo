@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Clock, MapPin, BookOpen } from "lucide-react";
 import type { PrivateLesson } from "../lib/types";
-import { GENRE_COLORS, genreLabel, formatDate, dateBadgeParts, timeUntil, formatEndTime, splitLocation } from "../lib/constants";
+import { GENRE_COLORS, genreLabel, formatDate, timeUntil, formatEndTime, splitLocation } from "../lib/constants";
 
 const LEVEL_LABELS: Record<string, string> = {
   all: "全レベル",
@@ -11,21 +11,22 @@ const LEVEL_LABELS: Record<string, string> = {
   advanced: "上級者",
 };
 
+// LESSON・EVENTは「本番・観客あり」の枠なので、CypherCardと違って縦長のポスター表示にする。
+// 画像を添付していればそれを、無ければ種別カラーのグラデーションを背景に敷く
 export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; onClick: () => void; index?: number }) {
-  const { time } = formatDate(lesson.starts_at);
-  const { month, day, weekday } = dateBadgeParts(lesson.starts_at);
+  const { date, time } = formatDate(lesson.starts_at);
   const { station, venue } = splitLocation(lesson.location);
   const until = timeUntil(lesson.starts_at);
   const [hover, setHover] = useState(false);
   // 押している間だけ、カードがわずかに傾く（指で押さえた物理カードのような質感）
   const [pressed, setPressed] = useState(false);
-  // イベントもこのカードを使い回す。青(レッスン)と紫(イベント)だけ切り替える
+  // イベントもこのカードを使い回す。青(レッスン)と黄(イベント)だけ切り替える
   const accent = lesson.kind === "event" ? "#EAB308" : "#2563EB";
-  const color = GENRE_COLORS[lesson.genres[0]] ?? accent;
+  const genreColor = GENRE_COLORS[lesson.genres[0]] ?? accent;
   const isEnded = until === "終了";
   const cardTransform = pressed
     ? "perspective(600px) rotateX(3deg) rotateY(-2deg) scale(0.98)"
-    : hover ? "translateY(-3px)" : "none";
+    : hover ? "translateY(-4px)" : "none";
 
   // 登場アニメ・常時のゆらぎ浮遊は外側の2層、ホバーの動きは内側（CypherCardと同じ理由）
   return (
@@ -35,84 +36,79 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
       onPointerDown={() => setPressed(true)} onPointerUp={() => setPressed(false)} onPointerLeave={() => setPressed(false)} onPointerCancel={() => setPressed(false)}
       // タッチ端末はホバーできないので、PCのホバー時と同じ色付き影を@media(hover:none)で常時出す
       className="bd-glow-card-blue"
-      style={{ background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: `1px solid ${hover ? accent + "4D" : "rgba(255,255,255,0.14)"}`, borderRadius: "10px", padding: "14px 16px", cursor: "pointer", transition: `transform ${pressed ? "0.12s" : "0.25s"} ease, box-shadow 0.25s ease`, transform: cardTransform, position: "relative", overflow: "hidden", boxShadow: (hover ? "0 6px 12px rgba(0,0,0,0.3), 0 18px 36px " + accent + "2E, " : "0 2px 4px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2), ") + "inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.5)", opacity: isEnded ? 0.55 : 1 }}>
-      {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.12)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>終了</div>}
+      style={{ position: "relative", aspectRatio: "3 / 4", borderRadius: "14px", overflow: "hidden", cursor: "pointer", border: `1px solid ${hover ? accent + "66" : "rgba(255,255,255,0.16)"}`, transition: `transform ${pressed ? "0.12s" : "0.25s"} ease, box-shadow 0.25s ease`, transform: cardTransform, boxShadow: (hover ? "0 10px 22px rgba(0,0,0,0.4), 0 22px 46px " + accent + "33, " : "0 4px 10px rgba(0,0,0,0.35), 0 12px 28px rgba(0,0,0,0.25), ") + "inset 0 1px 0 rgba(255,255,255,0.08)", opacity: isEnded ? 0.6 : 1 }}>
+      {/* 背景：画像を添付していればそれを表紙に、無ければ種別カラーのグラデーションでポスター風に見せる */}
+      {lesson.image_url ? (
+        <img src={lesson.image_url} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+      ) : (
+        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(160deg, ${accent}59 0%, #1c1c1c 62%, #101010 100%)` }} />
+      )}
+      {/* 下から黒く沈める。ここに乗る文字を読ませるためのシェード */}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.6) 34%, rgba(0,0,0,0.08) 64%, transparent 100%)" }} />
 
-      {lesson.genres[0] && (() => {
-        // 背景に敷くジャンル名（CypherCardと同じ作り）
-        const label = genreLabel(lesson.genres[0]).toUpperCase();
-        return (
-          <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", fontSize: `${Math.min(68, Math.round(360 / label.length))}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: color + "73", pointerEvents: "none", userSelect: "none" }}>
-            {label}
-          </div>
-        );
-      })()}
-      {/* 開催日時はチケットの半券風にカード左端へ張り付ける（CypherCardと同じ）。
-          背景はカード本体のメタリックな地色を透かして馴染ませ、区切り線だけで境目を示す */}
-      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "44px", display: "flex", flexDirection: "column", borderRight: "1px solid rgba(255,255,255,0.1)" }}>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 900, color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0" }}>{month}</div>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontWeight: 900, fontFamily: "'Noto Sans JP',sans-serif", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", lineHeight: 1 }}>{day}</div>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontWeight: 900, fontFamily: "'Noto Sans JP',sans-serif", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", borderTop: "1px solid rgba(255,255,255,0.08)" }}>{weekday}</div>
-      </div>
-      {/* 中身は背景文字より上に置く。日付バッジぶん（44px - カード左paddingの16px = 28px）に加えて、間隔を空けるため12px余分に取る */}
-      <div style={{ position: "relative", marginLeft: "40px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0px" }}>
-        <div style={{ flex: 1, paddingRight: "52px", display: "flex", alignItems: "center", gap: "10px" }}>
-          {lesson.image_url && (
-            <img src={lesson.image_url} alt="" style={{ width: "40px", height: "40px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }} />
+      {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.14)", padding: "4px 11px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "6px" }}>終了</div>}
+
+      {/* コンテンツはすべて下部に重ねる */}
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "9px", flexWrap: "wrap" }}>
+          <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", letterSpacing: "0.1em", padding: "3px 8px", borderRadius: "4px", background: accent, color: lesson.kind === "event" ? "#171717" : "#fff" }}>
+            {lesson.kind === "event" ? "EVENT" : "PRIVATE"}
+          </span>
+          {lesson.genres[0] && (
+            <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", padding: "3px 8px", borderRadius: "4px", background: genreColor + "26", color: genreColor }}>
+              {genreLabel(lesson.genres[0])}
+            </span>
           )}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+          <div style={{ width: "34px", height: "34px", borderRadius: "50%", background: `linear-gradient(135deg,${genreColor}33,${genreColor}55)`, border: "1px solid rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: "bold", color: genreColor, fontFamily: "'Noto Sans JP',sans-serif", overflow: "hidden", flexShrink: 0 }}>
+            {lesson.organizer.avatar_url
+              ? <img src={lesson.organizer.avatar_url} alt={lesson.organizer.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              : lesson.organizer.avatar}
+          </div>
           <div style={{ minWidth: 0 }}>
-            {/* 開催日そのものは左の日付バッジに出す（CypherCardと同じ） */}
-            <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap" }}>
-              <h3 style={{ margin: 0, fontSize: "19px", fontWeight: 700, color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{lesson.title}</h3>
-            </div>
-            <div style={{ fontSize: "12px", color: "#F0F0F0", marginTop: "2px", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-              {/* Instagramを設定している主催者は名前ではなくアカウント名を出す */}
+            <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "#fff", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.03em", lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any }}>{lesson.title}</h3>
+            <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.75)", marginTop: "1px", fontFamily: "'Noto Sans JP',sans-serif" }}>
               {lesson.organizer.instagram
                 ? <span>by <span style={{ color: "#38BDF8" }}>@{lesson.organizer.instagram}</span></span>
                 : <span>by {lesson.organizer.dancer_name}</span>}
             </div>
           </div>
         </div>
-        {/* 参加人数は講師アイコンの真下（CypherCardと同じ）。料金・対象レベルもこの列にまとめて出す */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", flexShrink: 0 }}>
-          <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: `linear-gradient(135deg,${color}22,${color}44)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px", fontWeight: "bold", color, fontFamily: "'Noto Sans JP',sans-serif", overflow: "hidden" }}>
-            {lesson.organizer.avatar_url
-              ? <img src={lesson.organizer.avatar_url} alt={lesson.organizer.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              : lesson.organizer.avatar}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "10px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Clock size={11} color="rgba(255,255,255,0.55)" />
+            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.85)", fontFamily: "'Noto Sans JP',sans-serif" }}>{date} {time}{lesson.ends_at ? `〜${formatEndTime(lesson.starts_at, lesson.ends_at)}` : ""}</span>
           </div>
-          <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", whiteSpace: "nowrap" }}>
+          {/* カード上では地図リンクにしない（CypherCardと同じ理由） */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <MapPin size={11} color="rgba(255,255,255,0.55)" />
+            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.85)", fontFamily: "'Noto Sans JP',sans-serif" }}>
+              {venue || (station && `${station}駅`)}
+              {venue && station && ` ${station}駅`}
+            </span>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "11px" }}>
+          <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
+            {lesson.price != null && (
+              <span style={{ fontSize: "10px", padding: "3px 8px", background: "rgba(255,255,255,0.14)", borderRadius: "4px", color: "#fff", fontFamily: "'Noto Sans JP',sans-serif", whiteSpace: "nowrap" }}>
+                ¥{lesson.price.toLocaleString()}
+              </span>
+            )}
+            {lesson.kind !== "event" && (
+              <span style={{ fontSize: "10px", padding: "3px 8px", background: accent + "26", borderRadius: "4px", color: "#fff", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "3px", whiteSpace: "nowrap" }}>
+                <BookOpen size={9} /> {LEVEL_LABELS[lesson.target_level] ?? "全レベル"}
+              </span>
+            )}
+          </div>
+          <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: "#fff", whiteSpace: "nowrap", flexShrink: 0 }}>
             {lesson.participant_count}{lesson.max_members ? `/${lesson.max_members}` : ""}人
           </span>
-          {/* 料金は参加人数表記のすぐ下に出す */}
-          {lesson.price != null && (
-            <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", whiteSpace: "nowrap" }}>
-              ¥{lesson.price.toLocaleString()}
-            </span>
-          )}
-          {/* 対象レベルは料金のすぐ下に出す */}
-          {lesson.kind !== "event" && (
-            <span style={{ fontSize: "9px", padding: "2px 7px", background: accent + "14", borderRadius: "4px", color: accent, fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "3px", whiteSpace: "nowrap" }}>
-              <BookOpen size={9} /> {LEVEL_LABELS[lesson.target_level] ?? "全レベル"}
-            </span>
-          )}
         </div>
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <Clock size={11} color="rgba(255,255,255,0.4)" />
-          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{time}{lesson.ends_at ? `〜${formatEndTime(lesson.starts_at, lesson.ends_at)}` : ""}</span>
-        </div>
-        {/* カード上では地図リンクにしない（CypherCardと同じ理由） */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <MapPin size={11} color="rgba(255,255,255,0.4)" />
-          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
-            {venue || (station && `${station}駅`)}
-            {venue && station && ` ${station}駅`}
-          </span>
-        </div>
-      </div>
       </div>
     </div>
     </div>
