@@ -106,6 +106,9 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
               </div>
             );
           })()}
+          {number.image_url && (
+            <img src={number.image_url} alt="" style={{ width: "100%", maxHeight: "180px", objectFit: "cover", borderRadius: "10px", marginBottom: "16px", display: "block" }} />
+          )}
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
             <button onClick={() => onViewProfile(organizerId)}
               style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>

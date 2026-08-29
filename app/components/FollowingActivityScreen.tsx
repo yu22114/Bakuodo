@@ -94,7 +94,7 @@ export function FollowingActivityScreen({ user, onCardClick, onPLClick, onViewPr
         const [{ data: lessonRows }, { data: plCountRows }] = await Promise.all([
           supabase.from("private_lessons")
             .select(`
-              id, title, organizer_id, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval, kind,
+              id, title, organizer_id, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval, kind, image_url,
               profiles:organizer_id ( dancer_name, avatar_url, instagram ),
               pl_genres ( genres:genre_id ( name ) )
             `)
@@ -107,7 +107,7 @@ export function FollowingActivityScreen({ user, onCardClick, onPLClick, onViewPr
         const shapedPL: PrivateLesson[] = (lessonRows ?? []).map((row: any) => {
           const name = row.profiles?.dancer_name ?? "UNKNOWN";
           const genres: GenreKey[] = (row.pl_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
-          return { id: row.id, kind: "event" as const, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, price: row.price ?? null, target_level: row.target_level ?? "all", visibility: row.visibility ?? "public", requires_approval: row.requires_approval ?? false, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null, instagram: row.profiles?.instagram ?? null }, participant_count: plCountMap[row.id] ?? 0 };
+          return { id: row.id, kind: "event" as const, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, price: row.price ?? null, target_level: row.target_level ?? "all", visibility: row.visibility ?? "public", requires_approval: row.requires_approval ?? false, image_url: row.image_url ?? null, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null, instagram: row.profiles?.instagram ?? null }, participant_count: plCountMap[row.id] ?? 0 };
         }).filter(l => l.visibility === "public" || l.organizer.id === user.id || followingSet.has(l.organizer.id));
 
         const lessonMap = new Map(shapedPL.map(l => [l.id, l]));

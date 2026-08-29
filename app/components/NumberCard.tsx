@@ -48,14 +48,19 @@ export function NumberCard({ number, onClick, index = 0 }: { number: DanceNumber
       </div>
       <div style={{ position: "relative", marginLeft: "40px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0px" }}>
-        <div style={{ flex: 1, paddingRight: "52px" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap" }}>
-            <h3 style={{ margin: 0, fontSize: "19px", fontWeight: 700, color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{number.title}</h3>
-          </div>
-          <div style={{ fontSize: "12px", color: "#F0F0F0", marginTop: "2px", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-            {number.organizer.instagram
-              ? <span>by <span style={{ color: "#38BDF8" }}>@{number.organizer.instagram}</span></span>
-              : <span>by {number.organizer.dancer_name}</span>}
+        <div style={{ flex: 1, paddingRight: "52px", display: "flex", alignItems: "center", gap: "10px" }}>
+          {number.image_url && (
+            <img src={number.image_url} alt="" style={{ width: "40px", height: "40px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }} />
+          )}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap" }}>
+              <h3 style={{ margin: 0, fontSize: "19px", fontWeight: 700, color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{number.title}</h3>
+            </div>
+            <div style={{ fontSize: "12px", color: "#F0F0F0", marginTop: "2px", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+              {number.organizer.instagram
+                ? <span>by <span style={{ color: "#38BDF8" }}>@{number.organizer.instagram}</span></span>
+                : <span>by {number.organizer.dancer_name}</span>}
+            </div>
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", flexShrink: 0 }}>

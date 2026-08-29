@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Check, Zap, BookOpen, RotateCcw, X, Plus } from "lucide-react";
+import { Check, Zap, BookOpen, RotateCcw, X, Plus, Camera } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { FormState } from "../lib/types";
@@ -41,6 +41,70 @@ const DRAFT_KEY = "bakuodori:post-draft:v1";
 const EMPTY_FORM: FormState = { title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [], description: "", max_members: "", payment: [], studio_fee: "" };
 const EMPTY_PL = { title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [] as string[], description: "", max_members: "", price: "", target_level: "all" };
 
+// LESSON・EVENT・NUMBERのカードに添付する画像まわり（CYPHERは対象外）。
+// アバターと違い正方形に切り抜かず、長辺だけ縮小してアスペクト比はそのまま保つ
+const POST_IMAGE_MAX = 1600;
+
+function loadImageElement(blob: Blob): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("画像を読み込めませんでした"));
+    img.src = URL.createObjectURL(blob);
+  });
+}
+
+// iPhoneのHEIC/HEIFは一部ブラウザで読み込めないためサーバー側で変換するが、
+// Vercelのサーバー関数は約4.5MBまでという制限があるため、それを超える大きな
+// ファイルはサーバーに送らずブラウザ自身のデコードにそのまま任せる
+async function convertHeicIfNeeded(file: File): Promise<Blob> {
+  const isHeic = /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+  if (!isHeic) return file;
+  if (file.size > 4 * 1024 * 1024) return file;
+  const res = await fetch("/api/convert-heic", { method: "POST", body: file });
+  if (!res.ok) throw new Error(`HEIC変換に失敗しました (status ${res.status})`);
+  return await res.blob();
+}
+
+async function processPostImage(file: File): Promise<Blob> {
+  const source = await convertHeicIfNeeded(file);
+  const img = await loadImageElement(source);
+  const longSide = Math.max(img.naturalWidth, img.naturalHeight);
+  const scale = longSide > POST_IMAGE_MAX ? POST_IMAGE_MAX / longSide : 1;
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(img.naturalWidth * scale);
+  canvas.height = Math.round(img.naturalHeight * scale);
+  const ctx = canvas.getContext("2d");
+  URL.revokeObjectURL(img.src);
+  if (!ctx) throw new Error("画像の処理に失敗しました");
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.85));
+  if (!blob) throw new Error("画像の処理に失敗しました");
+  return blob;
+}
+
+async function uploadPostImage(userId: string, file: File): Promise<string> {
+  const blob = await processPostImage(file);
+  const path = `${userId}/${crypto.randomUUID()}.jpg`;
+  const { error } = await supabase.storage.from("post-images").upload(path, blob, { contentType: "image/jpeg" });
+  if (error) throw new Error(`画像のアップロードに失敗しました: ${error.message}`);
+  const { data: { publicUrl } } = supabase.storage.from("post-images").getPublicUrl(path);
+  return publicUrl;
+}
+
+// 選んだ画像ファイルのバリデーションと、プレビュー用URLの発行だけを行う小さなヘルパー。
+// 実際のアップロードは投稿ボタンを押した時にまとめて行う
+function pickImageFile(e: React.ChangeEvent<HTMLInputElement>, onError: (msg: string) => void, onPicked: (file: File, previewUrl: string) => void) {
+  const file = e.target.files?.[0];
+  e.target.value = "";
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { onError("画像ファイルサイズは10MB以下にしてください"); return; }
+  const looksLikeImage = file.type.startsWith("image/") || /\.(jpe?g|png|gif|webp|heic|heif|bmp|avif)$/i.test(file.name);
+  if (!looksLikeImage) { onError("画像ファイルを選択してください"); return; }
+  onError("");
+  onPicked(file, URL.createObjectURL(file));
+}
+
 export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: { onNav: (s: string) => void; user: SupabaseUser; initialTab?: "number" | "cypher" | "pl" | "event"; accountType?: string }) {
   // トップでLESSON/EVENTを見ていたならその作成フォームから始める
   const [tab, setTab] = useState<"number" | "cypher" | "pl" | "event">(initialTab);
@@ -59,10 +123,15 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
   const [numberEndDate, setNumberEndDate] = useState("");
   // 本番当日。連続していなくてもよい複数の日付を追加・削除できるようにする
   const [numberPerformanceDates, setNumberPerformanceDates] = useState<string[]>([]);
+  // 添付画像（任意）。実際のアップロードは投稿ボタンを押した時にまとめて行う
+  const [numberImageFile, setNumberImageFile] = useState<File | null>(null);
+  const [numberImagePreview, setNumberImagePreview] = useState<string | null>(null);
   // PLフォーム用
   const [plForm, setPlForm] = useState(EMPTY_PL);
   const [plIsPrivate, setPlIsPrivate] = useState(false);
   const [plRequiresApproval, setPlRequiresApproval] = useState(false);
+  const [plImageFile, setPlImageFile] = useState<File | null>(null);
+  const [plImagePreview, setPlImagePreview] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -116,6 +185,30 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
     setPlIsPrivate(false); setPlRequiresApproval(false);
     setDraftRestored(false);
     clearDraft();
+  };
+
+  // 画像の選択・解除（NUMBER用・LESSON/EVENT用で共通の考え方）
+  const handleNumberImageSelect = (e: React.ChangeEvent<HTMLInputElement>) =>
+    pickImageFile(e, setError, (file, preview) => {
+      if (numberImagePreview) URL.revokeObjectURL(numberImagePreview);
+      setNumberImageFile(file);
+      setNumberImagePreview(preview);
+    });
+  const clearNumberImage = () => {
+    if (numberImagePreview) URL.revokeObjectURL(numberImagePreview);
+    setNumberImageFile(null);
+    setNumberImagePreview(null);
+  };
+  const handlePlImageSelect = (e: React.ChangeEvent<HTMLInputElement>) =>
+    pickImageFile(e, setError, (file, preview) => {
+      if (plImagePreview) URL.revokeObjectURL(plImagePreview);
+      setPlImageFile(file);
+      setPlImagePreview(preview);
+    });
+  const clearPlImage = () => {
+    if (plImagePreview) URL.revokeObjectURL(plImagePreview);
+    setPlImageFile(null);
+    setPlImagePreview(null);
   };
 
   // All Styleと他ジャンルの同時選択はできない（constants.tsのtoggleGenreが担当）
@@ -181,6 +274,14 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
       setError("入力が長すぎます"); return;
     }
     setLoading(true); setError("");
+    let image_url: string | null = null;
+    if (numberImageFile) {
+      try {
+        image_url = await uploadPostImage(user.id, numberImageFile);
+      } catch (err) {
+        setError((err as any)?.message ?? "画像のアップロードに失敗しました"); setLoading(false); return;
+      }
+    }
     const title = numberForm.title.trim();
     const starts_at = `${numberForm.date}T00:00:00+09:00`;
     // 2日目は1日目より後の日を選んだ時だけ意味がある値として保存する（マイコミュニティと同じ考え方）
@@ -189,7 +290,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
     const location = numberForm.studio.trim() || title;
     const { data: numberRow, error: nErr } = await supabase
       .from("numbers")
-      .insert({ title, location, description: numberForm.description, starts_at, ends_at, max_members: numberForm.max_members ? Number(numberForm.max_members) : null, organizer_id: user.id })
+      .insert({ title, location, description: numberForm.description, starts_at, ends_at, max_members: numberForm.max_members ? Number(numberForm.max_members) : null, organizer_id: user.id, image_url })
       .select().single();
     if (nErr || !numberRow) { console.error("number insert error:", nErr); setError(`投稿に失敗しました。エラー: ${nErr?.message ?? "不明"}`); setLoading(false); return; }
     if (numberForm.genres.length > 0) {
@@ -205,6 +306,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
     }
     // 主催者を自動で参加者に追加
     await supabase.from("number_participations").insert({ number_id: numberRow.id, profile_id: user.id });
+    clearNumberImage();
     clearDraft();
     setLoading(false); setSubmitted(true);
     setTimeout(() => onNav("top"), 1400);
@@ -217,6 +319,14 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
       setError("入力が長すぎます"); return;
     }
     setLoading(true); setError("");
+    let image_url: string | null = null;
+    if (plImageFile) {
+      try {
+        image_url = await uploadPostImage(user.id, plImageFile);
+      } catch (err) {
+        setError((err as any)?.message ?? "画像のアップロードに失敗しました"); setLoading(false); return;
+      }
+    }
     const starts_at = plForm.start_time ? `${plForm.date}T${plForm.start_time}:00+09:00` : `${plForm.date}T00:00:00+09:00`;
     const endDate = plForm.end_time && isNextDayEnd(plForm.end_time, plForm.start_time) ? getNextDate(plForm.date) : plForm.date;
     const ends_at = plForm.end_time ? `${endDate}T${plForm.end_time}:00+09:00` : null;
@@ -225,7 +335,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
     const title = plForm.title.trim() || plForm.studio || location;
     const { data: lesson, error: lErr } = await supabase
       .from("private_lessons")
-      .insert({ title, location, description: plForm.description, starts_at, ends_at, max_members: plForm.max_members ? Number(plForm.max_members) : null, price: plForm.price ? Number(plForm.price) : null, target_level: plForm.target_level, organizer_id: user.id, visibility: plIsPrivate ? "private" : "public", requires_approval: plRequiresApproval, kind: isEvent ? "event" : "lesson" })
+      .insert({ title, location, description: plForm.description, starts_at, ends_at, max_members: plForm.max_members ? Number(plForm.max_members) : null, price: plForm.price ? Number(plForm.price) : null, target_level: plForm.target_level, organizer_id: user.id, visibility: plIsPrivate ? "private" : "public", requires_approval: plRequiresApproval, kind: isEvent ? "event" : "lesson", image_url })
       .select().single();
     if (lErr || !lesson) { setError(`投稿に失敗しました: ${lErr?.message ?? "不明"}`); setLoading(false); return; }
     if (plForm.genres.length > 0) {
@@ -234,6 +344,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
         await supabase.from("pl_genres").insert(genreRows.map((g: any) => ({ lesson_id: lesson.id, genre_id: g.id })));
       }
     }
+    clearPlImage();
     clearDraft(); // 投稿できたので下書きは残さない
     setLoading(false); setSubmitted(true);
     setTimeout(() => onNav("top"), 1400);
@@ -319,6 +430,22 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
             </button>
           </div>
           <div><label style={lbl}>会場 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={numberForm.studio} onChange={e => setNumberForm(f => ({ ...f, studio: e.target.value }))} /></div>
+          <div>
+            <label style={lbl}>画像 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label>
+            {numberImagePreview ? (
+              <div style={{ position: "relative", borderRadius: "8px", overflow: "hidden" }}>
+                <img src={numberImagePreview} alt="" style={{ width: "100%", maxHeight: "160px", objectFit: "cover", display: "block" }} />
+                <button onClick={clearNumberImage} style={{ position: "absolute", top: "6px", right: "6px", width: "28px", height: "28px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "14px", border: "1px dashed rgba(255,255,255,0.24)", borderRadius: "8px", color: "rgba(255,255,255,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                <Camera size={14} /> 画像を選ぶ
+                <input type="file" accept="image/*" onChange={handleNumberImageSelect} style={{ display: "none" }} />
+              </label>
+            )}
+          </div>
           <div><label style={lbl}>ジャンル</label>
             <GenreStrip value={numberForm.genres[0] ?? ""} onChange={toggleNumberGenre} genres={EXTENDED_GENRES} />
           </div>
@@ -391,6 +518,22 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
             </div>
           </div>
           <div><label style={lbl}>{plNoun}名 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={plForm.title} onChange={e => setPlForm(f => ({ ...f, title: e.target.value }))} /></div>
+          <div>
+            <label style={lbl}>画像 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label>
+            {plImagePreview ? (
+              <div style={{ position: "relative", borderRadius: "8px", overflow: "hidden" }}>
+                <img src={plImagePreview} alt="" style={{ width: "100%", maxHeight: "160px", objectFit: "cover", display: "block" }} />
+                <button onClick={clearPlImage} style={{ position: "absolute", top: "6px", right: "6px", width: "28px", height: "28px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "14px", border: "1px dashed rgba(255,255,255,0.24)", borderRadius: "8px", color: "rgba(255,255,255,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                <Camera size={14} /> 画像を選ぶ
+                <input type="file" accept="image/*" onChange={handlePlImageSelect} style={{ display: "none" }} />
+              </label>
+            )}
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: isEvent ? "1fr" : "1fr 1fr", gap: "10px" }}>
             <div><label style={lbl}>{isEvent ? "参加費（円）" : "料金（円）"}</label><input style={inp} type="number" min="0" placeholder="例: 3000" value={plForm.price} onChange={e => setPlForm(f => ({ ...f, price: e.target.value }))} /></div>
             {!isEvent && <div><label style={lbl}>対象レベル</label>

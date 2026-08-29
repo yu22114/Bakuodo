@@ -217,7 +217,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
         supabase
           .from("numbers")
           .select(`
-            id, title, organizer_id, starts_at, ends_at, location, description, max_members, studio_fee,
+            id, title, organizer_id, starts_at, ends_at, location, description, max_members, studio_fee, image_url,
             profiles:organizer_id ( dancer_name, avatar_url, instagram ),
             number_genres ( genres:genre_id ( name ) ),
             number_performance_dates ( event_date )
@@ -234,7 +234,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
           const genres: GenreKey[] = (row.number_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
           const performanceDates: string[] = (row.number_performance_dates ?? []).map((d: any) => d.event_date as string).sort();
           const count = numberCountMap[row.id] ?? 0;
-          return { id: row.id, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, studio_fee: row.studio_fee ?? null, genres, performance_dates: performanceDates, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null, instagram: row.profiles?.instagram ?? null }, participant_count: count, hot: count >= 5 };
+          return { id: row.id, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, studio_fee: row.studio_fee ?? null, image_url: row.image_url ?? null, genres, performance_dates: performanceDates, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null, instagram: row.profiles?.instagram ?? null }, participant_count: count, hot: count >= 5 };
         });
         shapedNumbers.sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
         setNumbers(shapedNumbers);
@@ -243,7 +243,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
       // PLフェッチ
       const [plRes, plCountRes] = await Promise.all([
         supabase.from("private_lessons").select(`
-          id, title, organizer_id, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval, kind,
+          id, title, organizer_id, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval, kind, image_url,
           profiles:organizer_id ( dancer_name, avatar_url, instagram ),
           pl_genres ( genres:genre_id ( name ) )
         `).or(`starts_at.gte.${oneHourAgo},ends_at.gte.${now}`).order("starts_at"),
@@ -255,7 +255,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
         const shapedPL: PrivateLesson[] = (plRes.data ?? []).map((row: any) => {
           const name = row.profiles?.dancer_name ?? "UNKNOWN";
           const genres: GenreKey[] = (row.pl_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
-          return { id: row.id, kind: (row.kind === "event" ? "event" : "lesson") as PrivateLesson["kind"], title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, price: row.price ?? null, target_level: row.target_level ?? "all", visibility: row.visibility ?? "public", requires_approval: row.requires_approval ?? false, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null, instagram: row.profiles?.instagram ?? null }, participant_count: plCountMap[row.id] ?? 0 };
+          return { id: row.id, kind: (row.kind === "event" ? "event" : "lesson") as PrivateLesson["kind"], title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, price: row.price ?? null, target_level: row.target_level ?? "all", visibility: row.visibility ?? "public", requires_approval: row.requires_approval ?? false, image_url: row.image_url ?? null, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null, instagram: row.profiles?.instagram ?? null }, participant_count: plCountMap[row.id] ?? 0 };
         }).filter((l: PrivateLesson) => l.visibility === "public" || l.organizer.id === user.id || followingIds.has(l.organizer.id));
         // 同じテーブルから取ったものをkindで2つのタブに振り分ける
         setLessons(shapedPL.filter(l => l.kind === "lesson"));

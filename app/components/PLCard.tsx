@@ -57,16 +57,21 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
       {/* 中身は背景文字より上に置く。日付バッジぶん（44px - カード左paddingの16px = 28px）に加えて、間隔を空けるため12px余分に取る */}
       <div style={{ position: "relative", marginLeft: "40px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0px" }}>
-        <div style={{ flex: 1, paddingRight: "52px" }}>
-          {/* 開催日そのものは左の日付バッジに出す（CypherCardと同じ） */}
-          <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap" }}>
-            <h3 style={{ margin: 0, fontSize: "19px", fontWeight: 700, color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{lesson.title}</h3>
-          </div>
-          <div style={{ fontSize: "12px", color: "#F0F0F0", marginTop: "2px", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-            {/* Instagramを設定している主催者は名前ではなくアカウント名を出す */}
-            {lesson.organizer.instagram
-              ? <span>by <span style={{ color: "#38BDF8" }}>@{lesson.organizer.instagram}</span></span>
-              : <span>by {lesson.organizer.dancer_name}</span>}
+        <div style={{ flex: 1, paddingRight: "52px", display: "flex", alignItems: "center", gap: "10px" }}>
+          {lesson.image_url && (
+            <img src={lesson.image_url} alt="" style={{ width: "40px", height: "40px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }} />
+          )}
+          <div style={{ minWidth: 0 }}>
+            {/* 開催日そのものは左の日付バッジに出す（CypherCardと同じ） */}
+            <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap" }}>
+              <h3 style={{ margin: 0, fontSize: "19px", fontWeight: 700, color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.05em", lineHeight: 1.2 }}>{lesson.title}</h3>
+            </div>
+            <div style={{ fontSize: "12px", color: "#F0F0F0", marginTop: "2px", fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+              {/* Instagramを設定している主催者は名前ではなくアカウント名を出す */}
+              {lesson.organizer.instagram
+                ? <span>by <span style={{ color: "#38BDF8" }}>@{lesson.organizer.instagram}</span></span>
+                : <span>by {lesson.organizer.dancer_name}</span>}
+            </div>
           </div>
         </div>
         {/* 参加人数は講師アイコンの真下（CypherCardと同じ）。料金・対象レベルもこの列にまとめて出す */}
