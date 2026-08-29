@@ -1,5 +1,5 @@
 import { supabase } from "../../lib/supabase";
-import type { Cypher, PrivateLesson, GenreKey } from "./types";
+import type { Cypher, PrivateLesson, DanceNumber, GenreKey } from "./types";
 
 // サイファーIDからDetailModal用のフルデータを組み立てる
 // （page.tsx のトップ画面と /c/[id] の共有ページの両方から使う）
@@ -28,6 +28,38 @@ export async function fetchCypherById(cypherId: string): Promise<Cypher | null> 
     status: (row as any).status,
     visibility: (row as any).visibility ?? "public",
     requires_approval: (row as any).requires_approval ?? false,
+    studio_fee: (row as any).studio_fee ?? null,
+    genres,
+    organizer: { id: (row as any).organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: (row as any).profiles?.avatar_url ?? null, instagram: (row as any).profiles?.instagram ?? null },
+    participant_count: partCount ?? 0,
+    hot: (partCount ?? 0) >= 5,
+  };
+}
+
+// NUMBER IDからNumberDetailModal用のフルデータを組み立てる（fetchCypherByIdとほぼ同じ。
+// 限定公開・参加承認制がないのでvisibility/requires_approvalは扱わない）
+export async function fetchNumberById(numberId: string): Promise<DanceNumber | null> {
+  const { data: row } = await supabase.from("numbers").select(`
+    id, title, organizer_id, starts_at, ends_at, location, description, max_members, studio_fee,
+    profiles:organizer_id ( dancer_name, avatar_url, instagram ),
+    number_genres ( genres:genre_id ( name ) )
+  `).eq("id", numberId).single();
+  if (!row) return null;
+  const name = (row as any).profiles?.dancer_name ?? "UNKNOWN";
+  const genres: GenreKey[] = ((row as any).number_genres ?? [])
+    .map((cg: any) => cg.genres?.name as GenreKey)
+    .filter(Boolean);
+  const { count: partCount } = await supabase
+    .from("number_participations").select("id", { count: "exact", head: true })
+    .eq("number_id", numberId);
+  return {
+    id: (row as any).id,
+    title: (row as any).title,
+    starts_at: (row as any).starts_at,
+    ends_at: (row as any).ends_at ?? null,
+    location: (row as any).location,
+    description: (row as any).description ?? "",
+    max_members: (row as any).max_members,
     studio_fee: (row as any).studio_fee ?? null,
     genres,
     organizer: { id: (row as any).organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: (row as any).profiles?.avatar_url ?? null, instagram: (row as any).profiles?.instagram ?? null },

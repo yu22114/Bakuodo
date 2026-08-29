@@ -30,7 +30,8 @@ function GenreStrip({ value, onChange }: { value: string; onChange: (g: (typeof 
 }
 
 // 背景の光もホーム画面（TopScreen）と同じ考え方。タブの色を上から当たる光として敷く
-const TAB_BG: Record<"cypher" | "pl" | "event", string> = {
+const TAB_BG: Record<"number" | "cypher" | "pl" | "event", string> = {
+  number: "radial-gradient(circle at center, rgba(236,72,153,0.55), rgba(236,72,153,0.1) 45%, #000000 75%)",
   cypher: "radial-gradient(circle at center, rgba(220,38,38,0.55), rgba(220,38,38,0.1) 45%, #000000 75%)",
   pl: "radial-gradient(circle at center, rgba(37,99,235,0.55), rgba(37,99,235,0.1) 45%, #000000 75%)",
   event: "radial-gradient(circle at center, rgba(234,179,8,0.55), rgba(234,179,8,0.1) 45%, #000000 75%)",
@@ -39,17 +40,19 @@ const DRAFT_KEY = "bakuodori:post-draft:v1";
 const EMPTY_FORM: FormState = { title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [], description: "", max_members: "", payment: [], studio_fee: "" };
 const EMPTY_PL = { title: "", date: "", start_time: DEFAULT_START_TIME, end_time: "", station: "", studio: "", genres: [] as string[], description: "", max_members: "", price: "", target_level: "all" };
 
-export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: { onNav: (s: string) => void; user: SupabaseUser; initialTab?: "cypher" | "pl" | "event"; accountType?: string }) {
+export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: { onNav: (s: string) => void; user: SupabaseUser; initialTab?: "number" | "cypher" | "pl" | "event"; accountType?: string }) {
   // トップでLESSON/EVENTを見ていたならその作成フォームから始める
-  const [tab, setTab] = useState<"cypher" | "pl" | "event">(initialTab);
-  // 団体用アカウントではP LESSONタブを出さない（ホーム画面と同じ扱い）
-  const visibleTabs = (["cypher", "pl", "event"] as const).filter(t => !(accountType === "organization" && t === "pl"));
+  const [tab, setTab] = useState<"number" | "cypher" | "pl" | "event">(initialTab);
+  // 団体用アカウントではP LESSONタブを出さない（ホーム画面と同じ扱い）。NUMBERは団体用でも出す
+  const visibleTabs = (["number", "cypher", "pl", "event"] as const).filter(t => !(accountType === "organization" && t === "pl"));
   useEffect(() => {
     if (!visibleTabs.includes(tab)) setTab(visibleTabs[0]);
   }, [accountType, tab]);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [isPrivate, setIsPrivate] = useState(false);
   const [requiresApproval, setRequiresApproval] = useState(false);
+  // NUMBERフォーム用（限定公開・承認制がないのでトグルは持たない）
+  const [numberForm, setNumberForm] = useState<FormState>(EMPTY_FORM);
   // PLフォーム用
   const [plForm, setPlForm] = useState(EMPTY_PL);
   const [plIsPrivate, setPlIsPrivate] = useState(false);
@@ -64,8 +67,9 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
   const [draftLoaded, setDraftLoaded] = useState(false);
 
   // 入力が何かあるか。何も書いていない状態を下書きとして残さないための判定
-  const hasContent = (f: typeof EMPTY_FORM, p: typeof EMPTY_PL) =>
+  const hasContent = (f: typeof EMPTY_FORM, n: typeof EMPTY_FORM, p: typeof EMPTY_PL) =>
     !!(f.title || f.date || f.station || f.studio || f.description || f.max_members || f.studio_fee || f.genres.length ||
+       n.title || n.date || n.station || n.studio || n.description || n.max_members || n.studio_fee || n.genres.length ||
        p.title || p.date || p.station || p.studio || p.description || p.max_members || p.price);
 
   // 下書きの復元。タブだけは復元しない（トップで見ていたセクションを優先したいため）
@@ -75,12 +79,13 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
       if (raw) {
         const d = JSON.parse(raw);
         if (d.form) setForm({ ...EMPTY_FORM, ...d.form });
+        if (d.numberForm) setNumberForm({ ...EMPTY_FORM, ...d.numberForm });
         if (d.plForm) setPlForm({ ...EMPTY_PL, ...d.plForm });
         setIsPrivate(!!d.isPrivate);
         setRequiresApproval(!!d.requiresApproval);
         setPlIsPrivate(!!d.plIsPrivate);
         setPlRequiresApproval(!!d.plRequiresApproval);
-        if (hasContent(d.form ?? EMPTY_FORM, d.plForm ?? EMPTY_PL)) setDraftRestored(true);
+        if (hasContent(d.form ?? EMPTY_FORM, d.numberForm ?? EMPTY_FORM, d.plForm ?? EMPTY_PL)) setDraftRestored(true);
       }
     } catch { /* 壊れた下書きは無視して空フォームで始める */ }
     setDraftLoaded(true);
@@ -90,15 +95,15 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
   useEffect(() => {
     if (!draftLoaded) return;
     try {
-      if (!hasContent(form, plForm)) { localStorage.removeItem(DRAFT_KEY); return; }
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval }));
+      if (!hasContent(form, numberForm, plForm)) { localStorage.removeItem(DRAFT_KEY); return; }
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, numberForm, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval }));
     } catch { /* 保存できなくても入力は続けられるようにする */ }
-  }, [draftLoaded, form, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval]);
+  }, [draftLoaded, form, numberForm, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval]);
 
   const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch {} };
 
   const discardDraft = () => {
-    setForm(EMPTY_FORM); setPlForm(EMPTY_PL);
+    setForm(EMPTY_FORM); setNumberForm(EMPTY_FORM); setPlForm(EMPTY_PL);
     setIsPrivate(false); setRequiresApproval(false);
     setPlIsPrivate(false); setPlRequiresApproval(false);
     setDraftRestored(false);
@@ -107,10 +112,12 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
 
   // All Styleと他ジャンルの同時選択はできない（constants.tsのtoggleGenreが担当）
   const toggleGenre = (g: (typeof GENRES)[number]) => setForm(f => ({ ...f, genres: toggleGenreList(f.genres, g) }));
+  const toggleNumberGenre = (g: (typeof GENRES)[number]) => setNumberForm(f => ({ ...f, genres: toggleGenreList(f.genres, g) }));
   const togglePlGenre = (g: string) => setPlForm(f => ({ ...f, genres: toggleGenreList(f.genres, g) }));
 
   // 必須項目（最寄り駅・日付）が埋まっているか
   const canPost = !!(form.date && form.station);
+  const canPostNumber = !!(numberForm.date && numberForm.station);
   const canPostPL = !!(plForm.date && plForm.station);
   // イベントはレッスンと同じフォーム・同じテーブルを使い、kindと文言・色だけ変える
   const isEvent = tab === "event";
@@ -119,8 +126,8 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
   const onPlAccent = isEvent ? "#171717" : "#fff";
   // 投稿ボタンだけ、わずかにグラデーションを効かせて立体感を出す
   const plAccentGradient = isEvent ? "linear-gradient(135deg, #EAB308, #B7950B)" : "linear-gradient(135deg, #2563EB, #1D4ED8)";
-  // 投稿完了演出の色。タブごとの色（CYPHER=赤・P LESSON=青・EVENT=黄）に合わせる
-  const postedAccent = tab === "cypher" ? "#DC2626" : plAccent;
+  // 投稿完了演出の色。タブごとの色（NUMBER=ピンク・CYPHER=赤・P LESSON=青・EVENT=黄）に合わせる
+  const postedAccent = tab === "number" ? "#EC4899" : tab === "cypher" ? "#DC2626" : plAccent;
   const plNoun = isEvent ? "イベント" : "レッスン";
 
   const handleSubmit = async () => {
@@ -152,6 +159,37 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
     // 主催者を自動で参加者に追加
     await supabase.from("participations").insert({ cypher_id: cypher.id, profile_id: user.id });
     clearDraft(); // 投稿できたので下書きは残さない
+    setLoading(false); setSubmitted(true);
+    setTimeout(() => onNav("top"), 1400);
+  };
+
+  // NUMBERの投稿。限定公開・参加承認制がない分、handleSubmit（CYPHER）よりシンプル
+  const handleSubmitNumber = async () => {
+    if (!canPostNumber) return;
+    if (numberForm.date < todayStr()) { setError("過去の日付は投稿できません"); return; }
+    if (numberForm.station.length > 50 || numberForm.title.length > 100 || numberForm.description.length > 1000) {
+      setError("入力が長すぎます"); return;
+    }
+    setLoading(true); setError("");
+    const starts_at = numberForm.start_time ? `${numberForm.date}T${numberForm.start_time}:00+09:00` : `${numberForm.date}T00:00:00+09:00`;
+    const endDate = numberForm.end_time && isNextDayEnd(numberForm.end_time, numberForm.start_time) ? getNextDate(numberForm.date) : numberForm.date;
+    const ends_at = numberForm.end_time ? `${endDate}T${numberForm.end_time}:00+09:00` : null;
+    const location = numberForm.studio ? `${numberForm.station} ${numberForm.studio}` : numberForm.station;
+    const title = numberForm.title.trim() || numberForm.studio || location;
+    const { data: numberRow, error: nErr } = await supabase
+      .from("numbers")
+      .insert({ title, location, description: numberForm.description, starts_at, ends_at, max_members: numberForm.max_members ? Number(numberForm.max_members) : null, organizer_id: user.id, studio_fee: numberForm.studio_fee ? Number(numberForm.studio_fee) : null })
+      .select().single();
+    if (nErr || !numberRow) { console.error("number insert error:", nErr); setError(`投稿に失敗しました。エラー: ${nErr?.message ?? "不明"}`); setLoading(false); return; }
+    if (numberForm.genres.length > 0) {
+      const { data: genreRows } = await supabase.from("genres").select("id,name").in("name", numberForm.genres);
+      if (genreRows && genreRows.length > 0) {
+        await supabase.from("number_genres").insert(genreRows.map((g: any) => ({ number_id: numberRow.id, genre_id: g.id })));
+      }
+    }
+    // 主催者を自動で参加者に追加
+    await supabase.from("number_participations").insert({ number_id: numberRow.id, profile_id: user.id });
+    clearDraft();
     setLoading(false); setSubmitted(true);
     setTimeout(() => onNav("top"), 1400);
   };
@@ -191,7 +229,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "70vh", gap: "16px", background: "#000000" }}>
       <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: postedAccent + "26", border: `2px solid ${postedAccent}`, display: "flex", alignItems: "center", justifyContent: "center" }}><Check size={32} color={postedAccent} /></div>
       <p style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "28px", color: postedAccent, margin: 0 }}>
-        POSTED {tab === "cypher" ? "CYPHER" : tab === "pl" ? "LESSON" : "EVENT"}!
+        POSTED {tab === "number" ? "NUMBER" : tab === "cypher" ? "CYPHER" : tab === "pl" ? "LESSON" : "EVENT"}!
       </p>
     </div>
   );
@@ -203,7 +241,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
         {/* タブはホーム画面と同じ、丸い枠の中で選択中だけ浮くセグメント風 */}
         <div style={{ padding: "10px 16px", background: "#0D0D0D", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         {(() => {
-          const shownTabs = ([["cypher", "CYPHER", "#DC2626"], ["pl", "LESSON", "#2563EB"], ["event", "EVENT", "#EAB308"]] as const).filter(([key]) => visibleTabs.includes(key));
+          const shownTabs = ([["number", "NUMBER", "#EC4899"], ["cypher", "CYPHER", "#DC2626"], ["pl", "LESSON", "#2563EB"], ["event", "EVENT", "#EAB308"]] as const).filter(([key]) => visibleTabs.includes(key));
           return (
             <div style={{ display: "flex", background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", borderRadius: "14px", padding: "4px", position: "relative", boxShadow: "inset 0 2px 5px rgba(0,0,0,0.4)" }}>
               {/* 選択中を示す背景の板がヌルッと隣のタブへ移動する（下バーと同じ仕組み）。
@@ -236,7 +274,39 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
           </div>
         )}
 
-        {tab === "cypher" ? (<>
+        {tab === "number" ? (<>
+          <div><label style={lbl}>最寄り駅 <span style={{ color: "#EC4899" }}>*</span></label><StationSearch value={numberForm.station} onChange={v => setNumberForm(f => ({ ...f, station: v }))} inputStyle={inp} /></div>
+          <div><label style={lbl}>会場・スタジオ名・部屋番号</label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={numberForm.studio} onChange={e => setNumberForm(f => ({ ...f, studio: e.target.value }))} /></div>
+          <div><label style={lbl}>日付 <span style={{ color: "#EC4899" }}>*</span></label>
+            <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={numberForm.date} onChange={e => { const v = e.target.value; if (v && v < todayStr()) return; setNumberForm(f => ({ ...f, date: v })); }} /></div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <div><label style={lbl}>開始時間</label>
+              <select style={inp} value={numberForm.start_time} onChange={e => setNumberForm(f => ({ ...f, start_time: e.target.value }))}>
+                {START_TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div><label style={lbl}>終了時間</label>
+              <select style={inp} value={numberForm.end_time} onChange={e => setNumberForm(f => ({ ...f, end_time: e.target.value }))}>
+                <option value="">未設定</option>
+                {endTimeOptions(numberForm.start_time).map(t => <option key={t} value={t}>{endTimeLabel(t, numberForm.start_time)}</option>)}
+              </select>
+            </div>
+          </div>
+          <div><label style={lbl}>作品名 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={numberForm.title} onChange={e => setNumberForm(f => ({ ...f, title: e.target.value }))} /></div>
+          <div><label style={lbl}>ジャンル</label>
+            <GenreStrip value={numberForm.genres[0] ?? ""} onChange={toggleNumberGenre} />
+          </div>
+          <div><label style={lbl}>詳細説明</label><textarea style={{ ...inp, minHeight: "80px", resize: "vertical" } as React.CSSProperties} placeholder="参加者へのメッセージ..." value={numberForm.description} onChange={e => setNumberForm(f => ({ ...f, description: e.target.value }))} /></div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <div><label style={lbl}>参加定員</label><input style={inp} type="number" min="1" placeholder="空欄 = 無制限" value={numberForm.max_members} onChange={e => setNumberForm(f => ({ ...f, max_members: e.target.value }))} /></div>
+            <div><label style={lbl}>スタジオ代（円・合計）</label><input style={inp} type="number" min="0" placeholder="例: 6000" value={numberForm.studio_fee} onChange={e => setNumberForm(f => ({ ...f, studio_fee: e.target.value }))} /></div>
+          </div>
+          <button onClick={handleSubmitNumber} disabled={loading} className={canPostNumber ? "bd-spray" : undefined} style={{ width: "100%", padding: "20px 14px", border: "none", borderRadius: "6px", background: canPostNumber ? "linear-gradient(135deg, #EC4899, #BE185D)" : "rgba(255,255,255,0.08)", color: canPostNumber ? "#fff" : "rgba(255,255,255,0.3)", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: canPostNumber ? "pointer" : "not-allowed", opacity: loading ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+            <Zap size={15} />
+            {loading ? "投稿中..." : "NUMBERを投稿する"}
+          </button>
+        </>) : tab === "cypher" ? (<>
           <div><label style={lbl}>最寄り駅 <span style={{ color: "#DC2626" }}>*</span></label><StationSearch value={form.station} onChange={v => setForm(f => ({ ...f, station: v }))} inputStyle={inp} /></div>
           <div><label style={lbl}>会場・スタジオ名・部屋番号</label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={form.studio} onChange={e => setForm(f => ({ ...f, studio: e.target.value }))} /></div>
           {/* 過去のサイファーは掲載できないので今日より前は選べない */}

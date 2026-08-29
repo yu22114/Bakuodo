@@ -2,9 +2,9 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
-import type { Cypher, PrivateLesson } from "./lib/types";
-import { fetchCypherById, fetchLessonById } from "./lib/fetchDetail";
-import { joinCypher, cancelCypher, joinLesson, cancelLesson, type EventApplicationAnswers } from "./lib/participation";
+import type { Cypher, PrivateLesson, DanceNumber } from "./lib/types";
+import { fetchCypherById, fetchLessonById, fetchNumberById } from "./lib/fetchDetail";
+import { joinCypher, cancelCypher, joinLesson, cancelLesson, joinNumber, cancelNumber, type EventApplicationAnswers } from "./lib/participation";
 import { showToast } from "./components/Toast";
 import { LoginScreen } from "./components/LoginScreen";
 import { TopScreen, type TopSection } from "./components/TopScreen";
@@ -13,11 +13,13 @@ import { PublicProfileScreen } from "./components/PublicProfileScreen";
 import { EditProfileScreen } from "./components/EditProfileScreen";
 import { EditCypherScreen } from "./components/EditCypherScreen";
 import { EditLessonScreen } from "./components/EditLessonScreen";
+import { EditNumberScreen } from "./components/EditNumberScreen";
 import { CommunityScreen } from "./components/CommunityScreen";
 import { FollowingActivityScreen } from "./components/FollowingActivityScreen";
 import { CommunityBoardScreen } from "./components/CommunityBoardScreen";
 import { DetailModal } from "./components/DetailModal";
 import { PLDetailModal } from "./components/PLDetailModal";
+import { NumberDetailModal } from "./components/NumberDetailModal";
 import { ConfirmModal } from "./components/ConfirmModal";
 import { NotificationScreen } from "./components/NotificationScreen";
 import { BottomNav } from "./components/BottomNav";
@@ -32,6 +34,9 @@ export default function BakuOdori() {
   const [plJoined, setPlJoined] = useState<string[]>([]);
   const [plPending, setPlPending] = useState<string[]>([]);
   const [detail, setDetail] = useState<Cypher | null>(null);
+  const [numberDetail, setNumberDetail] = useState<DanceNumber | null>(null);
+  const [numberJoined, setNumberJoined] = useState<string[]>([]);
+  const [editNumberId, setEditNumberId] = useState<string | null>(null);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -69,10 +74,11 @@ export default function BakuOdori() {
 
   // ログイン後にダンサーネームと参加済みサイファー・レッスン一覧・未読通知数をDBから取得
   const fetchUserData = async (u: SupabaseUser) => {
-    const [profileRes, partsRes, plPartsRes, notifRes] = await Promise.all([
+    const [profileRes, partsRes, plPartsRes, numberPartsRes, notifRes] = await Promise.all([
       supabase.from("profiles").select("dancer_name, avatar_url, account_type").eq("id", u.id).single(),
       supabase.from("participations").select("cypher_id, status").eq("profile_id", u.id),
       supabase.from("pl_participations").select("lesson_id, status").eq("profile_id", u.id),
+      supabase.from("number_participations").select("number_id").eq("profile_id", u.id),
       supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", u.id).eq("read", false),
     ]);
     const name = profileRes.data?.dancer_name || u.user_metadata?.full_name || "";
@@ -86,6 +92,9 @@ export default function BakuOdori() {
     if (plPartsRes.data) {
       setPlJoined(plPartsRes.data.filter((p: any) => p.status !== "pending").map((p: any) => p.lesson_id));
       setPlPending(plPartsRes.data.filter((p: any) => p.status === "pending").map((p: any) => p.lesson_id));
+    }
+    if (numberPartsRes.data) {
+      setNumberJoined(numberPartsRes.data.map((p: any) => p.number_id));
     }
     setUnreadCount(notifRes.count ?? 0);
   };
@@ -129,6 +138,28 @@ export default function BakuOdori() {
   const openLessonDetail = async (lessonId: string) => {
     const lesson = await fetchLessonById(lessonId);
     if (lesson) setPlDetail(lesson);
+  };
+
+  // NUMBER IDからフルデータを取得してNumberDetailModalを開く
+  const openNumberDetail = async (numberId: string) => {
+    const n = await fetchNumberById(numberId);
+    if (n) setNumberDetail(n);
+  };
+
+  // NUMBERの参加ボタン。承認制がないのでjoined/unjoinedのトグルだけでよい
+  const handleNumberJoin = async (id: string) => {
+    if (!user) return;
+    if (numberJoined.includes(id)) {
+      const { error } = await cancelNumber(user.id, id);
+      if (error) { showToast(error); return; }
+      setNumberJoined(j => j.filter(x => x !== id));
+      setRefreshKey(k => k + 1);
+      return;
+    }
+    const { error } = await joinNumber(user.id, id);
+    if (error) { showToast(error); return; }
+    setNumberJoined(j => [...j, id]);
+    setRefreshKey(k => k + 1);
   };
 
   // 参加ボタン。status（承認制）・定員・通知はDBトリガーが処理する
@@ -184,10 +215,10 @@ export default function BakuOdori() {
   // モバイルの戻るジェスチャーでサイトから離脱してしまうのを防ぐ。
   // オーバーレイが開くたびに履歴を1つ積み、popstateで最前面だけ閉じる。
   const overlayCount =
-    (detail ? 1 : 0) + (plDetail ? 1 : 0) + (showNotifications ? 1 : 0) +
-    (editCypherId ? 1 : 0) + (editLessonId ? 1 : 0) + (boardTarget ? 1 : 0) + (confirmId ? 1 : 0) + profileStack.length;
-  const overlayStateRef = useRef({ detail, plDetail, showNotifications, editCypherId, editLessonId, boardTarget, confirmId, profileStack });
-  overlayStateRef.current = { detail, plDetail, showNotifications, editCypherId, editLessonId, boardTarget, confirmId, profileStack };
+    (detail ? 1 : 0) + (plDetail ? 1 : 0) + (numberDetail ? 1 : 0) + (showNotifications ? 1 : 0) +
+    (editCypherId ? 1 : 0) + (editLessonId ? 1 : 0) + (editNumberId ? 1 : 0) + (boardTarget ? 1 : 0) + (confirmId ? 1 : 0) + profileStack.length;
+  const overlayStateRef = useRef({ detail, plDetail, numberDetail, showNotifications, editCypherId, editLessonId, editNumberId, boardTarget, confirmId, profileStack });
+  overlayStateRef.current = { detail, plDetail, numberDetail, showNotifications, editCypherId, editLessonId, editNumberId, boardTarget, confirmId, profileStack };
   const prevOverlayCountRef = useRef(0);
   const suppressPopRef = useRef(0);
 
@@ -207,17 +238,19 @@ export default function BakuOdori() {
     const onPop = () => {
       if (suppressPopRef.current > 0) { suppressPopRef.current--; return; }
       const s = overlayStateRef.current;
-      if (s.confirmId || s.editCypherId || s.editLessonId || s.boardTarget || s.showNotifications || s.profileStack.length > 0 || s.plDetail || s.detail) {
+      if (s.confirmId || s.editCypherId || s.editLessonId || s.editNumberId || s.boardTarget || s.showNotifications || s.profileStack.length > 0 || s.plDetail || s.detail || s.numberDetail) {
         // 履歴エントリはすでに消費されているので、countの差分処理をスキップさせる
         prevOverlayCountRef.current -= 1;
         if (s.confirmId) setConfirmId(null);
         else if (s.editCypherId) setEditCypherId(null);
         else if (s.editLessonId) setEditLessonId(null);
+        else if (s.editNumberId) setEditNumberId(null);
         else if (s.boardTarget) setBoardTarget(null);
         else if (s.showNotifications) { setShowNotifications(false); setUnreadCount(0); }
         else if (s.profileStack.length > 0) setProfileStack(st => st.slice(0, -1));
         else if (s.plDetail) setPlDetail(null);
         else if (s.detail) setDetail(null);
+        else if (s.numberDetail) setNumberDetail(null);
       }
     };
     window.addEventListener("popstate", onPop);
@@ -340,15 +373,16 @@ export default function BakuOdori() {
           <LoginScreen />
         ) : (
           <>
-            {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} onPLClick={setPlDetail} onViewProfile={id => setProfileStack(s => [...s, id])} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} section={topSection} onSectionChange={setTopSection} accountType={accountType} />}
+            {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} onPLClick={setPlDetail} onNumberClick={setNumberDetail} onViewProfile={id => setProfileStack(s => [...s, id])} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} section={topSection} onSectionChange={setTopSection} accountType={accountType} />}
             {screen === "following" && <FollowingActivityScreen user={user} onCardClick={setDetail} onPLClick={setPlDetail} onViewProfile={id => setProfileStack(s => [...s, id])} refreshKey={refreshKey} />}
-            {screen === "post"    && <PostScreen onNav={setScreen} user={user} initialTab={topSection === "pl" || topSection === "event" ? topSection : "cypher"} accountType={accountType} />}
+            {screen === "post"    && <PostScreen onNav={setScreen} user={user} initialTab={topSection === "pl" || topSection === "event" || topSection === "number" ? topSection : "cypher"} accountType={accountType} />}
             {screen === "profile" && <PublicProfileScreen profileId={user.id} currentUserId={user.id} onEdit={() => setScreen("edit")} onLogout={() => supabase.auth.signOut()} onViewProfile={id => setProfileStack(s => [...s, id])} onCypherClick={openCypherDetail} onLessonClick={openLessonDetail} onEditCypher={id => setEditCypherId(id)} onEditLesson={id => setEditLessonId(id)} />}
             {screen === "community" && <CommunityScreen user={user} onOpenBoard={setBoardTarget} onViewProfile={id => setProfileStack(s => [...s, id])} accountType={accountType} />}
             {screen === "edit"    && <EditProfileScreen user={user} onDancerNameChange={setDancerName} onAvatarChange={setMyAvatarUrl} onAccountTypeChange={setAccountType} onBack={() => setScreen("profile")} />}
             <BottomNav current={screen} onNav={s => { setScreen(s); setProfileStack([]); }} onProfileLongPress={() => setShowSwitchAccount(true)} />
             {detail && <DetailModal cypher={detail} onClose={() => setDetail(null)} joined={joined.includes(detail.id)} pending={pendingJoins.includes(detail.id)} onJoin={handleJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} />}
             {plDetail && <PLDetailModal lesson={plDetail} onClose={() => setPlDetail(null)} joined={plJoined.includes(plDetail.id)} pending={plPending.includes(plDetail.id)} onJoin={handlePLJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} />}
+            {numberDetail && <NumberDetailModal number={numberDetail} onClose={() => setNumberDetail(null)} joined={numberJoined.includes(numberDetail.id)} onJoin={handleNumberJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} onEdit={id => { setNumberDetail(null); setEditNumberId(id); }} onDeleted={() => { setNumberDetail(null); setRefreshKey(k => k + 1); }} user={user} />}
             {confirmId && <ConfirmModal onConfirm={handleConfirmCancel} onCancel={() => setConfirmId(null)} />}
             {showSwitchAccount && (
               <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }} onClick={() => setShowSwitchAccount(false)}>
@@ -369,6 +403,16 @@ export default function BakuOdori() {
                   user={user}
                   onBack={() => setEditCypherId(null)}
                   onSaved={() => { setEditCypherId(null); setRefreshKey(k => k + 1); }}
+                />
+              </div>
+            )}
+            {editNumberId && (
+              <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#0A0A0A", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>
+                <EditNumberScreen
+                  numberId={editNumberId}
+                  user={user}
+                  onBack={() => setEditNumberId(null)}
+                  onSaved={() => { setEditNumberId(null); setRefreshKey(k => k + 1); }}
                 />
               </div>
             )}
