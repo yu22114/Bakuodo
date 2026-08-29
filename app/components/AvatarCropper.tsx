@@ -8,31 +8,39 @@ const VIEWPORT = 260; // 表示上の枠のサイズ(px)
 const OUTPUT = 600; // 書き出す画像の一辺のサイズ(px)。高解像度の端末でも荒れないように大きめにする
 const MAX_SOURCE = 1600; // スマホの高解像度写真をそのまま扱うとメモリ不足で落ちることがあるため、先に長辺をここまで縮める
 
-// iPhoneのHEIC/HEIFはブラウザの標準機能では読み込めない。以前はブラウザの中だけで
-// 変換していたが、高解像度写真だとスマホのメモリが足りずページごと落ちることがあったため、
-// サーバー側（/api/convert-heic）でJPEGに変換してから受け取るようにしている
+// iPhoneのHEIC/HEIFは一部ブラウザの標準機能では読み込めないため、サーバー側
+// （/api/convert-heic）でJPEGに変換してから受け取るのを基本にしている。
+// ただしVercelのサーバー関数はリクエストボディが約4.5MBまでという制限があり、
+// 最近のiPhoneの高解像度HEIC写真はこれを超えることが珍しくない。超えるファイルを
+// 送っても失敗するだけなので、その場合はサーバーに送らず、ブラウザ自身のHEIC
+// デコード機能（Safariなど対応ブラウザで既にネイティブ対応）にそのまま任せる
 async function convertHeicIfNeeded(file: File): Promise<Blob> {
   const isHeic = /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
   if (!isHeic) return file;
+  if (file.size > 4 * 1024 * 1024) return file;
   const res = await fetch("/api/convert-heic", { method: "POST", body: file });
   if (!res.ok) throw new Error(`HEIC変換に失敗しました (status ${res.status})`);
   return await res.blob();
 }
 
 // 元画像が大きすぎる場合だけ縮小したBlobを返す（十分小さい場合はそのまま元ファイルを使う）。
-// 失敗時はここで揉み消さず呼び出し側に投げる（原因を画面に出して調べられるようにするため）
+// 失敗時はここで揉み消さず呼び出し側に投げる（原因を画面に出して調べられるようにするため）。
+//
+// 重要：createImageBitmapにresizeWidthを渡さず素で呼ぶと、ブラウザはまず元画像を
+// フル解像度でデコードしてから初めてサイズが分かる。最近のiPhoneは4000万画素を超える
+// 写真も撮れるため、このフルデコードだけでメモリを使い切り、Safariがページごと
+// 落ちる（"this page couldn't load"）ことがあった。resizeWidthを渡すと、対応ブラウザは
+// 縮小しながらデコードしてくれるので、フル解像度をメモリに展開せずに済む
+// （非対応ブラウザでは単に無視され、これまで通りの動きになるだけで安全）
 async function shrinkIfNeeded(file: File): Promise<Blob> {
   const source = await convertHeicIfNeeded(file);
-  const bitmap = await createImageBitmap(source);
-  const longSide = Math.max(bitmap.width, bitmap.height);
-  if (longSide <= MAX_SOURCE) { bitmap.close?.(); return source; }
-  const s = MAX_SOURCE / longSide;
+  const bitmap = await createImageBitmap(source, { resizeWidth: MAX_SOURCE, resizeQuality: "medium" });
   const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * s);
-  canvas.height = Math.round(bitmap.height * s);
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
   const ctx = canvas.getContext("2d");
   if (!ctx) { bitmap.close?.(); return source; }
-  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  ctx.drawImage(bitmap, 0, 0);
   bitmap.close?.();
   const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.9));
   return blob ?? source;
