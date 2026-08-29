@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Plus, X, Check, LayoutGrid } from "lucide-react";
+import { Plus, X, Check, LayoutGrid, Camera } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { todayStr } from "../lib/constants";
@@ -9,6 +9,64 @@ import { EmptyState } from "./EmptyState";
 import { useScrollShadow } from "../lib/useScrollShadow";
 import { showToast } from "./Toast";
 import { CommunityBoardCard, type Board } from "./CommunityBoardCard";
+
+// 添付画像まわり（LESSON/EVENT/NUMBERと同じ考え方）。縦4:横3の縦長に中央で切り抜いてから縮小する
+const POST_IMAGE_WIDTH = 900;
+const POST_IMAGE_HEIGHT = 1200; // 900 * 4/3
+// 添付できる画像は最大5枚まで
+const MAX_POST_IMAGES = 5;
+
+// 画像は「保存済み（existing）」と「今回選び直した新しい画像（new）」が並んだ1つの配列として扱う。
+// 表示順のままimage_urlsに保存するため、削除・追加の操作もこの配列に対してだけ行う
+type PostImage = { kind: "existing"; url: string } | { kind: "new"; file: File; preview: string };
+
+function loadImageElement(blob: Blob): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("画像を読み込めませんでした"));
+    img.src = URL.createObjectURL(blob);
+  });
+}
+
+async function convertHeicIfNeeded(file: File): Promise<Blob> {
+  const isHeic = /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+  if (!isHeic) return file;
+  if (file.size > 4 * 1024 * 1024) return file;
+  const res = await fetch("/api/convert-heic", { method: "POST", body: file });
+  if (!res.ok) throw new Error(`HEIC変換に失敗しました (status ${res.status})`);
+  return await res.blob();
+}
+
+async function uploadPostImage(userId: string, file: File): Promise<string> {
+  const source = await convertHeicIfNeeded(file);
+  const img = await loadImageElement(source);
+  // 縦4:横3になるよう、中央を基準に元画像から切り出す範囲を決める
+  const targetRatio = POST_IMAGE_WIDTH / POST_IMAGE_HEIGHT; // 3/4
+  const srcRatio = img.naturalWidth / img.naturalHeight;
+  let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+  if (srcRatio > targetRatio) {
+    sw = img.naturalHeight * targetRatio;
+    sx = (img.naturalWidth - sw) / 2;
+  } else {
+    sh = img.naturalWidth / targetRatio;
+    sy = (img.naturalHeight - sh) / 2;
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = POST_IMAGE_WIDTH;
+  canvas.height = POST_IMAGE_HEIGHT;
+  const ctx = canvas.getContext("2d");
+  URL.revokeObjectURL(img.src);
+  if (!ctx) throw new Error("画像の処理に失敗しました");
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, POST_IMAGE_WIDTH, POST_IMAGE_HEIGHT);
+  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.85));
+  if (!blob) throw new Error("画像の処理に失敗しました");
+  const path = `${userId}/${crypto.randomUUID()}.jpg`;
+  const { error } = await supabase.storage.from("post-images").upload(path, blob, { contentType: "image/jpeg" });
+  if (error) throw new Error(`画像のアップロードに失敗しました: ${error.message}`);
+  const { data: { publicUrl } } = supabase.storage.from("post-images").getPublicUrl(path);
+  return publicUrl;
+}
 
 // 「コミュニティ」タブ：みんなが自由に作れる掲示板の一覧。
 // 右上の「＋」でタイトル等を入力して新しい掲示板を作り、タップすると中身（CommunityBoardScreen）が開く
@@ -31,6 +89,9 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
   const [newStartDate, setNewStartDate] = useState("");
   const [newEndDate, setNewEndDate] = useState("");
   const [newVenue, setNewVenue] = useState("");
+  // 添付画像（複数枚）。既存＋新規を1つの配列にして表示順を保つ
+  const [images, setImages] = useState<PostImage[]>([]);
+  const [imageError, setImageError] = useState("");
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -39,10 +100,10 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
   const fetchBoards = async () => {
     const { data } = await supabase
       .from("community_boards")
-      .select("id, title, subtitle, venue, genre, event_date, event_start_date, event_end_date, created_at, creator_id, instructors:community_board_instructors(id, name, instagram, sort_order)")
+      .select("id, title, subtitle, venue, genre, event_date, event_start_date, event_end_date, image_urls, created_at, creator_id, instructors:community_board_instructors(id, name, instagram, sort_order)")
       .order("created_at", { ascending: false })
       .order("sort_order", { referencedTable: "community_board_instructors", ascending: true });
-    setBoards((data as any[])?.map(b => ({ ...b, instructors: b.instructors ?? [] })) ?? []);
+    setBoards((data as any[])?.map(b => ({ ...b, instructors: b.instructors ?? [], image_urls: b.image_urls ?? [] })) ?? []);
   };
 
   // マイコミュニティのメンバー取得（結合クエリだと名前が引けないことがあったため2段階で取る）
@@ -64,6 +125,8 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
 
   const resetForm = () => {
     setNewTitle(""); setNewSubtitle(""); setNewStartDate(""); setNewEndDate(""); setNewVenue("");
+    images.forEach(img => { if (img.kind === "new") URL.revokeObjectURL(img.preview); });
+    setImages([]); setImageError("");
   };
 
   // カードの編集ボタン：フォームに既存の内容を詰めて、作成と同じモーダルを編集モードで開く
@@ -74,15 +137,50 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
     setNewStartDate(b.event_start_date ?? "");
     setNewEndDate(b.event_end_date ?? "");
     setNewVenue(b.venue ?? "");
+    setImages(b.image_urls.map(url => ({ kind: "existing", url })));
     setShowCreate(true);
   };
 
   const closeModal = () => { setShowCreate(false); setEditingId(null); resetForm(); };
 
+  // 画像の選択・削除（複数枚まとめて追加できる。上限を超えた分は無視する）
+  const handleImagesSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (files.length === 0) return;
+    const room = MAX_POST_IMAGES - images.length;
+    if (room <= 0) { setImageError(`画像は${MAX_POST_IMAGES}枚まで添付できます`); return; }
+    const picked = files.slice(0, room);
+    for (const file of picked) {
+      if (file.size > 10 * 1024 * 1024) { setImageError("画像ファイルサイズは10MB以下にしてください"); return; }
+      const looksLikeImage = file.type.startsWith("image/") || /\.(jpe?g|png|gif|webp|heic|heif|bmp|avif)$/i.test(file.name);
+      if (!looksLikeImage) { setImageError("画像ファイルを選択してください"); return; }
+    }
+    setImageError(files.length > picked.length ? `画像は${MAX_POST_IMAGES}枚までのため、一部のみ追加しました` : "");
+    setImages(arr => [...arr, ...picked.map(file => ({ kind: "new" as const, file, preview: URL.createObjectURL(file) }))]);
+  };
+  const removeImageAt = (index: number) => {
+    setImages(arr => {
+      const target = arr[index];
+      if (target?.kind === "new") URL.revokeObjectURL(target.preview);
+      return arr.filter((_, i) => i !== index);
+    });
+  };
+
   const handleSubmit = async () => {
     const title = newTitle.trim();
     if (!title || creating) return;
     setCreating(true);
+    // 表示順のまま、既存画像はそのURLを、新しい画像はアップロードしてから得たURLを並べる
+    const image_urls: string[] = [];
+    for (const img of images) {
+      if (img.kind === "existing") { image_urls.push(img.url); continue; }
+      try {
+        image_urls.push(await uploadPostImage(user.id, img.file));
+      } catch (err) {
+        showToast((err as any)?.message ?? "画像のアップロードに失敗しました"); setCreating(false); return;
+      }
+    }
     const fields = {
       title,
       subtitle: newSubtitle.trim() || null,
@@ -90,6 +188,7 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
       // 2日目は1日目より後の日を選んだ時だけ意味がある値として保存する
       event_end_date: newEndDate && newEndDate > newStartDate ? newEndDate : null,
       venue: newVenue.trim() || null,
+      image_urls,
     };
 
     if (editingId) {
@@ -190,6 +289,26 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
               </div>
               <div><label style={lbl}>公演会場（任意）</label>
                 <input value={newVenue} onChange={e => setNewVenue(e.target.value)} placeholder="例: 渋谷〇〇ホール" maxLength={100} style={inp} />
+              </div>
+              <div>
+                <label style={lbl}>画像（任意・最大{MAX_POST_IMAGES}枚）</label>
+                <div style={{ display: "flex", gap: "8px", overflowX: "auto" }}>
+                  {images.map((img, i) => (
+                    <div key={i} style={{ position: "relative", flexShrink: 0, width: "84px", borderRadius: "8px", overflow: "hidden" }}>
+                      <img src={img.kind === "existing" ? img.url : img.preview} alt="" style={{ width: "84px", aspectRatio: "3 / 4", objectFit: "cover", display: "block" }} />
+                      <button onClick={() => removeImageAt(i)} style={{ position: "absolute", top: "4px", right: "4px", width: "22px", height: "22px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                  {images.length < MAX_POST_IMAGES && (
+                    <label style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "4px", width: "84px", aspectRatio: "3 / 4", border: "1px dashed rgba(255,255,255,0.24)", borderRadius: "8px", color: "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                      <Camera size={16} /> 追加
+                      <input type="file" accept="image/*" multiple onChange={handleImagesSelect} style={{ display: "none" }} />
+                    </label>
+                  )}
+                </div>
+                {imageError && <div style={{ marginTop: "6px", fontSize: "10px", color: "#DC2626", fontFamily: "'Noto Sans JP',sans-serif" }}>{imageError}</div>}
               </div>
             </div>
 
