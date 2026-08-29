@@ -46,6 +46,7 @@ export interface DanceNumber {
   studio_fee: number | null;
   // 本番当日。連続していなくてもよい複数の日付（"YYYY-MM-DD"）を古い順に持つ
   performance_dates: string[];
+  image_url: string | null;
 }
 
 export interface PrivateLesson {
@@ -65,6 +66,7 @@ export interface PrivateLesson {
   target_level: "all" | "beginner" | "intermediate" | "advanced";
   visibility: "public" | "private";
   requires_approval: boolean;
+  image_url: string | null;
 }
 
 export interface FormState {

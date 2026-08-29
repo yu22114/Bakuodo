@@ -154,6 +154,9 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
               </div>
             );
           })()}
+          {lesson.image_url && (
+            <img src={lesson.image_url} alt="" style={{ width: "100%", maxHeight: "180px", objectFit: "cover", borderRadius: "10px", marginBottom: "16px", display: "block" }} />
+          )}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
             {!isEvent && (
               <span style={{ fontSize: "10px", padding: "3px 9px", background: accent + "14", borderRadius: "4px", color: accent, fontFamily: "'Noto Sans JP',sans-serif", display: "flex", alignItems: "center", gap: "4px" }}>
