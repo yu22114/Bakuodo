@@ -47,6 +47,8 @@ export interface DanceNumber {
   // 本番当日。連続していなくてもよい複数の日付（"YYYY-MM-DD"）を古い順に持つ
   performance_dates: string[];
   image_url: string | null;
+  // 添付画像（複数枚）。1枚目がimage_url（カード表紙のサムネイル）と同じ画像になる
+  image_urls: string[];
 }
 
 export interface PrivateLesson {
@@ -67,6 +69,8 @@ export interface PrivateLesson {
   visibility: "public" | "private";
   requires_approval: boolean;
   image_url: string | null;
+  // 添付画像（複数枚）。1枚目がimage_url（カード表紙のサムネイル）と同じ画像になる
+  image_urls: string[];
 }
 
 export interface FormState {

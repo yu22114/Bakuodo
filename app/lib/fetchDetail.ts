@@ -40,7 +40,7 @@ export async function fetchCypherById(cypherId: string): Promise<Cypher | null> 
 // 限定公開・参加承認制がないのでvisibility/requires_approvalは扱わない）
 export async function fetchNumberById(numberId: string): Promise<DanceNumber | null> {
   const { data: row } = await supabase.from("numbers").select(`
-    id, title, organizer_id, starts_at, ends_at, location, description, max_members, studio_fee, image_url,
+    id, title, organizer_id, starts_at, ends_at, location, description, max_members, studio_fee, image_url, image_urls,
     profiles:organizer_id ( dancer_name, avatar_url, instagram ),
     number_genres ( genres:genre_id ( name ) ),
     number_performance_dates ( event_date )
@@ -66,6 +66,8 @@ export async function fetchNumberById(numberId: string): Promise<DanceNumber | n
     max_members: (row as any).max_members,
     studio_fee: (row as any).studio_fee ?? null,
     image_url: (row as any).image_url ?? null,
+    // image_urlsを足す前の投稿はimage_urlしか持たないので、無ければそれを1枚目として扱う
+    image_urls: (row as any).image_urls?.length ? (row as any).image_urls : ((row as any).image_url ? [(row as any).image_url] : []),
     genres,
     performance_dates: performanceDates,
     organizer: { id: (row as any).organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: (row as any).profiles?.avatar_url ?? null, instagram: (row as any).profiles?.instagram ?? null },
@@ -77,7 +79,7 @@ export async function fetchNumberById(numberId: string): Promise<DanceNumber | n
 // レッスンIDからPLDetailModal用のフルデータを組み立てる
 export async function fetchLessonById(lessonId: string): Promise<PrivateLesson | null> {
   const { data: row } = await supabase.from("private_lessons").select(`
-    id, title, organizer_id, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval, kind, image_url,
+    id, title, organizer_id, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval, kind, image_url, image_urls,
     profiles:organizer_id ( dancer_name, avatar_url, instagram ),
     pl_genres ( genres:genre_id ( name ) )
   `).eq("id", lessonId).single();
@@ -103,6 +105,8 @@ export async function fetchLessonById(lessonId: string): Promise<PrivateLesson |
     visibility: (row as any).visibility ?? "public",
     requires_approval: (row as any).requires_approval ?? false,
     image_url: (row as any).image_url ?? null,
+    // image_urlsを足す前の投稿はimage_urlしか持たないので、無ければそれを1枚目として扱う
+    image_urls: (row as any).image_urls?.length ? (row as any).image_urls : ((row as any).image_url ? [(row as any).image_url] : []),
     genres,
     organizer: { id: (row as any).organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: (row as any).profiles?.avatar_url ?? null, instagram: (row as any).profiles?.instagram ?? null },
     participant_count: count ?? 0,

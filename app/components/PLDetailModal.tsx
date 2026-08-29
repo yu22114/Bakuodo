@@ -140,9 +140,21 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
         </div>
 
         <div style={{ overflowY: "auto", padding: "8px 20px 0", flex: 1 }}>
-          {/* カード表紙ではジャンル名を背景に大きく出しているが、詳細画面ではあえて出さない */}
-          {lesson.image_url && (
-            <img src={lesson.image_url} alt="" style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: "10px", marginTop: "8px", marginBottom: "16px", display: "block" }} />
+          {/* カード表紙ではジャンル名を背景に大きく出しているが、詳細画面ではあえて出さない。
+              複数枚ある時は横スワイプで見せ、右上に「1/3」のように枚数を出す */}
+          {lesson.image_urls.length > 0 && (
+            <div style={{ position: "relative", marginTop: "8px", marginBottom: "16px" }}>
+              <div className="bd-scroll" style={{ display: "flex", overflowX: "auto", scrollSnapType: "x mandatory", borderRadius: "10px" }}>
+                {lesson.image_urls.map((url, i) => (
+                  <img key={i} src={url} alt="" style={{ width: "100%", flexShrink: 0, aspectRatio: "3 / 4", objectFit: "cover", scrollSnapAlign: "start", display: "block" }} />
+                ))}
+              </div>
+              {lesson.image_urls.length > 1 && (
+                <div style={{ position: "absolute", top: "8px", right: "8px", padding: "2px 8px", borderRadius: "10px", background: "rgba(0,0,0,0.55)", color: "#fff", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif" }}>
+                  {lesson.image_urls.length}枚
+                </div>
+              )}
+            </div>
           )}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
             {!isEvent && (

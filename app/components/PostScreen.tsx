@@ -45,6 +45,8 @@ const EMPTY_PL = { title: "", date: "", start_time: DEFAULT_START_TIME, end_time
 // 縦4:横3の縦長に中央で切り抜いてから縮小する（サイズを固定して表示側を揃えるため）
 const POST_IMAGE_WIDTH = 900;
 const POST_IMAGE_HEIGHT = 1200; // 900 * 4/3
+// 添付できる画像は最大5枚まで
+const MAX_POST_IMAGES = 5;
 
 function loadImageElement(blob: Blob): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -104,17 +106,22 @@ async function uploadPostImage(userId: string, file: File): Promise<string> {
   return publicUrl;
 }
 
-// 選んだ画像ファイルのバリデーションと、プレビュー用URLの発行だけを行う小さなヘルパー。
-// 実際のアップロードは投稿ボタンを押した時にまとめて行う
-function pickImageFile(e: React.ChangeEvent<HTMLInputElement>, onError: (msg: string) => void, onPicked: (file: File, previewUrl: string) => void) {
-  const file = e.target.files?.[0];
+// 選んだ画像ファイル（複数）のバリデーションと、プレビュー用URLの発行だけを行う小さなヘルパー。
+// 実際のアップロードは投稿ボタンを押した時にまとめて行う。既に選んである枚数と合わせて上限を超えないようにする
+function pickImageFiles(e: React.ChangeEvent<HTMLInputElement>, currentCount: number, onError: (msg: string) => void, onPicked: (files: File[], previewUrls: string[]) => void) {
+  const files = Array.from(e.target.files ?? []);
   e.target.value = "";
-  if (!file) return;
-  if (file.size > 10 * 1024 * 1024) { onError("画像ファイルサイズは10MB以下にしてください"); return; }
-  const looksLikeImage = file.type.startsWith("image/") || /\.(jpe?g|png|gif|webp|heic|heif|bmp|avif)$/i.test(file.name);
-  if (!looksLikeImage) { onError("画像ファイルを選択してください"); return; }
-  onError("");
-  onPicked(file, URL.createObjectURL(file));
+  if (files.length === 0) return;
+  const room = MAX_POST_IMAGES - currentCount;
+  if (room <= 0) { onError(`画像は${MAX_POST_IMAGES}枚まで添付できます`); return; }
+  const picked = files.slice(0, room);
+  for (const file of picked) {
+    if (file.size > 10 * 1024 * 1024) { onError("画像ファイルサイズは10MB以下にしてください"); return; }
+    const looksLikeImage = file.type.startsWith("image/") || /\.(jpe?g|png|gif|webp|heic|heif|bmp|avif)$/i.test(file.name);
+    if (!looksLikeImage) { onError("画像ファイルを選択してください"); return; }
+  }
+  onError(files.length > picked.length ? `画像は${MAX_POST_IMAGES}枚までのため、一部のみ追加しました` : "");
+  onPicked(picked, picked.map(f => URL.createObjectURL(f)));
 }
 
 export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: { onNav: (s: string) => void; user: SupabaseUser; initialTab?: "number" | "cypher" | "pl" | "event"; accountType?: string }) {
@@ -135,15 +142,15 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
   const [numberEndDate, setNumberEndDate] = useState("");
   // 本番当日。連続していなくてもよい複数の日付を追加・削除できるようにする
   const [numberPerformanceDates, setNumberPerformanceDates] = useState<string[]>([]);
-  // 添付画像（任意）。実際のアップロードは投稿ボタンを押した時にまとめて行う
-  const [numberImageFile, setNumberImageFile] = useState<File | null>(null);
-  const [numberImagePreview, setNumberImagePreview] = useState<string | null>(null);
+  // 添付画像（任意・複数枚）。実際のアップロードは投稿ボタンを押した時にまとめて行う
+  const [numberImageFiles, setNumberImageFiles] = useState<File[]>([]);
+  const [numberImagePreviews, setNumberImagePreviews] = useState<string[]>([]);
   // PLフォーム用
   const [plForm, setPlForm] = useState(EMPTY_PL);
   const [plIsPrivate, setPlIsPrivate] = useState(false);
   const [plRequiresApproval, setPlRequiresApproval] = useState(false);
-  const [plImageFile, setPlImageFile] = useState<File | null>(null);
-  const [plImagePreview, setPlImagePreview] = useState<string | null>(null);
+  const [plImageFiles, setPlImageFiles] = useState<File[]>([]);
+  const [plImagePreviews, setPlImagePreviews] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -199,28 +206,34 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
     clearDraft();
   };
 
-  // 画像の選択・解除（NUMBER用・LESSON/EVENT用で共通の考え方）
-  const handleNumberImageSelect = (e: React.ChangeEvent<HTMLInputElement>) =>
-    pickImageFile(e, setError, (file, preview) => {
-      if (numberImagePreview) URL.revokeObjectURL(numberImagePreview);
-      setNumberImageFile(file);
-      setNumberImagePreview(preview);
+  // 画像の選択・解除（NUMBER用・LESSON/EVENT用で共通の考え方。複数枚まとめて追加できる）
+  const handleNumberImagesSelect = (e: React.ChangeEvent<HTMLInputElement>) =>
+    pickImageFiles(e, numberImageFiles.length, setError, (files, previews) => {
+      setNumberImageFiles(arr => [...arr, ...files]);
+      setNumberImagePreviews(arr => [...arr, ...previews]);
     });
-  const clearNumberImage = () => {
-    if (numberImagePreview) URL.revokeObjectURL(numberImagePreview);
-    setNumberImageFile(null);
-    setNumberImagePreview(null);
+  const removeNumberImageAt = (index: number) => {
+    setNumberImagePreviews(arr => { URL.revokeObjectURL(arr[index]); return arr.filter((_, i) => i !== index); });
+    setNumberImageFiles(arr => arr.filter((_, i) => i !== index));
   };
-  const handlePlImageSelect = (e: React.ChangeEvent<HTMLInputElement>) =>
-    pickImageFile(e, setError, (file, preview) => {
-      if (plImagePreview) URL.revokeObjectURL(plImagePreview);
-      setPlImageFile(file);
-      setPlImagePreview(preview);
+  const clearNumberImages = () => {
+    numberImagePreviews.forEach(p => URL.revokeObjectURL(p));
+    setNumberImageFiles([]);
+    setNumberImagePreviews([]);
+  };
+  const handlePlImagesSelect = (e: React.ChangeEvent<HTMLInputElement>) =>
+    pickImageFiles(e, plImageFiles.length, setError, (files, previews) => {
+      setPlImageFiles(arr => [...arr, ...files]);
+      setPlImagePreviews(arr => [...arr, ...previews]);
     });
-  const clearPlImage = () => {
-    if (plImagePreview) URL.revokeObjectURL(plImagePreview);
-    setPlImageFile(null);
-    setPlImagePreview(null);
+  const removePlImageAt = (index: number) => {
+    setPlImagePreviews(arr => { URL.revokeObjectURL(arr[index]); return arr.filter((_, i) => i !== index); });
+    setPlImageFiles(arr => arr.filter((_, i) => i !== index));
+  };
+  const clearPlImages = () => {
+    plImagePreviews.forEach(p => URL.revokeObjectURL(p));
+    setPlImageFiles([]);
+    setPlImagePreviews([]);
   };
 
   // All Styleと他ジャンルの同時選択はできない（constants.tsのtoggleGenreが担当）
@@ -286,14 +299,16 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
       setError("入力が長すぎます"); return;
     }
     setLoading(true); setError("");
-    let image_url: string | null = null;
-    if (numberImageFile) {
+    // 選んだ画像を順番にアップロードする。1枚目をimage_url（カード表紙のサムネイル）にも使う
+    const image_urls: string[] = [];
+    for (const file of numberImageFiles) {
       try {
-        image_url = await uploadPostImage(user.id, numberImageFile);
+        image_urls.push(await uploadPostImage(user.id, file));
       } catch (err) {
         setError((err as any)?.message ?? "画像のアップロードに失敗しました"); setLoading(false); return;
       }
     }
+    const image_url = image_urls[0] ?? null;
     const title = numberForm.title.trim();
     const starts_at = `${numberForm.date}T00:00:00+09:00`;
     // 2日目は1日目より後の日を選んだ時だけ意味がある値として保存する（マイコミュニティと同じ考え方）
@@ -302,7 +317,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
     const location = numberForm.studio.trim() || title;
     const { data: numberRow, error: nErr } = await supabase
       .from("numbers")
-      .insert({ title, location, description: numberForm.description, starts_at, ends_at, max_members: numberForm.max_members ? Number(numberForm.max_members) : null, organizer_id: user.id, image_url })
+      .insert({ title, location, description: numberForm.description, starts_at, ends_at, max_members: numberForm.max_members ? Number(numberForm.max_members) : null, organizer_id: user.id, image_url, image_urls })
       .select().single();
     if (nErr || !numberRow) { console.error("number insert error:", nErr); setError(`投稿に失敗しました。エラー: ${nErr?.message ?? "不明"}`); setLoading(false); return; }
     if (numberForm.genres.length > 0) {
@@ -318,7 +333,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
     }
     // 主催者を自動で参加者に追加
     await supabase.from("number_participations").insert({ number_id: numberRow.id, profile_id: user.id });
-    clearNumberImage();
+    clearNumberImages();
     clearDraft();
     setLoading(false); setSubmitted(true);
     setTimeout(() => onNav("top"), 1400);
@@ -331,14 +346,16 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
       setError("入力が長すぎます"); return;
     }
     setLoading(true); setError("");
-    let image_url: string | null = null;
-    if (plImageFile) {
+    // 選んだ画像を順番にアップロードする。1枚目をimage_url（カード表紙のサムネイル）にも使う
+    const image_urls: string[] = [];
+    for (const file of plImageFiles) {
       try {
-        image_url = await uploadPostImage(user.id, plImageFile);
+        image_urls.push(await uploadPostImage(user.id, file));
       } catch (err) {
         setError((err as any)?.message ?? "画像のアップロードに失敗しました"); setLoading(false); return;
       }
     }
+    const image_url = image_urls[0] ?? null;
     const starts_at = plForm.start_time ? `${plForm.date}T${plForm.start_time}:00+09:00` : `${plForm.date}T00:00:00+09:00`;
     const endDate = plForm.end_time && isNextDayEnd(plForm.end_time, plForm.start_time) ? getNextDate(plForm.date) : plForm.date;
     const ends_at = plForm.end_time ? `${endDate}T${plForm.end_time}:00+09:00` : null;
@@ -347,7 +364,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
     const title = plForm.title.trim() || plForm.studio || location;
     const { data: lesson, error: lErr } = await supabase
       .from("private_lessons")
-      .insert({ title, location, description: plForm.description, starts_at, ends_at, max_members: plForm.max_members ? Number(plForm.max_members) : null, price: plForm.price ? Number(plForm.price) : null, target_level: plForm.target_level, organizer_id: user.id, visibility: plIsPrivate ? "private" : "public", requires_approval: plRequiresApproval, kind: isEvent ? "event" : "lesson", image_url })
+      .insert({ title, location, description: plForm.description, starts_at, ends_at, max_members: plForm.max_members ? Number(plForm.max_members) : null, price: plForm.price ? Number(plForm.price) : null, target_level: plForm.target_level, organizer_id: user.id, visibility: plIsPrivate ? "private" : "public", requires_approval: plRequiresApproval, kind: isEvent ? "event" : "lesson", image_url, image_urls })
       .select().single();
     if (lErr || !lesson) { setError(`投稿に失敗しました: ${lErr?.message ?? "不明"}`); setLoading(false); return; }
     if (plForm.genres.length > 0) {
@@ -356,7 +373,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
         await supabase.from("pl_genres").insert(genreRows.map((g: any) => ({ lesson_id: lesson.id, genre_id: g.id })));
       }
     }
-    clearPlImage();
+    clearPlImages();
     clearDraft(); // 投稿できたので下書きは残さない
     setLoading(false); setSubmitted(true);
     setTimeout(() => onNav("top"), 1400);
@@ -443,20 +460,23 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
           </div>
           <div><label style={lbl}>会場 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={numberForm.studio} onChange={e => setNumberForm(f => ({ ...f, studio: e.target.value }))} /></div>
           <div>
-            <label style={lbl}>画像 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label>
-            {numberImagePreview ? (
-              <div style={{ position: "relative", borderRadius: "8px", overflow: "hidden" }}>
-                <img src={numberImagePreview} alt="" style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", display: "block" }} />
-                <button onClick={clearNumberImage} style={{ position: "absolute", top: "6px", right: "6px", width: "28px", height: "28px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <X size={14} />
-                </button>
-              </div>
-            ) : (
-              <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "14px", border: "1px dashed rgba(255,255,255,0.24)", borderRadius: "8px", color: "rgba(255,255,255,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
-                <Camera size={14} /> 画像を選ぶ
-                <input type="file" accept="image/*" onChange={handleNumberImageSelect} style={{ display: "none" }} />
-              </label>
-            )}
+            <label style={lbl}>画像 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意・最大{MAX_POST_IMAGES}枚</span></label>
+            <div style={{ display: "flex", gap: "8px", overflowX: "auto" }}>
+              {numberImagePreviews.map((src, i) => (
+                <div key={i} style={{ position: "relative", flexShrink: 0, width: "84px", borderRadius: "8px", overflow: "hidden" }}>
+                  <img src={src} alt="" style={{ width: "84px", aspectRatio: "3 / 4", objectFit: "cover", display: "block" }} />
+                  <button onClick={() => removeNumberImageAt(i)} style={{ position: "absolute", top: "4px", right: "4px", width: "22px", height: "22px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+              {numberImagePreviews.length < MAX_POST_IMAGES && (
+                <label style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "4px", width: "84px", aspectRatio: "3 / 4", border: "1px dashed rgba(255,255,255,0.24)", borderRadius: "8px", color: "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                  <Camera size={16} /> 追加
+                  <input type="file" accept="image/*" multiple onChange={handleNumberImagesSelect} style={{ display: "none" }} />
+                </label>
+              )}
+            </div>
           </div>
           <div><label style={lbl}>ジャンル</label>
             <GenreStrip value={numberForm.genres[0] ?? ""} onChange={toggleNumberGenre} genres={EXTENDED_GENRES} />
@@ -531,20 +551,23 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
           </div>
           <div><label style={lbl}>{plNoun}名 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={plForm.title} onChange={e => setPlForm(f => ({ ...f, title: e.target.value }))} /></div>
           <div>
-            <label style={lbl}>画像 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label>
-            {plImagePreview ? (
-              <div style={{ position: "relative", borderRadius: "8px", overflow: "hidden" }}>
-                <img src={plImagePreview} alt="" style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", display: "block" }} />
-                <button onClick={clearPlImage} style={{ position: "absolute", top: "6px", right: "6px", width: "28px", height: "28px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <X size={14} />
-                </button>
-              </div>
-            ) : (
-              <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "14px", border: "1px dashed rgba(255,255,255,0.24)", borderRadius: "8px", color: "rgba(255,255,255,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
-                <Camera size={14} /> 画像を選ぶ
-                <input type="file" accept="image/*" onChange={handlePlImageSelect} style={{ display: "none" }} />
-              </label>
-            )}
+            <label style={lbl}>画像 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意・最大{MAX_POST_IMAGES}枚</span></label>
+            <div style={{ display: "flex", gap: "8px", overflowX: "auto" }}>
+              {plImagePreviews.map((src, i) => (
+                <div key={i} style={{ position: "relative", flexShrink: 0, width: "84px", borderRadius: "8px", overflow: "hidden" }}>
+                  <img src={src} alt="" style={{ width: "84px", aspectRatio: "3 / 4", objectFit: "cover", display: "block" }} />
+                  <button onClick={() => removePlImageAt(i)} style={{ position: "absolute", top: "4px", right: "4px", width: "22px", height: "22px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+              {plImagePreviews.length < MAX_POST_IMAGES && (
+                <label style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "4px", width: "84px", aspectRatio: "3 / 4", border: "1px dashed rgba(255,255,255,0.24)", borderRadius: "8px", color: "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                  <Camera size={16} /> 追加
+                  <input type="file" accept="image/*" multiple onChange={handlePlImagesSelect} style={{ display: "none" }} />
+                </label>
+              )}
+            </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: isEvent ? "1fr" : "1fr 1fr", gap: "10px" }}>
             <div><label style={lbl}>{isEvent ? "参加費（円）" : "料金（円）"}</label><input style={inp} type="number" min="0" placeholder="例: 3000" value={plForm.price} onChange={e => setPlForm(f => ({ ...f, price: e.target.value }))} /></div>
