@@ -17,7 +17,7 @@ export function LoginScreen() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", background: "#000000" }}>
       <div style={{ marginBottom: "48px", textAlign: "center" }}>
-        <h1 style={{ margin: 0, lineHeight: 0, animation: "bdLogoRollInLg 1.8s cubic-bezier(0.33,1,0.68,1) both" }}><Logo size={132} /></h1>
+        <h1 style={{ margin: 0, lineHeight: 0 }}><Logo size={132} /></h1>
         <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.1em" }}>今日、ここで、踊ろう。</p>
       </div>
       <button

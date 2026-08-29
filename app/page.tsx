@@ -300,11 +300,6 @@ export default function BakuOdori() {
         @keyframes bdJoinRing{0%{transform:scale(1);opacity:0.7}100%{transform:scale(1.12);opacity:0}}
         /* 通知の未読バッジ。新着が増えた瞬間だけ一瞬拡大して戻る */
         @keyframes bdBadgePulse{0%{transform:translate(4px,-4px) scale(1)}40%{transform:translate(4px,-4px) scale(1.45)}100%{transform:translate(4px,-4px) scale(1)}}
-        /* 画面を開いた時、ロゴが左から転がってきて中央に止まる。
-           回転量は「移動距離÷半径」に合わせると滑らず転がって見えるので、
-           ロゴのサイズごとに角度を変える（同じ距離なら大きい球ほど回転は少ない） */
-        @keyframes bdLogoRollIn{from{transform:translateX(-200px) rotate(-440deg)}to{transform:translateX(0) rotate(0deg)}}
-        @keyframes bdLogoRollInLg{from{transform:translateX(-200px) rotate(-174deg)}to{transform:translateX(0) rotate(0deg)}}
         /* カードが下からふわっと浮かび上がってくる。1枚ずつ少しずつ遅らせて出す */
         @keyframes bdCardFloatIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
         /* 選択中タブの文字が客席ウェーブみたいに1文字ずつ上下する。各文字の animation-delay をずらして波にする */

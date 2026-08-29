@@ -400,7 +400,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
             <span style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", letterSpacing: "0.02em" }}>{todayLabel}</span>
           </button>
           {/* ロゴを押すと登録済みユーザーが全員出てくる */}
-          <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center", animation: "bdLogoRollIn 1.8s cubic-bezier(0.33,1,0.68,1) both" }}>
+          <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center" }}>
             <button onClick={() => { setUserSearch(""); setShowAllUsers(true); }} aria-label="全ユーザーを表示"
               style={{ background: "none", border: "none", padding: 0, lineHeight: 0, cursor: "pointer" }}>
               <Logo size={52} />
