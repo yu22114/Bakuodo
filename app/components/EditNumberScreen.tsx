@@ -187,7 +187,7 @@ export function EditNumberScreen({ numberId, user, onBack, onSaved }: {
           <label style={lbl}>画像 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label>
           {(imagePreview || imageUrl) ? (
             <div style={{ position: "relative", borderRadius: "8px", overflow: "hidden" }}>
-              <img src={imagePreview ?? imageUrl ?? ""} alt="" style={{ width: "100%", maxHeight: "160px", objectFit: "cover", display: "block" }} />
+              <img src={imagePreview ?? imageUrl ?? ""} alt="" style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", display: "block" }} />
               <button onClick={clearImage} style={{ position: "absolute", top: "6px", right: "6px", width: "28px", height: "28px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <X size={14} />
               </button>

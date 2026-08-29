@@ -142,7 +142,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
         <div style={{ overflowY: "auto", padding: "8px 20px 0", flex: 1 }}>
           {/* カード表紙ではジャンル名を背景に大きく出しているが、詳細画面ではあえて出さない */}
           {lesson.image_url && (
-            <img src={lesson.image_url} alt="" style={{ width: "100%", maxHeight: "260px", objectFit: "cover", borderRadius: "10px", marginTop: "8px", marginBottom: "16px", display: "block" }} />
+            <img src={lesson.image_url} alt="" style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: "10px", marginTop: "8px", marginBottom: "16px", display: "block" }} />
           )}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
             {!isEvent && (

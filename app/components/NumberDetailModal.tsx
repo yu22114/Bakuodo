@@ -97,7 +97,7 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
         <div style={{ overflowY: "auto", padding: "8px 20px 20px", flex: 1 }}>
           {/* カード表紙ではジャンル名を背景に大きく出しているが、詳細画面ではあえて出さない */}
           {number.image_url && (
-            <img src={number.image_url} alt="" style={{ width: "100%", maxHeight: "260px", objectFit: "cover", borderRadius: "10px", marginTop: "8px", marginBottom: "16px", display: "block" }} />
+            <img src={number.image_url} alt="" style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: "10px", marginTop: "8px", marginBottom: "16px", display: "block" }} />
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
             <button onClick={() => onViewProfile(organizerId)}
