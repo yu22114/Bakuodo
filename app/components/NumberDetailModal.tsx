@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabase";
 import type { DanceNumber, ParticipantProfile } from "../lib/types";
 import { dateBadgeParts, timeUntil, timeAgo } from "../lib/constants";
 import { useComments } from "../lib/useComments";
+import type { NumberApplicationAnswers } from "../lib/participation";
 import { ParticipantBar } from "./ParticipantBar";
 import { showToast } from "./Toast";
 import { hapticTap } from "../lib/haptics";
@@ -148,7 +149,7 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
   number: DanceNumber | null;
   onClose: () => void;
   joined: boolean;
-  onJoin: (id: string) => void;
+  onJoin: (id: string, answers?: NumberApplicationAnswers) => void;
   onViewProfile: (id: string) => void;
   // ホーム画面のカードから開いた時は渡さない＝編集・削除ボタンを出さない。
   // プロフィール画面の「主催」タブから開いた時だけ渡す（そちらで編集・削除できるようにするため）
@@ -186,6 +187,10 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
   const [justJoined, setJustJoined] = useState(false);
+  // 参加申請前の必須項目フォーム（EVENTと同じ考え方。項目はダンサーネーム・Instagramの2つ）
+  const [showApplyForm, setShowApplyForm] = useState(false);
+  const [answerDancerName, setAnswerDancerName] = useState("");
+  const [answerInstagram, setAnswerInstagram] = useState("");
   // ストーリーズ用画像の作成中（少し時間がかかるため連打防止も兼ねる）
   const [storyLoading, setStoryLoading] = useState(false);
   // コメントの取得・投稿はサイファー・レッスンと同じ処理を使う（commentsテーブル共通）
@@ -240,6 +245,16 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
       showToast("画像の作成に失敗しました");
     }
     setStoryLoading(false);
+  };
+
+  const submitApply = () => {
+    if (!answerDancerName.trim() || !answerInstagram.trim()) return;
+    hapticTap();
+    onJoin(number.id, { dancerName: answerDancerName.trim(), instagram: answerInstagram.trim() });
+    setShowApplyForm(false);
+    // 参加できたことを示すエフェクトを一瞬見せてから閉じる（EVENTと違い承認制がないので必ず即参加になる）
+    setJustJoined(true);
+    setTimeout(() => { setJustJoined(false); if (!keepOpenOnJoin) onClose(); }, 700);
   };
 
   return (
@@ -353,12 +368,9 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
                 {justJoined && <div aria-hidden="true" style={{ position: "absolute", inset: 0, borderRadius: "6px", border: "2px solid #16A34A", animation: "bdJoinRing 0.7s ease-out", pointerEvents: "none" }} />}
                 <button onClick={() => {
                   hapticTap();
-                  const isDirectJoin = !joined;
+                  // 新規参加だけ、先に必須項目（ダンサーネーム・Instagram）を聞くフォームを挟む
+                  if (!joined) { setShowApplyForm(true); return; }
                   onJoin(number.id);
-                  if (isDirectJoin) {
-                    setJustJoined(true);
-                    setTimeout(() => { setJustJoined(false); if (!keepOpenOnJoin) onClose(); }, 700);
-                  }
                 }}
                   className={!justJoined && !joined ? "bd-spray" : undefined}
                   style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: justJoined ? "#16A34A" : joined ? "rgba(22,163,74,0.12)" : "linear-gradient(135deg, #EC4899, #BE185D)", color: justJoined ? "#fff" : joined ? "#16A34A" : "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", animation: justJoined ? "bdJoinPop 0.4s ease-out" : undefined }}>
@@ -446,6 +458,35 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={() => setDeleteConfirm(false)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#F0F0F0" }}>キャンセル</button>
               <button onClick={handleDelete} disabled={deleting} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #DC2626, #A61B1B)", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>{deleting ? "削除中..." : "削除する"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 参加申請前の必須項目フォーム（EVENTと同じ考え方。項目はダンサーネーム・Instagramの2つ） */}
+      {showApplyForm && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={e => { e.stopPropagation(); setShowApplyForm(false); }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px" }}>
+            <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "8px" }}>参加申請</div>
+            <p style={{ margin: "0 0 16px", fontSize: "11px", color: "rgba(255,255,255,0.5)", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.6 }}>この回答は作成者以外に表示されません。</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "4px" }}>ダンサーネーム</label>
+                <input value={answerDancerName} onChange={e => setAnswerDancerName(e.target.value)} maxLength={50}
+                  style={{ width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "4px" }}>Instagramアカウント</label>
+                <input value={answerInstagram} onChange={e => setAnswerInstagram(e.target.value)} maxLength={100} placeholder="@ユーザー名" autoCapitalize="none" autoCorrect="off"
+                  style={{ width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "18px" }}>
+              <button onClick={() => setShowApplyForm(false)} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "10px 16px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
+              <button onClick={submitApply} disabled={!answerDancerName.trim() || !answerInstagram.trim()}
+                style={{ background: (answerDancerName.trim() && answerInstagram.trim()) ? "#EC4899" : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: (answerDancerName.trim() && answerInstagram.trim()) ? "pointer" : "default", color: (answerDancerName.trim() && answerInstagram.trim()) ? "#fff" : "rgba(255,255,255,0.3)", padding: "10px 16px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>
+                申請する
+              </button>
             </div>
           </div>
         </div>
