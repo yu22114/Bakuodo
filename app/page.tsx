@@ -302,9 +302,17 @@ export default function BakuOdori() {
         @keyframes bdBadgePulse{0%{transform:translate(4px,-4px) scale(1)}40%{transform:translate(4px,-4px) scale(1.45)}100%{transform:translate(4px,-4px) scale(1)}}
         /* カードが下からふわっと浮かび上がってくる。1枚ずつ少しずつ遅らせて出す */
         @keyframes bdCardFloatIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-        /* 登場後も、カードがずっと少しだけ浮遊しているように上下に揺れ続ける。
+        /* 登場後も、カードがずっと少しだけ浮遊しているように揺れ続ける。
+           上下だけでなく左右にもわずかにずらすことで、直線の反復ではなく
+           風に揺れる/水に浮くような、丸みのある軌道に見せる。
            負のanimation-delayで開始位置をずらし、カードごとに揺れがバラけて見えるようにする */
-        @keyframes bdCardFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+        @keyframes bdCardFloat{
+          0%{transform:translate(0,0)}
+          25%{transform:translate(2px,-4px)}
+          50%{transform:translate(0,-2px)}
+          75%{transform:translate(-2px,-4px)}
+          100%{transform:translate(0,0)}
+        }
         /* 選択中タブの文字が客席ウェーブみたいに1文字ずつ上下する。各文字の animation-delay をずらして波にする */
         /* 「ぽこっ」と跳ねてすぐ止まる区間を作り、残りは静止させることで
            滑らかな波ではなく1文字ずつ弾む感じにする */
