@@ -23,8 +23,10 @@ export function NumberCard({ number, onClick, index = 0 }: { number: DanceNumber
   const cardTransform = pressed
     ? "perspective(600px) rotateX(3deg) rotateY(-2deg) scale(0.98)"
     : hover ? "translateY(-3px)" : "none";
+  // 登場アニメ・常時のゆらぎ浮遊は外側の2層、ホバーの動きは内側（CypherCardと同じ理由）
   return (
     <div style={{ animation: `bdCardFloatIn 0.45s ease-out ${Math.min(index * 60, 400)}ms both` }}>
+    <div style={{ animation: `bdCardFloat ${4 + (index % 3) * 0.6}s ease-in-out infinite`, animationDelay: `-${(index % 5) * 0.8}s` }}>
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       onPointerDown={() => setPressed(true)} onPointerUp={() => setPressed(false)} onPointerLeave={() => setPressed(false)} onPointerCancel={() => setPressed(false)}
       className="bd-glow-card"
@@ -88,6 +90,7 @@ export function NumberCard({ number, onClick, index = 0 }: { number: DanceNumber
         )}
       </div>
       </div>
+    </div>
     </div>
     </div>
   );

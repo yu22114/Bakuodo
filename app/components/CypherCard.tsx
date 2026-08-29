@@ -17,10 +17,12 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
   const cardTransform = pressed
     ? "perspective(600px) rotateX(3deg) rotateY(-2deg) scale(0.98)"
     : hover ? "translateY(-3px)" : "none";
-  // 浮かび上がる登場は外側のdivに持たせる。内側のカードはホバーで動かすので
-  // 同じ要素にアニメーションを乗せるとtransformが競合してホバーが効かなくなる
+  // 浮かび上がる登場は一番外側のdivに、常時のゆらぎ浮遊はその内側の専用divに持たせる。
+  // 内側のカード本体はホバー/押下で動かすので、同じ要素にアニメーションを乗せると
+  // transformが競合してホバーが効かなくなる（3層とも別要素にすることで衝突を避ける）
   return (
     <div style={{ animation: `bdCardFloatIn 0.45s ease-out ${Math.min(index * 60, 400)}ms both` }}>
+    <div style={{ animation: `bdCardFloat ${4 + (index % 3) * 0.6}s ease-in-out infinite`, animationDelay: `-${(index % 5) * 0.8}s` }}>
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       onPointerDown={() => setPressed(true)} onPointerUp={() => setPressed(false)} onPointerLeave={() => setPressed(false)} onPointerCancel={() => setPressed(false)}
       // bd-glow-card: タッチ端末はホバーできないので、PCのホバー時と同じ色付き影を
@@ -102,6 +104,7 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
         </div>
       </div>
       </div>
+    </div>
     </div>
     </div>
   );
