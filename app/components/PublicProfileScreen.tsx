@@ -536,13 +536,14 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
   return (
     <div style={onBack
-      ? { position: "fixed", inset: 0, zIndex: 150, background: "#000000", overflow: "hidden", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }
-      : { height: "100dvh", overflow: "hidden", display: "flex", flexDirection: "column", background: "#000000" }
+      ? { position: "fixed", inset: 0, zIndex: 150, background: `radial-gradient(circle at 50% -20%, ${profileAccent}E6 0%, ${profileAccent}1F 25%, #000000 55%)`, overflow: "hidden", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }
+      : { height: "100dvh", overflow: "hidden", display: "flex", flexDirection: "column", background: `radial-gradient(circle at 50% -20%, ${profileAccent}E6 0%, ${profileAccent}1F 25%, #000000 55%)` }
     }>
       {/* ヘッダー。Instagramと同じ並びにする：
           上段＝アイコンと数字が横並び、その下に名前、いちばん下に横長のボタン
           「参加/主催」より下のカード一覧だけがスクロールするよう、ここは固定（flexShrink:0） */}
-      <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", flexShrink: 0, boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
+      {/* 背景を透過させ、上からの光をそのまま見せる（奥の光を透かすホーム画面ヘッダーと同じ考え方） */}
+      <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0, boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: "4px" }}>
           {onBack ? (
             <button onClick={onBack} style={{ justifySelf: "start", background: "linear-gradient(180deg, #303030, #1c1c1c)", boxShadow: "0 3px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px" }}>
