@@ -64,9 +64,13 @@ export function CommunityBoardCard({ board: b, isOwn, onClick, onEdit, onDelete 
           </div>
         )}
         {b.venue && (
-          <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "11px", color: "rgba(255,255,255,0.65)", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "3px" }}>
-            <MapPin size={10} color="rgba(255,255,255,0.4)" />{b.venue}
-          </div>
+          // 公演会場はGoogleマップへのリンクにする（他のカードと違いカード自体に詳細画面が
+          // ないため、ここでタップできるようにしておく）。カード全体のonClickは拾わないよう止める
+          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.venue)}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+            style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "11px", color: "rgba(255,255,255,0.65)", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "3px", textDecoration: "none", width: "fit-content" }}>
+            <MapPin size={10} color="rgba(255,255,255,0.4)" />
+            <span style={{ textDecoration: "underline", textUnderlineOffset: "2px" }}>{b.venue}</span>
+          </a>
         )}
         {b.instructors.length > 0 && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "6px" }}>
