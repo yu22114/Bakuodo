@@ -12,7 +12,8 @@ function formatJaDate(dateStr: string) {
 }
 
 // NUMBERは「本番・観客あり」の枠なので、CypherCardと違って縦長のポスター表示にする。
-// 画像を添付していればそれを、無ければジャンルカラーのグラデーションを背景に敷く
+// 画像を添付していればそれを、無ければジャンルカラーのグラデーションを背景に敷く。
+// 一覧は2列グリッドで並べる分カード自体が小さいので、中身の文字・余白も縮めてある
 export function NumberCard({ number, onClick, index = 0 }: { number: DanceNumber; onClick: () => void; index?: number }) {
   const { month, day, weekday } = dateBadgeParts(number.starts_at);
   const endParts = number.ends_at ? dateBadgeParts(number.ends_at) : null;
@@ -23,7 +24,7 @@ export function NumberCard({ number, onClick, index = 0 }: { number: DanceNumber
   const color = GENRE_COLORS[number.genres[0]] ?? "#EC4899";
   const cardTransform = pressed
     ? "perspective(600px) rotateX(3deg) rotateY(-2deg) scale(0.98)"
-    : hover ? "translateY(-4px)" : "none";
+    : hover ? "translateY(-3px)" : "none";
 
   // 登場アニメ・常時のゆらぎ浮遊は外側の2層、ホバーの動きは内側（CypherCardと同じ理由）
   return (
@@ -32,7 +33,7 @@ export function NumberCard({ number, onClick, index = 0 }: { number: DanceNumber
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       onPointerDown={() => setPressed(true)} onPointerUp={() => setPressed(false)} onPointerLeave={() => setPressed(false)} onPointerCancel={() => setPressed(false)}
       className="bd-glow-card"
-      style={{ position: "relative", aspectRatio: "3 / 4", borderRadius: "14px", overflow: "hidden", cursor: "pointer", border: `1px solid ${number.hot && !isEnded ? "rgba(236,72,153,0.4)" : hover ? "rgba(236,72,153,0.5)" : "rgba(255,255,255,0.16)"}`, transition: `transform ${pressed ? "0.12s" : "0.25s"} ease, box-shadow 0.25s ease`, transform: cardTransform, boxShadow: (hover ? `0 10px 22px rgba(0,0,0,0.4), 0 22px 46px ${color}33, ` : "0 4px 10px rgba(0,0,0,0.35), 0 12px 28px rgba(0,0,0,0.25), ") + "inset 0 1px 0 rgba(255,255,255,0.08)", opacity: isEnded ? 0.6 : 1, ["--bd-glow" as any]: `${color}33` } as React.CSSProperties}>
+      style={{ position: "relative", aspectRatio: "3 / 4", borderRadius: "10px", overflow: "hidden", cursor: "pointer", border: `1px solid ${number.hot && !isEnded ? "rgba(236,72,153,0.4)" : hover ? "rgba(236,72,153,0.5)" : "rgba(255,255,255,0.16)"}`, transition: `transform ${pressed ? "0.12s" : "0.25s"} ease, box-shadow 0.25s ease`, transform: cardTransform, boxShadow: (hover ? `0 6px 14px rgba(0,0,0,0.4), 0 14px 28px ${color}33, ` : "0 3px 7px rgba(0,0,0,0.35), 0 8px 18px rgba(0,0,0,0.25), ") + "inset 0 1px 0 rgba(255,255,255,0.08)", opacity: isEnded ? 0.6 : 1, ["--bd-glow" as any]: `${color}33` } as React.CSSProperties}>
       {/* 背景：画像を添付していればそれを表紙に、無ければジャンルカラーのグラデーションでポスター風に見せる */}
       {number.image_url ? (
         <img src={number.image_url} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
@@ -40,62 +41,53 @@ export function NumberCard({ number, onClick, index = 0 }: { number: DanceNumber
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(160deg, ${color}59 0%, #1c1c1c 62%, #101010 100%)` }} />
       )}
       {/* 下から黒く沈める。ここに乗る文字を読ませるためのシェード */}
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.6) 34%, rgba(0,0,0,0.08) 64%, transparent 100%)" }} />
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.62) 38%, rgba(0,0,0,0.08) 68%, transparent 100%)" }} />
 
-      {number.hot && !isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "#EC4899", padding: "4px 11px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold", borderBottomLeftRadius: "6px" }}>🔥 HOT</div>}
-      {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.14)", padding: "4px 11px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "6px" }}>終了</div>}
+      {number.hot && !isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "#EC4899", padding: "2px 7px", fontSize: "7.5px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold", borderBottomLeftRadius: "5px" }}>🔥 HOT</div>}
+      {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.14)", padding: "2px 7px", fontSize: "7.5px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "5px" }}>終了</div>}
 
       {/* コンテンツはすべて下部に重ねる */}
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "16px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "9px", flexWrap: "wrap" }}>
-          <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", letterSpacing: "0.1em", padding: "3px 8px", borderRadius: "4px", background: "#EC4899", color: "#fff" }}>NUMBER</span>
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "6px", flexWrap: "wrap" }}>
+          <span style={{ fontSize: "8px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", letterSpacing: "0.06em", padding: "2px 6px", borderRadius: "3px", background: "#EC4899", color: "#fff" }}>NUMBER</span>
           {number.genres[0] && (
-            <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", padding: "3px 8px", borderRadius: "4px", background: color + "26", color }}>
+            <span style={{ fontSize: "8px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", padding: "2px 6px", borderRadius: "3px", background: color + "26", color }}>
               {genreLabel(number.genres[0])}
             </span>
           )}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
-          <div style={{ width: "34px", height: "34px", borderRadius: "50%", background: `linear-gradient(135deg,${color}33,${color}55)`, border: "1px solid rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: "bold", color, fontFamily: "'Noto Sans JP',sans-serif", overflow: "hidden", flexShrink: 0 }}>
-            {number.organizer.avatar_url
-              ? <img src={number.organizer.avatar_url} alt={number.organizer.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              : number.organizer.avatar}
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "#fff", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.03em", lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any }}>{number.title}</h3>
-            <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.75)", marginTop: "1px", fontFamily: "'Noto Sans JP',sans-serif" }}>
-              {number.organizer.instagram
-                ? <span>by <span style={{ color: "#38BDF8" }}>@{number.organizer.instagram}</span></span>
-                : <span>by {number.organizer.dancer_name}</span>}
-            </div>
-          </div>
+        <h3 style={{ margin: 0, fontSize: "12.5px", fontWeight: 700, color: "#fff", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any }}>{number.title}</h3>
+        <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.7)", marginTop: "2px", fontFamily: "'Noto Sans JP',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {number.organizer.instagram
+            ? <span>by <span style={{ color: "#38BDF8" }}>@{number.organizer.instagram}</span></span>
+            : <span>by {number.organizer.dancer_name}</span>}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "10px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "2px", marginTop: "6px" }}>
           {/* 想定練習期間。開始日から表示し、終了日があれば「〜終了日」を続ける */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <Calendar size={11} color="rgba(255,255,255,0.55)" />
-            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.85)", fontFamily: "'Noto Sans JP',sans-serif" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <Calendar size={8} color="rgba(255,255,255,0.55)" style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.85)", fontFamily: "'Noto Sans JP',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {month}/{day}({weekday}){endParts ? `〜${endParts.month}/${endParts.day}(${endParts.weekday})` : ""}
             </span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <MapPin size={11} color="rgba(255,255,255,0.55)" />
-            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.85)", fontFamily: "'Noto Sans JP',sans-serif" }}>{number.location}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <MapPin size={8} color="rgba(255,255,255,0.55)" style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.85)", fontFamily: "'Noto Sans JP',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{number.location}</span>
           </div>
           {number.performance_dates.length > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <Star size={11} color={color} />
-              <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.85)", fontFamily: "'Noto Sans JP',sans-serif" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              <Star size={8} color={color} style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.85)", fontFamily: "'Noto Sans JP',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 本番: {formatJaDate(number.performance_dates[0])}{number.performance_dates.length > 1 ? ` 他${number.performance_dates.length - 1}日` : ""}
               </span>
             </div>
           )}
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "11px" }}>
-          <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: "#fff", whiteSpace: "nowrap" }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "6px" }}>
+          <span style={{ fontSize: "9.5px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: "#fff", whiteSpace: "nowrap" }}>
             {number.participant_count}{number.max_members ? `/${number.max_members}` : ""}人
           </span>
         </div>

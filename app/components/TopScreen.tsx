@@ -511,24 +511,24 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
         const shown = section === "pl" ? filteredLessons : filteredEvents;
         const noun = section === "pl" ? "プライベートレッスン" : "イベント";
         return (
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", padding: "12px 16px" }}>
           {loading && all.length === 0
-            ? <CardSkeleton />
+            ? <div style={{ gridColumn: "1 / -1" }}><CardSkeleton /></div>
             : !loading && all.length === 0
-              ? <EmptyState icon={CalendarX}>まだ{noun}がありません</EmptyState>
+              ? <div style={{ gridColumn: "1 / -1" }}><EmptyState icon={CalendarX}>まだ{noun}がありません</EmptyState></div>
               : !loading && shown.length === 0
-                ? <EmptyState icon={SearchX}>条件に合う{noun}がありません</EmptyState>
+                ? <div style={{ gridColumn: "1 / -1" }}><EmptyState icon={SearchX}>条件に合う{noun}がありません</EmptyState></div>
                 : shown.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => onPLClick(l)} />)}
         </div>
         );
       })() : section === "number" ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", padding: "12px 16px" }}>
           {loading && numbers.length === 0
-            ? <CardSkeleton />
+            ? <div style={{ gridColumn: "1 / -1" }}><CardSkeleton /></div>
             : !loading && numbers.length === 0
-              ? <EmptyState icon={CalendarX}>まだNUMBERがありません</EmptyState>
+              ? <div style={{ gridColumn: "1 / -1" }}><EmptyState icon={CalendarX}>まだNUMBERがありません</EmptyState></div>
               : !loading && filteredNumbers.length === 0
-                ? <EmptyState icon={SearchX}>条件に合うNUMBERがありません</EmptyState>
+                ? <div style={{ gridColumn: "1 / -1" }}><EmptyState icon={SearchX}>条件に合うNUMBERがありません</EmptyState></div>
                 : filteredNumbers.map((n, i) => <NumberCard key={n.id} number={n} index={i} onClick={() => onNumberClick(n)} />)}
         </div>
       ) : (

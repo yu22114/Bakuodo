@@ -173,7 +173,7 @@ export function FollowingActivityScreen({ user, onCardClick, onPLClick, onViewPr
             {events.length > 0 && (
               <div>
                 <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#EAB308", letterSpacing: "0.1em", marginBottom: "10px" }}>EVENT</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                   {events.map(({ lesson, participants }, i) => (
                     <div key={lesson.id} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                       <PLCard lesson={lesson} index={i} onClick={() => onPLClick(lesson)} />
