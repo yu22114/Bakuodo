@@ -8,7 +8,7 @@ import { GENRES, GENRE_COLORS, genreLabel, todayStr, toggleGenre as toggleGenreL
 import { Loading } from "./Loading";
 import { useSwipeBack } from "../lib/useSwipeBack";
 
-// PostScreenのNUMBER投稿フォームと同じ形（イベント名＋想定練習期間の1日目・2日目、
+// PostScreenのNUMBER投稿フォームと同じ形（イベント名＋想定練習期間の開始・終了、
 // 最寄り駅・スタジオ代・時刻は持たない）
 export function EditNumberScreen({ numberId, user, onBack, onSaved }: {
   numberId: string;
@@ -88,10 +88,10 @@ export function EditNumberScreen({ numberId, user, onBack, onSaved }: {
         {error && <div style={{ padding: "10px 12px", background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: "6px", color: "#DC2626", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>{error}</div>}
         <div><label style={lbl}>イベント名 <span style={{ color: "#EC4899" }}>*</span></label><input style={inp} placeholder="例: 〇〇ダンスショーケース" maxLength={100} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-          <div><label style={lbl}>想定練習期間 1日目 <span style={{ color: "#EC4899" }}>*</span></label>
+          <div><label style={lbl}>想定練習期間 開始 <span style={{ color: "#EC4899" }}>*</span></label>
             <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={form.date} onChange={e => { const v = e.target.value; setForm(f => ({ ...f, date: v })); if (endDate && endDate < v) setEndDate(""); }} /></div>
           </div>
-          <div><label style={lbl}>2日目 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label>
+          <div><label style={lbl}>終了 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label>
             <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={form.date || todayStr()} value={endDate} onChange={e => setEndDate(e.target.value)} disabled={!form.date} /></div>
           </div>
         </div>

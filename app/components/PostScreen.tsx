@@ -283,12 +283,12 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
 
         {tab === "number" ? (<>
           <div><label style={lbl}>イベント名 <span style={{ color: "#EC4899" }}>*</span></label><input style={inp} placeholder="例: 〇〇ダンスショーケース" maxLength={100} value={numberForm.title} onChange={e => setNumberForm(f => ({ ...f, title: e.target.value }))} /></div>
-          {/* 想定練習期間：マイコミュニティの掲示板作成と同じ「1日目・2日目」の範囲指定 */}
+          {/* 想定練習期間：マイコミュニティの掲示板作成と同じ「開始・終了」の範囲指定 */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-            <div><label style={lbl}>想定練習期間 1日目 <span style={{ color: "#EC4899" }}>*</span></label>
+            <div><label style={lbl}>想定練習期間 開始 <span style={{ color: "#EC4899" }}>*</span></label>
               <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={numberForm.date} onChange={e => { const v = e.target.value; if (v && v < todayStr()) return; setNumberForm(f => ({ ...f, date: v })); if (numberEndDate && numberEndDate < v) setNumberEndDate(""); }} /></div>
             </div>
-            <div><label style={lbl}>2日目 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label>
+            <div><label style={lbl}>終了 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label>
               <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={numberForm.date || todayStr()} value={numberEndDate} onChange={e => setNumberEndDate(e.target.value)} disabled={!numberForm.date} /></div>
             </div>
           </div>
