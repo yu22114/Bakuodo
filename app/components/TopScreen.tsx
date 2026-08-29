@@ -20,7 +20,7 @@ export type TopSection = "number" | "cypher" | "pl" | "event" | "spots";
 
 // タブの並び順・色・ラベル。NUMBERを一番左、CYPHERを真ん中にする。
 // EVENTはレッスンと同じ仕組みで動く（DBのkind列で見分ける）
-const SECTION_ORDER = ["number", "pl", "cypher", "event", "spots"] as const;
+const SECTION_ORDER = ["number", "event", "cypher", "pl", "spots"] as const;
 const SECTION_COLOR: Record<TopSection, string> = {
   number: "#EC4899",
   cypher: "#DC2626",

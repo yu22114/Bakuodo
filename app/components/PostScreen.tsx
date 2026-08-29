@@ -241,7 +241,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
         {/* タブはホーム画面と同じ、丸い枠の中で選択中だけ浮くセグメント風 */}
         <div style={{ padding: "10px 16px", background: "#0D0D0D", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         {(() => {
-          const shownTabs = ([["number", "NUMBER", "#EC4899"], ["cypher", "CYPHER", "#DC2626"], ["pl", "LESSON", "#2563EB"], ["event", "EVENT", "#EAB308"]] as const).filter(([key]) => visibleTabs.includes(key));
+          const shownTabs = ([["number", "NUMBER", "#EC4899"], ["event", "EVENT", "#EAB308"], ["cypher", "CYPHER", "#DC2626"], ["pl", "LESSON", "#2563EB"]] as const).filter(([key]) => visibleTabs.includes(key));
           return (
             <div style={{ display: "flex", background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", borderRadius: "14px", padding: "4px", position: "relative", boxShadow: "inset 0 2px 5px rgba(0,0,0,0.4)" }}>
               {/* 選択中を示す背景の板がヌルッと隣のタブへ移動する（下バーと同じ仕組み）。
