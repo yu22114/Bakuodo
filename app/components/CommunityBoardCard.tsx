@@ -9,6 +9,8 @@ export type Board = {
   event_date: string | null; event_start_date: string | null; event_end_date: string | null;
   creator_id: string;
   instructors: { id: string; name: string; instagram: string | null }[];
+  // 添付画像（複数枚）。カード表紙のサムネイルには1枚目だけを使う
+  image_urls: string[];
 };
 
 // 公演日程を「9/20(日)」のように短く表示する
@@ -44,8 +46,15 @@ export function CommunityBoardCard({ board: b, isOwn, onClick, onEdit, onDelete 
             <button onClick={e => { e.stopPropagation(); onDelete(); }} title="削除" style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "6px", cursor: "pointer", color: "rgba(255,255,255,0.75)", padding: "6px", display: "flex" }}><Trash2 size={13} /></button>
           </div>
         )}
-        <div style={{ fontSize: "20px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", paddingRight: isOwn ? "60px" : 0 }}>【{b.title}】</div>
-        {b.subtitle && <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", marginTop: "4px" }}>{b.subtitle}</div>}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", paddingRight: isOwn ? "60px" : 0 }}>
+          {b.image_urls[0] && (
+            <img src={b.image_urls[0]} alt="" style={{ width: "40px", height: "40px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }} />
+          )}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: "20px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>【{b.title}】</div>
+            {b.subtitle && <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", marginTop: "4px" }}>{b.subtitle}</div>}
+          </div>
+        </div>
         {(b.event_start_date || b.event_date) && (
           <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "11px", color: "rgba(255,255,255,0.65)", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "5px" }}>
             <Calendar size={10} color="rgba(255,255,255,0.4)" />
