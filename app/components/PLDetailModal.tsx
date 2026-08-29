@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, MapPin, User, X, Check, BookOpen, Share2, Trash2 } from "lucide-react";
+import { Clock, MapPin, User, X, Check, BookOpen, Share2, Trash2, Bookmark } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { PrivateLesson, ParticipantProfile } from "../lib/types";
@@ -18,7 +18,7 @@ const LEVEL_LABELS: Record<string, string> = {
   advanced: "上級者向け",
 };
 
-export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onViewProfile, user, keepOpenOnJoin }: {
+export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onViewProfile, user, keepOpenOnJoin, saved, onToggleSave }: {
   lesson: PrivateLesson | null;
   onClose: () => void;
   joined: boolean;
@@ -27,6 +27,9 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   onViewProfile: (id: string) => void;
   user: SupabaseUser | null; // 未ログイン閲覧（/l/[id] 共有ページ）でも表示できる
   keepOpenOnJoin?: boolean; // /l/[id] では参加後も閉じない（onCloseがページ遷移のため）
+  // 「気になる」（参加とは別の軽いブックマーク）。EVENTだけが持つ
+  saved?: boolean;
+  onToggleSave?: (id: string) => void;
 }) {
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
@@ -134,6 +137,13 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
             <h2 style={{ margin: 0, fontSize: "24px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", lineHeight: 1.1 }}>{lesson.title}</h2>
           </div>
           <div style={{ display: "flex", flexShrink: 0, marginLeft: "12px" }}>
+            {/* 「気になる」：参加ほどの決意はないが後で見返したい人向けの軽いブックマーク。EVENTだけに出す */}
+            {isEvent && onToggleSave && (
+              <button onClick={() => { hapticTap(); onToggleSave(lesson.id); }} title="気になる"
+                style={{ background: "none", border: "none", color: saved ? accent : "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Bookmark size={19} fill={saved ? accent : "none"} />
+              </button>
+            )}
             <button onClick={handleShare} title="共有" style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Share2 size={19} /></button>
             <button onClick={onClose} style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><X size={22} /></button>
           </div>
