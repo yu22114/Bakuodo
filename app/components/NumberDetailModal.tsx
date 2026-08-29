@@ -24,8 +24,10 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
   joined: boolean;
   onJoin: (id: string) => void;
   onViewProfile: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDeleted: (id: string) => void;
+  // ホーム画面のカードから開いた時は渡さない＝編集・削除ボタンを出さない。
+  // プロフィール画面の「主催」タブから開いた時だけ渡す（そちらで編集・削除できるようにするため）
+  onEdit?: (id: string) => void;
+  onDeleted?: (id: string) => void;
   user: SupabaseUser | null;
   keepOpenOnJoin?: boolean; // /n/[id] では参加後も閉じない（onCloseがページ遷移のため）
 }) {
@@ -41,7 +43,7 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
     setDeleting(false);
     if (error) { showToast("削除に失敗しました"); return; }
     setDeleteConfirm(false);
-    onDeleted(number.id);
+    onDeleted?.(number.id);
   };
 
   const numberId = number.id;
@@ -191,7 +193,9 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
             );
           })())}
 
-          {isOwn && (
+          {/* 編集・削除はプロフィール画面の「主催」タブからだけ行える
+              （onEdit/onDeletedが渡されている時だけ、つまりホーム画面のカードからは出さない） */}
+          {isOwn && onEdit && onDeleted && (
             <div style={{ display: "flex", gap: "8px", marginTop: "20px" }}>
               <button onClick={() => onEdit(number.id)}
                 style={{ flex: 1, padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", background: "transparent", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>

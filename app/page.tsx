@@ -35,6 +35,9 @@ export default function BakuOdori() {
   const [plPending, setPlPending] = useState<string[]>([]);
   const [detail, setDetail] = useState<Cypher | null>(null);
   const [numberDetail, setNumberDetail] = useState<DanceNumber | null>(null);
+  // NumberDetailModalに編集・削除ボタンを出すかどうか。ホーム画面のカードから開いた時はfalse、
+  // プロフィール画面の「主催」タブから開いた時だけtrueにする
+  const [numberDetailEditable, setNumberDetailEditable] = useState(false);
   const [numberJoined, setNumberJoined] = useState<string[]>([]);
   const [editNumberId, setEditNumberId] = useState<string | null>(null);
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -140,10 +143,11 @@ export default function BakuOdori() {
     if (lesson) setPlDetail(lesson);
   };
 
-  // NUMBER IDからフルデータを取得してNumberDetailModalを開く
+  // NUMBER IDからフルデータを取得してNumberDetailModalを開く（プロフィール画面の
+  // 「主催」タブから呼ばれる想定なので、編集・削除ボタンを出すtrueにしておく）
   const openNumberDetail = async (numberId: string) => {
     const n = await fetchNumberById(numberId);
-    if (n) setNumberDetail(n);
+    if (n) { setNumberDetail(n); setNumberDetailEditable(true); }
   };
 
   // NUMBERの参加ボタン。承認制がないのでjoined/unjoinedのトグルだけでよい
@@ -379,7 +383,7 @@ export default function BakuOdori() {
           <LoginScreen />
         ) : (
           <>
-            {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} onPLClick={setPlDetail} onNumberClick={setNumberDetail} onViewProfile={id => setProfileStack(s => [...s, id])} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} section={topSection} onSectionChange={setTopSection} accountType={accountType} />}
+            {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} onPLClick={setPlDetail} onNumberClick={n => { setNumberDetail(n); setNumberDetailEditable(false); }} onViewProfile={id => setProfileStack(s => [...s, id])} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} section={topSection} onSectionChange={setTopSection} accountType={accountType} />}
             {screen === "following" && <FollowingActivityScreen user={user} onCardClick={setDetail} onPLClick={setPlDetail} onViewProfile={id => setProfileStack(s => [...s, id])} refreshKey={refreshKey} />}
             {screen === "post"    && <PostScreen onNav={setScreen} user={user} initialTab={topSection === "pl" || topSection === "event" || topSection === "number" ? topSection : "cypher"} accountType={accountType} />}
             {screen === "profile" && <PublicProfileScreen profileId={user.id} currentUserId={user.id} onEdit={() => setScreen("edit")} onLogout={() => supabase.auth.signOut()} onViewProfile={id => setProfileStack(s => [...s, id])} onCypherClick={openCypherDetail} onLessonClick={openLessonDetail} onNumberClick={openNumberDetail} onEditCypher={id => setEditCypherId(id)} onEditLesson={id => setEditLessonId(id)} onEditNumber={id => setEditNumberId(id)} />}
@@ -388,7 +392,7 @@ export default function BakuOdori() {
             <BottomNav current={screen} onNav={s => { setScreen(s); setProfileStack([]); }} onProfileLongPress={() => setShowSwitchAccount(true)} />
             {detail && <DetailModal cypher={detail} onClose={() => setDetail(null)} joined={joined.includes(detail.id)} pending={pendingJoins.includes(detail.id)} onJoin={handleJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} />}
             {plDetail && <PLDetailModal lesson={plDetail} onClose={() => setPlDetail(null)} joined={plJoined.includes(plDetail.id)} pending={plPending.includes(plDetail.id)} onJoin={handlePLJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} />}
-            {numberDetail && <NumberDetailModal number={numberDetail} onClose={() => setNumberDetail(null)} joined={numberJoined.includes(numberDetail.id)} onJoin={handleNumberJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} onEdit={id => { setNumberDetail(null); setEditNumberId(id); }} onDeleted={() => { setNumberDetail(null); setRefreshKey(k => k + 1); }} user={user} />}
+            {numberDetail && <NumberDetailModal number={numberDetail} onClose={() => setNumberDetail(null)} joined={numberJoined.includes(numberDetail.id)} onJoin={handleNumberJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} onEdit={numberDetailEditable ? id => { setNumberDetail(null); setEditNumberId(id); } : undefined} onDeleted={numberDetailEditable ? () => { setNumberDetail(null); setRefreshKey(k => k + 1); } : undefined} user={user} />}
             {confirmId && <ConfirmModal onConfirm={handleConfirmCancel} onCancel={() => setConfirmId(null)} />}
             {showSwitchAccount && (
               <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }} onClick={() => setShowSwitchAccount(false)}>

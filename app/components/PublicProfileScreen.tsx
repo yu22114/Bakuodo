@@ -561,7 +561,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     </div>
   );
 
-  // 主催NUMBER一覧（他人のプロフィールでも同じ見た目で出す。ホーム画面と同じくNUMBERを先頭に置く）
+  // 主催NUMBER一覧（他人のプロフィールでも同じ見た目で出す。NUMBERは一番最後に置く）
   const numberRows = hostedNumbers.length > 0 && (
     <div style={{ marginTop: "12px" }}>
       <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#EC4899", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#EC489914", borderRadius: "3px", margin: "0 0 6px 2px" }}>NUMBER</div>
@@ -807,19 +807,11 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                     )}
                   </>)
             ) : (
-              // 主催タブ：NUMBER / CYPHER / P LESSON / EVENT を種類ごとに見出しを分けて表示する
-              // （ホーム画面のタブ順と同じくNUMBERを先頭に置く）
+              // 主催タブ：CYPHER / P LESSON / EVENT / NUMBER を種類ごとに見出しを分けて表示する
+              // （NUMBERは一番最後に置く）
               hostedNumbers.length === 0 && hostedCyphers.length === 0 && hostedLessons.length === 0
                 ? <EmptyState icon={CalendarX} padding="32px">まだ主催しているサイファー・レッスン・NUMBERはありません</EmptyState>
                 : (<>
-                    {hostedNumbers.length > 0 && (
-                      <div style={{ marginBottom: (hostedCyphers.length > 0 || hostedPlList.length > 0 || hostedEventList.length > 0) ? "12px" : 0 }}>
-                        <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#EC4899", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#EC489914", borderRadius: "3px", margin: "0 0 6px 2px" }}>NUMBER</div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                          {hostedNumbers.map(n => renderNumberRow(n))}
-                        </div>
-                      </div>
-                    )}
                     {hostedCyphers.length > 0 && (
                       <div style={{ marginBottom: (hostedPlList.length > 0 || hostedEventList.length > 0) ? "12px" : 0 }}>
                         <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#DC2626", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#DC262614", borderRadius: "3px", margin: "0 0 6px 2px" }}>CYPHER</div>
@@ -859,10 +851,18 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                       </div>
                     )}
                     {hostedEventList.length > 0 && (
-                      <div>
+                      <div style={{ marginBottom: hostedNumbers.length > 0 ? "12px" : 0 }}>
                         <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#EAB308", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#EAB30814", borderRadius: "3px", margin: "0 0 6px 2px" }}>EVENT</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                           {hostedEventList.map(l => renderLessonRow(l, false))}
+                        </div>
+                      </div>
+                    )}
+                    {hostedNumbers.length > 0 && (
+                      <div>
+                        <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#EC4899", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#EC489914", borderRadius: "3px", margin: "0 0 6px 2px" }}>NUMBER</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                          {hostedNumbers.map(n => renderNumberRow(n))}
                         </div>
                       </div>
                     )}
@@ -885,8 +885,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                   );})}
                 </div>
           )}
-          {!isOwn && numberRows}
           {!isOwn && lessonRows}
+          {!isOwn && numberRows}
           {/* 下の固定ナビに隠れないための余白（自分のプロフィールタブ表示時のみ） */}
           {!onBack && <div style={{ height: "80px", flexShrink: 0 }} />}
         </>)}
