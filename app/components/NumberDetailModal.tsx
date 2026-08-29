@@ -4,7 +4,7 @@ import { Calendar, MapPin, User, X, Check, Zap, Share2, Pencil, Trash2, Star } f
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { DanceNumber, ParticipantProfile } from "../lib/types";
-import { dateBadgeParts, timeUntil, GENRE_COLORS, genreLabel } from "../lib/constants";
+import { dateBadgeParts, timeUntil } from "../lib/constants";
 import { ParticipantBar } from "./ParticipantBar";
 import { showToast } from "./Toast";
 import { hapticTap } from "../lib/haptics";
@@ -52,7 +52,6 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
   // 複数日にまたがる練習期間なので、「終了」判定は2日目（あれば）を基準にする
   const isEnded = timeUntil(number.ends_at ?? number.starts_at) === "終了";
   const isOwn = organizerId === user?.id;
-  const genreColor = GENRE_COLORS[number.genres[0]] ?? "#EC4899";
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
   const [justJoined, setJustJoined] = useState(false);
@@ -96,18 +95,9 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><X size={22} /></button>
         </div>
         <div style={{ overflowY: "auto", padding: "8px 20px 20px", flex: 1 }}>
-          {number.genres[0] && (() => {
-            const label = genreLabel(number.genres[0]).toUpperCase();
-            return (
-              <div style={{ position: "relative", overflow: "hidden", height: "44px", marginBottom: "4px" }}>
-                <div aria-hidden="true" style={{ position: "absolute", right: "0", bottom: "-6px", fontSize: `${Math.round(Math.min(56, Math.round(280 / label.length)))}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: genreColor + "40", pointerEvents: "none", userSelect: "none" }}>
-                  {label}
-                </div>
-              </div>
-            );
-          })()}
+          {/* カード表紙ではジャンル名を背景に大きく出しているが、詳細画面ではあえて出さない */}
           {number.image_url && (
-            <img src={number.image_url} alt="" style={{ width: "100%", maxHeight: "180px", objectFit: "cover", borderRadius: "10px", marginBottom: "16px", display: "block" }} />
+            <img src={number.image_url} alt="" style={{ width: "100%", maxHeight: "260px", objectFit: "cover", borderRadius: "10px", marginTop: "8px", marginBottom: "16px", display: "block" }} />
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
             <button onClick={() => onViewProfile(organizerId)}

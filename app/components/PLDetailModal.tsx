@@ -4,7 +4,7 @@ import { Clock, MapPin, User, X, Check, BookOpen, Share2, Trash2 } from "lucide-
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { PrivateLesson, ParticipantProfile } from "../lib/types";
-import { formatDate, timeUntil, formatEndTime, timeAgo, splitLocation, GENRE_COLORS, genreLabel } from "../lib/constants";
+import { formatDate, timeUntil, formatEndTime, timeAgo, splitLocation } from "../lib/constants";
 import { useComments } from "../lib/useComments";
 import { hapticTap } from "../lib/haptics";
 import type { EventApplicationAnswers } from "../lib/participation";
@@ -97,8 +97,6 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   // EVENTの黄色は白文字だと読みにくいので、accentを背景に敷く箇所だけ文字色を切り替える
   const onAccent = isEvent ? "#171717" : "#fff";
   const noun = isEvent ? "イベント" : "レッスン";
-  // ホーム画面のカードと同じ、背景に敷く色付きジャンル名
-  const genreColor = GENRE_COLORS[lesson.genres[0]] ?? accent;
 
   const isFull = !joined && !pending && lesson.max_members !== null && participantsFetched && participants.length >= lesson.max_members;
   // 定員に達した後も申請自体は通るので、承認待ち＝キャンセル待ちの人がいるかどうか（EVENTのみ表示）
@@ -142,20 +140,9 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
         </div>
 
         <div style={{ overflowY: "auto", padding: "8px 20px 0", flex: 1 }}>
-          {/* ホーム画面のカードと同じ、背景に敷く色付きのジャンル名。×・共有ボタンとは被らないよう、
-              ヘッダーの下の専用の帯に置く */}
-          {lesson.genres[0] && (() => {
-            const label = genreLabel(lesson.genres[0]).toUpperCase();
-            return (
-              <div style={{ position: "relative", overflow: "hidden", height: "44px", marginBottom: "4px" }}>
-                <div aria-hidden="true" style={{ position: "absolute", right: "0", bottom: "-6px", fontSize: `${Math.round(Math.min(56, Math.round(280 / label.length)))}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: genreColor + "40", pointerEvents: "none", userSelect: "none" }}>
-                  {label}
-                </div>
-              </div>
-            );
-          })()}
+          {/* カード表紙ではジャンル名を背景に大きく出しているが、詳細画面ではあえて出さない */}
           {lesson.image_url && (
-            <img src={lesson.image_url} alt="" style={{ width: "100%", maxHeight: "180px", objectFit: "cover", borderRadius: "10px", marginBottom: "16px", display: "block" }} />
+            <img src={lesson.image_url} alt="" style={{ width: "100%", maxHeight: "260px", objectFit: "cover", borderRadius: "10px", marginTop: "8px", marginBottom: "16px", display: "block" }} />
           )}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
             {!isEvent && (

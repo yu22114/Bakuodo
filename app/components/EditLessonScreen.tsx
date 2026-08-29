@@ -9,8 +9,9 @@ import { StationSearch } from "./StationSearch";
 import { Loading } from "./Loading";
 import { useSwipeBack } from "../lib/useSwipeBack";
 
-// 添付画像まわり（CYPHERは対象外）。アバターと違い正方形には切り抜かず、長辺だけ縮小する
-const POST_IMAGE_MAX = 1600;
+// 添付画像まわり（CYPHERは対象外）。縦4:横3の縦長に中央で切り抜いてから縮小する
+const POST_IMAGE_WIDTH = 900;
+const POST_IMAGE_HEIGHT = 1200; // 900 * 4/3
 
 function loadImageElement(blob: Blob): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -33,15 +34,24 @@ async function convertHeicIfNeeded(file: File): Promise<Blob> {
 async function uploadPostImage(userId: string, file: File): Promise<string> {
   const source = await convertHeicIfNeeded(file);
   const img = await loadImageElement(source);
-  const longSide = Math.max(img.naturalWidth, img.naturalHeight);
-  const scale = longSide > POST_IMAGE_MAX ? POST_IMAGE_MAX / longSide : 1;
+  // 縦4:横3になるよう、中央を基準に元画像から切り出す範囲を決める
+  const targetRatio = POST_IMAGE_WIDTH / POST_IMAGE_HEIGHT; // 3/4
+  const srcRatio = img.naturalWidth / img.naturalHeight;
+  let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+  if (srcRatio > targetRatio) {
+    sw = img.naturalHeight * targetRatio;
+    sx = (img.naturalWidth - sw) / 2;
+  } else {
+    sh = img.naturalWidth / targetRatio;
+    sy = (img.naturalHeight - sh) / 2;
+  }
   const canvas = document.createElement("canvas");
-  canvas.width = Math.round(img.naturalWidth * scale);
-  canvas.height = Math.round(img.naturalHeight * scale);
+  canvas.width = POST_IMAGE_WIDTH;
+  canvas.height = POST_IMAGE_HEIGHT;
   const ctx = canvas.getContext("2d");
   URL.revokeObjectURL(img.src);
   if (!ctx) throw new Error("画像の処理に失敗しました");
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, POST_IMAGE_WIDTH, POST_IMAGE_HEIGHT);
   const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.85));
   if (!blob) throw new Error("画像の処理に失敗しました");
   const path = `${userId}/${crypto.randomUUID()}.jpg`;
