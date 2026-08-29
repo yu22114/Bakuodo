@@ -29,8 +29,8 @@ export const GENRES: GenreKey[] = [
 ];
 
 // LESSON・EVENT・NUMBERの投稿・絞り込みだけで使う拡張ジャンル一覧。
-// CYPHERは従来通りGENRES（8種）のまま
-export const EXTENDED_GENRES: GenreKey[] = [...GENRES, "Girls", "Jazz", "Freestyle"];
+// CYPHERは従来通りGENRES（8種）のまま。All Styleは一番右（最後）に来るよう並び替える
+export const EXTENDED_GENRES: GenreKey[] = [...GENRES.filter(g => g !== "All Style"), "Girls", "Jazz", "Freestyle", "All Style"];
 
 // ジャンル選択のトグル。カードの背景にジャンル名を大きく出すようになったので、
 // 選べるのは1つだけ。選んでいるものをもう一度押すと解除。
