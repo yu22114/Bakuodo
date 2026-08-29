@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Calendar, MapPin, User, X, Check, Zap, Share2, Pencil, Trash2, Star, Bookmark } from "lucide-react";
+import { Calendar, MapPin, User, X, Check, Zap, Share2, Pencil, Trash2, Star, Bookmark, Download, Loader } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { DanceNumber, ParticipantProfile } from "../lib/types";
@@ -14,6 +14,131 @@ function formatJaDate(dateStr: string) {
   const d = new Date(`${dateStr}T00:00:00`);
   const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
   return `${d.getMonth() + 1}/${d.getDate()}(${weekdays[d.getDay()]})`;
+}
+
+// Instagramストーリーズ用の画像を作る（縦9:16）。カードのフライヤー組みと同じ考え方で、
+// 添付画像があれば背景に、無ければジャンルカラーのグラデーションを敷く
+const STORY_W = 1080;
+const STORY_H = 1920;
+
+function loadImageEl(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("画像の読み込みに失敗しました"));
+    img.src = src;
+  });
+}
+
+// canvasは自動改行してくれないので、1文字ずつ測って折り返す（日本語タイトルでも自然に折り返る）
+function wrapCanvasText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number): string[] {
+  const lines: string[] = [];
+  let line = "";
+  for (const ch of Array.from(text)) {
+    const test = line + ch;
+    if (line && ctx.measureText(test).width > maxWidth) {
+      lines.push(line);
+      line = ch;
+      if (lines.length === maxLines - 1) break;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+async function generateStoryImage(opts: { title: string; imageUrl: string | null; accentColor: string; tag: string; by: string; meta: string[]; linkPath: string }): Promise<Blob> {
+  await document.fonts.load("italic 900 84px 'Playfair Display'");
+  await document.fonts.load("700 32px 'Noto Sans JP'");
+  const canvas = document.createElement("canvas");
+  canvas.width = STORY_W; canvas.height = STORY_H;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("画像の作成に失敗しました");
+
+  let drewPhoto = false;
+  if (opts.imageUrl) {
+    try {
+      const img = await loadImageEl(opts.imageUrl);
+      const scale = Math.max(STORY_W / img.naturalWidth, STORY_H / img.naturalHeight);
+      const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
+      ctx.drawImage(img, (STORY_W - dw) / 2, (STORY_H - dh) / 2, dw, dh);
+      drewPhoto = true;
+    } catch { /* 読み込めなければ下のグラデーションにフォールバック */ }
+  }
+  if (!drewPhoto) {
+    const bg = ctx.createLinearGradient(0, 0, STORY_W * 0.3, STORY_H);
+    bg.addColorStop(0, opts.accentColor + "99");
+    bg.addColorStop(0.55, "#1c1c1c");
+    bg.addColorStop(1, "#0a0a0a");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, STORY_W, STORY_H);
+  }
+
+  const shade = ctx.createLinearGradient(0, 0, 0, STORY_H);
+  shade.addColorStop(0, "rgba(0,0,0,0.25)");
+  shade.addColorStop(0.5, "rgba(0,0,0,0.55)");
+  shade.addColorStop(1, "rgba(0,0,0,0.96)");
+  ctx.fillStyle = shade;
+  ctx.fillRect(0, 0, STORY_W, STORY_H);
+
+  const marginX = 84;
+  const safeBottom = STORY_H - 240;
+
+  ctx.font = "700 30px 'Noto Sans JP'";
+  const tagW = ctx.measureText(opts.tag).width + 44;
+  ctx.fillStyle = opts.accentColor;
+  ctx.beginPath();
+  (ctx as any).roundRect ? (ctx as any).roundRect(marginX, 220, tagW, 56, 10) : ctx.rect(marginX, 220, tagW, 56);
+  ctx.fill();
+  ctx.fillStyle = "#111";
+  ctx.textBaseline = "middle";
+  ctx.fillText(opts.tag, marginX + 22, 220 + 30);
+
+  ctx.fillStyle = "#fff";
+  ctx.font = "italic 900 84px 'Playfair Display','Noto Sans JP',sans-serif";
+  ctx.textBaseline = "alphabetic";
+  const titleLines = wrapCanvasText(ctx, opts.title, STORY_W - marginX * 2, 3);
+  let y = safeBottom - (titleLines.length - 1) * 90 - 220;
+  for (const line of titleLines) {
+    ctx.fillText(line, marginX, y);
+    y += 90;
+  }
+
+  ctx.font = "500 34px 'Noto Sans JP'";
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  let metaY = y + 30;
+  ctx.fillText(opts.by, marginX, metaY);
+  metaY += 48;
+  for (const line of opts.meta) {
+    ctx.fillText(line, marginX, metaY);
+    metaY += 48;
+  }
+
+  ctx.font = "700 30px 'Noto Sans JP'";
+  ctx.fillStyle = "rgba(255,255,255,0.6)";
+  const host = typeof window !== "undefined" ? window.location.host : "bakuodo.vercel.app";
+  ctx.fillText(`爆踊 → ${host}${opts.linkPath}`, marginX, STORY_H - 100);
+
+  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.92));
+  if (!blob) throw new Error("画像の作成に失敗しました");
+  return blob;
+}
+
+// 作った画像をOSの共有シートに渡す。iPhone Safariでは「画像を保存」を選べば
+// カメラロールに入り、そこから手動でInstagramストーリーズに載せてもらう流れになる
+async function shareStoryImage(blob: Blob, filename: string, title: string) {
+  const file = new File([blob], filename, { type: "image/jpeg" });
+  if (typeof navigator !== "undefined" && (navigator as any).canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title });
+      return;
+    } catch (e) {
+      if ((e as any)?.name === "AbortError") return; // 共有をやめただけ
+    }
+  }
+  window.open(URL.createObjectURL(blob), "_blank");
 }
 
 // DetailModal（CYPHER用）とほぼ同じ作り。限定公開・参加承認制・コメントは持たない分シンプル。
@@ -60,6 +185,8 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
   const [justJoined, setJustJoined] = useState(false);
+  // ストーリーズ用画像の作成中（少し時間がかかるため連打防止も兼ねる）
+  const [storyLoading, setStoryLoading] = useState(false);
 
   useEffect(() => {
     async function fetchParticipants() {
@@ -91,6 +218,27 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
     }
   };
 
+  // ストーリーズ投稿用の画像を作って共有シートに渡す（宣伝素材として使ってもらう用）
+  const handleShareStory = async () => {
+    if (storyLoading) return;
+    setStoryLoading(true);
+    try {
+      const blob = await generateStoryImage({
+        title: number.title,
+        imageUrl: number.image_url,
+        accentColor: "#EC4899",
+        tag: "NUMBER",
+        by: `by ${number.organizer.dancer_name}`,
+        meta: [`${start.month}/${start.day}(${start.weekday})${end ? `〜${end.month}/${end.day}(${end.weekday})` : ""}`, number.location],
+        linkPath: `/n/${numberId}`,
+      });
+      await shareStoryImage(blob, `bakuodo-${numberId}.jpg`, number.title);
+    } catch {
+      showToast("画像の作成に失敗しました");
+    }
+    setStoryLoading(false);
+  };
+
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", padding: "0 12px 12px", boxSizing: "border-box" }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", maxHeight: "88vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 -4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
@@ -103,6 +251,11 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
               <Bookmark size={19} fill={saved ? "#EC4899" : "none"} />
             </button>
           )}
+          {/* ストーリーズ投稿用の画像を作って共有シートに渡す（宣伝素材として使ってもらう用） */}
+          <button onClick={handleShareStory} disabled={storyLoading} title="ストーリーズ用に画像を保存"
+            style={{ background: "none", border: "none", color: "#F0F0F0", cursor: storyLoading ? "default" : "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: storyLoading ? 0.5 : 1 }}>
+            {storyLoading ? <Loader size={19} style={{ animation: "spin 0.7s linear infinite" }} /> : <Download size={19} />}
+          </button>
           <button onClick={handleShare} title="共有" style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Share2 size={19} /></button>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><X size={22} /></button>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, MapPin, User, X, Check, BookOpen, Share2, Trash2, Bookmark } from "lucide-react";
+import { Clock, MapPin, User, X, Check, BookOpen, Share2, Trash2, Bookmark, Download, Loader } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { PrivateLesson, ParticipantProfile } from "../lib/types";
@@ -17,6 +17,139 @@ const LEVEL_LABELS: Record<string, string> = {
   intermediate: "中級者向け",
   advanced: "上級者向け",
 };
+
+// Instagramストーリーズ用の画像を作る（縦9:16）。カードのフライヤー組みと同じ考え方で、
+// 添付画像があれば背景に、無ければ種別カラーのグラデーションを敷く
+const STORY_W = 1080;
+const STORY_H = 1920;
+
+function loadImageEl(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("画像の読み込みに失敗しました"));
+    img.src = src;
+  });
+}
+
+// canvasは自動改行してくれないので、1文字ずつ測って折り返す（日本語タイトルでも自然に折り返る）
+function wrapCanvasText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number): string[] {
+  const lines: string[] = [];
+  let line = "";
+  for (const ch of Array.from(text)) {
+    const test = line + ch;
+    if (line && ctx.measureText(test).width > maxWidth) {
+      lines.push(line);
+      line = ch;
+      if (lines.length === maxLines - 1) break;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+async function generateStoryImage(opts: { title: string; imageUrl: string | null; accentColor: string; tag: string; by: string; meta: string[]; linkPath: string }): Promise<Blob> {
+  await document.fonts.load("italic 900 84px 'Playfair Display'");
+  await document.fonts.load("700 32px 'Noto Sans JP'");
+  const canvas = document.createElement("canvas");
+  canvas.width = STORY_W; canvas.height = STORY_H;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("画像の作成に失敗しました");
+
+  // 背景：添付画像があればカバー表示、無ければアクセントカラーのグラデーション
+  let drewPhoto = false;
+  if (opts.imageUrl) {
+    try {
+      const img = await loadImageEl(opts.imageUrl);
+      const scale = Math.max(STORY_W / img.naturalWidth, STORY_H / img.naturalHeight);
+      const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
+      ctx.drawImage(img, (STORY_W - dw) / 2, (STORY_H - dh) / 2, dw, dh);
+      drewPhoto = true;
+    } catch { /* 読み込めなければ下のグラデーションにフォールバック */ }
+  }
+  if (!drewPhoto) {
+    const bg = ctx.createLinearGradient(0, 0, STORY_W * 0.3, STORY_H);
+    bg.addColorStop(0, opts.accentColor + "99");
+    bg.addColorStop(0.55, "#1c1c1c");
+    bg.addColorStop(1, "#0a0a0a");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, STORY_W, STORY_H);
+  }
+
+  // 下から黒く沈める
+  const shade = ctx.createLinearGradient(0, 0, 0, STORY_H);
+  shade.addColorStop(0, "rgba(0,0,0,0.25)");
+  shade.addColorStop(0.5, "rgba(0,0,0,0.55)");
+  shade.addColorStop(1, "rgba(0,0,0,0.96)");
+  ctx.fillStyle = shade;
+  ctx.fillRect(0, 0, STORY_W, STORY_H);
+
+  const marginX = 84;
+  // ストーリーズのUI（フォロー中バー・返信欄など）に隠れないよう、上下に余白を取る
+  const safeBottom = STORY_H - 240;
+
+  // ジャンル/種別タグ
+  ctx.font = "700 30px 'Noto Sans JP'";
+  const tagW = ctx.measureText(opts.tag).width + 44;
+  ctx.fillStyle = opts.accentColor;
+  ctx.beginPath();
+  (ctx as any).roundRect ? (ctx as any).roundRect(marginX, 220, tagW, 56, 10) : ctx.rect(marginX, 220, tagW, 56);
+  ctx.fill();
+  ctx.fillStyle = "#111";
+  ctx.textBaseline = "middle";
+  ctx.fillText(opts.tag, marginX + 22, 220 + 30);
+
+  // タイトル（大きな斜体）
+  ctx.fillStyle = "#fff";
+  ctx.font = "italic 900 84px 'Playfair Display','Noto Sans JP',sans-serif";
+  ctx.textBaseline = "alphabetic";
+  const titleLines = wrapCanvasText(ctx, opts.title, STORY_W - marginX * 2, 3);
+  let y = safeBottom - (titleLines.length - 1) * 90 - 220;
+  for (const line of titleLines) {
+    ctx.fillText(line, marginX, y);
+    y += 90;
+  }
+
+  // メタ情報（by・日時・場所など）
+  ctx.font = "500 34px 'Noto Sans JP'";
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  let metaY = y + 30;
+  ctx.fillText(opts.by, marginX, metaY);
+  metaY += 48;
+  for (const line of opts.meta) {
+    ctx.fillText(line, marginX, metaY);
+    metaY += 48;
+  }
+
+  // フッター：どこから来た投稿か分かるようにブランドとリンクを添える
+  ctx.font = "700 30px 'Noto Sans JP'";
+  ctx.fillStyle = "rgba(255,255,255,0.6)";
+  const host = typeof window !== "undefined" ? window.location.host : "bakuodo.vercel.app";
+  ctx.fillText(`爆踊 → ${host}${opts.linkPath}`, marginX, STORY_H - 100);
+
+  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.92));
+  if (!blob) throw new Error("画像の作成に失敗しました");
+  return blob;
+}
+
+// 作った画像をOSの共有シートに渡す。iPhone Safariでは「画像を保存」を選べば
+// カメラロールに入り、そこから手動でInstagramストーリーズに載せてもらう流れになる
+async function shareStoryImage(blob: Blob, filename: string, title: string) {
+  const file = new File([blob], filename, { type: "image/jpeg" });
+  if (typeof navigator !== "undefined" && (navigator as any).canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title });
+      return;
+    } catch (e) {
+      if ((e as any)?.name === "AbortError") return; // 共有をやめただけ
+    }
+  }
+  // 共有シートに対応していない環境では、新しいタブで開いて長押し保存してもらう
+  window.open(URL.createObjectURL(blob), "_blank");
+}
 
 export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onViewProfile, user, keepOpenOnJoin, saved, onToggleSave }: {
   lesson: PrivateLesson | null;
@@ -35,6 +168,8 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   const [participantsFetched, setParticipantsFetched] = useState(false);
   // 「この◯◯に申し込む」を押した直後だけ、参加できたことを示すエフェクトを一瞬見せる
   const [justJoined, setJustJoined] = useState(false);
+  // ストーリーズ用画像の作成中（少し時間がかかるため連打防止も兼ねる）
+  const [storyLoading, setStoryLoading] = useState(false);
   // EVENTのみ：定員に達した後も申請自体は受け付けているので、承認待ちの人を「キャンセル待ち」として見せる
   const [pendingParticipants, setPendingParticipants] = useState<ParticipantProfile[]>([]);
   // EVENTは申請前にダンサーネーム・メールアドレス・電話番号を必須で答えてもらう
@@ -116,6 +251,27 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
     }
   };
 
+  // ストーリーズ投稿用の画像を作って共有シートに渡す（宣伝素材として使ってもらう用）
+  const handleShareStory = async () => {
+    if (storyLoading) return;
+    setStoryLoading(true);
+    try {
+      const blob = await generateStoryImage({
+        title: lesson.title,
+        imageUrl: lesson.image_url,
+        accentColor: accent,
+        tag: isEvent ? "EVENT" : "PRIVATE LESSON",
+        by: `by ${lesson.organizer.dancer_name}`,
+        meta: [`${date} ${time}`, lesson.location],
+        linkPath: `/l/${lesson.id}`,
+      });
+      await shareStoryImage(blob, `bakuodo-${lesson.id}.jpg`, lesson.title);
+    } catch {
+      showToast("画像の作成に失敗しました");
+    }
+    setStoryLoading(false);
+  };
+
   const submitApply = () => {
     if (!answerDancerName.trim() || !answerEmail.trim() || !answerPhone.trim()) return;
     hapticTap();
@@ -144,6 +300,11 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
                 <Bookmark size={19} fill={saved ? accent : "none"} />
               </button>
             )}
+            {/* ストーリーズ投稿用の画像を作って共有シートに渡す（宣伝素材として使ってもらう用） */}
+            <button onClick={handleShareStory} disabled={storyLoading} title="ストーリーズ用に画像を保存"
+              style={{ background: "none", border: "none", color: "#F0F0F0", cursor: storyLoading ? "default" : "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: storyLoading ? 0.5 : 1 }}>
+              {storyLoading ? <Loader size={19} style={{ animation: "spin 0.7s linear infinite" }} /> : <Download size={19} />}
+            </button>
             <button onClick={handleShare} title="共有" style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Share2 size={19} /></button>
             <button onClick={onClose} style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><X size={22} /></button>
           </div>
