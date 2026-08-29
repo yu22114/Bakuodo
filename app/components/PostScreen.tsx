@@ -3,8 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import { Check, Zap, BookOpen, RotateCcw, X, Plus, Camera } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
-import type { FormState } from "../lib/types";
-import { GENRES, EXTENDED_GENRES, GENRE_COLORS, genreLabel, START_TIME_OPTIONS, DEFAULT_START_TIME, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr, toggleGenre as toggleGenreList } from "../lib/constants";
+import type { FormState, StaffRole } from "../lib/types";
+import { GENRES, EXTENDED_GENRES, GENRE_COLORS, genreLabel, START_TIME_OPTIONS, DEFAULT_START_TIME, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr, toggleGenre as toggleGenreList, normalizeInstagramUrl, STAFF_ROLES, STAFF_ROLE_LABELS } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
 
 // ジャンルは横スクロールのドラム式で選ぶ。折り返さず1列に並べ、選択中を追いかけてスクロールする。
@@ -26,6 +26,74 @@ function GenreStrip({ value, onChange, genres }: { value: string; onChange: (g: 
           </button>
         );
       })}
+    </div>
+  );
+}
+
+// EVENTだけが持つJUDGE・DJ・MC。1人ずつ、フォロー中のアカウントから選ぶか、
+// アプリ未登録の人向けにInstagramを手入力するかのどちらかで追加する
+type StaffDraft = { profileId: string | null; dancerName: string | null; avatarUrl: string | null; instagram: string | null };
+
+function StaffRoleEditor({ role, entries, onChange, following }: {
+  role: StaffRole;
+  entries: StaffDraft[];
+  onChange: (next: StaffDraft[]) => void;
+  following: { id: string; dancer_name: string; avatar_url: string | null }[];
+}) {
+  const [instagramInput, setInstagramInput] = useState("");
+  const availableFollowing = following.filter(f => !entries.some(e => e.profileId === f.id));
+
+  const addFromFollowing = (id: string) => {
+    const person = following.find(f => f.id === id);
+    if (!person) return;
+    onChange([...entries, { profileId: person.id, dancerName: person.dancer_name, avatarUrl: person.avatar_url, instagram: null }]);
+  };
+  const addFromInstagram = () => {
+    const handle = normalizeInstagramUrl(instagramInput);
+    if (!handle) return;
+    onChange([...entries, { profileId: null, dancerName: null, avatarUrl: null, instagram: handle }]);
+    setInstagramInput("");
+  };
+  const remove = (i: number) => onChange(entries.filter((_, idx) => idx !== i));
+
+  const inp: React.CSSProperties = { flex: 1, padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" };
+
+  return (
+    <div>
+      <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.15em", color: "#F0F0F0", marginBottom: "6px", textTransform: "uppercase" }}>
+        {STAFF_ROLE_LABELS[role]} <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span>
+      </label>
+      {entries.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "8px" }}>
+          {entries.map((e, i) => (
+            <span key={i} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "4px 8px 4px 4px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>
+              {e.profileId ? (
+                <>
+                  <span style={{ width: "18px", height: "18px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", fontWeight: 700, flexShrink: 0 }}>
+                    {e.avatarUrl ? <img src={e.avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : e.dancerName?.[0]?.toUpperCase()}
+                  </span>
+                  {e.dancerName}
+                </>
+              ) : (
+                <span style={{ color: "#38BDF8" }}>@{e.instagram?.replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/\/+$/, "")}</span>
+              )}
+              <button onClick={() => remove(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", padding: 0, display: "flex" }}><X size={11} /></button>
+            </span>
+          ))}
+        </div>
+      )}
+      <select value="" onChange={e => e.target.value && addFromFollowing(e.target.value)} disabled={availableFollowing.length === 0}
+        style={{ ...inp, width: "100%", color: availableFollowing.length ? "#F0F0F0" : "rgba(255,255,255,0.3)" }}>
+        <option value="">フォロー中から選ぶ</option>
+        {availableFollowing.map(f => <option key={f.id} value={f.id}>{f.dancer_name}</option>)}
+      </select>
+      <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+        <input value={instagramInput} onChange={e => setInstagramInput(e.target.value)} placeholder="Instagram（URLか@ユーザー名）" maxLength={200} autoCapitalize="none" autoCorrect="off" style={inp} />
+        <button onClick={addFromInstagram} disabled={!instagramInput.trim()} type="button"
+          style={{ flexShrink: 0, padding: "0 12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", background: "transparent", color: instagramInput.trim() ? "#F0F0F0" : "rgba(255,255,255,0.3)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: instagramInput.trim() ? "pointer" : "default" }}>
+          追加
+        </button>
+      </div>
     </div>
   );
 }
@@ -151,6 +219,10 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
   const [plRequiresApproval, setPlRequiresApproval] = useState(false);
   const [plImageFiles, setPlImageFiles] = useState<File[]>([]);
   const [plImagePreviews, setPlImagePreviews] = useState<string[]>([]);
+  // JUDGE・DJ・MC（EVENTだけで使う）。ロールごとに配列を持つ
+  const [staffByRole, setStaffByRole] = useState<Record<StaffRole, StaffDraft[]>>({ judge: [], dj: [], mc: [] });
+  // フォロー中のアカウント一覧（JUDGE・DJ・MCの選択肢に使う）
+  const [following, setFollowing] = useState<{ id: string; dancer_name: string; avatar_url: string | null }[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -159,6 +231,15 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
   // 復元処理と同じ回で保存処理が走ってしまい、まだ空のフォームを見て
   // 「中身なし」と判定して復元したての下書きを消してしまうため
   const [draftLoaded, setDraftLoaded] = useState(false);
+
+  // JUDGE・DJ・MCの「フォロー中から選ぶ」に出す一覧。承認済みのフォローだけを対象にする
+  useEffect(() => {
+    supabase.from("follows").select("following_id, profiles:following_id ( dancer_name, avatar_url )")
+      .eq("follower_id", user.id).eq("status", "accepted")
+      .then(({ data }) => {
+        setFollowing((data ?? []).map((row: any) => ({ id: row.following_id, dancer_name: row.profiles?.dancer_name ?? "UNKNOWN", avatar_url: row.profiles?.avatar_url ?? null })));
+      });
+  }, [user.id]);
 
   // 入力が何かあるか。何も書いていない状態を下書きとして残さないための判定
   const hasContent = (f: typeof EMPTY_FORM, n: typeof EMPTY_FORM, p: typeof EMPTY_PL) =>
@@ -373,7 +454,15 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
         await supabase.from("pl_genres").insert(genreRows.map((g: any) => ({ lesson_id: lesson.id, genre_id: g.id })));
       }
     }
+    // JUDGE・DJ・MC（EVENTだけ）
+    if (isEvent) {
+      const staffRows = STAFF_ROLES.flatMap(role => staffByRole[role].map((e, i) => ({ lesson_id: lesson.id, role, profile_id: e.profileId, instagram: e.profileId ? null : e.instagram, sort_order: i })));
+      if (staffRows.length > 0) {
+        await supabase.from("pl_staff").insert(staffRows);
+      }
+    }
     clearPlImages();
+    setStaffByRole({ judge: [], dj: [], mc: [] });
     clearDraft(); // 投稿できたので下書きは残さない
     setLoading(false); setSubmitted(true);
     setTimeout(() => onNav("top"), 1400);
@@ -585,6 +674,14 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
           </div>
           <div><label style={lbl}>詳細説明</label><textarea style={{ ...inp, minHeight: "80px", resize: "vertical" } as React.CSSProperties} placeholder={isEvent ? "イベント内容、持ち物など..." : "レッスン内容、持ち物など..."} value={plForm.description} onChange={e => setPlForm(f => ({ ...f, description: e.target.value }))} /></div>
           <div><label style={lbl}>定員</label><input style={inp} type="number" min="1" placeholder="空欄 = 無制限" value={plForm.max_members} onChange={e => setPlForm(f => ({ ...f, max_members: e.target.value }))} /></div>
+          {isEvent && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              {STAFF_ROLES.map(role => (
+                <StaffRoleEditor key={role} role={role} entries={staffByRole[role]}
+                  onChange={next => setStaffByRole(s => ({ ...s, [role]: next }))} following={following} />
+              ))}
+            </div>
+          )}
           <button onClick={() => setPlIsPrivate(v => !v)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
             <div><div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold" }}>🔒 フォロワー限定</div><div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginTop: "3px" }}>ONにするとフォロワーにのみ表示されます</div></div>
             <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: plIsPrivate ? plAccent : "rgba(255,255,255,0.16)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}><div style={{ position: "absolute", top: "3px", left: plIsPrivate ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.4)", transition: "left 0.2s" }} /></div>

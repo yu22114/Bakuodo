@@ -3,8 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import { Check, ChevronLeft, X, Camera } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
-import type { GenreKey } from "../lib/types";
-import { EXTENDED_GENRES, GENRE_COLORS, genreLabel, START_TIME_OPTIONS, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr, toggleGenre as toggleGenreList } from "../lib/constants";
+import type { GenreKey, StaffRole } from "../lib/types";
+import { EXTENDED_GENRES, GENRE_COLORS, genreLabel, START_TIME_OPTIONS, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr, toggleGenre as toggleGenreList, normalizeInstagramUrl, STAFF_ROLES, STAFF_ROLE_LABELS } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
 import { Loading } from "./Loading";
 import { useSwipeBack } from "../lib/useSwipeBack";
@@ -90,6 +90,74 @@ function GenreStrip({ value, onChange }: { value: string; onChange: (g: (typeof 
   );
 }
 
+// EVENTだけが持つJUDGE・DJ・MC。1人ずつ、フォロー中のアカウントから選ぶか、
+// アプリ未登録の人向けにInstagramを手入力するかのどちらかで追加する
+type StaffDraft = { profileId: string | null; dancerName: string | null; avatarUrl: string | null; instagram: string | null };
+
+function StaffRoleEditor({ role, entries, onChange, following }: {
+  role: StaffRole;
+  entries: StaffDraft[];
+  onChange: (next: StaffDraft[]) => void;
+  following: { id: string; dancer_name: string; avatar_url: string | null }[];
+}) {
+  const [instagramInput, setInstagramInput] = useState("");
+  const availableFollowing = following.filter(f => !entries.some(e => e.profileId === f.id));
+
+  const addFromFollowing = (id: string) => {
+    const person = following.find(f => f.id === id);
+    if (!person) return;
+    onChange([...entries, { profileId: person.id, dancerName: person.dancer_name, avatarUrl: person.avatar_url, instagram: null }]);
+  };
+  const addFromInstagram = () => {
+    const handle = normalizeInstagramUrl(instagramInput);
+    if (!handle) return;
+    onChange([...entries, { profileId: null, dancerName: null, avatarUrl: null, instagram: handle }]);
+    setInstagramInput("");
+  };
+  const remove = (i: number) => onChange(entries.filter((_, idx) => idx !== i));
+
+  const inp: React.CSSProperties = { flex: 1, padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" };
+
+  return (
+    <div>
+      <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.15em", color: "#F0F0F0", marginBottom: "6px", textTransform: "uppercase" }}>
+        {STAFF_ROLE_LABELS[role]} <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span>
+      </label>
+      {entries.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "8px" }}>
+          {entries.map((e, i) => (
+            <span key={i} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "4px 8px 4px 4px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>
+              {e.profileId ? (
+                <>
+                  <span style={{ width: "18px", height: "18px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", fontWeight: 700, flexShrink: 0 }}>
+                    {e.avatarUrl ? <img src={e.avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : e.dancerName?.[0]?.toUpperCase()}
+                  </span>
+                  {e.dancerName}
+                </>
+              ) : (
+                <span style={{ color: "#38BDF8" }}>@{e.instagram?.replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/\/+$/, "")}</span>
+              )}
+              <button onClick={() => remove(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", padding: 0, display: "flex" }}><X size={11} /></button>
+            </span>
+          ))}
+        </div>
+      )}
+      <select value="" onChange={e => e.target.value && addFromFollowing(e.target.value)} disabled={availableFollowing.length === 0}
+        style={{ ...inp, width: "100%", color: availableFollowing.length ? "#F0F0F0" : "rgba(255,255,255,0.3)" }}>
+        <option value="">フォロー中から選ぶ</option>
+        {availableFollowing.map(f => <option key={f.id} value={f.id}>{f.dancer_name}</option>)}
+      </select>
+      <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+        <input value={instagramInput} onChange={e => setInstagramInput(e.target.value)} placeholder="Instagram（URLか@ユーザー名）" maxLength={200} autoCapitalize="none" autoCorrect="off" style={inp} />
+        <button onClick={addFromInstagram} disabled={!instagramInput.trim()} type="button"
+          style={{ flexShrink: 0, padding: "0 12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", background: "transparent", color: instagramInput.trim() ? "#F0F0F0" : "rgba(255,255,255,0.3)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: instagramInput.trim() ? "pointer" : "default" }}>
+          追加
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const EMPTY_FORM = { title: "", date: "", start_time: "", end_time: "", station: "", studio: "", genres: [] as GenreKey[], description: "", max_members: "", price: "", target_level: "all" };
 
 export function EditLessonScreen({ lessonId, user, onBack, onSaved }: {
@@ -106,6 +174,10 @@ export function EditLessonScreen({ lessonId, user, onBack, onSaved }: {
   const [requiresApproval, setRequiresApproval] = useState(false);
   // 添付画像（複数枚）。既存＋新規を1つの配列にして表示順を保つ
   const [images, setImages] = useState<PostImage[]>([]);
+  // JUDGE・DJ・MC（EVENTだけで使う）。ロールごとに配列を持つ
+  const [staffByRole, setStaffByRole] = useState<Record<StaffRole, StaffDraft[]>>({ judge: [], dj: [], mc: [] });
+  // フォロー中のアカウント一覧（JUDGE・DJ・MCの選択肢に使う）
+  const [following, setFollowing] = useState<{ id: string; dancer_name: string; avatar_url: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -118,10 +190,19 @@ export function EditLessonScreen({ lessonId, user, onBack, onSaved }: {
 
   const toggleGenre = (g: GenreKey) => setForm(f => ({ ...f, genres: toggleGenreList(f.genres, g) }));
 
+  // JUDGE・DJ・MCの「フォロー中から選ぶ」に出す一覧。承認済みのフォローだけを対象にする
+  useEffect(() => {
+    supabase.from("follows").select("following_id, profiles:following_id ( dancer_name, avatar_url )")
+      .eq("follower_id", user.id).eq("status", "accepted")
+      .then(({ data }) => {
+        setFollowing((data ?? []).map((row: any) => ({ id: row.following_id, dancer_name: row.profiles?.dancer_name ?? "UNKNOWN", avatar_url: row.profiles?.avatar_url ?? null })));
+      });
+  }, [user.id]);
+
   useEffect(() => {
     async function fetchLesson() {
       const { data } = await supabase.from("private_lessons")
-        .select("id, title, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval, kind, image_url, image_urls, pl_genres(genres:genre_id(name))")
+        .select("id, title, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval, kind, image_url, image_urls, pl_genres(genres:genre_id(name)), pl_staff(role, profile_id, instagram, sort_order, profiles:profile_id(dancer_name, avatar_url))")
         .eq("id", lessonId).single();
       if (data) {
         const d = data as any;
@@ -141,6 +222,12 @@ export function EditLessonScreen({ lessonId, user, onBack, onSaved }: {
         // image_urlsを足す前の投稿はimage_urlしか持たないので、無ければそれを1枚目として扱う
         const existingUrls: string[] = d.image_urls?.length ? d.image_urls : (d.image_url ? [d.image_url] : []);
         setImages(existingUrls.map((url: string) => ({ kind: "existing", url })));
+        const nextStaff: Record<StaffRole, StaffDraft[]> = { judge: [], dj: [], mc: [] };
+        (d.pl_staff ?? []).slice().sort((a: any, b: any) => a.sort_order - b.sort_order).forEach((s: any) => {
+          if (!nextStaff[s.role as StaffRole]) return;
+          nextStaff[s.role as StaffRole].push({ profileId: s.profile_id, dancerName: s.profiles?.dancer_name ?? null, avatarUrl: s.profiles?.avatar_url ?? null, instagram: s.instagram ?? null });
+        });
+        setStaffByRole(nextStaff);
       }
       setLoading(false);
     }
@@ -201,6 +288,14 @@ export function EditLessonScreen({ lessonId, user, onBack, onSaved }: {
       const { data: genreRows } = await supabase.from("genres").select("id,name").in("name", form.genres);
       if (genreRows && genreRows.length > 0) {
         await supabase.from("pl_genres").insert(genreRows.map((g: any) => ({ lesson_id: lessonId, genre_id: g.id })));
+      }
+    }
+    // JUDGE・DJ・MC（EVENTだけ。一旦全部消してから作り直す。genresと同じやり方）
+    if (isEvent) {
+      await supabase.from("pl_staff").delete().eq("lesson_id", lessonId);
+      const staffRows = STAFF_ROLES.flatMap(role => staffByRole[role].map((e, i) => ({ lesson_id: lessonId, role, profile_id: e.profileId, instagram: e.profileId ? null : e.instagram, sort_order: i })));
+      if (staffRows.length > 0) {
+        await supabase.from("pl_staff").insert(staffRows);
       }
     }
     setSaving(false);
@@ -284,6 +379,14 @@ export function EditLessonScreen({ lessonId, user, onBack, onSaved }: {
         </div>
         <div><label style={lbl}>詳細説明</label><textarea style={{ ...inp, minHeight: "80px", resize: "vertical" } as React.CSSProperties} placeholder={isEvent ? "イベント内容、持ち物など..." : "レッスン内容、持ち物など..."} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div>
         <div><label style={lbl}>定員</label><input style={inp} type="number" min="1" placeholder="空欄 = 無制限" value={form.max_members} onChange={e => setForm(f => ({ ...f, max_members: e.target.value }))} /></div>
+        {isEvent && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            {STAFF_ROLES.map(role => (
+              <StaffRoleEditor key={role} role={role} entries={staffByRole[role]}
+                onChange={next => setStaffByRole(s => ({ ...s, [role]: next }))} following={following} />
+            ))}
+          </div>
+        )}
         <button onClick={() => setIsPrivate(v => !v)}
           style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
           <div>
