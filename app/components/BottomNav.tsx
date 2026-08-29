@@ -47,8 +47,9 @@ export function BottomNav({ current, onNav, onProfileLongPress }: { current: str
     // 外側はビューポート全幅の透明レイヤー（中央寄せのためだけ）。
     // pointerEvents:none にして、島の外の余白部分はタップをすり抜けさせる
     <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, display: "flex", justifyContent: "center", padding: "0 16px 16px", pointerEvents: "none", transform: hidden ? "translateY(140%)" : "none", transition: "transform 0.25s ease" }}>
-      {/* 完全に透明。地色・ブラー・枠を持たせず、アイコンだけが浮かんでいるように見せる */}
-      <div style={{ width: "100%", maxWidth: "448px", background: "none", borderRadius: "26px", display: "flex", position: "relative", border: "none", pointerEvents: "auto" }}>
+      {/* クリアガラス調：すりガラスほど強くぼかさず、後ろがはっきり透けて見えるガラス板の質感。
+          地色はごく薄く、縁の細いハイライトとブラーだけでガラスらしさを出す */}
+      <div style={{ width: "100%", maxWidth: "448px", background: "rgba(255,255,255,0.04)", backdropFilter: "blur(8px) saturate(150%)", WebkitBackdropFilter: "blur(8px) saturate(150%)", borderRadius: "26px", display: "flex", position: "relative", boxShadow: "0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.25)", border: "1px solid rgba(255,255,255,0.15)", pointerEvents: "auto" }}>
         {/* アクティブ表示のピル。背景の四角自体がヌルッと隣のアイコンへスライドする
             （各アイコンごとに個別のON/OFFではなく、1枚の板が移動する見せ方）。
             どのタブにも一致しない画面（プロフィール編集など）の時は消しておく */}
