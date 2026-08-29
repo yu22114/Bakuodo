@@ -49,19 +49,18 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
 
       {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.14)", padding: "2px 7px", fontSize: "7.5px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "5px" }}>終了</div>}
 
-      {/* コンテンツはすべて下部に重ねる */}
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "10px" }}>
+      {/* コンテンツは上から下まで満たすフライヤー組み。ジャンルタグは上、タイトルはmarginTop:autoで
+          下寄せの大きな斜体文字にする（写真の有無に関わらず、これだけで様になるようにする） */}
+      <div style={{ position: "absolute", inset: 0, padding: "10px", display: "flex", flexDirection: "column" }}>
         {/* タブ自体がLESSON/EVENTを表しているので、カード上に種別バッジは出さない。ジャンルだけ出す */}
         {lesson.genres[0] && (
-          <div style={{ marginBottom: "6px" }}>
-            <span style={{ fontSize: "8px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", padding: "2px 6px", borderRadius: "3px", background: genreColor + "26", color: genreColor }}>
-              {genreLabel(lesson.genres[0])}
-            </span>
-          </div>
+          <span style={{ alignSelf: "flex-start", fontSize: "8px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", padding: "2px 6px", borderRadius: "3px", background: genreColor + "26", color: genreColor }}>
+            {genreLabel(lesson.genres[0])}
+          </span>
         )}
 
-        <h3 style={{ margin: 0, fontSize: "12.5px", fontWeight: 700, color: "#fff", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any }}>{lesson.title}</h3>
-        <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.7)", marginTop: "2px", fontFamily: "'Noto Sans JP',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <h3 style={{ margin: "auto 0 0", fontSize: "20px", fontWeight: 900, fontStyle: "italic", color: "#fff", fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.01em", lineHeight: 0.98, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as any }}>{lesson.title}</h3>
+        <div style={{ fontSize: "8.5px", color: "rgba(255,255,255,0.7)", marginTop: "4px", fontFamily: "'Noto Sans JP',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {lesson.organizer.instagram
             ? <span>by <span style={{ color: "#38BDF8" }}>@{lesson.organizer.instagram}</span></span>
             : <span>by {lesson.organizer.dancer_name}</span>}
