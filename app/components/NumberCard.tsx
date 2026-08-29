@@ -75,12 +75,14 @@ export function NumberCard({ number, onClick, index = 0 }: { number: DanceNumber
         </div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-        {endParts && (
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <Calendar size={11} color="rgba(255,255,255,0.4)" />
-            <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>〜{endParts.month}/{endParts.day}({endParts.weekday})</span>
-          </div>
-        )}
+        {/* 想定練習期間。開始日から表示し、終了日があれば「〜終了日」を続ける
+            （マイコミュニティの掲示板カードと同じ表示ルール） */}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <Calendar size={11} color="rgba(255,255,255,0.4)" />
+          <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
+            {month}/{day}({weekday}){endParts ? `〜${endParts.month}/${endParts.day}(${endParts.weekday})` : ""}
+          </span>
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <MapPin size={11} color="rgba(255,255,255,0.4)" />
           <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{number.location}</span>
