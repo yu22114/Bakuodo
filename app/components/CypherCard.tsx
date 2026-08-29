@@ -70,22 +70,12 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
               : <span>by {cypher.organizer.dancer_name}</span>}
           </div>
         </div>
-        {/* 参加人数は下のバーではなく主催者アイコンの真下に出す */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", flexShrink: 0 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
           <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: `linear-gradient(135deg,${color}22,${color}44)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px", fontWeight: "bold", color, fontFamily: "'Noto Sans JP',sans-serif", overflow: "hidden" }}>
             {cypher.organizer.avatar_url
               ? <img src={cypher.organizer.avatar_url} alt={cypher.organizer.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               : cypher.organizer.avatar}
           </div>
-          <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", whiteSpace: "nowrap" }}>
-            {cypher.participant_count}{cypher.max_members ? `/${cypher.max_members}` : ""}人
-          </span>
-          {/* スタジオ代は参加人数表記のすぐ下に出す */}
-          {cypher.studio_fee != null && (
-            <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", whiteSpace: "nowrap" }}>
-              {cypher.participant_count > 0 ? `¥${Math.ceil(cypher.studio_fee / cypher.participant_count).toLocaleString()}/人` : `¥${cypher.studio_fee.toLocaleString()}`}
-            </span>
-          )}
         </div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
@@ -102,6 +92,20 @@ export function CypherCard({ cypher, onClick, index = 0 }: { cypher: Cypher; onC
             {venue && station && ` ${station}駅`}
           </span>
         </div>
+      </div>
+      {/* 参加人数はLESSON/EVENT/NUMBERのポスターカードと同じく右下に統一。
+          スタジオ代を出す時はその左隣に並べる */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "8px", gap: "4px" }}>
+        <div>
+          {cypher.studio_fee != null && (
+            <span style={{ fontSize: "9px", padding: "2px 7px", background: "rgba(255,255,255,0.08)", borderRadius: "4px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", whiteSpace: "nowrap" }}>
+              {cypher.participant_count > 0 ? `¥${Math.ceil(cypher.studio_fee / cypher.participant_count).toLocaleString()}/人` : `¥${cypher.studio_fee.toLocaleString()}`}
+            </span>
+          )}
+        </div>
+        <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: isEnded ? "rgba(255,255,255,0.4)" : "#F0F0F0", whiteSpace: "nowrap", flexShrink: 0 }}>
+          {cypher.participant_count}{cypher.max_members ? `/${cypher.max_members}` : ""}人
+        </span>
       </div>
       </div>
     </div>

@@ -51,16 +51,14 @@ export function PLCard({ lesson, onClick, index = 0 }: { lesson: PrivateLesson; 
 
       {/* コンテンツはすべて下部に重ねる */}
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "10px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "6px", flexWrap: "wrap" }}>
-          <span style={{ fontSize: "8px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", letterSpacing: "0.06em", padding: "2px 6px", borderRadius: "3px", background: accent, color: lesson.kind === "event" ? "#171717" : "#fff" }}>
-            {lesson.kind === "event" ? "EVENT" : "PRIVATE"}
-          </span>
-          {lesson.genres[0] && (
+        {/* タブ自体がLESSON/EVENTを表しているので、カード上に種別バッジは出さない。ジャンルだけ出す */}
+        {lesson.genres[0] && (
+          <div style={{ marginBottom: "6px" }}>
             <span style={{ fontSize: "8px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", padding: "2px 6px", borderRadius: "3px", background: genreColor + "26", color: genreColor }}>
               {genreLabel(lesson.genres[0])}
             </span>
-          )}
-        </div>
+          </div>
+        )}
 
         <h3 style={{ margin: 0, fontSize: "12.5px", fontWeight: 700, color: "#fff", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any }}>{lesson.title}</h3>
         <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.7)", marginTop: "2px", fontFamily: "'Noto Sans JP',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>

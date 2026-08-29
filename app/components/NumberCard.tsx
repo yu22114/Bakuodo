@@ -48,14 +48,14 @@ export function NumberCard({ number, onClick, index = 0 }: { number: DanceNumber
 
       {/* コンテンツはすべて下部に重ねる */}
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "10px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "6px", flexWrap: "wrap" }}>
-          <span style={{ fontSize: "8px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", letterSpacing: "0.06em", padding: "2px 6px", borderRadius: "3px", background: "#EC4899", color: "#fff" }}>NUMBER</span>
-          {number.genres[0] && (
+        {/* タブ自体がNUMBERを表しているので、カード上に種別バッジは出さない。ジャンルだけ出す */}
+        {number.genres[0] && (
+          <div style={{ marginBottom: "6px" }}>
             <span style={{ fontSize: "8px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", padding: "2px 6px", borderRadius: "3px", background: color + "26", color }}>
               {genreLabel(number.genres[0])}
             </span>
-          )}
-        </div>
+          </div>
+        )}
 
         <h3 style={{ margin: 0, fontSize: "12.5px", fontWeight: 700, color: "#fff", fontFamily: "'Noto Sans JP',sans-serif", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any }}>{number.title}</h3>
         <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.7)", marginTop: "2px", fontFamily: "'Noto Sans JP',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
