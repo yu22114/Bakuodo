@@ -273,7 +273,7 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              <div><label style={lbl}>タイトル</label>
+              <div><label style={lbl}>イベント名</label>
                 <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="例: 〇〇ダンスショーケース" maxLength={50} autoFocus style={inp} />
               </div>
               <div><label style={lbl}>サブタイトル（任意）</label>
