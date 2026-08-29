@@ -23,25 +23,36 @@ async function convertHeicIfNeeded(file: File): Promise<Blob> {
   return await res.blob();
 }
 
+// <img>タグに読み込ませてHTMLImageElementとして受け取るだけの小さなヘルパー。
+// createImageBitmapと違い、HEICも含めてSafariが表示できる画像形式ならほぼ確実に読める
+// （Safari同士でも、createImageBitmapのHEIC対応はimgタグほど安定していないため）
+function loadImageElement(blob: Blob): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("画像を読み込めませんでした"));
+    img.src = URL.createObjectURL(blob);
+  });
+}
+
 // 元画像が大きすぎる場合だけ縮小したBlobを返す（十分小さい場合はそのまま元ファイルを使う）。
 // 失敗時はここで揉み消さず呼び出し側に投げる（原因を画面に出して調べられるようにするため）。
 //
-// 重要：createImageBitmapにresizeWidthを渡さず素で呼ぶと、ブラウザはまず元画像を
-// フル解像度でデコードしてから初めてサイズが分かる。最近のiPhoneは4000万画素を超える
-// 写真も撮れるため、このフルデコードだけでメモリを使い切り、Safariがページごと
-// 落ちる（"this page couldn't load"）ことがあった。resizeWidthを渡すと、対応ブラウザは
-// 縮小しながらデコードしてくれるので、フル解像度をメモリに展開せずに済む
-// （非対応ブラウザでは単に無視され、これまで通りの動きになるだけで安全）
+// createImageBitmapではなく<img>+canvasで縮小する。最近のiPhoneは4000万画素を超える
+// 写真も撮れるため、フル解像度のままメモリに展開する処理があるとSafariがページごと
+// 落ちる（"this page couldn't load"）ことがあり、こちらの方が実績のある縮小方法
 async function shrinkIfNeeded(file: File): Promise<Blob> {
   const source = await convertHeicIfNeeded(file);
-  const bitmap = await createImageBitmap(source, { resizeWidth: MAX_SOURCE, resizeQuality: "medium" });
+  const img = await loadImageElement(source);
+  const longSide = Math.max(img.naturalWidth, img.naturalHeight);
+  const scale = longSide > MAX_SOURCE ? MAX_SOURCE / longSide : 1;
   const canvas = document.createElement("canvas");
-  canvas.width = bitmap.width;
-  canvas.height = bitmap.height;
+  canvas.width = Math.round(img.naturalWidth * scale);
+  canvas.height = Math.round(img.naturalHeight * scale);
   const ctx = canvas.getContext("2d");
-  if (!ctx) { bitmap.close?.(); return source; }
-  ctx.drawImage(bitmap, 0, 0);
-  bitmap.close?.();
+  if (!ctx) { URL.revokeObjectURL(img.src); return source; }
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  URL.revokeObjectURL(img.src);
   const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.9));
   return blob ?? source;
 }
