@@ -219,7 +219,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
           .select(`
             id, title, organizer_id, starts_at, ends_at, location, description, max_members, studio_fee,
             profiles:organizer_id ( dancer_name, avatar_url, instagram ),
-            number_genres ( genres:genre_id ( name ) )
+            number_genres ( genres:genre_id ( name ) ),
+            number_performance_dates ( event_date )
           `)
           .or(`starts_at.gte.${oneHourAgo},ends_at.gte.${now}`)
           .order("starts_at"),
@@ -231,8 +232,9 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
         const shapedNumbers: DanceNumber[] = numberRes.data.map((row: any) => {
           const name = row.profiles?.dancer_name ?? "UNKNOWN";
           const genres: GenreKey[] = (row.number_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
+          const performanceDates: string[] = (row.number_performance_dates ?? []).map((d: any) => d.event_date as string).sort();
           const count = numberCountMap[row.id] ?? 0;
-          return { id: row.id, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, studio_fee: row.studio_fee ?? null, genres, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null, instagram: row.profiles?.instagram ?? null }, participant_count: count, hot: count >= 5 };
+          return { id: row.id, title: row.title, starts_at: row.starts_at, ends_at: row.ends_at ?? null, location: row.location, description: row.description ?? "", max_members: row.max_members, studio_fee: row.studio_fee ?? null, genres, performance_dates: performanceDates, organizer: { id: row.organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: row.profiles?.avatar_url ?? null, instagram: row.profiles?.instagram ?? null }, participant_count: count, hot: count >= 5 };
         });
         shapedNumbers.sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
         setNumbers(shapedNumbers);

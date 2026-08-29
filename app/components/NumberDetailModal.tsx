@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Calendar, MapPin, User, X, Check, Zap, Share2, Pencil, Trash2 } from "lucide-react";
+import { Calendar, MapPin, User, X, Check, Zap, Share2, Pencil, Trash2, Star } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { DanceNumber, ParticipantProfile } from "../lib/types";
@@ -8,6 +8,13 @@ import { dateBadgeParts, timeUntil, GENRE_COLORS, genreLabel } from "../lib/cons
 import { ParticipantBar } from "./ParticipantBar";
 import { showToast } from "./Toast";
 import { hapticTap } from "../lib/haptics";
+
+// 本番当日（"YYYY-MM-DD"）を「9/10(木)」のように短く表示する
+function formatJaDate(dateStr: string) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  return `${d.getMonth() + 1}/${d.getDate()}(${weekdays[d.getDay()]})`;
+}
 
 // DetailModal（CYPHER用）とほぼ同じ作り。限定公開・参加承認制・コメントは持たない分シンプル。
 // 主催者向けの編集・削除は（プロフィール画面の主催タブにはまだ出していないので）このモーダル自身に持たせる
@@ -106,8 +113,14 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
             </button>
             <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center" }}>
               <Calendar size={14} color="rgba(255,255,255,0.45)" />
-              {start.month}/{start.day}({start.weekday}){end ? `〜${end.month}/${end.day}(${end.weekday})` : ""}
+              想定練習期間: {start.month}/{start.day}({start.weekday}){end ? `〜${end.month}/${end.day}(${end.weekday})` : ""}
             </div>
+            {number.performance_dates.length > 0 && (
+              <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "flex-start" }}>
+                <Star size={14} color="rgba(255,255,255,0.45)" style={{ marginTop: "2px", flexShrink: 0 }} />
+                <span>本番当日: {number.performance_dates.map(formatJaDate).join("、")}</span>
+              </div>
+            )}
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(number.location)}`}
               target="_blank"

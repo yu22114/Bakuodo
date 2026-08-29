@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Check, Zap, BookOpen, RotateCcw } from "lucide-react";
+import { Check, Zap, BookOpen, RotateCcw, X, Plus } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { FormState } from "../lib/types";
@@ -56,6 +56,8 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
   // NUMBERの開催日は、マイコミュニティの掲示板作成と同じ「1日目・2日目」の範囲指定にする
   // （numberForm.dateを1日目として使い回し、2日目だけ別で持つ）
   const [numberEndDate, setNumberEndDate] = useState("");
+  // 本番当日。連続していなくてもよい複数の日付を追加・削除できるようにする
+  const [numberPerformanceDates, setNumberPerformanceDates] = useState<string[]>([]);
   // PLフォーム用
   const [plForm, setPlForm] = useState(EMPTY_PL);
   const [plIsPrivate, setPlIsPrivate] = useState(false);
@@ -84,6 +86,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
         if (d.form) setForm({ ...EMPTY_FORM, ...d.form });
         if (d.numberForm) setNumberForm({ ...EMPTY_FORM, ...d.numberForm });
         if (d.numberEndDate) setNumberEndDate(d.numberEndDate);
+        if (d.numberPerformanceDates) setNumberPerformanceDates(d.numberPerformanceDates);
         if (d.plForm) setPlForm({ ...EMPTY_PL, ...d.plForm });
         setIsPrivate(!!d.isPrivate);
         setRequiresApproval(!!d.requiresApproval);
@@ -100,14 +103,14 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
     if (!draftLoaded) return;
     try {
       if (!hasContent(form, numberForm, plForm)) { localStorage.removeItem(DRAFT_KEY); return; }
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, numberForm, numberEndDate, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval }));
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, numberForm, numberEndDate, numberPerformanceDates, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval }));
     } catch { /* 保存できなくても入力は続けられるようにする */ }
-  }, [draftLoaded, form, numberForm, numberEndDate, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval]);
+  }, [draftLoaded, form, numberForm, numberEndDate, numberPerformanceDates, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval]);
 
   const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch {} };
 
   const discardDraft = () => {
-    setForm(EMPTY_FORM); setNumberForm(EMPTY_FORM); setNumberEndDate(""); setPlForm(EMPTY_PL);
+    setForm(EMPTY_FORM); setNumberForm(EMPTY_FORM); setNumberEndDate(""); setNumberPerformanceDates([]); setPlForm(EMPTY_PL);
     setIsPrivate(false); setRequiresApproval(false);
     setPlIsPrivate(false); setPlRequiresApproval(false);
     setDraftRestored(false);
@@ -193,6 +196,11 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
       if (genreRows && genreRows.length > 0) {
         await supabase.from("number_genres").insert(genreRows.map((g: any) => ({ number_id: numberRow.id, genre_id: g.id })));
       }
+    }
+    // 本番当日（空欄の行は無視する）
+    const validPerformanceDates = numberPerformanceDates.filter(Boolean);
+    if (validPerformanceDates.length > 0) {
+      await supabase.from("number_performance_dates").insert(validPerformanceDates.map(event_date => ({ number_id: numberRow.id, event_date })));
     }
     // 主催者を自動で参加者に追加
     await supabase.from("number_participations").insert({ number_id: numberRow.id, profile_id: user.id });
@@ -291,6 +299,23 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
             <div><label style={lbl}>終了 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label>
               <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={numberForm.date || todayStr()} value={numberEndDate} onChange={e => setNumberEndDate(e.target.value)} disabled={!numberForm.date} /></div>
             </div>
+          </div>
+          {/* 本番当日：連続していなくてもよい複数の日付を追加できる */}
+          <div>
+            <label style={lbl}>本番当日 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label>
+            {numberPerformanceDates.map((d, i) => (
+              <div key={i} style={{ display: "flex", gap: "6px", marginBottom: "6px" }}>
+                <input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={d} onChange={e => { const v = e.target.value; setNumberPerformanceDates(arr => arr.map((x, idx) => idx === i ? v : x)); }} />
+                <button onClick={() => setNumberPerformanceDates(arr => arr.filter((_, idx) => idx !== i))}
+                  style={{ flexShrink: 0, width: "40px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", color: "#F0F0F0", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+            <button onClick={() => setNumberPerformanceDates(arr => [...arr, ""])}
+              style={{ width: "100%", padding: "10px", border: "1px dashed rgba(236,72,153,0.5)", borderRadius: "6px", background: "transparent", color: "#EC4899", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+              <Plus size={12} /> 日程を追加
+            </button>
           </div>
           <div><label style={lbl}>会場 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={numberForm.studio} onChange={e => setNumberForm(f => ({ ...f, studio: e.target.value }))} /></div>
           <div><label style={lbl}>ジャンル</label>
