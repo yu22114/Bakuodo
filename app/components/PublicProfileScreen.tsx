@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText, MessageCircle, Music, Download, UserPlus, ClipboardList, Mail, Phone, CalendarX } from "lucide-react";
+import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText, MessageCircle, Music, Download, UserPlus, ClipboardList, Mail, Phone, AtSign, CalendarX } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import type { GenreKey } from "../lib/types";
 import { formatDate, timeUntil, GENRE_COLORS } from "../lib/constants";
@@ -107,9 +107,10 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [loading, setLoading] = useState(true);
   const [participantSheet, setParticipantSheet] = useState<{ title: string; participants: Array<{ profile_id: string; dancer_name: string; avatar_url: string | null }> } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; kind: "cypher" | "lesson" | "number" } | null>(null);
-  // EVENT申請時の回答（ダンサーネーム・メールアドレス・電話番号）は、主催者のこの画面からしか見られない
-  const [answersModal, setAnswersModal] = useState<{ title: string } | null>(null);
-  const [answers, setAnswers] = useState<{ profile_id: string; dancer_name: string; avatar_url: string | null; answer_dancer_name: string | null; answer_email: string | null; answer_phone: string | null }[] | null>(null);
+  // EVENT申請時の回答（ダンサーネーム・メールアドレス・電話番号）・NUMBER申請時の回答
+  // （ダンサーネーム・Instagram）は、主催者のこの画面からしか見られない
+  const [answersModal, setAnswersModal] = useState<{ title: string; kind: "event" | "number" } | null>(null);
+  const [answers, setAnswers] = useState<{ profile_id: string; dancer_name: string; avatar_url: string | null; answer_dancer_name: string | null; answer_email: string | null; answer_phone: string | null; answer_instagram: string | null }[] | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [followSheet, setFollowSheet] = useState<{ type: "followers" | "following" | "friends"; users: { id: string; dancer_name: string; avatar_url: string | null }[] } | null>(null);
@@ -441,7 +442,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
   // EVENT申請時の回答一覧を開く（自分が主催したEVENTのみ、この画面からしか見られない）
   const handleOpenAnswers = async (lesson: HostedLesson) => {
-    setAnswersModal({ title: lesson.title });
+    setAnswersModal({ title: lesson.title, kind: "event" });
     setAnswers(null);
     const { data } = await supabase.from("pl_participations")
       .select("profile_id, answer_dancer_name, answer_email, answer_phone, profiles:profile_id(dancer_name, avatar_url)")
@@ -450,7 +451,22 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       profile_id: row.profile_id,
       dancer_name: row.profiles?.dancer_name ?? "UNKNOWN",
       avatar_url: row.profiles?.avatar_url ?? null,
-      answer_dancer_name: row.answer_dancer_name, answer_email: row.answer_email, answer_phone: row.answer_phone,
+      answer_dancer_name: row.answer_dancer_name, answer_email: row.answer_email, answer_phone: row.answer_phone, answer_instagram: null,
+    })));
+  };
+
+  // NUMBER申請時の回答一覧を開く（自分が主催したNUMBERのみ、この画面からしか見られない）
+  const handleOpenNumberAnswers = async (n: HostedNumber) => {
+    setAnswersModal({ title: n.title, kind: "number" });
+    setAnswers(null);
+    const { data } = await supabase.from("number_participations")
+      .select("profile_id, answer_dancer_name, answer_instagram, profiles:profile_id(dancer_name, avatar_url)")
+      .eq("number_id", n.id);
+    setAnswers((data ?? []).map((row: any) => ({
+      profile_id: row.profile_id,
+      dancer_name: row.profiles?.dancer_name ?? "UNKNOWN",
+      avatar_url: row.profiles?.avatar_url ?? null,
+      answer_dancer_name: row.answer_dancer_name, answer_email: null, answer_phone: null, answer_instagram: row.answer_instagram,
     })));
   };
 
@@ -534,6 +550,11 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, marginLeft: "8px" }}>
           <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: isPast ? "rgba(255,255,255,0.35)" : "#EC4899", fontWeight: "bold" }}>{n.participant_count}人</span>
+          {/* 参加申請の回答（ダンサーネーム・Instagram）は、主催者がここからだけ見られる */}
+          {isOwn && (
+            <button onClick={e => { e.stopPropagation(); handleOpenNumberAnswers(n); }} title="回答を見る"
+              style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#F0F0F0", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><ClipboardList size={13} /></button>
+          )}
           {isOwn && (
             <button onClick={e => { e.stopPropagation(); onEditNumber?.(n.id); }} title="編集"
               style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#F0F0F0", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Pencil size={13} /></button>
@@ -986,11 +1007,17 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                       </div>
                       <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>{a.dancer_name}</span>
                     </button>
-                    {a.answer_dancer_name || a.answer_email || a.answer_phone ? (
+                    {a.answer_dancer_name || a.answer_email || a.answer_phone || a.answer_instagram ? (
                       <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
                         {a.answer_dancer_name && <div style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}><UserPlus size={12} color="rgba(255,255,255,0.4)" />{a.answer_dancer_name}</div>}
                         {a.answer_email && <div style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}><Mail size={12} color="rgba(255,255,255,0.4)" />{a.answer_email}</div>}
                         {a.answer_phone && <div style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}><Phone size={12} color="rgba(255,255,255,0.4)" />{a.answer_phone}</div>}
+                        {a.answer_instagram && (
+                          <a href={`https://instagram.com/${a.answer_instagram.replace(/^@/, "")}`} target="_blank" rel="noopener noreferrer"
+                            style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "12px", color: "#38BDF8", fontFamily: "'Noto Sans JP',sans-serif", textDecoration: "none" }}>
+                            <AtSign size={12} color="rgba(255,255,255,0.4)" />@{a.answer_instagram.replace(/^@/, "")}
+                          </a>
+                        )}
                       </div>
                     ) : (
                       <p style={{ margin: 0, fontSize: "11px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif" }}>回答なし</p>

@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import type { Cypher, PrivateLesson, DanceNumber } from "./lib/types";
 import { fetchCypherById, fetchLessonById, fetchNumberById } from "./lib/fetchDetail";
-import { joinCypher, cancelCypher, joinLesson, cancelLesson, joinNumber, cancelNumber, type EventApplicationAnswers } from "./lib/participation";
+import { joinCypher, cancelCypher, joinLesson, cancelLesson, joinNumber, cancelNumber, type EventApplicationAnswers, type NumberApplicationAnswers } from "./lib/participation";
 import { showToast } from "./components/Toast";
 import { LoginScreen } from "./components/LoginScreen";
 import { TopScreen, type TopSection } from "./components/TopScreen";
@@ -158,7 +158,7 @@ export default function BakuOdori() {
   };
 
   // NUMBERの参加ボタン。承認制がないのでjoined/unjoinedのトグルだけでよい
-  const handleNumberJoin = async (id: string) => {
+  const handleNumberJoin = async (id: string, answers?: NumberApplicationAnswers) => {
     if (!user) return;
     if (numberJoined.includes(id)) {
       const { error } = await cancelNumber(user.id, id);
@@ -167,7 +167,7 @@ export default function BakuOdori() {
       setRefreshKey(k => k + 1);
       return;
     }
-    const { error } = await joinNumber(user.id, id);
+    const { error } = await joinNumber(user.id, id, answers);
     if (error) { showToast(error); return; }
     setNumberJoined(j => [...j, id]);
     setRefreshKey(k => k + 1);

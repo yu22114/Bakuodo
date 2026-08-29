@@ -4,7 +4,7 @@ import { supabase } from "../../../lib/supabase";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import type { DanceNumber } from "../../lib/types";
 import { fetchNumberById } from "../../lib/fetchDetail";
-import { joinNumber, cancelNumber } from "../../lib/participation";
+import { joinNumber, cancelNumber, type NumberApplicationAnswers } from "../../lib/participation";
 import { showToast } from "../../components/Toast";
 import { NumberDetailModal } from "../../components/NumberDetailModal";
 import { Loading } from "../../components/Loading";
@@ -35,7 +35,7 @@ export function NumberSharePage({ numberId }: { numberId: string }) {
     init();
   }, [numberId]);
 
-  const handleJoin = async (id: string) => {
+  const handleJoin = async (id: string, answers?: NumberApplicationAnswers) => {
     if (!user) {
       // 未ログインはトップへ（ログイン画面が出る）
       window.location.href = "/";
@@ -48,7 +48,7 @@ export function NumberSharePage({ numberId }: { numberId: string }) {
       showToast("キャンセルしました");
       return;
     }
-    const { error } = await joinNumber(user.id, id);
+    const { error } = await joinNumber(user.id, id, answers);
     if (error) { showToast(error); return; }
     setJoined(true);
     showToast("参加しました！");
