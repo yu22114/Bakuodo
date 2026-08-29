@@ -166,9 +166,18 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
 
           {/* 並び順: 主催者→開催日時→場所→参加人数→料金→参加者 */}
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
-            <button onClick={() => onViewProfile(lesson.organizer.id)} style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
-              <User size={14} color="rgba(255,255,255,0.45)" /> {isEvent ? "主催" : "講師"}: {lesson.organizer.dancer_name}
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              <button onClick={() => onViewProfile(lesson.organizer.id)} style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
+                <User size={14} color="rgba(255,255,255,0.45)" /> {isEvent ? "主催" : "講師"}: {lesson.organizer.dancer_name}
+              </button>
+              {/* Instagramを設定している主催者は、プロフィールとは別にInstagramへも直接飛べるようにする */}
+              {lesson.organizer.instagram && (
+                <a href={`https://instagram.com/${lesson.organizer.instagram}`} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: "12px", color: "#38BDF8", fontFamily: "'Noto Sans JP',sans-serif", textDecoration: "none" }}>
+                  @{lesson.organizer.instagram}
+                </a>
+              )}
+            </div>
             <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center" }}>
               <Clock size={14} color="rgba(255,255,255,0.45)" /> {date} {time}{lesson.ends_at ? `〜${formatEndTime(lesson.starts_at, lesson.ends_at)}` : ""}
             </div>

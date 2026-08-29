@@ -114,10 +114,19 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
             </div>
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
-            <button onClick={() => onViewProfile(organizerId)}
-              style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
-              <User size={14} color="rgba(255,255,255,0.45)" /> 主催: {number.organizer.dancer_name}
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              <button onClick={() => onViewProfile(organizerId)}
+                style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
+                <User size={14} color="rgba(255,255,255,0.45)" /> 主催: {number.organizer.dancer_name}
+              </button>
+              {/* Instagramを設定している主催者は、プロフィールとは別にInstagramへも直接飛べるようにする */}
+              {number.organizer.instagram && (
+                <a href={`https://instagram.com/${number.organizer.instagram}`} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: "12px", color: "#38BDF8", fontFamily: "'Noto Sans JP',sans-serif", textDecoration: "none" }}>
+                  @{number.organizer.instagram}
+                </a>
+              )}
+            </div>
             <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center" }}>
               <Calendar size={14} color="rgba(255,255,255,0.45)" />
               想定練習期間: {start.month}/{start.day}({start.weekday}){end ? `〜${end.month}/${end.day}(${end.weekday})` : ""}

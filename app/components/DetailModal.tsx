@@ -94,10 +94,19 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
           })()}
           {/* 並び順: 主催者→開催日時→場所→参加人数→スタジオ代→参加者 */}
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
-            <button onClick={() => onViewProfile(organizerId)}
-              style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
-              <User size={14} color="rgba(255,255,255,0.45)" /> 主催: {cypher.organizer.dancer_name}
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              <button onClick={() => onViewProfile(organizerId)}
+                style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
+                <User size={14} color="rgba(255,255,255,0.45)" /> 主催: {cypher.organizer.dancer_name}
+              </button>
+              {/* Instagramを設定している主催者は、プロフィールとは別にInstagramへも直接飛べるようにする */}
+              {cypher.organizer.instagram && (
+                <a href={`https://instagram.com/${cypher.organizer.instagram}`} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: "12px", color: "#38BDF8", fontFamily: "'Noto Sans JP',sans-serif", textDecoration: "none" }}>
+                  @{cypher.organizer.instagram}
+                </a>
+              )}
+            </div>
             <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center" }}><Clock size={14} color="rgba(255,255,255,0.45)" /> {date} {time}{cypher.ends_at ? `〜${formatEndTime(cypher.starts_at, cypher.ends_at)}` : ""}</div>
             {/* 地図へ飛べるのはここだけ。押せる場所だと一目で分かるよう枠で囲い、
                 指で押しやすいよう高さも確保する */}
