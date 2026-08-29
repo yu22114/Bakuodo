@@ -4,20 +4,21 @@ import { Check, ChevronLeft } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { GenreKey } from "../lib/types";
-import { GENRES, GENRE_COLORS, genreLabel, START_TIME_OPTIONS, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr, toggleGenre as toggleGenreList } from "../lib/constants";
+import { EXTENDED_GENRES, GENRE_COLORS, genreLabel, START_TIME_OPTIONS, isNextDayEnd, endTimeLabel, endTimeOptions, getNextDate, todayStr, toggleGenre as toggleGenreList } from "../lib/constants";
 import { StationSearch } from "./StationSearch";
 import { Loading } from "./Loading";
 import { useSwipeBack } from "../lib/useSwipeBack";
 
-// ジャンルは横スクロールのドラム式で選ぶ（投稿画面と同じ見た目）
-function GenreStrip({ value, onChange }: { value: string; onChange: (g: (typeof GENRES)[number]) => void }) {
+// ジャンルは横スクロールのドラム式で選ぶ（投稿画面と同じ見た目）。
+// LESSON・EVENTなのでGIRLS/JAZZ/FREESTYLEも含む拡張ジャンル一覧を使う
+function GenreStrip({ value, onChange }: { value: string; onChange: (g: (typeof EXTENDED_GENRES)[number]) => void }) {
   const selectedRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     selectedRef.current?.scrollIntoView({ block: "nearest", inline: "center" });
   }, [value]);
   return (
     <div className="bd-scroll" style={{ display: "flex", gap: "7px", overflowX: "auto", padding: "2px 1px 6px" }}>
-      {GENRES.map(g => {
+      {EXTENDED_GENRES.map(g => {
         const sel = value === g;
         const col = GENRE_COLORS[g];
         return (

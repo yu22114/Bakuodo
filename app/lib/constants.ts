@@ -28,6 +28,10 @@ export const GENRES: GenreKey[] = [
   "All Style",
 ];
 
+// LESSON・EVENT・NUMBERの投稿・絞り込みだけで使う拡張ジャンル一覧。
+// CYPHERは従来通りGENRES（8種）のまま
+export const EXTENDED_GENRES: GenreKey[] = [...GENRES, "Girls", "Jazz", "Freestyle"];
+
 // ジャンル選択のトグル。カードの背景にジャンル名を大きく出すようになったので、
 // 選べるのは1つだけ。選んでいるものをもう一度押すと解除。
 // 返り値が配列なのは、保存側（cypher_genres / pl_genres）が複数行を入れる作りのまま
@@ -88,6 +92,9 @@ export const GENRE_COLORS: Record<GenreKey, string> = {
   Krump: "#EA580C",
   "Hip-Hop": "#4338CA",
   "All Style": "#6B7280",
+  Girls: "#E11D48",
+  Jazz: "#CA8A04",
+  Freestyle: "#0EA5E9",
 };
 
 // 30分刻みの全時間（00:00〜23:30）

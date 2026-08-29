@@ -4,7 +4,7 @@ import { Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus, ChevronLe
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, PrivateLesson, DanceNumber, GenreKey } from "../lib/types";
-import { GENRES, GENRE_COLORS, genreLabel, timeUntil, formatDate, formatEndTime, calcDistanceM } from "../lib/constants";
+import { GENRES, EXTENDED_GENRES, GENRE_COLORS, genreLabel, timeUntil, formatDate, formatEndTime, calcDistanceM } from "../lib/constants";
 import { CypherCard } from "./CypherCard";
 import { PLCard } from "./PLCard";
 import { NumberCard } from "./NumberCard";
@@ -451,10 +451,11 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
         </div>
       </div>
 
-      {/* ジャンルチップ（横スクロール）。CYPHER/LESSON共通 */}
+      {/* ジャンルチップ（横スクロール）。CYPHER/LESSON共通。
+          GIRLS/JAZZ/FREESTYLEはLESSON・EVENT・NUMBERだけに出す（CYPHERは従来の8種のまま） */}
       {section !== "spots" && (
         <div style={{ display: "flex", gap: "6px", padding: "10px 16px", overflowX: "auto", scrollbarWidth: "none", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          {(["ALL", ...GENRES] as (GenreKey | "ALL")[]).map(g => {
+          {(["ALL", ...(section === "cypher" ? GENRES : EXTENDED_GENRES)] as (GenreKey | "ALL")[]).map(g => {
             const sel = g === "ALL" ? selectedGenres.length === 0 : selectedGenres.includes(g as GenreKey);
             // ALLは「絞り込みなし」であって特定のジャンル/セクションではないので、
             // CYPHERタブと同じ色を使わず中立な色にする

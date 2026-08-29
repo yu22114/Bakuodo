@@ -6,7 +6,11 @@ export type GenreKey =
   | "House"
   | "Krump"
   | "Hip-Hop"
-  | "All Style";
+  | "All Style"
+  // LESSON・EVENT・NUMBERの投稿・絞り込みだけで使う（CYPHERには出さない）
+  | "Girls"
+  | "Jazz"
+  | "Freestyle";
 
 export interface Cypher {
   id: string;
