@@ -7,7 +7,34 @@ import type { ProfileState } from "../lib/types";
 import { GENRES, GENRE_COLORS } from "../lib/constants";
 import { Loading } from "./Loading";
 import { useSwipeBack } from "../lib/useSwipeBack";
-import { AvatarCropper } from "./AvatarCropper";
+
+const AVATAR_OUTPUT = 600; // 書き出す画像の一辺のサイズ(px)。高解像度の端末でも荒れないように大きめにする
+
+// <img>タグに読み込ませてHTMLImageElementとして受け取るだけの小さなヘルパー。
+// createImageBitmapと違い、HEICも含めてSafariが表示できる画像形式ならほぼ確実に読める
+function loadImageElement(blob: Blob): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("画像を読み込めませんでした"));
+    img.src = URL.createObjectURL(blob);
+  });
+}
+
+// iPhoneのHEIC/HEIFは一部ブラウザの標準機能では読み込めないため、サーバー側
+// （/api/convert-heic）でJPEGに変換してから受け取るのを基本にしている。
+// ただしVercelのサーバー関数はリクエストボディが約4.5MBまでという制限があり、
+// 最近のiPhoneの高解像度HEIC写真はこれを超えることが珍しくない。超えるファイルを
+// 送っても失敗するだけなので、その場合はサーバーに送らず、ブラウザ自身のHEIC
+// デコード機能（Safariなど対応ブラウザで既にネイティブ対応）にそのまま任せる
+async function convertHeicIfNeeded(file: File): Promise<Blob> {
+  const isHeic = /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+  if (!isHeic) return file;
+  if (file.size > 4 * 1024 * 1024) return file;
+  const res = await fetch("/api/convert-heic", { method: "POST", body: file });
+  if (!res.ok) throw new Error(`HEIC変換に失敗しました (status ${res.status})`);
+  return await res.blob();
+}
 
 export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, onAccountTypeChange, onBack }: {
   user: SupabaseUser;
@@ -22,8 +49,6 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState("");
-  // 選択直後の画像。丸枠の範囲選び（クロップ）が終わるまではまだアップロードしない
-  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -56,8 +81,11 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
     fetchProfile();
   }, [user.id]);
 
-  // ファイルを選んだ直後はまだアップロードせず、丸枠の範囲選び（クロップ）画面を開く
-  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ファイルを選んだら、範囲選び（クロップ）画面は挟まず、中央の正方形で自動的に
+  // 切り抜いてすぐアップロードする。以前は専用のクロップ画面（丸枠でドラッグ・ズーム）
+  // を挟んでいたが、そのモーダルのbackdrop-filter（画面全体をぼかす処理）が、写真アプリで
+  // メモリを使った直後のiPhone Safariでページごと落ちる原因になっていたため、無くした
+  const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = ""; // 同じファイルを選び直しても変化を検知できるようにリセット
     if (!file) return;
@@ -72,14 +100,32 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
       return;
     }
     setAvatarError("");
-    setPendingAvatarFile(file);
+    setAvatarUploading(true);
+    try {
+      const source = await convertHeicIfNeeded(file);
+      const img = await loadImageElement(source);
+      // 中央の正方形（短い方の辺に合わせる）だけを切り抜く
+      const side = Math.min(img.naturalWidth, img.naturalHeight);
+      const sx = (img.naturalWidth - side) / 2;
+      const sy = (img.naturalHeight - side) / 2;
+      const canvas = document.createElement("canvas");
+      canvas.width = AVATAR_OUTPUT;
+      canvas.height = AVATAR_OUTPUT;
+      const ctx = canvas.getContext("2d");
+      URL.revokeObjectURL(img.src);
+      if (!ctx) { setAvatarError("画像の処理に失敗しました"); setAvatarUploading(false); return; }
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, AVATAR_OUTPUT, AVATAR_OUTPUT);
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.9));
+      if (!blob) { setAvatarError("画像の処理に失敗しました"); setAvatarUploading(false); return; }
+      await uploadAvatarBlob(blob);
+    } catch (err) {
+      setAvatarError(`画像の読み込みに失敗しました: ${(err as any)?.message ?? String(err)}`);
+      setAvatarUploading(false);
+    }
   };
 
-  // クロップ確定後、その範囲の画像（blob）をアップロードする
-  const handleAvatarCropped = async (blob: Blob) => {
-    setPendingAvatarFile(null);
-    setAvatarUploading(true);
-    setAvatarError("");
+  // 切り抜いた画像（blob）をアップロードする
+  const uploadAvatarBlob = async (blob: Blob) => {
     const path = `${user.id}.jpg`;
     const { error: uploadErr } = await supabase.storage.from("avatars").upload(path, blob, { upsert: true, contentType: "image/jpeg" });
     if (uploadErr) {
@@ -261,9 +307,6 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
           {saved ? <><Check size={15} />SAVED!</> : <><Star size={15} />プロフィールを保存する</>}
         </button>
       </div>
-      {pendingAvatarFile && (
-        <AvatarCropper file={pendingAvatarFile} onCancel={() => setPendingAvatarFile(null)} onConfirm={handleAvatarCropped} />
-      )}
     </div>
   );
 }
