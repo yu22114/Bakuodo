@@ -15,7 +15,7 @@ import { useScrollShadow } from "../lib/useScrollShadow";
 // 「参加/主催」タブの並び順。左右スワイプで隣のタブに切り替える時に使う
 const CYPHER_TAB_ORDER = ["joined", "hosted"] as const;
 
-export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogout, onViewProfile, onCypherClick, onLessonClick, onEditCypher, onEditLesson }: {
+export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, onLogout, onViewProfile, onCypherClick, onLessonClick, onNumberClick, onEditCypher, onEditLesson, onEditNumber }: {
   profileId: string;
   currentUserId: string;
   onBack?: () => void;
@@ -24,8 +24,10 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   onViewProfile?: (id: string) => void;
   onCypherClick?: (cypherId: string) => void;
   onLessonClick?: (lessonId: string) => void;
+  onNumberClick?: (numberId: string) => void;
   onEditCypher?: (cypherId: string) => void;
   onEditLesson?: (lessonId: string) => void;
+  onEditNumber?: (numberId: string) => void;
 }) {
   const isOwn = profileId === currentUserId;
   type ProfileData = { dancer_name: string; genres: GenreKey[]; instagram: string | null; dance_years: number | null; age_group: string | null; birth_year: number | null; gender: string | null; bio: string | null; playlist_url: string | null; team: string | null; avatar_url: string | null; is_private: boolean; account_type: string };
@@ -33,6 +35,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   type JoinedCypher = { id: string; title: string; starts_at: string; location: string; organizer_name: string };
   type HostedLesson = { id: string; title: string; starts_at: string; location: string; kind: "lesson" | "event"; participant_count: number };
   type JoinedLesson = { id: string; title: string; starts_at: string; location: string; kind: "lesson" | "event"; organizer_name: string };
+  // NUMBERは限定公開・参加承認制を持たないぶんシンプル（参加タブは持たず主催のみ）
+  type HostedNumber = { id: string; title: string; starts_at: string; location: string; participant_count: number };
 
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   // このプロフィールの「得意ジャンル」（先頭に登録したもの）の色を、アバターやフォローボタンの
@@ -46,6 +50,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [followLoading, setFollowLoading] = useState(false);
   const [hostedCyphers, setHostedCyphers] = useState<HostedCypher[]>([]);
   const [hostedLessons, setHostedLessons] = useState<HostedLesson[]>([]);
+  const [hostedNumbers, setHostedNumbers] = useState<HostedNumber[]>([]);
   const [joinedCyphers, setJoinedCyphers] = useState<JoinedCypher[]>([]);
   const [joinedLessons, setJoinedLessons] = useState<JoinedLesson[]>([]);
   const [cypherTab, setCypherTab] = useState<"joined" | "hosted">("joined");
@@ -101,7 +106,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   };
   const [loading, setLoading] = useState(true);
   const [participantSheet, setParticipantSheet] = useState<{ title: string; participants: Array<{ profile_id: string; dancer_name: string; avatar_url: string | null }> } | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; kind: "cypher" | "lesson" } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; kind: "cypher" | "lesson" | "number" } | null>(null);
   // EVENT申請時の回答（ダンサーネーム・メールアドレス・電話番号）は、主催者のこの画面からしか見られない
   const [answersModal, setAnswersModal] = useState<{ title: string } | null>(null);
   const [answers, setAnswers] = useState<{ profile_id: string; dancer_name: string; avatar_url: string | null; answer_dancer_name: string | null; answer_email: string | null; answer_phone: string | null }[] | null>(null);
@@ -237,10 +242,12 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   useEffect(() => {
     async function fetchAll() {
       setLoading(true);
-      const [profileRes, hostedRes, hostedLessonsRes, allPartsRes, allPlPartsRes, followersRes, followingRes] = await Promise.all([
+      const [profileRes, hostedRes, hostedLessonsRes, hostedNumbersRes, numberCountRes, allPartsRes, allPlPartsRes, followersRes, followingRes] = await Promise.all([
         supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, birth_year, gender, bio, playlist_url, team, avatar_url, is_private, account_type").eq("id", profileId).single(),
         supabase.from("cyphers").select("id, title, starts_at, location").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("private_lessons").select("id, title, starts_at, location, kind").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
+        supabase.from("numbers").select("id, title, starts_at, location").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
+        supabase.from("number_participant_counts").select("number_id, participant_count"),
         supabase.from("participations").select("cypher_id"),
         supabase.from("pl_participations").select("lesson_id"),
         supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", profileId).eq("status", "accepted"),
@@ -273,6 +280,11 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       }
       if (hostedLessonsRes.data) {
         setHostedLessons((hostedLessonsRes.data as any[]).map(l => ({ id: l.id, title: l.title, starts_at: l.starts_at, location: l.location, kind: l.kind === "event" ? "event" : "lesson", participant_count: plCountMap[l.id] ?? 0 })));
+      }
+      const numberCountMap: Record<string, number> = {};
+      (numberCountRes.data ?? []).forEach((p: any) => { numberCountMap[p.number_id] = p.participant_count ?? 0; });
+      if (hostedNumbersRes.data) {
+        setHostedNumbers((hostedNumbersRes.data as any[]).map(n => ({ id: n.id, title: n.title, starts_at: n.starts_at, location: n.location, participant_count: numberCountMap[n.id] ?? 0 })));
       }
       if (isOwn) {
         const { data: joinedData } = await supabase.from("participations")
@@ -451,11 +463,16 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       await supabase.from("cypher_genres").delete().eq("cypher_id", id);
       const { error } = await supabase.from("cyphers").delete().eq("id", id).eq("organizer_id", currentUserId);
       if (!error) setHostedCyphers(prev => prev.filter(c => c.id !== id));
-    } else {
+    } else if (kind === "lesson") {
       await supabase.from("pl_participations").delete().eq("lesson_id", id);
       await supabase.from("pl_genres").delete().eq("lesson_id", id);
       const { error } = await supabase.from("private_lessons").delete().eq("id", id).eq("organizer_id", currentUserId);
       if (!error) setHostedLessons(prev => prev.filter(l => l.id !== id));
+    } else {
+      // NUMBERはnumber_genres・number_participations・number_performance_datesが
+      // on delete cascadeで一緒に消えるので、numbersを消すだけでいい
+      const { error } = await supabase.from("numbers").delete().eq("id", id).eq("organizer_id", currentUserId);
+      if (!error) setHostedNumbers(prev => prev.filter(n => n.id !== id));
     }
     setDeleteConfirm(null);
   };
@@ -501,6 +518,35 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     );
   };
 
+  // NUMBER1件分のカード（CYPHERの主催カードと同じ見た目にする。他人のプロフィールの
+  // 主催一覧と、自分の主催タブの両方で使う）。NUMBERは限定公開・参加承認制を持たない分シンプル
+  const renderNumberRow = (n: HostedNumber) => {
+    const { date, time } = formatDate(n.starts_at);
+    const isPast = new Date(n.starts_at) < new Date();
+    return (
+      <div key={n.id} onClick={() => onNumberClick?.(n.id)} style={{ padding: "10px 14px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderLeft: "3px solid #EC4899", borderRadius: "8px", cursor: onNumberClick ? "pointer" : "default", opacity: isPast ? 0.45 : 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.title}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "2px" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Clock size={9} color="rgba(255,255,255,0.35)" />{date} {time}</span>
+            {isPast && <span style={{ fontSize: "9px", padding: "1px 5px", background: "rgba(255,255,255,0.08)", borderRadius: "3px", color: "#F0F0F0" }}>終了</span>}
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0, marginLeft: "8px" }}>
+          <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: isPast ? "rgba(255,255,255,0.35)" : "#EC4899", fontWeight: "bold" }}>{n.participant_count}人</span>
+          {isOwn && (
+            <button onClick={e => { e.stopPropagation(); onEditNumber?.(n.id); }} title="編集"
+              style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#F0F0F0", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Pencil size={13} /></button>
+          )}
+          {isOwn && (
+            <button onClick={e => { e.stopPropagation(); setDeleteConfirm({ id: n.id, kind: "number" }); }} title="削除"
+              style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#F0F0F0", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // 主催タブ：CYPHER / P LESSON / EVENT で見出しを分けて表示するための振り分け
   const hostedPlList = hostedLessons.filter(l => l.kind === "lesson");
   const hostedEventList = hostedLessons.filter(l => l.kind === "event");
@@ -511,6 +557,16 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", margin: "0 0 6px 2px" }}>LESSON &amp; EVENT / レッスン・イベント</div>
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         {hostedLessons.map(l => renderLessonRow(l))}
+      </div>
+    </div>
+  );
+
+  // 主催NUMBER一覧（他人のプロフィールでも同じ見た目で出す。ホーム画面と同じくNUMBERを先頭に置く）
+  const numberRows = hostedNumbers.length > 0 && (
+    <div style={{ marginTop: "12px" }}>
+      <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#EC4899", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#EC489914", borderRadius: "3px", margin: "0 0 6px 2px" }}>NUMBER</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        {hostedNumbers.map(n => renderNumberRow(n))}
       </div>
     </div>
   );
@@ -751,10 +807,19 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                     )}
                   </>)
             ) : (
-              // 主催タブ：CYPHER / P LESSON / EVENT を種類ごとに見出しを分けて表示する
-              hostedCyphers.length === 0 && hostedLessons.length === 0
-                ? <EmptyState icon={CalendarX} padding="32px">まだ主催しているサイファー・レッスンはありません</EmptyState>
+              // 主催タブ：NUMBER / CYPHER / P LESSON / EVENT を種類ごとに見出しを分けて表示する
+              // （ホーム画面のタブ順と同じくNUMBERを先頭に置く）
+              hostedNumbers.length === 0 && hostedCyphers.length === 0 && hostedLessons.length === 0
+                ? <EmptyState icon={CalendarX} padding="32px">まだ主催しているサイファー・レッスン・NUMBERはありません</EmptyState>
                 : (<>
+                    {hostedNumbers.length > 0 && (
+                      <div style={{ marginBottom: (hostedCyphers.length > 0 || hostedPlList.length > 0 || hostedEventList.length > 0) ? "12px" : 0 }}>
+                        <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#EC4899", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#EC489914", borderRadius: "3px", margin: "0 0 6px 2px" }}>NUMBER</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                          {hostedNumbers.map(n => renderNumberRow(n))}
+                        </div>
+                      </div>
+                    )}
                     {hostedCyphers.length > 0 && (
                       <div style={{ marginBottom: (hostedPlList.length > 0 || hostedEventList.length > 0) ? "12px" : 0 }}>
                         <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#DC2626", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#DC262614", borderRadius: "3px", margin: "0 0 6px 2px" }}>CYPHER</div>
@@ -805,8 +870,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             )}
             </div>
           ) : (
-            hostedCyphers.length === 0 && hostedLessons.length === 0
-              ? <EmptyState icon={CalendarX}>まだ主催しているサイファー・レッスンはありません</EmptyState>
+            hostedNumbers.length === 0 && hostedCyphers.length === 0 && hostedLessons.length === 0
+              ? <EmptyState icon={CalendarX}>まだ主催しているサイファー・レッスン・NUMBERはありません</EmptyState>
               : hostedCyphers.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   {hostedCyphers.map(c => { const { date, time } = formatDate(c.starts_at); const ended = timeUntil(c.starts_at) === "終了"; return (
                     <div key={c.id} onClick={() => onCypherClick?.(c.id)} style={{ padding: "10px 14px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: onCypherClick ? "pointer" : "default" }}>
@@ -820,6 +885,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                   );})}
                 </div>
           )}
+          {!isOwn && numberRows}
           {!isOwn && lessonRows}
           {/* 下の固定ナビに隠れないための余白（自分のプロフィールタブ表示時のみ） */}
           {!onBack && <div style={{ height: "80px", flexShrink: 0 }} />}
@@ -942,8 +1008,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setDeleteConfirm(null)}>
           <div onClick={e => e.stopPropagation()} style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "12px", padding: "28px 24px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
             <div style={{ fontSize: "28px", marginBottom: "8px" }}>🗑️</div>
-            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "20px", color: "#F0F0F0", marginBottom: "8px" }}>{deleteConfirm.kind === "cypher" ? "サイファーを削除" : "レッスンを削除"}</div>
-            <div style={{ fontSize: "13px", color: "#F0F0F0", marginBottom: "24px", lineHeight: "1.6" }}>削除すると{deleteConfirm.kind === "cypher" ? "参加者" : "申込"}の記録もすべて消えます。開催履歴からも消えます。本当に削除しますか？</div>
+            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "20px", color: "#F0F0F0", marginBottom: "8px" }}>{deleteConfirm.kind === "cypher" ? "サイファーを削除" : deleteConfirm.kind === "lesson" ? "レッスンを削除" : "NUMBERを削除"}</div>
+            <div style={{ fontSize: "13px", color: "#F0F0F0", marginBottom: "24px", lineHeight: "1.6" }}>削除すると{deleteConfirm.kind === "cypher" ? "参加者" : deleteConfirm.kind === "lesson" ? "申込" : "参加者"}の記録もすべて消えます。開催履歴からも消えます。本当に削除しますか？</div>
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={() => setDeleteConfirm(null)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#F0F0F0" }}>キャンセル</button>
               <button onClick={handleDelete} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #DC2626, #A61B1B)", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>削除する</button>
