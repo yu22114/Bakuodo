@@ -12,6 +12,12 @@ import { useSwipeBack } from "../lib/useSwipeBack";
 // 添付画像まわり（CYPHERは対象外）。縦4:横3の縦長に中央で切り抜いてから縮小する
 const POST_IMAGE_WIDTH = 900;
 const POST_IMAGE_HEIGHT = 1200; // 900 * 4/3
+// 添付できる画像は最大5枚まで
+const MAX_POST_IMAGES = 5;
+
+// 画像は「保存済み（existing）」と「今回選び直した新しい画像（new）」が並んだ1つの配列として扱う。
+// 表示順のままimage_urlsに保存するため、削除・追加の操作もこの配列に対してだけ行う
+type PostImage = { kind: "existing"; url: string } | { kind: "new"; file: File; preview: string };
 
 function loadImageElement(blob: Blob): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -98,10 +104,8 @@ export function EditLessonScreen({ lessonId, user, onBack, onSaved }: {
   const [kind, setKind] = useState<"lesson" | "event">("lesson");
   const [isPrivate, setIsPrivate] = useState(false);
   const [requiresApproval, setRequiresApproval] = useState(false);
-  // 添付画像。imageUrlは保存済みの画像、imageFile/imagePreviewは選び直した新しい画像
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  // 添付画像（複数枚）。既存＋新規を1つの配列にして表示順を保つ
+  const [images, setImages] = useState<PostImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -117,7 +121,7 @@ export function EditLessonScreen({ lessonId, user, onBack, onSaved }: {
   useEffect(() => {
     async function fetchLesson() {
       const { data } = await supabase.from("private_lessons")
-        .select("id, title, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval, kind, image_url, pl_genres(genres:genre_id(name))")
+        .select("id, title, starts_at, ends_at, location, description, max_members, price, target_level, visibility, requires_approval, kind, image_url, image_urls, pl_genres(genres:genre_id(name))")
         .eq("id", lessonId).single();
       if (data) {
         const d = data as any;
@@ -134,31 +138,37 @@ export function EditLessonScreen({ lessonId, user, onBack, onSaved }: {
         setKind(d.kind === "event" ? "event" : "lesson");
         setIsPrivate(d.visibility === "private");
         setRequiresApproval(d.requires_approval ?? false);
-        setImageUrl(d.image_url ?? null);
+        // image_urlsを足す前の投稿はimage_urlしか持たないので、無ければそれを1枚目として扱う
+        const existingUrls: string[] = d.image_urls?.length ? d.image_urls : (d.image_url ? [d.image_url] : []);
+        setImages(existingUrls.map((url: string) => ({ kind: "existing", url })));
       }
       setLoading(false);
     }
     fetchLesson();
   }, [lessonId]);
 
-  // 画像の選択・解除
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  // 画像の選択・削除（複数枚まとめて追加できる。上限を超えた分は無視する）
+  const handleImagesSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
     e.target.value = "";
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) { setError("画像ファイルサイズは10MB以下にしてください"); return; }
-    const looksLikeImage = file.type.startsWith("image/") || /\.(jpe?g|png|gif|webp|heic|heif|bmp|avif)$/i.test(file.name);
-    if (!looksLikeImage) { setError("画像ファイルを選択してください"); return; }
-    setError("");
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+    if (files.length === 0) return;
+    const room = MAX_POST_IMAGES - images.length;
+    if (room <= 0) { setError(`画像は${MAX_POST_IMAGES}枚まで添付できます`); return; }
+    const picked = files.slice(0, room);
+    for (const file of picked) {
+      if (file.size > 10 * 1024 * 1024) { setError("画像ファイルサイズは10MB以下にしてください"); return; }
+      const looksLikeImage = file.type.startsWith("image/") || /\.(jpe?g|png|gif|webp|heic|heif|bmp|avif)$/i.test(file.name);
+      if (!looksLikeImage) { setError("画像ファイルを選択してください"); return; }
+    }
+    setError(files.length > picked.length ? `画像は${MAX_POST_IMAGES}枚までのため、一部のみ追加しました` : "");
+    setImages(arr => [...arr, ...picked.map(file => ({ kind: "new" as const, file, preview: URL.createObjectURL(file) }))]);
   };
-  const clearImage = () => {
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImageFile(null);
-    setImagePreview(null);
-    setImageUrl(null);
+  const removeImageAt = (index: number) => {
+    setImages(arr => {
+      const target = arr[index];
+      if (target?.kind === "new") URL.revokeObjectURL(target.preview);
+      return arr.filter((_, i) => i !== index);
+    });
   };
 
   const handleSave = async () => {
@@ -166,15 +176,17 @@ export function EditLessonScreen({ lessonId, user, onBack, onSaved }: {
     // 過去日に付け替えられないようにする（投稿時と同じ制限）
     if (form.date < todayStr()) { setError("過去の日付には変更できません"); return; }
     setSaving(true); setError("");
-    // 画像を選び直していればアップロードし直す。何もしていなければ今の値（削除していればnull）のまま
-    let image_url = imageUrl;
-    if (imageFile) {
+    // 表示順のまま、既存画像はそのURLを、新しい画像はアップロードしてから得たURLを並べる
+    const image_urls: string[] = [];
+    for (const img of images) {
+      if (img.kind === "existing") { image_urls.push(img.url); continue; }
       try {
-        image_url = await uploadPostImage(user.id, imageFile);
+        image_urls.push(await uploadPostImage(user.id, img.file));
       } catch (err) {
         setError((err as any)?.message ?? "画像のアップロードに失敗しました"); setSaving(false); return;
       }
     }
+    const image_url = image_urls[0] ?? null;
     // +09:00を付けてJSTとして保存（省略するとUTC扱いになり9時間ずれる）
     const starts_at = form.start_time ? `${form.date}T${form.start_time}:00+09:00` : `${form.date}T00:00:00+09:00`;
     const endDate = form.end_time && isNextDayEnd(form.end_time, form.start_time) ? getNextDate(form.date) : form.date;
@@ -182,7 +194,7 @@ export function EditLessonScreen({ lessonId, user, onBack, onSaved }: {
     const location = form.studio ? `${form.station} ${form.studio}` : form.station;
     // イベント名が空欄なら会場名だけをタイトルにする（会場も未入力なら駅名にフォールバック）
     const title = form.title.trim() || form.studio || location;
-    const { error: uErr } = await supabase.from("private_lessons").update({ title, location, description: form.description, starts_at, ends_at, max_members: form.max_members ? Number(form.max_members) : null, price: form.price ? Number(form.price) : null, target_level: form.target_level, visibility: isPrivate ? "private" : "public", requires_approval: requiresApproval, image_url }).eq("id", lessonId).eq("organizer_id", user.id);
+    const { error: uErr } = await supabase.from("private_lessons").update({ title, location, description: form.description, starts_at, ends_at, max_members: form.max_members ? Number(form.max_members) : null, price: form.price ? Number(form.price) : null, target_level: form.target_level, visibility: isPrivate ? "private" : "public", requires_approval: requiresApproval, image_url, image_urls }).eq("id", lessonId).eq("organizer_id", user.id);
     if (uErr) { setError(`保存に失敗しました: ${uErr.message}`); setSaving(false); return; }
     await supabase.from("pl_genres").delete().eq("lesson_id", lessonId);
     if (form.genres.length > 0) {
@@ -238,20 +250,23 @@ export function EditLessonScreen({ lessonId, user, onBack, onSaved }: {
         </div>
         <div><label style={lbl}>{noun}名 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
         <div>
-          <label style={lbl}>画像 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label>
-          {(imagePreview || imageUrl) ? (
-            <div style={{ position: "relative", borderRadius: "8px", overflow: "hidden" }}>
-              <img src={imagePreview ?? imageUrl ?? ""} alt="" style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", display: "block" }} />
-              <button onClick={clearImage} style={{ position: "absolute", top: "6px", right: "6px", width: "28px", height: "28px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <X size={14} />
-              </button>
-            </div>
-          ) : (
-            <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "14px", border: "1px dashed rgba(255,255,255,0.24)", borderRadius: "8px", color: "rgba(255,255,255,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
-              <Camera size={14} /> 画像を選ぶ
-              <input type="file" accept="image/*" onChange={handleImageSelect} style={{ display: "none" }} />
-            </label>
-          )}
+          <label style={lbl}>画像 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意・最大{MAX_POST_IMAGES}枚</span></label>
+          <div style={{ display: "flex", gap: "8px", overflowX: "auto" }}>
+            {images.map((img, i) => (
+              <div key={i} style={{ position: "relative", flexShrink: 0, width: "84px", borderRadius: "8px", overflow: "hidden" }}>
+                <img src={img.kind === "existing" ? img.url : img.preview} alt="" style={{ width: "84px", aspectRatio: "3 / 4", objectFit: "cover", display: "block" }} />
+                <button onClick={() => removeImageAt(i)} style={{ position: "absolute", top: "4px", right: "4px", width: "22px", height: "22px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+            {images.length < MAX_POST_IMAGES && (
+              <label style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "4px", width: "84px", aspectRatio: "3 / 4", border: "1px dashed rgba(255,255,255,0.24)", borderRadius: "8px", color: "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                <Camera size={16} /> 追加
+                <input type="file" accept="image/*" multiple onChange={handleImagesSelect} style={{ display: "none" }} />
+              </label>
+            )}
+          </div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: isEvent ? "1fr" : "1fr 1fr", gap: "10px" }}>
           <div><label style={lbl}>{isEvent ? "参加費（円）" : "料金（円）"}</label><input style={inp} type="number" min="0" placeholder="例: 3000" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} /></div>
