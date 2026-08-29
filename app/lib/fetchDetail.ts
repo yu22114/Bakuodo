@@ -42,13 +42,17 @@ export async function fetchNumberById(numberId: string): Promise<DanceNumber | n
   const { data: row } = await supabase.from("numbers").select(`
     id, title, organizer_id, starts_at, ends_at, location, description, max_members, studio_fee,
     profiles:organizer_id ( dancer_name, avatar_url, instagram ),
-    number_genres ( genres:genre_id ( name ) )
+    number_genres ( genres:genre_id ( name ) ),
+    number_performance_dates ( event_date )
   `).eq("id", numberId).single();
   if (!row) return null;
   const name = (row as any).profiles?.dancer_name ?? "UNKNOWN";
   const genres: GenreKey[] = ((row as any).number_genres ?? [])
     .map((cg: any) => cg.genres?.name as GenreKey)
     .filter(Boolean);
+  const performanceDates: string[] = ((row as any).number_performance_dates ?? [])
+    .map((d: any) => d.event_date as string)
+    .sort();
   const { count: partCount } = await supabase
     .from("number_participations").select("id", { count: "exact", head: true })
     .eq("number_id", numberId);
@@ -62,6 +66,7 @@ export async function fetchNumberById(numberId: string): Promise<DanceNumber | n
     max_members: (row as any).max_members,
     studio_fee: (row as any).studio_fee ?? null,
     genres,
+    performance_dates: performanceDates,
     organizer: { id: (row as any).organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: (row as any).profiles?.avatar_url ?? null, instagram: (row as any).profiles?.instagram ?? null },
     participant_count: partCount ?? 0,
     hot: (partCount ?? 0) >= 5,

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Check, ChevronLeft } from "lucide-react";
+import { Check, ChevronLeft, X, Plus } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { FormState, GenreKey } from "../lib/types";
@@ -19,6 +19,8 @@ export function EditNumberScreen({ numberId, user, onBack, onSaved }: {
   const swipeBack = useSwipeBack(onBack);
   const [form, setForm] = useState<FormState>({ title: "", date: "", start_time: "", end_time: "", station: "", studio: "", genres: [], description: "", max_members: "", payment: [], studio_fee: "" });
   const [endDate, setEndDate] = useState("");
+  // 本番当日。連続していなくてもよい複数の日付を追加・削除できるようにする
+  const [performanceDates, setPerformanceDates] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -28,7 +30,7 @@ export function EditNumberScreen({ numberId, user, onBack, onSaved }: {
   useEffect(() => {
     async function fetchNumber() {
       const { data } = await supabase.from("numbers")
-        .select("id, title, starts_at, ends_at, location, description, max_members, number_genres(genres:genre_id(name))")
+        .select("id, title, starts_at, ends_at, location, description, max_members, number_genres(genres:genre_id(name)), number_performance_dates(event_date)")
         .eq("id", numberId).single();
       if (data) {
         const starts = new Date((data as any).starts_at);
@@ -36,8 +38,10 @@ export function EditNumberScreen({ numberId, user, onBack, onSaved }: {
         const dateStr = `${starts.getFullYear()}-${String(starts.getMonth() + 1).padStart(2, "0")}-${String(starts.getDate()).padStart(2, "0")}`;
         const endDateStr = ends ? `${ends.getFullYear()}-${String(ends.getMonth() + 1).padStart(2, "0")}-${String(ends.getDate()).padStart(2, "0")}` : "";
         const genres = ((data as any).number_genres ?? []).map((cg: any) => cg.genres?.name as GenreKey).filter(Boolean);
+        const perfDates = ((data as any).number_performance_dates ?? []).map((d: any) => d.event_date as string).sort();
         setForm({ title: (data as any).title ?? "", date: dateStr, start_time: "", end_time: "", station: "", studio: (data as any).location ?? "", genres, description: (data as any).description ?? "", max_members: (data as any).max_members ? String((data as any).max_members) : "", payment: [], studio_fee: "" });
         setEndDate(endDateStr);
+        setPerformanceDates(perfDates);
       }
       setLoading(false);
     }
@@ -62,6 +66,12 @@ export function EditNumberScreen({ numberId, user, onBack, onSaved }: {
       if (genreRows && genreRows.length > 0) {
         await supabase.from("number_genres").insert(genreRows.map((g: any) => ({ number_id: numberId, genre_id: g.id })));
       }
+    }
+    // 本番当日は一旦全部消してから作り直す（ジャンルと同じやり方。空欄の行は無視する）
+    await supabase.from("number_performance_dates").delete().eq("number_id", numberId);
+    const validPerformanceDates = performanceDates.filter(Boolean);
+    if (validPerformanceDates.length > 0) {
+      await supabase.from("number_performance_dates").insert(validPerformanceDates.map(event_date => ({ number_id: numberId, event_date })));
     }
     setSaving(false);
     onSaved();
@@ -94,6 +104,22 @@ export function EditNumberScreen({ numberId, user, onBack, onSaved }: {
           <div><label style={lbl}>終了 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label>
             <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={form.date || todayStr()} value={endDate} onChange={e => setEndDate(e.target.value)} disabled={!form.date} /></div>
           </div>
+        </div>
+        <div>
+          <label style={lbl}>本番当日 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label>
+          {performanceDates.map((d, i) => (
+            <div key={i} style={{ display: "flex", gap: "6px", marginBottom: "6px" }}>
+              <input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={d} onChange={e => { const v = e.target.value; setPerformanceDates(arr => arr.map((x, idx) => idx === i ? v : x)); }} />
+              <button onClick={() => setPerformanceDates(arr => arr.filter((_, idx) => idx !== i))}
+                style={{ flexShrink: 0, width: "40px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", color: "#F0F0F0", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+          <button onClick={() => setPerformanceDates(arr => [...arr, ""])}
+            style={{ width: "100%", padding: "10px", border: "1px dashed rgba(236,72,153,0.5)", borderRadius: "6px", background: "transparent", color: "#EC4899", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+            <Plus size={12} /> 日程を追加
+          </button>
         </div>
         <div><label style={lbl}>会場 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={form.studio} onChange={e => setForm(f => ({ ...f, studio: e.target.value }))} /></div>
         <div>

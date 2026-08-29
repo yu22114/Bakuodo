@@ -1,8 +1,15 @@
 "use client";
 import { useState } from "react";
-import { Calendar, MapPin } from "lucide-react";
+import { Calendar, MapPin, Star } from "lucide-react";
 import type { DanceNumber } from "../lib/types";
 import { GENRE_COLORS, genreLabel, dateBadgeParts, timeUntil } from "../lib/constants";
+
+// 本番当日（"YYYY-MM-DD"）を「9/10(木)」のように短く表示する
+function formatJaDate(dateStr: string) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  return `${d.getMonth() + 1}/${d.getDate()}(${weekdays[d.getDay()]})`;
+}
 
 // CypherCardとほぼ同じ作り。時刻ではなく想定練習期間（日付の範囲）を持つ点が異なる
 export function NumberCard({ number, onClick, index = 0 }: { number: DanceNumber; onClick: () => void; index?: number }) {
@@ -71,6 +78,14 @@ export function NumberCard({ number, onClick, index = 0 }: { number: DanceNumber
           <MapPin size={11} color="rgba(255,255,255,0.4)" />
           <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>{number.location}</span>
         </div>
+        {number.performance_dates.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Star size={11} color={color} />
+            <span style={{ fontSize: "11px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
+              本番: {formatJaDate(number.performance_dates[0])}{number.performance_dates.length > 1 ? ` 他${number.performance_dates.length - 1}日` : ""}
+            </span>
+          </div>
+        )}
       </div>
       </div>
     </div>

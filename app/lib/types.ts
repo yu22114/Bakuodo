@@ -40,6 +40,8 @@ export interface DanceNumber {
   description: string;
   hot: boolean;
   studio_fee: number | null;
+  // 本番当日。連続していなくてもよい複数の日付（"YYYY-MM-DD"）を古い順に持つ
+  performance_dates: string[];
 }
 
 export interface PrivateLesson {
