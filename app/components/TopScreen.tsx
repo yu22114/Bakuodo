@@ -397,7 +397,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
           {/* 今日の日付は常に出しておく。左のカレンダーアイコンを押すと月間カレンダーが開く */}
           <button onClick={() => { setCalendarMonthOffset(0); setShowCalendar(true); }} aria-label="カレンダーを表示"
             style={{ justifySelf: "start", background: "none", border: "none", padding: "6px", cursor: "pointer", display: "flex", alignItems: "center" }}>
-            <span style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", letterSpacing: "0.02em" }}>{todayLabel}</span>
+            <span style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#FFFFFF", letterSpacing: "0.02em" }}>{todayLabel}</span>
           </button>
           {/* ロゴを押すと登録済みユーザーが全員出てくる */}
           <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center" }}>
@@ -409,7 +409,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "4px" }}>
             {/* 検索ボタン */}
             <button onClick={() => setSearchOpen(true)} style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "6px" }}>
-              <Search size={22} color={activeFilterCount > 0 ? "#DC2626" : "rgba(255,255,255,0.5)"} />
+              <Search size={22} color={activeFilterCount > 0 ? "#DC2626" : "#FFFFFF"} />
               {activeFilterCount > 0 && (
                 <span style={{ position: "absolute", top: "2px", right: "2px", background: "#DC2626", color: "#fff", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", minWidth: "16px", height: "16px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", transform: "translate(4px,-4px)", lineHeight: 1 }}>
                   {activeFilterCount}
@@ -417,7 +417,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
               )}
             </button>
             <button onClick={onBell} style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "6px" }}>
-              <Bell size={22} color="rgba(255,255,255,0.5)" />
+              <Bell size={22} color="#FFFFFF" />
               {unreadCount > 0 && (
                 <span style={{ position: "absolute", top: "2px", right: "2px", background: "#DC2626", color: "#fff", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", minWidth: "16px", height: "16px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", transform: "translate(4px,-4px)", lineHeight: 1, animation: badgePulsing ? "bdBadgePulse 0.5s ease-out" : undefined }}>
                   {unreadCount > 99 ? "99+" : unreadCount}
