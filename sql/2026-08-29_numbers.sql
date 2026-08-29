@@ -28,7 +28,7 @@ create table if not exists public.numbers (
 create table if not exists public.number_genres (
   id uuid primary key default gen_random_uuid(),
   number_id uuid not null references public.numbers(id) on delete cascade,
-  genre_id uuid not null references public.genres(id)
+  genre_id integer not null references public.genres(id)
 );
 
 create table if not exists public.number_participations (
