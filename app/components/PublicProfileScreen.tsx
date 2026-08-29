@@ -536,8 +536,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
   return (
     <div style={onBack
-      ? { position: "fixed", inset: 0, zIndex: 150, background: `radial-gradient(circle at 50% -20%, ${profileAccent}E6 0%, ${profileAccent}1F 25%, #000000 55%)`, overflow: "hidden", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }
-      : { height: "100dvh", overflow: "hidden", display: "flex", flexDirection: "column", background: `radial-gradient(circle at 50% -20%, ${profileAccent}E6 0%, ${profileAccent}1F 25%, #000000 55%)` }
+      ? { position: "fixed", inset: 0, zIndex: 150, background: "radial-gradient(circle at 50% -20%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.12) 25%, #000000 55%)", overflow: "hidden", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }
+      : { height: "100dvh", overflow: "hidden", display: "flex", flexDirection: "column", background: "radial-gradient(circle at 50% -20%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.12) 25%, #000000 55%)" }
     }>
       {/* ヘッダー。Instagramと同じ並びにする：
           上段＝アイコンと数字が横並び、その下に名前、いちばん下に横長のボタン
