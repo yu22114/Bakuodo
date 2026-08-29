@@ -550,22 +550,24 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
           <div><label style={lbl}>会場 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={numberForm.studio} onChange={e => setNumberForm(f => ({ ...f, studio: e.target.value }))} /></div>
           <div>
             <label style={lbl}>画像 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意・最大{MAX_POST_IMAGES}枚</span></label>
-            <div style={{ display: "flex", gap: "8px", overflowX: "auto" }}>
-              {numberImagePreviews.map((src, i) => (
-                <div key={i} style={{ position: "relative", flexShrink: 0, width: "84px", borderRadius: "8px", overflow: "hidden" }}>
-                  <img src={src} alt="" style={{ width: "84px", aspectRatio: "3 / 4", objectFit: "cover", display: "block" }} />
-                  <button onClick={() => removeNumberImageAt(i)} style={{ position: "absolute", top: "4px", right: "4px", width: "22px", height: "22px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <X size={12} />
-                  </button>
-                </div>
-              ))}
-              {numberImagePreviews.length < MAX_POST_IMAGES && (
-                <label style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "4px", width: "84px", aspectRatio: "3 / 4", border: "1px dashed rgba(255,255,255,0.24)", borderRadius: "8px", color: "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
-                  <Camera size={16} /> 追加
-                  <input type="file" accept="image/*" multiple onChange={handleNumberImagesSelect} style={{ display: "none" }} />
-                </label>
-              )}
-            </div>
+            {numberImagePreviews.length > 0 && (
+              <div style={{ display: "flex", gap: "8px", overflowX: "auto", marginBottom: "8px" }}>
+                {numberImagePreviews.map((src, i) => (
+                  <div key={i} style={{ position: "relative", flexShrink: 0, width: "84px", borderRadius: "8px", overflow: "hidden" }}>
+                    <img src={src} alt="" style={{ width: "84px", aspectRatio: "3 / 4", objectFit: "cover", display: "block" }} />
+                    <button onClick={() => removeNumberImageAt(i)} style={{ position: "absolute", top: "4px", right: "4px", width: "22px", height: "22px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {numberImagePreviews.length < MAX_POST_IMAGES && (
+              <label style={{ width: "100%", padding: "10px", border: "1px dashed rgba(236,72,153,0.5)", borderRadius: "6px", background: "transparent", color: "#EC4899", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", boxSizing: "border-box" }}>
+                <Camera size={12} /> 画像を追加
+                <input type="file" accept="image/*" multiple onChange={handleNumberImagesSelect} style={{ display: "none" }} />
+              </label>
+            )}
           </div>
           <div><label style={lbl}>ジャンル</label>
             <GenreStrip value={numberForm.genres[0] ?? ""} onChange={toggleNumberGenre} genres={EXTENDED_GENRES} />
@@ -641,22 +643,24 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
           <div><label style={lbl}>{plNoun}名 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="空欄の場合は開催場所がタイトルになります" value={plForm.title} onChange={e => setPlForm(f => ({ ...f, title: e.target.value }))} /></div>
           <div>
             <label style={lbl}>画像 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意・最大{MAX_POST_IMAGES}枚</span></label>
-            <div style={{ display: "flex", gap: "8px", overflowX: "auto" }}>
-              {plImagePreviews.map((src, i) => (
-                <div key={i} style={{ position: "relative", flexShrink: 0, width: "84px", borderRadius: "8px", overflow: "hidden" }}>
-                  <img src={src} alt="" style={{ width: "84px", aspectRatio: "3 / 4", objectFit: "cover", display: "block" }} />
-                  <button onClick={() => removePlImageAt(i)} style={{ position: "absolute", top: "4px", right: "4px", width: "22px", height: "22px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <X size={12} />
-                  </button>
-                </div>
-              ))}
-              {plImagePreviews.length < MAX_POST_IMAGES && (
-                <label style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "4px", width: "84px", aspectRatio: "3 / 4", border: "1px dashed rgba(255,255,255,0.24)", borderRadius: "8px", color: "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
-                  <Camera size={16} /> 追加
-                  <input type="file" accept="image/*" multiple onChange={handlePlImagesSelect} style={{ display: "none" }} />
+            {plImagePreviews.length > 0 && (
+              <div style={{ display: "flex", gap: "8px", overflowX: "auto", marginBottom: "8px" }}>
+                {plImagePreviews.map((src, i) => (
+                  <div key={i} style={{ position: "relative", flexShrink: 0, width: "84px", borderRadius: "8px", overflow: "hidden" }}>
+                    <img src={src} alt="" style={{ width: "84px", aspectRatio: "3 / 4", objectFit: "cover", display: "block" }} />
+                    <button onClick={() => removePlImageAt(i)} style={{ position: "absolute", top: "4px", right: "4px", width: "22px", height: "22px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {plImagePreviews.length < MAX_POST_IMAGES && (
+              <label style={{ width: "100%", padding: "10px", border: `1px dashed ${plAccent}80`, borderRadius: "6px", background: "transparent", color: plAccent, fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", boxSizing: "border-box" }}>
+                <Camera size={12} /> 画像を追加
+                <input type="file" accept="image/*" multiple onChange={handlePlImagesSelect} style={{ display: "none" }} />
                 </label>
               )}
-            </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: isEvent ? "1fr" : "1fr 1fr", gap: "10px" }}>
             <div><label style={lbl}>{isEvent ? "参加費（円）" : "料金（円）"}</label><input style={inp} type="number" min="0" placeholder="例: 3000" value={plForm.price} onChange={e => setPlForm(f => ({ ...f, price: e.target.value }))} /></div>
