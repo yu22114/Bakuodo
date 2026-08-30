@@ -79,6 +79,8 @@ export function EditNumberScreen({ numberId, user, onBack, onSaved }: {
   const [endDate, setEndDate] = useState("");
   // 本番当日。連続していなくてもよい複数の日付を追加・削除できるようにする
   const [performanceDates, setPerformanceDates] = useState<string[]>([]);
+  // 募集期限。想定練習期間の終了とは別に、参加受付だけ先に締め切れる（任意）
+  const [recruitmentDeadline, setRecruitmentDeadline] = useState("");
   // 添付画像（複数枚）。既存＋新規を1つの配列にして表示順を保つ
   const [images, setImages] = useState<PostImage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,7 +92,7 @@ export function EditNumberScreen({ numberId, user, onBack, onSaved }: {
   useEffect(() => {
     async function fetchNumber() {
       const { data } = await supabase.from("numbers")
-        .select("id, title, starts_at, ends_at, location, description, max_members, image_url, image_urls, number_genres(genres:genre_id(name)), number_performance_dates(event_date)")
+        .select("id, title, starts_at, ends_at, location, description, max_members, image_url, image_urls, recruitment_deadline, number_genres(genres:genre_id(name)), number_performance_dates(event_date)")
         .eq("id", numberId).single();
       if (data) {
         const starts = new Date((data as any).starts_at);
@@ -102,6 +104,7 @@ export function EditNumberScreen({ numberId, user, onBack, onSaved }: {
         setForm({ title: (data as any).title ?? "", date: dateStr, start_time: "", end_time: "", station: "", studio: (data as any).location ?? "", genres, description: (data as any).description ?? "", max_members: (data as any).max_members ? String((data as any).max_members) : "", payment: [], studio_fee: "" });
         setEndDate(endDateStr);
         setPerformanceDates(perfDates);
+        setRecruitmentDeadline((data as any).recruitment_deadline ?? "");
         // image_urlsを足す前の投稿はimage_urlしか持たないので、無ければそれを1枚目として扱う
         const existingUrls: string[] = (data as any).image_urls?.length ? (data as any).image_urls : ((data as any).image_url ? [(data as any).image_url] : []);
         setImages(existingUrls.map((url: string) => ({ kind: "existing", url })));
@@ -156,7 +159,7 @@ export function EditNumberScreen({ numberId, user, onBack, onSaved }: {
     const starts_at = `${form.date}T00:00:00+09:00`;
     const ends_at = endDate && endDate > form.date ? `${endDate}T23:59:59+09:00` : null;
     const location = form.studio.trim() || title;
-    const { error: uErr } = await supabase.from("numbers").update({ title, location, description: form.description, starts_at, ends_at, max_members: form.max_members ? Number(form.max_members) : null, image_url, image_urls }).eq("id", numberId).eq("organizer_id", user.id);
+    const { error: uErr } = await supabase.from("numbers").update({ title, location, description: form.description, starts_at, ends_at, max_members: form.max_members ? Number(form.max_members) : null, image_url, image_urls, recruitment_deadline: recruitmentDeadline || null }).eq("id", numberId).eq("organizer_id", user.id);
     if (uErr) { setError(`保存に失敗しました: ${uErr.message}`); setSaving(false); return; }
     await supabase.from("number_genres").delete().eq("number_id", numberId);
     if (form.genres.length > 0) {
@@ -237,6 +240,10 @@ export function EditNumberScreen({ numberId, user, onBack, onSaved }: {
             style={{ width: "100%", padding: "10px", border: "1px dashed rgba(236,72,153,0.5)", borderRadius: "6px", background: "transparent", color: "#EC4899", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
             <Plus size={12} /> 日程を追加
           </button>
+        </div>
+        {/* 募集期限：想定練習期間の終了とは別に、参加受付だけ先に締め切りたい時用 */}
+        <div><label style={lbl}>募集期限 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label>
+          <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={recruitmentDeadline} onChange={e => setRecruitmentDeadline(e.target.value)} /></div>
         </div>
         <div><label style={lbl}>会場 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={form.studio} onChange={e => setForm(f => ({ ...f, studio: e.target.value }))} /></div>
         <div>

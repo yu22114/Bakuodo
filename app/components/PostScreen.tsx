@@ -210,6 +210,8 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
   const [numberEndDate, setNumberEndDate] = useState("");
   // 本番当日。連続していなくてもよい複数の日付を追加・削除できるようにする
   const [numberPerformanceDates, setNumberPerformanceDates] = useState<string[]>([]);
+  // 募集期限。想定練習期間の終了とは別に、参加受付だけ先に締め切れる（任意）
+  const [numberRecruitmentDeadline, setNumberRecruitmentDeadline] = useState("");
   // 添付画像（任意・複数枚）。実際のアップロードは投稿ボタンを押した時にまとめて行う
   const [numberImageFiles, setNumberImageFiles] = useState<File[]>([]);
   const [numberImagePreviews, setNumberImagePreviews] = useState<string[]>([]);
@@ -257,6 +259,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
         if (d.numberForm) setNumberForm({ ...EMPTY_FORM, ...d.numberForm });
         if (d.numberEndDate) setNumberEndDate(d.numberEndDate);
         if (d.numberPerformanceDates) setNumberPerformanceDates(d.numberPerformanceDates);
+        if (d.numberRecruitmentDeadline) setNumberRecruitmentDeadline(d.numberRecruitmentDeadline);
         if (d.plForm) setPlForm({ ...EMPTY_PL, ...d.plForm });
         setIsPrivate(!!d.isPrivate);
         setRequiresApproval(!!d.requiresApproval);
@@ -273,14 +276,14 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
     if (!draftLoaded) return;
     try {
       if (!hasContent(form, numberForm, plForm)) { localStorage.removeItem(DRAFT_KEY); return; }
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, numberForm, numberEndDate, numberPerformanceDates, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval }));
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, numberForm, numberEndDate, numberPerformanceDates, numberRecruitmentDeadline, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval }));
     } catch { /* 保存できなくても入力は続けられるようにする */ }
-  }, [draftLoaded, form, numberForm, numberEndDate, numberPerformanceDates, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval]);
+  }, [draftLoaded, form, numberForm, numberEndDate, numberPerformanceDates, numberRecruitmentDeadline, plForm, isPrivate, requiresApproval, plIsPrivate, plRequiresApproval]);
 
   const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch {} };
 
   const discardDraft = () => {
-    setForm(EMPTY_FORM); setNumberForm(EMPTY_FORM); setNumberEndDate(""); setNumberPerformanceDates([]); setPlForm(EMPTY_PL);
+    setForm(EMPTY_FORM); setNumberForm(EMPTY_FORM); setNumberEndDate(""); setNumberPerformanceDates([]); setNumberRecruitmentDeadline(""); setPlForm(EMPTY_PL);
     setIsPrivate(false); setRequiresApproval(false);
     setPlIsPrivate(false); setPlRequiresApproval(false);
     setDraftRestored(false);
@@ -398,7 +401,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
     const location = numberForm.studio.trim() || title;
     const { data: numberRow, error: nErr } = await supabase
       .from("numbers")
-      .insert({ title, location, description: numberForm.description, starts_at, ends_at, max_members: numberForm.max_members ? Number(numberForm.max_members) : null, organizer_id: user.id, image_url, image_urls })
+      .insert({ title, location, description: numberForm.description, starts_at, ends_at, max_members: numberForm.max_members ? Number(numberForm.max_members) : null, organizer_id: user.id, image_url, image_urls, recruitment_deadline: numberRecruitmentDeadline || null })
       .select().single();
     if (nErr || !numberRow) { console.error("number insert error:", nErr); setError(`投稿に失敗しました。エラー: ${nErr?.message ?? "不明"}`); setLoading(false); return; }
     if (numberForm.genres.length > 0) {
@@ -546,6 +549,10 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
               style={{ width: "100%", padding: "10px", border: "1px dashed rgba(236,72,153,0.5)", borderRadius: "6px", background: "transparent", color: "#EC4899", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
               <Plus size={12} /> 日程を追加
             </button>
+          </div>
+          {/* 募集期限：想定練習期間の終了とは別に、参加受付だけ先に締め切りたい時用 */}
+          <div><label style={lbl}>募集期限 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label>
+            <div style={{ display: "flex" }}><input type="date" style={{ ...inp, flex: 1 }} min={todayStr()} value={numberRecruitmentDeadline} onChange={e => setNumberRecruitmentDeadline(e.target.value)} /></div>
           </div>
           <div><label style={lbl}>会場 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "8px" }}>任意</span></label><input style={inp} placeholder="例: Buzz渋谷 3号室、代々木worcle Aスタジオ" value={numberForm.studio} onChange={e => setNumberForm(f => ({ ...f, studio: e.target.value }))} /></div>
           <div>

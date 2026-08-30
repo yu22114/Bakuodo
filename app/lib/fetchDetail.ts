@@ -40,7 +40,7 @@ export async function fetchCypherById(cypherId: string): Promise<Cypher | null> 
 // 限定公開・参加承認制がないのでvisibility/requires_approvalは扱わない）
 export async function fetchNumberById(numberId: string): Promise<DanceNumber | null> {
   const { data: row } = await supabase.from("numbers").select(`
-    id, title, organizer_id, starts_at, ends_at, location, description, max_members, studio_fee, image_url, image_urls,
+    id, title, organizer_id, starts_at, ends_at, location, description, max_members, studio_fee, image_url, image_urls, recruitment_deadline,
     profiles:organizer_id ( dancer_name, avatar_url, instagram ),
     number_genres ( genres:genre_id ( name ) ),
     number_performance_dates ( event_date )
@@ -68,6 +68,7 @@ export async function fetchNumberById(numberId: string): Promise<DanceNumber | n
     image_url: (row as any).image_url ?? null,
     // image_urlsを足す前の投稿はimage_urlしか持たないので、無ければそれを1枚目として扱う
     image_urls: (row as any).image_urls?.length ? (row as any).image_urls : ((row as any).image_url ? [(row as any).image_url] : []),
+    recruitment_deadline: (row as any).recruitment_deadline ?? null,
     genres,
     performance_dates: performanceDates,
     organizer: { id: (row as any).organizer_id, dancer_name: name, avatar: name[0]?.toUpperCase() ?? "?", avatar_url: (row as any).profiles?.avatar_url ?? null, instagram: (row as any).profiles?.instagram ?? null },

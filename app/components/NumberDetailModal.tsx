@@ -1,10 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Calendar, MapPin, User, X, Check, Zap, Share2, Pencil, Trash2, Star, Bookmark, Download, Loader } from "lucide-react";
+import { Calendar, MapPin, User, X, Check, Zap, Share2, Pencil, Trash2, Star, Bookmark, Download, Loader, Hourglass } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { DanceNumber, ParticipantProfile } from "../lib/types";
-import { dateBadgeParts, timeUntil, timeAgo } from "../lib/constants";
+import { dateBadgeParts, timeUntil, timeAgo, todayStr } from "../lib/constants";
 import { useComments } from "../lib/useComments";
 import type { NumberApplicationAnswers } from "../lib/participation";
 import { ParticipantBar } from "./ParticipantBar";
@@ -183,6 +183,8 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
   const end = number.ends_at ? dateBadgeParts(number.ends_at) : null;
   // 複数日にまたがる練習期間なので、「終了」判定は2日目（あれば）を基準にする
   const isEnded = timeUntil(number.ends_at ?? number.starts_at) === "終了";
+  // 募集期限：想定練習期間そのものの終了とは別に、参加受付だけ先に締め切れる
+  const recruitmentClosed = !!number.recruitment_deadline && number.recruitment_deadline < todayStr();
   const isOwn = organizerId === user?.id;
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
@@ -312,6 +314,12 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
               <Calendar size={14} color="rgba(255,255,255,0.45)" />
               想定練習期間: {start.month}/{start.day}({start.weekday}){end ? `〜${end.month}/${end.day}(${end.weekday})` : ""}
             </div>
+            {number.recruitment_deadline && (
+              <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: recruitmentClosed ? "#DC2626" : "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "center" }}>
+                <Hourglass size={14} color={recruitmentClosed ? "#DC2626" : "rgba(255,255,255,0.45)"} />
+                募集期限: {formatJaDate(number.recruitment_deadline)}{recruitmentClosed ? "（終了）" : ""}
+              </div>
+            )}
             {number.performance_dates.length > 0 && (
               <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", alignItems: "flex-start" }}>
                 <Star size={14} color="rgba(255,255,255,0.45)" style={{ marginTop: "2px", flexShrink: 0 }} />
@@ -356,6 +364,10 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
           ) : !isOwn && (isEnded ? (
             <div style={{ marginTop: "20px", padding: "14px", background: "rgba(255,255,255,0.06)", borderRadius: "6px", textAlign: "center", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
               このNUMBERは終了しました
+            </div>
+          ) : recruitmentClosed && !joined ? (
+            <div style={{ marginTop: "20px", padding: "14px", background: "rgba(255,255,255,0.06)", borderRadius: "6px", textAlign: "center", fontSize: "13px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
+              募集は終了しました
             </div>
           ) : (() => {
             const isFull = !joined && number.max_members !== null && participantsFetched && participants.length >= number.max_members;

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Calendar, MapPin, Star } from "lucide-react";
 import type { DanceNumber } from "../lib/types";
-import { GENRE_COLORS, genreLabel, dateBadgeParts, timeUntil } from "../lib/constants";
+import { GENRE_COLORS, genreLabel, dateBadgeParts, timeUntil, todayStr } from "../lib/constants";
 
 // 本番当日（"YYYY-MM-DD"）を「9/10(木)」のように短く表示する
 function formatJaDate(dateStr: string) {
@@ -19,6 +19,8 @@ export function NumberCard({ number, onClick, index = 0 }: { number: DanceNumber
   const endParts = number.ends_at ? dateBadgeParts(number.ends_at) : null;
   // 複数日にまたがる練習期間なので、「終了」判定は2日目（あれば）を基準にする
   const isEnded = timeUntil(number.ends_at ?? number.starts_at) === "終了";
+  // 募集期限：想定練習期間そのものの終了とは別に、参加受付だけ先に締め切れる
+  const recruitmentClosed = !!number.recruitment_deadline && number.recruitment_deadline < todayStr();
   const [hover, setHover] = useState(false);
   const [pressed, setPressed] = useState(false);
   const color = GENRE_COLORS[number.genres[0]] ?? "#EC4899";
@@ -44,7 +46,11 @@ export function NumberCard({ number, onClick, index = 0 }: { number: DanceNumber
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.62) 38%, rgba(0,0,0,0.08) 68%, transparent 100%)" }} />
 
       {number.hot && !isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "#EC4899", padding: "2px 7px", fontSize: "7.5px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold", borderBottomLeftRadius: "5px" }}>🔥 HOT</div>}
-      {isEnded && <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.14)", padding: "2px 7px", fontSize: "7.5px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "5px" }}>終了</div>}
+      {isEnded ? (
+        <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.14)", padding: "2px 7px", fontSize: "7.5px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "5px" }}>終了</div>
+      ) : recruitmentClosed && (
+        <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(220,38,38,0.75)", padding: "2px 7px", fontSize: "7.5px", fontFamily: "'Noto Sans JP',sans-serif", color: "#fff", fontWeight: "bold", borderBottomLeftRadius: "5px" }}>募集終了</div>
+      )}
 
       {/* コンテンツは上から下まで満たすフライヤー組み。ジャンルタグは上、タイトルはmarginTop:autoで
           下寄せの大きな斜体文字にする（写真の有無に関わらず、これだけで様になるようにする） */}
