@@ -410,13 +410,14 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     setCommunityMembersLoading(false);
   };
 
-  // マイコミュニティに追加できるのは「団体用」アカウントのみ。チームの候補（全員）とは別に持つ
+  // マイコミュニティに追加できるのは、以前は「団体用」アカウントだけだったが、
+  // 個人用アカウントも掲示板を作れるようになったのでフォロー中の全員を候補にする。
+  // チームの候補（全員）とは別に持つ
   const openCommunityMemberPicker = async () => {
     setPickCommunityMemberOpen(true);
     if (communityCandidates !== null) return;
-    const { data } = await supabase.from("follows").select("following_id, profiles:following_id(dancer_name, avatar_url, account_type)").eq("follower_id", currentUserId);
+    const { data } = await supabase.from("follows").select("following_id, profiles:following_id(dancer_name, avatar_url)").eq("follower_id", currentUserId);
     setCommunityCandidates((data ?? [])
-      .filter((r: any) => r.profiles?.account_type === "organization")
       .map((r: any) => ({ id: r.following_id, dancer_name: r.profiles?.dancer_name ?? "UNKNOWN", avatar_url: r.profiles?.avatar_url ?? null })));
   };
 

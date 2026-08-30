@@ -19,7 +19,7 @@ type DraftInstructor = { name: string; instagram: string };
 const EMPTY_INSTRUCTOR: DraftInstructor = { name: "", instagram: "" };
 
 // マイコミュニティのカードを押すと開く画面。中身は練習カードの一覧（タップすると中の練習日程を見られる）。
-// 閲覧は誰でもできるが、書き換えられるのは作成者だけ
+// 閲覧・練習カードの作成はこの掲示板を見られる人なら誰でもできる。掲示板自体の削除・編集は作成者だけ
 export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
   board: { id: string; title: string };
   user: SupabaseUser;
@@ -129,6 +129,14 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
     const { error } = await supabase.from("community_board_genre_cards").insert({ id: newId, board_id: board.id, title, genre });
     if (error) { setAddingCard(false); console.error("community_board_genre_cards insert error:", error); showToast(`カードの作成に失敗しました: ${error.message}`); return; }
 
+    // 作成者本人（掲示板の作成者）以外が作った場合は、自分をそのカードのメンバーとして
+    // 登録しておく。そうしないと自分で作ったカードなのに参加申請が必要になってしまう
+    if (!isOwn) {
+      const { error: memErr } = await supabase.from("community_board_genre_card_members").insert({ card_id: newId, profile_id: user.id });
+      if (memErr) console.error("community_board_genre_card_members insert error:", memErr);
+      else setMyCardIds(prev => new Set(prev ?? []).add(newId));
+    }
+
     // 名前を入れた講師だけ登録する（空欄の行は無視）
     const validInstructors = newCardInstructors.map(ins => ({ name: ins.name.trim(), instagram: normalizeInstagramUrl(ins.instagram) })).filter(ins => ins.name);
     const instructors: CardInstructor[] = validInstructors.map(ins => ({ id: crypto.randomUUID(), name: ins.name, instagram: ins.instagram }));
@@ -180,9 +188,8 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
             <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "16px" }}>メンバー {members.length}人</div>
           )}
 
-          {/* 練習カードを作る（作成者だけ）。タイトルを自由に決められる */}
-          {isOwn && (
-            <div style={{ marginBottom: "16px" }}>
+          {/* 練習カードを作る（作成者以外も含め、この掲示板を見られる人なら誰でも）。タイトルを自由に決められる */}
+          <div style={{ marginBottom: "16px" }}>
               {!showAddCard ? (
                 <button onClick={() => setShowAddCard(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", background: "none", border: "1px dashed rgba(255,255,255,0.25)", borderRadius: "8px", padding: "10px", color: "rgba(255,255,255,0.6)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", boxSizing: "border-box" }}>
                   <Plus size={14} /> カードを作る
@@ -232,7 +239,6 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
                 </div>
               )}
             </div>
-          )}
 
           {/* 練習カードの一覧（参加申請済みのカードだけ）。参加中のカードを優先して上に出す。
               タップするとその中の練習日程を見る画面が開く */}
