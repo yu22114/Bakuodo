@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Plus, Trash2, Pencil, Check, X, GripVertical } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, X, GripVertical, Camera } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { showToast } from "./Toast";
@@ -8,7 +8,54 @@ import { showToast } from "./Toast";
 const ACCENT = "#DC2626";
 
 export type Assignee = { id: string; dancer_name: string; avatar_url: string | null };
-type ChoreoPart = { id: string; title: string; eightCount: number | null; createdBy: string | null; assigneeIds: string[] };
+type ChoreoPart = { id: string; title: string; eightCount: number | null; createdBy: string | null; assigneeIds: string[]; imageUrl: string | null };
+
+// パートの画像（フォーメーション図・参考写真など、任意で1枚）。
+// 「保存済み（existing）」か「今回選び直した新しい画像（new）」かで表示・保存の扱いが変わる
+type PartImage = { kind: "existing"; url: string } | { kind: "new"; file: File; preview: string };
+
+function loadImageElement(blob: Blob): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("画像を読み込めませんでした"));
+    img.src = URL.createObjectURL(blob);
+  });
+}
+
+async function convertHeicIfNeeded(file: File): Promise<Blob> {
+  const isHeic = /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+  if (!isHeic) return file;
+  if (file.size > 4 * 1024 * 1024) return file;
+  const res = await fetch("/api/convert-heic", { method: "POST", body: file });
+  if (!res.ok) throw new Error(`HEIC変換に失敗しました (status ${res.status})`);
+  return await res.blob();
+}
+
+// パート画像は正方形に中央で切り抜いてから縮小する（フォーメーション図などは縦長・横長どちらもあるため）
+const PART_IMAGE_SIZE = 900;
+
+async function uploadPartImage(userId: string, file: File): Promise<string> {
+  const source = await convertHeicIfNeeded(file);
+  const img = await loadImageElement(source);
+  const side = Math.min(img.naturalWidth, img.naturalHeight);
+  const sx = (img.naturalWidth - side) / 2;
+  const sy = (img.naturalHeight - side) / 2;
+  const canvas = document.createElement("canvas");
+  canvas.width = PART_IMAGE_SIZE;
+  canvas.height = PART_IMAGE_SIZE;
+  const ctx = canvas.getContext("2d");
+  URL.revokeObjectURL(img.src);
+  if (!ctx) throw new Error("画像の処理に失敗しました");
+  ctx.drawImage(img, sx, sy, side, side, 0, 0, PART_IMAGE_SIZE, PART_IMAGE_SIZE);
+  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.85));
+  if (!blob) throw new Error("画像の処理に失敗しました");
+  const path = `${userId}/${crypto.randomUUID()}.jpg`;
+  const { error } = await supabase.storage.from("post-images").upload(path, blob, { contentType: "image/jpeg" });
+  if (error) throw new Error(`画像のアップロードに失敗しました: ${error.message}`);
+  const { data: { publicUrl } } = supabase.storage.from("post-images").getPublicUrl(path);
+  return publicUrl;
+}
 
 // 「担当振付」タブの中身：曲・パート名ごとに担当メンバーを紐づける。
 // パートの追加はこのカードを見られる人なら誰でも。編集・削除は掲示板の作成者、
@@ -24,11 +71,13 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
   const [newTitle, setNewTitle] = useState("");
   const [newEightCount, setNewEightCount] = useState("");
   const [newAssigneeIds, setNewAssigneeIds] = useState<string[]>([]);
+  const [newImage, setNewImage] = useState<PartImage | null>(null);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editEightCount, setEditEightCount] = useState("");
   const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>([]);
+  const [editImage, setEditImage] = useState<PartImage | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -52,9 +101,9 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
   useEffect(() => () => { if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current); }, []);
 
   const fetchParts = async () => {
-    const { data: partRows } = await supabase.from("community_board_choreography_parts").select("id, title, eight_count, created_by")
+    const { data: partRows } = await supabase.from("community_board_choreography_parts").select("id, title, eight_count, created_by, image_url")
       .eq("card_id", cardId).order("sort_order", { ascending: true }).order("created_at", { ascending: true });
-    const list = (partRows as { id: string; title: string; eight_count: number | null; created_by: string | null }[] | null) ?? [];
+    const list = (partRows as { id: string; title: string; eight_count: number | null; created_by: string | null; image_url: string | null }[] | null) ?? [];
     if (list.length === 0) { setParts([]); return; }
     const { data: assigneeRows } = await supabase.from("community_board_choreography_assignees").select("part_id, profile_id").in("part_id", list.map(p => p.id));
     setParts(list.map(p => ({
@@ -62,6 +111,7 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
       title: p.title,
       eightCount: p.eight_count,
       createdBy: p.created_by,
+      imageUrl: p.image_url,
       assigneeIds: (assigneeRows as any[] ?? []).filter(r => r.part_id === p.id).map(r => r.profile_id),
     })));
   };
@@ -166,15 +216,20 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
     const newId = crypto.randomUUID();
     const eightCount = newEightCount ? Number(newEightCount) : null;
     const sortOrder = parts?.length ?? 0; // 新しいパートは常に一番下に追加する
-    const { error } = await supabase.from("community_board_choreography_parts").insert({ id: newId, card_id: cardId, title, eight_count: eightCount, created_by: user.id, sort_order: sortOrder });
+    let imageUrl: string | null = null;
+    if (newImage?.kind === "new") {
+      try { imageUrl = await uploadPartImage(user.id, newImage.file); }
+      catch (e) { setAdding(false); showToast(e instanceof Error ? e.message : "画像のアップロードに失敗しました"); return; }
+    }
+    const { error } = await supabase.from("community_board_choreography_parts").insert({ id: newId, card_id: cardId, title, eight_count: eightCount, created_by: user.id, sort_order: sortOrder, image_url: imageUrl });
     if (error) { setAdding(false); console.error("community_board_choreography_parts insert error:", error); showToast(`パートの作成に失敗しました: ${error.message}`); return; }
     if (newAssigneeIds.length > 0) {
       const { error: aErr } = await supabase.from("community_board_choreography_assignees").insert(newAssigneeIds.map(pid => ({ part_id: newId, profile_id: pid })));
       if (aErr) console.error("community_board_choreography_assignees insert error:", aErr);
     }
     setAdding(false);
-    setParts(list => [...(list ?? []), { id: newId, title, eightCount, createdBy: user.id, assigneeIds: newAssigneeIds }]);
-    setNewTitle(""); setNewEightCount(""); setNewAssigneeIds([]); setShowAdd(false);
+    setParts(list => [...(list ?? []), { id: newId, title, eightCount, createdBy: user.id, imageUrl, assigneeIds: newAssigneeIds }]);
+    setNewTitle(""); setNewEightCount(""); setNewAssigneeIds([]); setNewImage(null); setShowAdd(false);
   };
 
   const openEdit = (part: ChoreoPart) => {
@@ -182,6 +237,7 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
     setEditTitle(part.title);
     setEditEightCount(part.eightCount != null ? String(part.eightCount) : "");
     setEditAssigneeIds(part.assigneeIds);
+    setEditImage(part.imageUrl ? { kind: "existing", url: part.imageUrl } : null);
   };
 
   const saveEdit = async () => {
@@ -189,7 +245,12 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
     if (!title || !editingId || savingEdit) return;
     setSavingEdit(true);
     const eightCount = editEightCount ? Number(editEightCount) : null;
-    const { error } = await supabase.from("community_board_choreography_parts").update({ title, eight_count: eightCount }).eq("id", editingId);
+    let imageUrl: string | null = editImage?.kind === "existing" ? editImage.url : null;
+    if (editImage?.kind === "new") {
+      try { imageUrl = await uploadPartImage(user.id, editImage.file); }
+      catch (e) { setSavingEdit(false); showToast(e instanceof Error ? e.message : "画像のアップロードに失敗しました"); return; }
+    }
+    const { error } = await supabase.from("community_board_choreography_parts").update({ title, eight_count: eightCount, image_url: imageUrl }).eq("id", editingId);
     if (error) { setSavingEdit(false); console.error("community_board_choreography_parts update error:", error); showToast(`保存に失敗しました: ${error.message}`); return; }
     // 担当者は一旦全部消してから今のフォームの内容で入れ直す
     await supabase.from("community_board_choreography_assignees").delete().eq("part_id", editingId);
@@ -198,7 +259,7 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
       if (aErr) { console.error("community_board_choreography_assignees insert error:", aErr); showToast(`担当者の保存に失敗しました: ${aErr.message}`); }
     }
     setSavingEdit(false);
-    setParts(list => (list ?? []).map(p => p.id === editingId ? { ...p, title, eightCount, assigneeIds: editAssigneeIds } : p));
+    setParts(list => (list ?? []).map(p => p.id === editingId ? { ...p, title, eightCount, imageUrl, assigneeIds: editAssigneeIds } : p));
     setEditingId(null);
   };
 
@@ -213,12 +274,34 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
 
   const inp: React.CSSProperties = { width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" };
 
-  // パート作成・編集フォーム共通（タイトル・エイト数＋担当者のチェックリスト）
-  const renderForm = (title: string, setTitle: (v: string) => void, eightCount: string, setEightCount: (v: string) => void, assigneeIds: string[], setAssigneeIds: (v: string[]) => void, onCancel: () => void, onSave: () => void, saving: boolean) => (
+  // パート作成・編集フォーム共通（タイトル・エイト数・画像＋担当者のチェックリスト）
+  const renderForm = (title: string, setTitle: (v: string) => void, eightCount: string, setEightCount: (v: string) => void, assigneeIds: string[], setAssigneeIds: (v: string[]) => void, image: PartImage | null, setImage: (v: PartImage | null) => void, onCancel: () => void, onSave: () => void, saving: boolean) => {
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if (!file) return;
+      setImage({ kind: "new", file, preview: URL.createObjectURL(file) });
+    };
+    const imageSrc = image?.kind === "existing" ? image.url : image?.kind === "new" ? image.preview : null;
+    return (
     <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px" }}>
       <input value={title} onChange={e => setTitle(e.target.value)} placeholder="パート名（例: 1番サビ）" maxLength={40} autoFocus style={inp} />
       <input value={eightCount} onChange={e => setEightCount(e.target.value.replace(/[^0-9]/g, ""))} placeholder="エイト数（任意）" inputMode="numeric" maxLength={3}
         style={{ ...inp, marginTop: "6px" }} />
+      <div style={{ marginTop: "10px" }}>
+        <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "6px" }}>画像（任意・フォーメーション図など）</label>
+        {imageSrc ? (
+          <div style={{ position: "relative", width: "84px" }}>
+            <img src={imageSrc} alt="" style={{ width: "84px", height: "84px", objectFit: "cover", borderRadius: "8px", display: "block" }} />
+            <button type="button" onClick={() => setImage(null)} style={{ position: "absolute", top: "-6px", right: "-6px", width: "20px", height: "20px", borderRadius: "50%", background: "rgba(0,0,0,0.75)", border: "none", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={12} /></button>
+          </div>
+        ) : (
+          <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "4px", width: "84px", height: "84px", border: "1px dashed rgba(255,255,255,0.24)", borderRadius: "8px", color: "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+            <Camera size={16} /> 追加
+            <input type="file" accept="image/*" onChange={handleImageSelect} style={{ display: "none" }} />
+          </label>
+        )}
+      </div>
       {candidates.length > 0 && (
         <div style={{ marginTop: "10px" }}>
           <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "6px" }}>担当（任意・複数選べます）</label>
@@ -244,7 +327,8 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
         <button onClick={onSave} disabled={!title.trim() || saving} style={{ background: title.trim() ? ACCENT : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: title.trim() ? "pointer" : "default", color: title.trim() ? "#fff" : "rgba(255,255,255,0.3)", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>{saving ? "保存中..." : "保存する"}</button>
       </div>
     </div>
-  );
+    );
+  };
 
   if (parts === null) return <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>読み込み中...</div>;
 
@@ -257,7 +341,7 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
           <button onClick={() => setShowAdd(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", background: "none", border: "1px dashed rgba(255,255,255,0.25)", borderRadius: "8px", padding: "10px", color: "rgba(255,255,255,0.6)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", boxSizing: "border-box" }}>
             <Plus size={14} /> パートを作る
           </button>
-        ) : renderForm(newTitle, setNewTitle, newEightCount, setNewEightCount, newAssigneeIds, setNewAssigneeIds, () => { setShowAdd(false); setNewTitle(""); setNewEightCount(""); setNewAssigneeIds([]); }, addPart, adding)}
+        ) : renderForm(newTitle, setNewTitle, newEightCount, setNewEightCount, newAssigneeIds, setNewAssigneeIds, newImage, setNewImage, () => { setShowAdd(false); setNewTitle(""); setNewEightCount(""); setNewAssigneeIds([]); setNewImage(null); }, addPart, adding)}
       </div>
       </div>
 
@@ -284,13 +368,18 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
                 transition: dragging ? "none" : "box-shadow 0.15s ease",
               }}>
               {editingId === part.id ? (
-                renderForm(editTitle, setEditTitle, editEightCount, setEditEightCount, editAssigneeIds, setEditAssigneeIds, () => setEditingId(null), saveEdit, savingEdit)
+                renderForm(editTitle, setEditTitle, editEightCount, setEditEightCount, editAssigneeIds, setEditAssigneeIds, editImage, setEditImage, () => setEditingId(null), saveEdit, savingEdit)
               ) : (
                 <button onClick={() => setViewingPartId(part.id)} style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px" }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{part.title}</div>
-                    <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)", marginTop: "4px" }}>
-                      {part.eightCount != null && <>{part.eightCount}エイト・</>}担当{part.assigneeIds.length}人
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                    {part.imageUrl && (
+                      <img src={part.imageUrl} alt="" style={{ width: "40px", height: "40px", borderRadius: "6px", objectFit: "cover", flexShrink: 0 }} />
+                    )}
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{part.title}</div>
+                      <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)", marginTop: "4px" }}>
+                        {part.eightCount != null && <>{part.eightCount}エイト・</>}担当{part.assigneeIds.length}人
+                      </div>
                     </div>
                   </div>
                   {/* 並び替えのつまみは、この一覧を見られるメンバーなら誰でも操作できる。
@@ -333,6 +422,9 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
                 <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>一緒に踊るメンバー</div>
                 <button onClick={() => setViewingPartId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
               </div>
+              {part.imageUrl && (
+                <img src={part.imageUrl} alt="" style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", borderRadius: "10px", marginBottom: "12px", display: "block" }} />
+              )}
               <div style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", marginBottom: "4px" }}>{part.title}</div>
               {part.eightCount != null && <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "16px" }}>{part.eightCount}エイト</div>}
               {assignees.length === 0 ? (
