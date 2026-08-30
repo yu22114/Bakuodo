@@ -35,11 +35,6 @@ function formatTimeRange(start: string | null, end: string | null) {
   return `${start}〜${isNextDayEnd(end, start) ? `翌${end}` : end}`;
 }
 
-// 日時が早い順の並び順を①②③...で表す（21件目以降は(21)のように数字にフォールバック）
-function circledNumber(n: number) {
-  return n >= 1 && n <= 20 ? String.fromCodePoint(0x2460 + n - 1) : `(${n})`;
-}
-
 // 1つの練習カード（またはカード未設定欄）の中身：練習日程の追加・一覧・参加可否・コメント。
 // CommunityGenreCardScreen（カード詳細）とCommunityBoardScreen（カード未設定の欄）の両方から使う
 export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, allowAdd, heading, onCountChange, scrollableList }: {
@@ -230,9 +225,12 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
                 {!isPast && (
                   <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.12)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>今後の予定</div>
                 )}
-                {/* 番号は一番左に専用の列として配置する */}
-                <div style={{ alignSelf: "stretch", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "12px", borderRight: "1px solid rgba(255,255,255,0.1)", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
-                  {circledNumber(i + 1)}
+                {/* 番号は一番左に専用の列として配置する。①②③...の丸数字は文字（フォント）任せだと
+                    グリフの余白が左右非対称で丸が右に寄って見えることがあるため、CSSで丸枠を描く */}
+                <div style={{ alignSelf: "stretch", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "12px", borderRight: "1px solid rgba(255,255,255,0.1)" }}>
+                  <span style={{ width: "24px", height: "24px", borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0, boxSizing: "border-box" }}>
+                    {i + 1}
+                  </span>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "5px", flex: 1, minWidth: 0, fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap" }}>

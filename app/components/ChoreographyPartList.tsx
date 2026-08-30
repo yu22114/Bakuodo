@@ -333,9 +333,10 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
   if (parts === null) return <div style={{ textAlign: "center", padding: "40px 16px", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>読み込み中...</div>;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
-      {/* パートを作る。この掲示板を見られる人なら誰でも追加できる（ここから上は固定） */}
-      <div style={{ flexShrink: 0 }}>
+    // フォーム（画像添付などで縦に長くなることがある）も一覧も同じ領域でスクロールできるように、
+    // 「上は固定・下だけスクロール」ではなく全体を1つのスクロール領域にする
+    <div className="bd-scroll" style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflowY: "auto" }}>
+      {/* パートを作る。この掲示板を見られる人なら誰でも追加できる */}
       <div style={{ marginBottom: "12px" }}>
         {!showAdd ? (
           <button onClick={() => setShowAdd(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", background: "none", border: "1px dashed rgba(255,255,255,0.25)", borderRadius: "8px", padding: "10px", color: "rgba(255,255,255,0.6)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", boxSizing: "border-box" }}>
@@ -343,10 +344,7 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
           </button>
         ) : renderForm(newTitle, setNewTitle, newEightCount, setNewEightCount, newAssigneeIds, setNewAssigneeIds, newImage, setNewImage, () => { setShowAdd(false); setNewTitle(""); setNewEightCount(""); setNewAssigneeIds([]); setNewImage(null); }, addPart, adding)}
       </div>
-      </div>
 
-      {/* パートの一覧だけがスクロールする */}
-      <div className="bd-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
       {parts.length === 0 ? (
         <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", fontFamily: "'Noto Sans JP',sans-serif", padding: "2px 2px 4px" }}>まだ担当振付がありません</div>
       ) : (
@@ -408,7 +406,6 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
           })}
         </div>
       )}
-      </div>
 
       {/* タップすると開く「誰が一緒に踊るか」の一覧 */}
       {viewingPartId && (() => {
