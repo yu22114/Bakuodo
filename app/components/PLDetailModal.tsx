@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, MapPin, User, X, Check, BookOpen, Share2, Trash2, Bookmark, Download, Loader } from "lucide-react";
+import { Clock, MapPin, User, X, Check, BookOpen, Share2, Trash2, Bookmark, Download, Loader, Camera } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { PrivateLesson, ParticipantProfile } from "../lib/types";
@@ -151,6 +151,60 @@ async function shareStoryImage(blob: Blob, filename: string, title: string) {
   window.open(URL.createObjectURL(blob), "_blank");
 }
 
+// EVENTが終わった後の「振り返り」写真まわり。宣伝用の添付画像（image_urls）とは別物で、
+// 開催後に参加者・主催者が当日の写真を持ち寄る用。縦4:横3の縦長に揃える（添付画像と同じ考え方）
+const RECAP_IMAGE_WIDTH = 900;
+const RECAP_IMAGE_HEIGHT = 1200; // 900 * 4/3
+const MAX_RECAP_UPLOAD_AT_ONCE = 10;
+
+function loadImageElement(blob: Blob): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("画像を読み込めませんでした"));
+    img.src = URL.createObjectURL(blob);
+  });
+}
+
+async function convertHeicIfNeeded(file: File): Promise<Blob> {
+  const isHeic = /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+  if (!isHeic) return file;
+  if (file.size > 4 * 1024 * 1024) return file;
+  const res = await fetch("/api/convert-heic", { method: "POST", body: file });
+  if (!res.ok) throw new Error(`HEIC変換に失敗しました (status ${res.status})`);
+  return await res.blob();
+}
+
+async function uploadRecapPhoto(userId: string, file: File): Promise<string> {
+  const source = await convertHeicIfNeeded(file);
+  const img = await loadImageElement(source);
+  const targetRatio = RECAP_IMAGE_WIDTH / RECAP_IMAGE_HEIGHT; // 3/4
+  const srcRatio = img.naturalWidth / img.naturalHeight;
+  let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+  if (srcRatio > targetRatio) {
+    sw = img.naturalHeight * targetRatio;
+    sx = (img.naturalWidth - sw) / 2;
+  } else {
+    sh = img.naturalWidth / targetRatio;
+    sy = (img.naturalHeight - sh) / 2;
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = RECAP_IMAGE_WIDTH; canvas.height = RECAP_IMAGE_HEIGHT;
+  const ctx = canvas.getContext("2d");
+  URL.revokeObjectURL(img.src);
+  if (!ctx) throw new Error("画像の処理に失敗しました");
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, RECAP_IMAGE_WIDTH, RECAP_IMAGE_HEIGHT);
+  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.85));
+  if (!blob) throw new Error("画像の処理に失敗しました");
+  const path = `${userId}/${crypto.randomUUID()}.jpg`;
+  const { error } = await supabase.storage.from("post-images").upload(path, blob, { contentType: "image/jpeg" });
+  if (error) throw new Error(`画像のアップロードに失敗しました: ${error.message}`);
+  const { data: { publicUrl } } = supabase.storage.from("post-images").getPublicUrl(path);
+  return publicUrl;
+}
+
+type RecapPhoto = { id: string; image_url: string; profile_id: string; dancer_name: string; avatar_url: string | null };
+
 export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onViewProfile, user, keepOpenOnJoin, saved, onToggleSave }: {
   lesson: PrivateLesson | null;
   onClose: () => void;
@@ -177,6 +231,9 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   const [answerDancerName, setAnswerDancerName] = useState("");
   const [answerEmail, setAnswerEmail] = useState("");
   const [answerPhone, setAnswerPhone] = useState("");
+  // EVENTが終わった後の「振り返り」写真
+  const [recapPhotos, setRecapPhotos] = useState<RecapPhoto[]>([]);
+  const [recapUploading, setRecapUploading] = useState(false);
   const lessonId = lesson?.id;
   // コメントの取得・投稿はサイファー側と同じ処理を使う（commentsテーブル共通）
   const { comments, commentText, setCommentText, posting, postComment, deleteComment } = useComments({ lessonId: lessonId ?? "" }, user);
@@ -220,6 +277,25 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
         });
     }
   }, [lessonId, joined, pending, lesson?.kind]);
+
+  // 振り返り写真の取得（EVENTだけ。終了しているかは呼び出し側で判定するので、ここは常に引いておく）
+  const fetchRecapPhotos = async () => {
+    if (!lessonId) return;
+    const { data } = await supabase
+      .from("pl_recap_photos")
+      .select("id, image_url, profile_id, profiles:profile_id ( dancer_name, avatar_url )")
+      .eq("lesson_id", lessonId)
+      .order("created_at", { ascending: false });
+    if (data) {
+      setRecapPhotos(data.map((row: any) => ({
+        id: row.id, image_url: row.image_url, profile_id: row.profile_id,
+        dancer_name: row.profiles?.dancer_name ?? "UNKNOWN", avatar_url: row.profiles?.avatar_url ?? null,
+      })));
+    }
+  };
+  useEffect(() => {
+    if (lesson?.kind === "event") fetchRecapPhotos();
+  }, [lessonId, lesson?.kind]);
 
   if (!lesson) return null;
 
@@ -270,6 +346,32 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
       showToast("画像の作成に失敗しました");
     }
     setStoryLoading(false);
+  };
+
+  // 振り返り写真の追加（複数選択可）。主催者・参加者だけがRLSで書き込める
+  const handleRecapFilesSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []).slice(0, MAX_RECAP_UPLOAD_AT_ONCE);
+    e.target.value = "";
+    if (files.length === 0 || !user) return;
+    setRecapUploading(true);
+    for (const file of files) {
+      if (file.size > 10 * 1024 * 1024) { showToast("画像ファイルサイズは10MB以下にしてください"); continue; }
+      try {
+        const image_url = await uploadRecapPhoto(user.id, file);
+        const { error } = await supabase.from("pl_recap_photos").insert({ lesson_id: lesson.id, profile_id: user.id, image_url });
+        if (error) throw error;
+      } catch (err) {
+        showToast((err as any)?.message ?? "画像のアップロードに失敗しました");
+      }
+    }
+    await fetchRecapPhotos();
+    setRecapUploading(false);
+  };
+  const deleteRecapPhoto = async (id: string) => {
+    const prev = recapPhotos;
+    setRecapPhotos(photos => photos.filter(p => p.id !== id)); // 先に消して、失敗したら戻す
+    const { error } = await supabase.from("pl_recap_photos").delete().eq("id", id);
+    if (error) { setRecapPhotos(prev); showToast("削除に失敗しました"); }
   };
 
   const submitApply = () => {
@@ -474,6 +576,39 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
               </div>
             )
           )}
+
+          {/* 振り返り写真（EVENTが終わった後だけ）。宣伝用の添付画像とは別に、
+              主催者・参加者が当日の写真を持ち寄れるようにする */}
+          {isEvent && isEnded && (
+            <div style={{ marginTop: "20px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "20px" }}>
+              <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "12px" }}>振り返り{recapPhotos.length > 0 ? ` (${recapPhotos.length})` : ""}</div>
+              {(isOwn || joined) && (
+                <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "12px", border: "1px dashed rgba(255,255,255,0.24)", borderRadius: "8px", color: "rgba(255,255,255,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: recapUploading ? "default" : "pointer", marginBottom: "12px", opacity: recapUploading ? 0.6 : 1 }}>
+                  {recapUploading ? <Loader size={14} style={{ animation: "spin 0.7s linear infinite" }} /> : <Camera size={14} />}
+                  {recapUploading ? "アップロード中..." : "当日の写真を追加"}
+                  <input type="file" accept="image/*" multiple onChange={handleRecapFilesSelect} disabled={recapUploading} style={{ display: "none" }} />
+                </label>
+              )}
+              {recapPhotos.length === 0 ? (
+                <p style={{ fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>まだ振り返り写真はありません</p>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px" }}>
+                  {recapPhotos.map(p => (
+                    <div key={p.id} style={{ position: "relative", borderRadius: "8px", overflow: "hidden" }}>
+                      <img src={p.image_url} alt="" style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", display: "block" }} />
+                      {/* 削除できるのは投稿した本人か主催者だけ */}
+                      {user && (p.profile_id === user.id || isOwn) && (
+                        <button onClick={() => deleteRecapPhoto(p.id)} title="削除" style={{ position: "absolute", top: "4px", right: "4px", width: "22px", height: "22px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <X size={12} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div style={{ marginTop: "28px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "20px" }}>
             <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "14px" }}>コメント{comments.length > 0 ? ` (${comments.length})` : ""}</div>
             {comments.length === 0 ? (
