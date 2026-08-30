@@ -178,24 +178,24 @@ export default function BakuOdori() {
     if (!user) return;
     if (savedEvents.includes(id)) {
       const { error } = await supabase.from("pl_saves").delete().eq("lesson_id", id).eq("profile_id", user.id);
-      if (error) { showToast("取り消しに失敗しました"); return; }
+      if (error) { console.error("pl_saves delete error:", error); showToast(`取り消しに失敗しました: ${error.message}`); return; }
       setSavedEvents(s => s.filter(x => x !== id));
       return;
     }
     const { error } = await supabase.from("pl_saves").insert({ lesson_id: id, profile_id: user.id });
-    if (error) { showToast("保存に失敗しました"); return; }
+    if (error) { console.error("pl_saves insert error:", error); showToast(`保存に失敗しました: ${error.message}`); return; }
     setSavedEvents(s => [...s, id]);
   };
   const handleToggleSaveNumber = async (id: string) => {
     if (!user) return;
     if (savedNumbers.includes(id)) {
       const { error } = await supabase.from("number_saves").delete().eq("number_id", id).eq("profile_id", user.id);
-      if (error) { showToast("取り消しに失敗しました"); return; }
+      if (error) { console.error("number_saves delete error:", error); showToast(`取り消しに失敗しました: ${error.message}`); return; }
       setSavedNumbers(s => s.filter(x => x !== id));
       return;
     }
     const { error } = await supabase.from("number_saves").insert({ number_id: id, profile_id: user.id });
-    if (error) { showToast("保存に失敗しました"); return; }
+    if (error) { console.error("number_saves insert error:", error); showToast(`保存に失敗しました: ${error.message}`); return; }
     setSavedNumbers(s => [...s, id]);
   };
 
