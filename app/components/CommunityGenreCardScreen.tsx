@@ -136,9 +136,9 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
   // カードを編集・削除できるのは、掲示板の作成者、またはそのカードを作った本人
   const canManageCard = isOwn || cardState.created_by === user.id;
   const genreColor = cardState.genre && (GENRE_COLORS as Record<string, string>)[cardState.genre] ? (GENRE_COLORS as Record<string, string>)[cardState.genre] : ACCENT;
-  // GENRESの固定一覧にない値＝「その他」で自由記述されたジャンル名。色を持たないので黒で統一する
+  // GENRESの固定一覧にない値＝「その他」で自由記述されたジャンル名。色を持たないので白で統一する
   const isCustomGenre = !!cardState.genre && !(GENRES as readonly string[]).includes(cardState.genre);
-  const watermarkColor = isCustomGenre ? "#000000" : genreColor;
+  const watermarkColor = isCustomGenre ? "#FFFFFF" : genreColor;
   // instructorsが登録されていればそちらを優先。空の古いカードだけ旧フィールドにフォールバック
   const displayInstructors = cardState.instructors.length > 0
     ? cardState.instructors

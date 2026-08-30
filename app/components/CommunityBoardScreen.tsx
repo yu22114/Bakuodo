@@ -269,9 +269,9 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
                 // 小さなバッジは別で出すので、この文字を短縮するgenreLabelは固定ジャンルの時だけ使う
                 const isCustomGenre = !!card.genre && !(GENRES as readonly string[]).includes(card.genre);
                 // 背景に敷くジャンル名。ホーム画面のCYPHERカードと同じ仕組み（右下に大きく薄く）。
-                // その他の自由記述は色を持たないので黒で統一する
+                // その他の自由記述は色を持たないので白で統一する
                 const genreText = card.genre ? (isCustomGenre ? card.genre.toUpperCase() : genreLabel(card.genre).toUpperCase()) : "";
-                const watermarkColor = isCustomGenre ? "#000000" : genreColor;
+                const watermarkColor = isCustomGenre ? "#FFFFFF" : genreColor;
                 return (
                   <button key={card.id} onClick={() => setOpenCard(card)}
                     style={{ width: "100%", boxSizing: "border-box", textAlign: "left", background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }}>
