@@ -20,6 +20,11 @@ const STATUS_META: Record<AttendanceStatus, { label: string; color: string }> = 
   no: { label: "×", color: "#DC2626" },
 };
 
+// 日時が早い順の並び順を①②③...で表す（21件目以降は(21)のように数字にフォールバック）
+function circledNumber(n: number) {
+  return n >= 1 && n <= 20 ? String.fromCodePoint(0x2460 + n - 1) : `(${n})`;
+}
+
 // 練習日程を「9/20(日)」のように短く表示する
 function formatJaDate(dateStr: string) {
   const d = new Date(`${dateStr}T00:00:00`);
@@ -158,11 +163,11 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
   if (!allowAdd && schedules.length === 0) return null;
 
   // scrollableList時は「追加ボタンより上は固定、日程カードの一覧だけスクロール」の2段構成にする
-  const headerStyle: React.CSSProperties = scrollableList ? { flexShrink: 0 } : {};
+  const headerStyle: React.CSSProperties = scrollableList ? { flexShrink: 0, minWidth: 0 } : {};
   const listWrapStyle: React.CSSProperties = scrollableList ? { flex: 1, minHeight: 0, overflowY: "auto" } : {};
 
   return (
-    <div style={scrollableList ? { display: "flex", flexDirection: "column", height: "100%", minHeight: 0 } : undefined}>
+    <div style={scrollableList ? { display: "flex", flexDirection: "column", height: "100%", minHeight: 0, minWidth: 0 } : undefined}>
       <div style={headerStyle}>
       {heading && <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>{heading}</div>}
 
@@ -176,7 +181,7 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
           ) : (
             <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px" }}>
               <input type="date" min={todayStr()} value={newDate} onChange={e => setNewDate(e.target.value)}
-                style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                style={{ display: "block", width: "100%", maxWidth: "100%", minWidth: 0, padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
               {/* 開始・終了時間はCYPHERと同じ仕様：30分刻みのプルダウンで、終了は開始を基準に並べ替え、
                   開始以下の時刻は「翌日」として翌HH:MMで表示する */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginTop: "6px" }}>
@@ -225,12 +230,9 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
                 {!isPast && (
                   <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.12)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>今後の予定</div>
                 )}
-                {/* 番号は一番左に専用の列として配置する。①②③...の丸数字は文字（フォント）任せだと
-                    グリフの余白が左右非対称で丸が右に寄って見えることがあるため、CSSで丸枠を描く */}
-                <div style={{ alignSelf: "stretch", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "12px", borderRight: "1px solid rgba(255,255,255,0.1)" }}>
-                  <span style={{ width: "24px", height: "24px", borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0, boxSizing: "border-box" }}>
-                    {i + 1}
-                  </span>
+                {/* 番号は一番左に専用の列として配置する */}
+                <div style={{ alignSelf: "stretch", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "12px", borderRight: "1px solid rgba(255,255,255,0.1)", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
+                  {circledNumber(i + 1)}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "5px", flex: 1, minWidth: 0, fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap" }}>
@@ -371,7 +373,7 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
               <button onClick={() => setEditingId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
             </div>
             <input type="date" min={todayStr()} value={editDate} onChange={e => setEditDate(e.target.value)}
-              style={{ width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+              style={{ display: "block", width: "100%", maxWidth: "100%", minWidth: 0, padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginTop: "6px" }}>
               <div>
                 <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "3px" }}>開始時間</label>

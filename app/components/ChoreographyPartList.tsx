@@ -83,6 +83,8 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
   const [deleting, setDeleting] = useState(false);
   // タップすると開く「誰が一緒に踊るか」の一覧
   const [viewingPartId, setViewingPartId] = useState<string | null>(null);
+  // タップして開く、添付画像の全画面表示
+  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
 
   // 並び替え（つまみを長押し→ドラッグ）用の状態。掲示板の作成者だけが並び替えできる
   // （他人が作ったパートのsort_orderまでは更新できないため）
@@ -420,7 +422,8 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
                 <button onClick={() => setViewingPartId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
               </div>
               {part.imageUrl && (
-                <img src={part.imageUrl} alt="" style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", borderRadius: "10px", marginBottom: "12px", display: "block" }} />
+                <img src={part.imageUrl} alt="" onClick={() => setViewingImageUrl(part.imageUrl)}
+                  style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", borderRadius: "10px", marginBottom: "12px", display: "block", cursor: "pointer" }} />
               )}
               <div style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", marginBottom: "4px" }}>{part.title}</div>
               {part.eightCount != null && <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "16px" }}>{part.eightCount}エイト</div>}
@@ -442,6 +445,14 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
           </div>
         );
       })()}
+
+      {/* 添付画像の全画面表示。タップまたは背景クリックで閉じる */}
+      {viewingImageUrl && (
+        <div onClick={() => setViewingImageUrl(null)} style={{ position: "fixed", inset: 0, zIndex: 280, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+          <button onClick={() => setViewingImageUrl(null)} style={{ position: "absolute", top: "16px", right: "16px", background: "rgba(255,255,255,0.12)", border: "none", borderRadius: "50%", cursor: "pointer", color: "#fff", width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={18} /></button>
+          <img src={viewingImageUrl} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: "8px" }} />
+        </div>
+      )}
 
       {/* パートの削除確認モーダル */}
       {deleteTarget && (
