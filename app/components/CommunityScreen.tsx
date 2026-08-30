@@ -70,12 +70,10 @@ async function uploadPostImage(userId: string, file: File): Promise<string> {
 
 // 「コミュニティ」タブ：みんなが自由に作れる掲示板の一覧。
 // 右上の「＋」でタイトル等を入力して新しい掲示板を作り、タップすると中身（CommunityBoardScreen）が開く
-export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType }: {
+export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
   user: SupabaseUser;
   onOpenBoard: (board: { id: string; title: string }) => void;
   onViewProfile?: (id: string) => void;
-  // 掲示板の作成（＋ボタン）は団体用アカウントだけ
-  accountType?: string;
 }) {
   const [boards, setBoards] = useState<Board[] | null>(null);
   // 一覧をスクロールした時、固定ヘッダーの下にうっすら影を出す
@@ -321,17 +319,16 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile, accountType 
       )}
 
       {/* 掲示板を作るボタン。ヘッダーを無くした代わりに、右下に浮かぶ丸ボタンとして残す
-          （下部ナビと同じく外側は全幅の透明レイヤーにして中央寄せだけ担わせる） */}
-      {accountType === "organization" && (
-        <div style={{ position: "fixed", bottom: "88px", left: 0, right: 0, zIndex: 40, display: "flex", justifyContent: "center", pointerEvents: "none" }}>
-          <div style={{ width: "100%", maxWidth: "480px", display: "flex", justifyContent: "flex-end", padding: "0 16px" }}>
-            <button onClick={openCreate} aria-label="掲示板を作る"
-              style={{ pointerEvents: "auto", background: "linear-gradient(135deg, #DC2626, #A61B1B)", border: "none", borderRadius: "50%", cursor: "pointer", width: "52px", height: "52px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(220,38,38,0.4), 0 2px 6px rgba(0,0,0,0.3)" }}>
-              <Plus size={24} color="#fff" />
-            </button>
-          </div>
+          （下部ナビと同じく外側は全幅の透明レイヤーにして中央寄せだけ担わせる）。
+          以前は団体用アカウントだけだったが、個人用アカウントでも作れるようにした */}
+      <div style={{ position: "fixed", bottom: "88px", left: 0, right: 0, zIndex: 40, display: "flex", justifyContent: "center", pointerEvents: "none" }}>
+        <div style={{ width: "100%", maxWidth: "480px", display: "flex", justifyContent: "flex-end", padding: "0 16px" }}>
+          <button onClick={openCreate} aria-label="掲示板を作る"
+            style={{ pointerEvents: "auto", background: "linear-gradient(135deg, #DC2626, #A61B1B)", border: "none", borderRadius: "50%", cursor: "pointer", width: "52px", height: "52px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(220,38,38,0.4), 0 2px 6px rgba(0,0,0,0.3)" }}>
+            <Plus size={24} color="#fff" />
+          </button>
         </div>
-      )}
+      </div>
 
       {/* 削除確認モーダル */}
       {deleteTarget && (
