@@ -78,14 +78,15 @@ export function NumberSharePage({ numberId }: { numberId: string }) {
 
   return (
     <div style={{ maxWidth: "480px", margin: "0 auto", minHeight: "100vh", background: "#000000" }}>
+      {/* 編集・削除はこの共有ページからはできない（主催者はプロフィール画面の「主催」タブから行う）。
+          以前はここに壊れた編集ボタンが出ていたが、onEdit/onDeletedを渡さなければ
+          NumberDetailModal側で自動的にボタンごと隠れる */}
       <NumberDetailModal
         number={numberData}
         onClose={() => { window.location.href = "/"; }}
         joined={joined}
         onJoin={handleJoin}
         onViewProfile={id => { window.location.href = `/u/${id}`; }}
-        onEdit={() => { window.location.href = "/"; }}
-        onDeleted={() => { window.location.href = "/"; }}
         user={user}
         keepOpenOnJoin
       />

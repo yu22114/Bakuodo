@@ -30,7 +30,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
     async function fetchAndMarkRead() {
       const { data } = await supabase
         .from("notifications")
-        .select("id, type, read, created_at, actor:actor_id(id,dancer_name,avatar_url), cypher:cypher_id(id,title), lesson:lesson_id(id,title)")
+        .select("id, type, read, created_at, actor:actor_id(id,dancer_name,avatar_url), cypher:cypher_id(id,title), lesson:lesson_id(id,title), number:number_id(id,title)")
         .eq("user_id", currentUserId)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -105,8 +105,9 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
           const actor = n.actor as any;
           const cypher = n.cypher as any;
           const lesson = n.lesson as any;
+          const number = n.number as any;
           const actorName = actor?.dancer_name ?? "UNKNOWN";
-          const cypherTitle = cypher?.title ?? lesson?.title ?? "サイファー";
+          const cypherTitle = cypher?.title ?? lesson?.title ?? number?.title ?? "サイファー";
           return (
             <div key={n.id} style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: n.read ? "transparent" : "rgba(220,38,38,0.06)", display: "flex", alignItems: "center", gap: "12px" }}>
               <button onClick={() => actor?.id && onViewProfile?.(actor.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}>
