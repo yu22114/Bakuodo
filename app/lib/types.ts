@@ -61,6 +61,8 @@ export interface DanceNumber {
   image_url: string | null;
   // 添付画像（複数枚）。1枚目がimage_url（カード表紙のサムネイル）と同じ画像になる
   image_urls: string[];
+  // 募集期限（"YYYY-MM-DD"）。想定練習期間の終了とは別に、参加受付だけを先に締め切れる
+  recruitment_deadline: string | null;
 }
 
 export interface PrivateLesson {
