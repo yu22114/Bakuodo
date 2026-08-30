@@ -180,8 +180,12 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
             </button>
           ) : (
             <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px" }}>
-              <input type="date" min={todayStr()} value={newDate} onChange={e => setNewDate(e.target.value)}
-                style={{ display: "block", width: "100%", maxWidth: "100%", minWidth: 0, padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+              {/* ネイティブのdate inputはOSによって幅の扱いが不安定で、指定した幅を超えて
+                  右にはみ出て見えることがあるため、overflow:hiddenの枠で確実に切る */}
+              <div style={{ width: "100%", overflow: "hidden", borderRadius: "6px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", boxSizing: "border-box" }}>
+                <input type="date" min={todayStr()} value={newDate} onChange={e => setNewDate(e.target.value)}
+                  style={{ display: "block", width: "100%", minWidth: 0, padding: "8px 10px", background: "transparent", border: "none", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+              </div>
               {/* 開始・終了時間はCYPHERと同じ仕様：30分刻みのプルダウンで、終了は開始を基準に並べ替え、
                   開始以下の時刻は「翌日」として翌HH:MMで表示する */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginTop: "6px" }}>
@@ -372,8 +376,10 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
               <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>EDIT SCHEDULE</div>
               <button onClick={() => setEditingId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
             </div>
-            <input type="date" min={todayStr()} value={editDate} onChange={e => setEditDate(e.target.value)}
-              style={{ display: "block", width: "100%", maxWidth: "100%", minWidth: 0, padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+            <div style={{ width: "100%", overflow: "hidden", borderRadius: "6px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", boxSizing: "border-box" }}>
+              <input type="date" min={todayStr()} value={editDate} onChange={e => setEditDate(e.target.value)}
+                style={{ display: "block", width: "100%", minWidth: 0, padding: "8px 10px", background: "transparent", border: "none", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+            </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginTop: "6px" }}>
               <div>
                 <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "3px" }}>開始時間</label>

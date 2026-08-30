@@ -17,3 +17,13 @@ body {
   color: var(--foreground);
   font-family: 'Noto Sans JP', Arial, Helvetica, sans-serif;
 }
+
+/* ネイティブの日付入力（練習日程など）。カレンダーアイコンの既定の余白がブラウザによって
+   右側にはみ出て見えることがあるため、幅いっぱいに収まるよう明示的に詰める */
+input[type="date"] {
+  min-width: 0;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+  margin-left: 4px;
+  padding: 0;
+}
