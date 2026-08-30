@@ -174,21 +174,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
           <Loading />
         ) : (
           <>
-          {/* 添付画像。複数枚ある時は横スワイプで見せ、右上に「1/3」のように枚数を出す */}
-          {detail.image_urls.length > 0 && (
-            <div style={{ position: "relative", marginBottom: "16px" }}>
-              <div className="bd-scroll" style={{ display: "flex", overflowX: "auto", scrollSnapType: "x mandatory", borderRadius: "10px" }}>
-                {detail.image_urls.map((url, i) => (
-                  <img key={i} src={url} alt="" style={{ width: "100%", flexShrink: 0, aspectRatio: "3 / 4", objectFit: "cover", scrollSnapAlign: "start", display: "block" }} />
-                ))}
-              </div>
-              {detail.image_urls.length > 1 && (
-                <div style={{ position: "absolute", top: "8px", right: "8px", padding: "2px 8px", borderRadius: "10px", background: "rgba(0,0,0,0.55)", color: "#fff", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif" }}>
-                  {detail.image_urls.length}枚
-                </div>
-              )}
-            </div>
-          )}
+          {/* 添付画像はカード（一覧）側だけの表紙用。詳細画面には出さない */}
           {/* メンバー欄：一覧は出さず合計人数だけ表示する */}
           {members && members.length > 0 && (
             <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "16px" }}>メンバー {members.length}人</div>

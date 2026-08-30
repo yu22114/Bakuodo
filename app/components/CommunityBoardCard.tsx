@@ -9,7 +9,7 @@ export type Board = {
   event_date: string | null; event_start_date: string | null; event_end_date: string | null;
   creator_id: string;
   instructors: { id: string; name: string; instagram: string | null }[];
-  // 添付画像（複数枚）。カード表紙のサムネイルには1枚目だけを使う
+  // 添付画像（複数枚）。カード表紙には1枚目だけを使う
   image_urls: string[];
 };
 
@@ -20,62 +20,74 @@ function formatJaDate(dateStr: string) {
   return `${d.getMonth() + 1}/${d.getDate()}(${weekdays[d.getDay()]})`;
 }
 
-// マイコミュニティのカード。ホーム画面のCypherCardと同じメタリックな質感・
-// ジャンル背景文字のサイズにそろえる。作成者だけ右上に編集・削除ボタンが出る
+// マイコミュニティのカードも、ホーム画面のLESSON/EVENT/NUMBERと同じ縦長ポスター表示にする。
+// 画像を添付していればそれを、無ければコミュニティカラー（紫）のグラデーションを背景に敷く
 export function CommunityBoardCard({ board: b, isOwn, onClick, onEdit, onDelete }: {
   board: Board; isOwn: boolean; onClick: () => void; onEdit: () => void; onDelete: () => void;
 }) {
   const [hover, setHover] = useState(false);
-  const color = b.genre ? GENRE_COLORS[b.genre] : "#DC2626";
-  const genreText = b.genre ? genreLabel(b.genre).toUpperCase() : "";
+  const color = b.genre ? GENRE_COLORS[b.genre] : "#A855F7";
 
   return (
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       className="bd-glow-card"
-      style={{ background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "18px 18px", cursor: "pointer", transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", position: "relative", overflow: "hidden", boxShadow: (hover ? `0 6px 12px rgba(0,0,0,0.3), 0 18px 36px ${color}26, ` : "0 2px 4px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2), ") + "inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.5)", ["--bd-glow" as any]: `${color}26` } as React.CSSProperties}>
-      {/* ジャンルの背景文字。サイズ・位置ともホーム画面のCypherCardと同じ式にそろえる */}
-      {b.genre && (
-        <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", fontSize: `${Math.round(Math.min(68, Math.round(360 / genreText.length)) * 1.1)}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: color + "73", pointerEvents: "none", userSelect: "none" }}>
-          {genreText}
+      style={{ position: "relative", aspectRatio: "3 / 4", borderRadius: "10px", overflow: "hidden", cursor: "pointer", border: `1px solid ${hover ? "rgba(168,85,247,0.5)" : "rgba(255,255,255,0.16)"}`, transition: "transform 0.25s ease, box-shadow 0.25s ease", transform: hover ? "translateY(-3px)" : "none", boxShadow: (hover ? `0 6px 14px rgba(0,0,0,0.4), 0 14px 28px rgba(168,85,247,0.2), ` : "0 3px 7px rgba(0,0,0,0.35), 0 8px 18px rgba(0,0,0,0.25), ") + "inset 0 1px 0 rgba(255,255,255,0.08)", ["--bd-glow" as any]: "rgba(168,85,247,0.2)" } as React.CSSProperties}>
+      {/* 背景：画像を添付していればそれを表紙に、無ければコミュニティカラーのグラデーションでポスター風に見せる */}
+      {b.image_urls[0] ? (
+        <img src={b.image_urls[0]} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+      ) : (
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(168,85,247,0.35) 0%, #1c1c1c 62%, #101010 100%)" }} />
+      )}
+      {/* 下から黒く沈める */}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.62) 38%, rgba(0,0,0,0.08) 68%, transparent 100%)" }} />
+
+      {isOwn && (
+        <div style={{ position: "absolute", top: "12px", right: "12px", display: "flex", gap: "6px", zIndex: 1 }}>
+          <button onClick={e => { e.stopPropagation(); onEdit(); }} title="編集" style={{ background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", cursor: "pointer", color: "#fff", width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center" }}><Pencil size={15} /></button>
+          <button onClick={e => { e.stopPropagation(); onDelete(); }} title="削除" style={{ background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", cursor: "pointer", color: "#fff", width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={15} /></button>
         </div>
       )}
-      <div style={{ position: "relative" }}>
-        {isOwn && (
-          <div style={{ position: "absolute", top: 0, right: 0, display: "flex", gap: "4px" }}>
-            <button onClick={e => { e.stopPropagation(); onEdit(); }} title="編集" style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "6px", cursor: "pointer", color: "rgba(255,255,255,0.75)", padding: "6px", display: "flex" }}><Pencil size={13} /></button>
-            <button onClick={e => { e.stopPropagation(); onDelete(); }} title="削除" style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "6px", cursor: "pointer", color: "rgba(255,255,255,0.75)", padding: "6px", display: "flex" }}><Trash2 size={13} /></button>
-          </div>
+
+      {/* コンテンツは上から下まで満たすフライヤー組み。ジャンルタグは上、タイトルは
+          marginTop:autoで下寄せの大きな斜体文字にする */}
+      <div style={{ position: "absolute", inset: 0, padding: "20px", display: "flex", flexDirection: "column" }}>
+        {b.genre && (
+          <span style={{ alignSelf: "flex-start", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", padding: "3px 9px", borderRadius: "4px", background: color + "26", color }}>
+            {genreLabel(b.genre)}
+          </span>
         )}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", paddingRight: isOwn ? "60px" : 0 }}>
-          {b.image_urls[0] && (
-            <img src={b.image_urls[0]} alt="" style={{ width: "40px", height: "40px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }} />
-          )}
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: "20px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>【{b.title}】</div>
-            {b.subtitle && <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", marginTop: "4px" }}>{b.subtitle}</div>}
-          </div>
+
+        <div style={{ margin: "auto 0 0" }}>
+          <h3 style={{ margin: 0, fontSize: "32px", fontWeight: 900, fontStyle: "italic", color: "#fff", fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.01em", lineHeight: 1, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as any }}>【{b.title}】</h3>
+          {b.subtitle && <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.75)", marginTop: "6px" }}>{b.subtitle}</div>}
         </div>
-        {(b.event_start_date || b.event_date) && (
-          <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "11px", color: "rgba(255,255,255,0.65)", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "5px" }}>
-            <Calendar size={10} color="rgba(255,255,255,0.4)" />
-            {b.event_start_date
-              ? formatJaDate(b.event_start_date) + (b.event_end_date ? `〜${formatJaDate(b.event_end_date)}` : "")
-              : b.event_date}
-          </div>
-        )}
-        {b.venue && (
-          // 公演会場はGoogleマップへのリンクにする（他のカードと違いカード自体に詳細画面が
-          // ないため、ここでタップできるようにしておく）。カード全体のonClickは拾わないよう止める
-          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.venue)}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-            style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "11px", color: "rgba(255,255,255,0.65)", fontFamily: "'Noto Sans JP',sans-serif", marginTop: "3px", textDecoration: "none", width: "fit-content" }}>
-            <MapPin size={10} color="rgba(255,255,255,0.4)" />
-            <span style={{ textDecoration: "underline", textUnderlineOffset: "2px" }}>{b.venue}</span>
-          </a>
-        )}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "14px" }}>
+          {(b.event_start_date || b.event_date) && (
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Calendar size={14} color="rgba(255,255,255,0.55)" style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: "13px", color: "rgba(255,255,255,0.9)", fontFamily: "'Noto Sans JP',sans-serif" }}>
+                {b.event_start_date
+                  ? formatJaDate(b.event_start_date) + (b.event_end_date ? `〜${formatJaDate(b.event_end_date)}` : "")
+                  : b.event_date}
+              </span>
+            </div>
+          )}
+          {b.venue && (
+            // 公演会場はGoogleマップへのリンクにする（他のカードと違いカード自体に詳細画面が
+            // ないため、ここでタップできるようにしておく）。カード全体のonClickは拾わないよう止める
+            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.venue)}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+              style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none", width: "fit-content" }}>
+              <MapPin size={14} color="rgba(255,255,255,0.55)" style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: "13px", color: "rgba(255,255,255,0.9)", fontFamily: "'Noto Sans JP',sans-serif", textDecoration: "underline", textUnderlineOffset: "2px" }}>{b.venue}</span>
+            </a>
+          )}
+        </div>
+
         {b.instructors.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "6px" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "12px" }}>
             {b.instructors.map(ins => (
-              <span key={ins.id} style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(255,255,255,0.08)", borderRadius: "20px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
+              <span key={ins.id} style={{ fontSize: "11px", padding: "4px 10px", background: "rgba(255,255,255,0.12)", borderRadius: "20px", color: "#fff", fontFamily: "'Noto Sans JP',sans-serif" }}>
                 {ins.name}{ins.instagram && <span style={{ color: "#38BDF8" }}> @{ins.instagram}</span>}
               </span>
             ))}
