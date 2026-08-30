@@ -59,6 +59,9 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
   const [editTitle, setEditTitle] = useState("");
   const [editInstructors, setEditInstructors] = useState<DraftInstructor[]>([{ ...EMPTY_INSTRUCTOR }]);
   const [editGenre, setEditGenre] = useState<GenreKey[]>([]);
+  // 「その他」を選んだ時だけ使う自由記述のジャンル名
+  const [editOtherSelected, setEditOtherSelected] = useState(false);
+  const [editOtherGenre, setEditOtherGenre] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   // 個人用アカウントはこのカードに参加申請していないと練習日程の中身を見られない（自動承認）
   const [isMember, setIsMember] = useState<boolean | null>(isOwn ? true : null);
@@ -131,6 +134,9 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
   };
 
   const genreColor = cardState.genre && (GENRE_COLORS as Record<string, string>)[cardState.genre] ? (GENRE_COLORS as Record<string, string>)[cardState.genre] : ACCENT;
+  // GENRESの固定一覧にない値＝「その他」で自由記述されたジャンル名。
+  // この場合は右側の大きなジャンル名を出さず、代わりにバッジとして表示する
+  const isCustomGenre = !!cardState.genre && !(GENRES as readonly string[]).includes(cardState.genre);
   // instructorsが登録されていればそちらを優先。空の古いカードだけ旧フィールドにフォールバック
   const displayInstructors = cardState.instructors.length > 0
     ? cardState.instructors
@@ -159,7 +165,9 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
       : cardState.instructor_name ? [{ name: cardState.instructor_name, instagram: cardState.instructor_instagram ?? "" }]
       : [{ ...EMPTY_INSTRUCTOR }]
     );
-    setEditGenre(cardState.genre ? [cardState.genre as GenreKey] : []);
+    setEditGenre(cardState.genre && !isCustomGenre ? [cardState.genre as GenreKey] : []);
+    setEditOtherSelected(isCustomGenre);
+    setEditOtherGenre(isCustomGenre ? cardState.genre! : "");
     setShowEdit(true);
   };
   const updateEditInstructor = (i: number, field: keyof DraftInstructor, value: string) => {
@@ -172,7 +180,7 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
     const title = editTitle.trim();
     if (!title || savingEdit) return;
     setSavingEdit(true);
-    const genre = editGenre[0] ?? null;
+    const genre = editOtherSelected ? (editOtherGenre.trim() || null) : (editGenre[0] ?? null);
     const { error } = await supabase.from("community_board_genre_cards").update({ title, genre }).eq("id", cardState.id);
     if (error) { setSavingEdit(false); console.error("community_board_genre_cards update error:", error); showToast(`保存に失敗しました: ${error.message}`); return; }
 
@@ -196,8 +204,9 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
   return (
     <div {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 160, background: "#000000", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }}>
       <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "flex-start", gap: "16px", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
-        {/* 背景に敷くジャンル名。ホーム画面のCYPHERカードと同じ仕組み（右側に大きく薄く色付き） */}
-        {cardState.genre && (() => {
+        {/* 背景に敷くジャンル名。ホーム画面のCYPHERカードと同じ仕組み（右側に大きく薄く色付き）。
+            「その他」の自由記述ジャンルの時はここには出さず、タイトル横のバッジで見せる */}
+        {cardState.genre && !isCustomGenre && (() => {
           const genreText = genreLabel(cardState.genre).toUpperCase();
           return (
             <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", fontSize: `${Math.round(Math.min(68, Math.round(360 / genreText.length)) * 1.1)}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: genreColor + "73", pointerEvents: "none", userSelect: "none" }}>
@@ -210,6 +219,9 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
             <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
           </button>
           <div style={{ minWidth: 0 }}>
+            {isCustomGenre && (
+              <span style={{ display: "inline-block", fontSize: "9px", padding: "2px 7px", borderRadius: "10px", background: genreColor + "26", color: genreColor, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, marginBottom: "4px" }}>{cardState.genre}</span>
+            )}
             <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0", wordBreak: "break-word" }}>{cardState.title}</h2>
             <InstructorList instructors={displayInstructors} />
           </div>
@@ -331,12 +343,20 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
               <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "5px" }}>ジャンル（任意）</label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {GENRES.map(g => { const sel = editGenre.includes(g); const col = GENRE_COLORS[g]; return (
-                  <button key={g} onClick={() => setEditGenre(list => toggleGenre(list, g))}
+                  <button key={g} onClick={() => { setEditGenre(list => toggleGenre(list, g)); setEditOtherSelected(false); }}
                     style={{ padding: "6px 10px", border: sel ? `1px solid ${col}` : "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
                     {genreLabel(g)}
                   </button>
                 ); })}
+                <button onClick={() => { setEditOtherSelected(v => !v); setEditGenre([]); }}
+                  style={{ padding: "6px 10px", border: editOtherSelected ? "1px solid #DC2626" : "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", background: editOtherSelected ? "rgba(220,38,38,0.1)" : "transparent", color: editOtherSelected ? "#DC2626" : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                  その他
+                </button>
               </div>
+              {editOtherSelected && (
+                <input value={editOtherGenre} onChange={e => setEditOtherGenre(e.target.value)} placeholder="ジャンル名を入力" maxLength={20}
+                  style={{ width: "100%", marginTop: "8px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+              )}
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "16px" }}>
               <button onClick={() => setShowEdit(false)} disabled={savingEdit} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "8px 14px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>

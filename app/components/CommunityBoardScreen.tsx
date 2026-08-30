@@ -36,6 +36,9 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
   const [newCardTitle, setNewCardTitle] = useState("");
   const [newCardInstructors, setNewCardInstructors] = useState<DraftInstructor[]>([{ ...EMPTY_INSTRUCTOR }]);
   const [newCardGenre, setNewCardGenre] = useState<GenreKey[]>([]);
+  // 「その他」を選んだ時だけ使う自由記述のジャンル名
+  const [newCardOtherSelected, setNewCardOtherSelected] = useState(false);
+  const [newCardOtherGenre, setNewCardOtherGenre] = useState("");
   const [addingCard, setAddingCard] = useState(false);
   const [deleteCardTarget, setDeleteCardTarget] = useState<string | null>(null);
   const [deletingCard, setDeletingCard] = useState(false);
@@ -117,7 +120,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
   };
   const addNewInstructor = () => setNewCardInstructors(list => [...list, { ...EMPTY_INSTRUCTOR }]);
   const removeNewInstructor = (i: number) => setNewCardInstructors(list => list.filter((_, idx) => idx !== i));
-  const resetAddCardForm = () => { setNewCardTitle(""); setNewCardInstructors([{ ...EMPTY_INSTRUCTOR }]); setNewCardGenre([]); };
+  const resetAddCardForm = () => { setNewCardTitle(""); setNewCardInstructors([{ ...EMPTY_INSTRUCTOR }]); setNewCardGenre([]); setNewCardOtherSelected(false); setNewCardOtherGenre(""); };
 
   // 練習カードを作る。IDは先に用意して読み返しをしない＝RLSのRETURNING問題を避ける
   const addCard = async () => {
@@ -125,7 +128,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
     if (!title || addingCard) return;
     setAddingCard(true);
     const newId = crypto.randomUUID();
-    const genre = newCardGenre[0] ?? null;
+    const genre = newCardOtherSelected ? (newCardOtherGenre.trim() || null) : (newCardGenre[0] ?? null);
     const { error } = await supabase.from("community_board_genre_cards").insert({ id: newId, board_id: board.id, title, genre });
     if (error) { setAddingCard(false); console.error("community_board_genre_cards insert error:", error); showToast(`カードの作成に失敗しました: ${error.message}`); return; }
 
@@ -225,12 +228,20 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
                     <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "5px" }}>ジャンル（任意）</label>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                       {GENRES.map(g => { const sel = newCardGenre.includes(g); const col = GENRE_COLORS[g]; return (
-                        <button key={g} onClick={() => setNewCardGenre(list => toggleGenre(list, g))}
+                        <button key={g} onClick={() => { setNewCardGenre(list => toggleGenre(list, g)); setNewCardOtherSelected(false); }}
                           style={{ padding: "6px 10px", border: sel ? `1px solid ${col}` : "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", background: sel ? `${col}15` : "transparent", color: sel ? col : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
                           {genreLabel(g)}
                         </button>
                       ); })}
+                      <button onClick={() => { setNewCardOtherSelected(v => !v); setNewCardGenre([]); }}
+                        style={{ padding: "6px 10px", border: newCardOtherSelected ? "1px solid #DC2626" : "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", background: newCardOtherSelected ? "rgba(220,38,38,0.1)" : "transparent", color: newCardOtherSelected ? "#DC2626" : "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                        その他
+                      </button>
                     </div>
+                    {newCardOtherSelected && (
+                      <input value={newCardOtherGenre} onChange={e => setNewCardOtherGenre(e.target.value)} placeholder="ジャンル名を入力" maxLength={20}
+                        style={{ width: "100%", marginTop: "8px", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                    )}
                   </div>
                   <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "10px" }}>
                     <button onClick={() => { setShowAddCard(false); resetAddCardForm(); }} disabled={addingCard} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "7px 12px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
@@ -252,12 +263,15 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {joinedCards.map(card => {
                 const genreColor = card.genre && (GENRE_COLORS as Record<string, string>)[card.genre] ? (GENRE_COLORS as Record<string, string>)[card.genre] : "#DC2626";
+                // GENRESの固定一覧にない値＝「その他」で自由記述されたジャンル名。
+                // この場合は右下の大きなジャンル名を出さず、代わりにバッジとして表示する
+                const isCustomGenre = !!card.genre && !(GENRES as readonly string[]).includes(card.genre);
                 // 背景に敷くジャンル名。ホーム画面のCYPHERカードと同じ仕組み（右下に大きく薄く）
                 const genreText = card.genre ? genreLabel(card.genre).toUpperCase() : "";
                 return (
                   <button key={card.id} onClick={() => setOpenCard(card)}
                     style={{ width: "100%", boxSizing: "border-box", textAlign: "left", background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }}>
-                    {card.genre && (
+                    {card.genre && !isCustomGenre && (
                       <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", fontSize: `${Math.round(Math.min(68, Math.round(360 / genreText.length)) * 1.1)}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: genreColor + "73", pointerEvents: "none", userSelect: "none" }}>
                         {genreText}
                       </div>
@@ -265,7 +279,11 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
                     <div style={{ position: "relative" }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
-                          <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: genreColor, flexShrink: 0 }} />
+                          {isCustomGenre ? (
+                            <span style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "10px", background: genreColor + "26", color: genreColor, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, flexShrink: 0 }}>{card.genre}</span>
+                          ) : (
+                            <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: genreColor, flexShrink: 0 }} />
+                          )}
                           <span style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.title}</span>
                         </div>
                         {isOwn ? (
@@ -299,10 +317,15 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {unjoinedCards.map(card => {
                   const genreColor = card.genre && (GENRE_COLORS as Record<string, string>)[card.genre] ? (GENRE_COLORS as Record<string, string>)[card.genre] : "#DC2626";
+                  const isCustomGenre = !!card.genre && !(GENRES as readonly string[]).includes(card.genre);
                   return (
                     <div key={card.id} style={{ width: "100%", boxSizing: "border-box", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "14px 16px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
-                        <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: genreColor, flexShrink: 0 }} />
+                        {isCustomGenre ? (
+                          <span style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "10px", background: genreColor + "26", color: genreColor, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, flexShrink: 0 }}>{card.genre}</span>
+                        ) : (
+                          <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: genreColor, flexShrink: 0 }} />
+                        )}
                         <span style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.title}</span>
                       </div>
                       <div style={{ paddingLeft: "14px" }}>
