@@ -66,7 +66,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
   // 練習カードの一覧（作成者がタイトルを入れて作ったもの）
   const fetchGenreCards = async () => {
     const { data } = await supabase.from("community_board_genre_cards")
-      .select("id, title, instructor_name, instructor_instagram, genre, instructors:community_board_genre_card_instructors(id, name, instagram, sort_order)")
+      .select("id, title, instructor_name, instructor_instagram, genre, created_by, instructors:community_board_genre_card_instructors(id, name, instagram, sort_order)")
       .eq("board_id", board.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true })
       .order("sort_order", { referencedTable: "community_board_genre_card_instructors", ascending: true });
     setGenreCards((data as any[])?.map(c => ({ ...c, instructors: c.instructors ?? [] })) ?? []);
@@ -129,7 +129,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
     setAddingCard(true);
     const newId = crypto.randomUUID();
     const genre = newCardOtherSelected ? (newCardOtherGenre.trim() || null) : (newCardGenre[0] ?? null);
-    const { error } = await supabase.from("community_board_genre_cards").insert({ id: newId, board_id: board.id, title, genre });
+    const { error } = await supabase.from("community_board_genre_cards").insert({ id: newId, board_id: board.id, title, genre, created_by: user.id });
     if (error) { setAddingCard(false); console.error("community_board_genre_cards insert error:", error); showToast(`カードの作成に失敗しました: ${error.message}`); return; }
 
     // 作成者本人（掲示板の作成者）以外が作った場合は、自分をそのカードのメンバーとして
@@ -150,7 +150,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
       if (insErr) console.error("community_board_genre_card_instructors insert error:", insErr);
     }
     setAddingCard(false);
-    setGenreCards(list => [...(list ?? []), { id: newId, title, instructor_name: null, instructor_instagram: null, genre, instructors }]);
+    setGenreCards(list => [...(list ?? []), { id: newId, title, instructor_name: null, instructor_instagram: null, genre, created_by: user.id, instructors }]);
     resetAddCardForm(); setShowAddCard(false);
   };
 
@@ -262,17 +262,21 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {joinedCards.map(card => {
+                // カードを削除できるのは、掲示板の作成者、またはそのカードを作った本人
+                const canManageCard = isOwn || card.created_by === user.id;
                 const genreColor = card.genre && (GENRE_COLORS as Record<string, string>)[card.genre] ? (GENRE_COLORS as Record<string, string>)[card.genre] : "#DC2626";
                 // GENRESの固定一覧にない値＝「その他」で自由記述されたジャンル名。
-                // この場合は右下の大きなジャンル名を出さず、代わりにバッジとして表示する
+                // 小さなバッジは別で出すので、この文字を短縮するgenreLabelは固定ジャンルの時だけ使う
                 const isCustomGenre = !!card.genre && !(GENRES as readonly string[]).includes(card.genre);
-                // 背景に敷くジャンル名。ホーム画面のCYPHERカードと同じ仕組み（右下に大きく薄く）
-                const genreText = card.genre ? genreLabel(card.genre).toUpperCase() : "";
+                // 背景に敷くジャンル名。ホーム画面のCYPHERカードと同じ仕組み（右下に大きく薄く）。
+                // その他の自由記述は色を持たないので黒で統一する
+                const genreText = card.genre ? (isCustomGenre ? card.genre.toUpperCase() : genreLabel(card.genre).toUpperCase()) : "";
+                const watermarkColor = isCustomGenre ? "#000000" : genreColor;
                 return (
                   <button key={card.id} onClick={() => setOpenCard(card)}
                     style={{ width: "100%", boxSizing: "border-box", textAlign: "left", background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }}>
-                    {card.genre && !isCustomGenre && (
-                      <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", fontSize: `${Math.round(Math.min(68, Math.round(360 / genreText.length)) * 1.1)}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: genreColor + "73", pointerEvents: "none", userSelect: "none" }}>
+                    {card.genre && (
+                      <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", fontSize: `${Math.round(Math.min(68, Math.round(360 / genreText.length)) * 1.1)}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: watermarkColor + "73", pointerEvents: "none", userSelect: "none" }}>
                         {genreText}
                       </div>
                     )}
@@ -286,7 +290,7 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
                           )}
                           <span style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.title}</span>
                         </div>
-                        {isOwn ? (
+                        {canManageCard ? (
                           <span onClick={e => { e.stopPropagation(); setDeleteCardTarget(card.id); }} title="カードを削除"
                             style={{ background: "none", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "6px", cursor: "pointer", color: "rgba(255,255,255,0.4)", padding: "5px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                             <Trash2 size={13} />

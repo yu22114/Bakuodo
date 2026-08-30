@@ -19,7 +19,7 @@ const EMPTY_INSTRUCTOR: DraftInstructor = { name: "", instagram: "" };
 
 // instructor_name/instructor_instagramは旧仕様（講師1人だけ）の名残。消さずに残し、
 // instructorsが空の古いカードだけ表示にフォールバックで使う
-export type GenreCard = { id: string; title: string; instructor_name: string | null; instructor_instagram: string | null; genre: string | null; instructors: CardInstructor[] };
+export type GenreCard = { id: string; title: string; instructor_name: string | null; instructor_instagram: string | null; genre: string | null; created_by: string | null; instructors: CardInstructor[] };
 
 // 講師名・その下にInstagramアカウントを並べて出す。空なら何も出さない
 export function InstructorList({ instructors }: { instructors: { name: string; instagram: string | null }[] }) {
@@ -133,10 +133,12 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
     setIsMember(true);
   };
 
+  // カードを編集・削除できるのは、掲示板の作成者、またはそのカードを作った本人
+  const canManageCard = isOwn || cardState.created_by === user.id;
   const genreColor = cardState.genre && (GENRE_COLORS as Record<string, string>)[cardState.genre] ? (GENRE_COLORS as Record<string, string>)[cardState.genre] : ACCENT;
-  // GENRESの固定一覧にない値＝「その他」で自由記述されたジャンル名。
-  // この場合は右側の大きなジャンル名を出さず、代わりにバッジとして表示する
+  // GENRESの固定一覧にない値＝「その他」で自由記述されたジャンル名。色を持たないので黒で統一する
   const isCustomGenre = !!cardState.genre && !(GENRES as readonly string[]).includes(cardState.genre);
+  const watermarkColor = isCustomGenre ? "#000000" : genreColor;
   // instructorsが登録されていればそちらを優先。空の古いカードだけ旧フィールドにフォールバック
   const displayInstructors = cardState.instructors.length > 0
     ? cardState.instructors
@@ -205,11 +207,11 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
     <div {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 160, background: "#000000", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }}>
       <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "flex-start", gap: "16px", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
         {/* 背景に敷くジャンル名。ホーム画面のCYPHERカードと同じ仕組み（右側に大きく薄く色付き）。
-            「その他」の自由記述ジャンルの時はここには出さず、タイトル横のバッジで見せる */}
-        {cardState.genre && !isCustomGenre && (() => {
-          const genreText = genreLabel(cardState.genre).toUpperCase();
+            「その他」の自由記述ジャンルは色を持たないので黒で表示する */}
+        {cardState.genre && (() => {
+          const genreText = (isCustomGenre ? cardState.genre! : genreLabel(cardState.genre!)).toUpperCase();
           return (
-            <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", fontSize: `${Math.round(Math.min(68, Math.round(360 / genreText.length)) * 1.1)}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: genreColor + "73", pointerEvents: "none", userSelect: "none" }}>
+            <div aria-hidden="true" style={{ position: "absolute", right: "14px", bottom: "-8px", fontSize: `${Math.round(Math.min(68, Math.round(360 / genreText.length)) * 1.1)}px`, fontStyle: "italic", fontWeight: 900, fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.02em", lineHeight: 1, whiteSpace: "nowrap", color: watermarkColor + "73", pointerEvents: "none", userSelect: "none" }}>
               {genreText}
             </div>
           );
@@ -226,7 +228,7 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
             <InstructorList instructors={displayInstructors} />
           </div>
         </div>
-        {isOwn && (
+        {canManageCard && (
           <div style={{ display: "flex", gap: "6px", flexShrink: 0, position: "relative" }}>
             <button onClick={openEdit} title="カードを編集"
               style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "rgba(255,255,255,0.6)", padding: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
