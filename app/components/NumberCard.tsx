@@ -62,7 +62,7 @@ export function NumberCard({ number, onClick, index = 0 }: { number: DanceNumber
           </span>
         )}
 
-        <h3 style={{ margin: "auto 0 0", fontSize: "20px", fontWeight: 900, fontStyle: "italic", color: "#fff", fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.01em", lineHeight: 0.98, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as any }}>{number.title}</h3>
+        <h3 style={{ margin: "auto 0 0", fontSize: "18px", fontWeight: 900, fontStyle: "italic", color: "#fff", fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.01em", lineHeight: 0.98, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{number.title}</h3>
         <div style={{ fontSize: "8.5px", color: "rgba(255,255,255,0.7)", marginTop: "4px", fontFamily: "'Noto Sans JP',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {number.organizer.instagram
             ? <span>by <span style={{ color: "#38BDF8" }}>@{number.organizer.instagram}</span></span>

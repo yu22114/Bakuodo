@@ -58,8 +58,8 @@ export function CommunityBoardCard({ board: b, isOwn, onClick, onEdit, onDelete 
         )}
 
         <div style={{ margin: "auto 0 0" }}>
-          <h3 style={{ margin: 0, fontSize: "32px", fontWeight: 900, fontStyle: "italic", color: "#fff", fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.01em", lineHeight: 1, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as any }}>【{b.title}】</h3>
-          {b.subtitle && <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.75)", marginTop: "6px" }}>{b.subtitle}</div>}
+          <h3 style={{ margin: 0, fontSize: "26px", fontWeight: 900, fontStyle: "italic", color: "#fff", fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.01em", lineHeight: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>【{b.title}】</h3>
+          {b.subtitle && <div style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.75)", marginTop: "6px" }}>{b.subtitle}</div>}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "14px" }}>
