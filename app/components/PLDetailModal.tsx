@@ -293,8 +293,8 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
             <h2 style={{ margin: 0, fontSize: "24px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", lineHeight: 1.1 }}>{lesson.title}</h2>
           </div>
           <div style={{ display: "flex", flexShrink: 0, marginLeft: "12px" }}>
-            {/* 「気になる」：参加ほどの決意はないが後で見返したい人向けの軽いブックマーク。EVENTだけに出す */}
-            {isEvent && onToggleSave && (
+            {/* 「気になる」：参加ほどの決意はないが後で見返したい人向けの軽いブックマーク */}
+            {onToggleSave && (
               <button onClick={() => { hapticTap(); onToggleSave(lesson.id); }} title="気になる"
                 style={{ background: "none", border: "none", color: saved ? accent : "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Bookmark size={19} fill={saved ? accent : "none"} />

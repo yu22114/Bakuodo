@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, MapPin, User, X, Check, Zap, Share2, Trash2 } from "lucide-react";
+import { Clock, MapPin, User, X, Check, Zap, Share2, Trash2, Bookmark } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, ParticipantProfile } from "../lib/types";
@@ -10,7 +10,7 @@ import { showToast } from "./Toast";
 import { useComments } from "../lib/useComments";
 import { hapticTap } from "../lib/haptics";
 
-export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewProfile, user, keepOpenOnJoin }: {
+export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewProfile, user, keepOpenOnJoin, saved, onToggleSave }: {
   cypher: Cypher | null;
   onClose: () => void;
   joined: boolean;
@@ -19,6 +19,9 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
   onViewProfile: (id: string) => void;
   user: SupabaseUser | null; // 未ログイン閲覧（/c/[id] 共有ページ）でも表示できる
   keepOpenOnJoin?: boolean; // /c/[id] では参加後も閉じない（onCloseがページ遷移のため）
+  // 「気になる」（参加とは別の軽いブックマーク）
+  saved?: boolean;
+  onToggleSave?: (id: string) => void;
 }) {
   if (!cypher) return null;
 
@@ -76,6 +79,13 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
       <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", maxHeight: "88vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 -4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
         <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0, borderRadius: "12px 12px 0 0" }}>
           <h2 style={{ margin: 0, fontSize: "24px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", lineHeight: 1.1, flex: 1 }}>{cypher.title}</h2>
+          {/* 「気になる」：参加ほどの決意はないが後で見返したい人向けの軽いブックマーク */}
+          {onToggleSave && (
+            <button onClick={() => { hapticTap(); onToggleSave(cypher.id); }} title="気になる"
+              style={{ background: "none", border: "none", color: saved ? "#DC2626" : "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Bookmark size={19} fill={saved ? "#DC2626" : "none"} />
+            </button>
+          )}
           <button onClick={handleShare} title="共有" style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Share2 size={19} /></button>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#F0F0F0", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><X size={22} /></button>
         </div>

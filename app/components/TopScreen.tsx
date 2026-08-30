@@ -48,7 +48,7 @@ const SECTION_BG: Record<TopSection, string> = {
   spots: "radial-gradient(circle at center, rgba(22,163,74,0.9) 0%, rgba(22,163,74,0.08) 16%, #000000 32%)",
 };
 
-export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onViewProfile, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell, section, onSectionChange, accountType, savedEventIds, savedNumberIds }: {
+export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onViewProfile, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell, section, onSectionChange, accountType, savedCypherIds, savedEventIds, savedNumberIds }: {
   onNav: (s: string) => void;
   onCardClick: (c: Cypher) => void;
   onPLClick: (l: PrivateLesson) => void;
@@ -66,7 +66,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
   onSectionChange: (s: TopSection) => void;
   // 団体用アカウントではSPOTS機能を使わないため、タブごと隠す
   accountType?: string;
-  // 「気になる」（参加とは別の軽いブックマーク）。EVENT・NUMBERだけが持つ
+  // 「気になる」（参加とは別の軽いブックマーク）。CYPHER・LESSON・EVENT・NUMBERすべてが持つ
+  savedCypherIds?: string[];
   savedEventIds?: string[];
   savedNumberIds?: string[];
 }) {
@@ -647,10 +648,14 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
         </div>
       )}
 
-      {/* 気になるリスト。参加とは別にブックマークしたEVENT・NUMBERの一覧（終了したものはリストから静かに消える） */}
+      {/* 気になるリスト。参加とは別にブックマークしたCYPHER・LESSON・EVENT・NUMBERの一覧
+          （終了したものはリストから静かに消える）。CYPHERは横長カードなのでグリッドとは分けて縦に並べる */}
       {showSaved && (() => {
+        const savedCypherCards = cyphers.filter(c => (savedCypherIds ?? []).includes(c.id));
+        const savedLessonCards = lessons.filter(l => (savedEventIds ?? []).includes(l.id));
         const savedEventCards = events.filter(e => (savedEventIds ?? []).includes(e.id));
         const savedNumberCards = numbers.filter(n => (savedNumberIds ?? []).includes(n.id));
+        const hasGridCards = savedLessonCards.length > 0 || savedEventCards.length > 0 || savedNumberCards.length > 0;
         return (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setShowSaved(false)}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px", maxHeight: "85vh", overflowY: "auto" }} className="bd-scroll">
@@ -661,13 +666,23 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
               </div>
               <button onClick={() => setShowSaved(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={20} /></button>
             </div>
-            {savedEventCards.length === 0 && savedNumberCards.length === 0 ? (
-              <EmptyState icon={Bookmark} padding="40px 16px">まだ「気になる」に追加したEVENT・NUMBERはありません</EmptyState>
+            {savedCypherCards.length === 0 && !hasGridCards ? (
+              <EmptyState icon={Bookmark} padding="40px 16px">まだ「気になる」に追加したものはありません</EmptyState>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                {savedEventCards.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => { setShowSaved(false); onPLClick(l); }} />)}
-                {savedNumberCards.map((n, i) => <NumberCard key={n.id} number={n} index={i} onClick={() => { setShowSaved(false); onNumberClick(n); }} />)}
-              </div>
+              <>
+                {savedCypherCards.length > 0 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: hasGridCards ? "16px" : 0 }}>
+                    {savedCypherCards.map((c, i) => <CypherCard key={c.id} cypher={c} index={i} onClick={() => { setShowSaved(false); onCardClick(c); }} />)}
+                  </div>
+                )}
+                {hasGridCards && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                    {savedLessonCards.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => { setShowSaved(false); onPLClick(l); }} />)}
+                    {savedEventCards.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => { setShowSaved(false); onPLClick(l); }} />)}
+                    {savedNumberCards.map((n, i) => <NumberCard key={n.id} number={n} index={i} onClick={() => { setShowSaved(false); onNumberClick(n); }} />)}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -40,7 +40,9 @@ export default function BakuOdori() {
   const [numberDetailEditable, setNumberDetailEditable] = useState(false);
   const [numberJoined, setNumberJoined] = useState<string[]>([]);
   const [editNumberId, setEditNumberId] = useState<string | null>(null);
-  // 「気になる」（参加とは別の軽いブックマーク）。EVENT・NUMBERだけが持つ
+  // 「気になる」（参加とは別の軽いブックマーク）。CYPHER・LESSON・EVENT・NUMBERすべてが持つ。
+  // LESSON・EVENTは同じprivate_lessonsテーブルなのでsavedEventsを両方に使い回す
+  const [savedCyphers, setSavedCyphers] = useState<string[]>([]);
   const [savedEvents, setSavedEvents] = useState<string[]>([]);
   const [savedNumbers, setSavedNumbers] = useState<string[]>([]);
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -80,12 +82,13 @@ export default function BakuOdori() {
 
   // ログイン後にダンサーネームと参加済みサイファー・レッスン一覧・未読通知数をDBから取得
   const fetchUserData = async (u: SupabaseUser) => {
-    const [profileRes, partsRes, plPartsRes, numberPartsRes, notifRes, plSavesRes, numberSavesRes] = await Promise.all([
+    const [profileRes, partsRes, plPartsRes, numberPartsRes, notifRes, cypherSavesRes, plSavesRes, numberSavesRes] = await Promise.all([
       supabase.from("profiles").select("dancer_name, avatar_url, account_type").eq("id", u.id).single(),
       supabase.from("participations").select("cypher_id, status").eq("profile_id", u.id),
       supabase.from("pl_participations").select("lesson_id, status").eq("profile_id", u.id),
       supabase.from("number_participations").select("number_id").eq("profile_id", u.id),
       supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", u.id).eq("read", false),
+      supabase.from("cypher_saves").select("cypher_id").eq("profile_id", u.id),
       supabase.from("pl_saves").select("lesson_id").eq("profile_id", u.id),
       supabase.from("number_saves").select("number_id").eq("profile_id", u.id),
     ]);
@@ -104,6 +107,7 @@ export default function BakuOdori() {
     if (numberPartsRes.data) {
       setNumberJoined(numberPartsRes.data.map((p: any) => p.number_id));
     }
+    if (cypherSavesRes.data) setSavedCyphers(cypherSavesRes.data.map((s: any) => s.cypher_id));
     if (plSavesRes.data) setSavedEvents(plSavesRes.data.map((s: any) => s.lesson_id));
     if (numberSavesRes.data) setSavedNumbers(numberSavesRes.data.map((s: any) => s.number_id));
     setUnreadCount(notifRes.count ?? 0);
@@ -174,6 +178,18 @@ export default function BakuOdori() {
   };
 
   // 「気になる」トグル。参加とは別の軽いブックマークなので、承認制や定員は関係ない
+  const handleToggleSaveCypher = async (id: string) => {
+    if (!user) return;
+    if (savedCyphers.includes(id)) {
+      const { error } = await supabase.from("cypher_saves").delete().eq("cypher_id", id).eq("profile_id", user.id);
+      if (error) { console.error("cypher_saves delete error:", error); showToast(`取り消しに失敗しました: ${error.message}`); return; }
+      setSavedCyphers(s => s.filter(x => x !== id));
+      return;
+    }
+    const { error } = await supabase.from("cypher_saves").insert({ cypher_id: id, profile_id: user.id });
+    if (error) { console.error("cypher_saves insert error:", error); showToast(`保存に失敗しました: ${error.message}`); return; }
+    setSavedCyphers(s => [...s, id]);
+  };
   const handleToggleSaveEvent = async (id: string) => {
     if (!user) return;
     if (savedEvents.includes(id)) {
@@ -416,14 +432,14 @@ export default function BakuOdori() {
           <LoginScreen />
         ) : (
           <>
-            {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} onPLClick={setPlDetail} onNumberClick={n => { setNumberDetail(n); setNumberDetailEditable(false); }} onViewProfile={id => setProfileStack(s => [...s, id])} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} section={topSection} onSectionChange={setTopSection} accountType={accountType} savedEventIds={savedEvents} savedNumberIds={savedNumbers} />}
+            {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} onPLClick={setPlDetail} onNumberClick={n => { setNumberDetail(n); setNumberDetailEditable(false); }} onViewProfile={id => setProfileStack(s => [...s, id])} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} section={topSection} onSectionChange={setTopSection} accountType={accountType} savedCypherIds={savedCyphers} savedEventIds={savedEvents} savedNumberIds={savedNumbers} />}
             {screen === "following" && <FollowingActivityScreen user={user} onCardClick={setDetail} onPLClick={setPlDetail} onViewProfile={id => setProfileStack(s => [...s, id])} refreshKey={refreshKey} />}
             {screen === "post"    && <PostScreen onNav={setScreen} user={user} initialTab={topSection === "pl" || topSection === "event" || topSection === "number" ? topSection : "cypher"} accountType={accountType} />}
             {screen === "profile" && <PublicProfileScreen profileId={user.id} currentUserId={user.id} onEdit={() => setScreen("edit")} onLogout={() => supabase.auth.signOut()} onViewProfile={id => setProfileStack(s => [...s, id])} onCypherClick={openCypherDetail} onLessonClick={openLessonDetail} onNumberClick={openNumberDetail} onEditCypher={id => setEditCypherId(id)} onEditLesson={id => setEditLessonId(id)} onEditNumber={id => setEditNumberId(id)} />}
             {screen === "community" && <CommunityScreen user={user} onOpenBoard={setBoardTarget} onViewProfile={id => setProfileStack(s => [...s, id])} accountType={accountType} />}
             {screen === "edit"    && <EditProfileScreen user={user} onDancerNameChange={setDancerName} onAvatarChange={setMyAvatarUrl} onAccountTypeChange={setAccountType} onBack={() => setScreen("profile")} />}
             <BottomNav current={screen} onNav={s => { setScreen(s); setProfileStack([]); }} onProfileLongPress={() => setShowSwitchAccount(true)} />
-            {detail && <DetailModal cypher={detail} onClose={() => setDetail(null)} joined={joined.includes(detail.id)} pending={pendingJoins.includes(detail.id)} onJoin={handleJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} />}
+            {detail && <DetailModal cypher={detail} onClose={() => setDetail(null)} joined={joined.includes(detail.id)} pending={pendingJoins.includes(detail.id)} onJoin={handleJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} saved={savedCyphers.includes(detail.id)} onToggleSave={handleToggleSaveCypher} />}
             {plDetail && <PLDetailModal lesson={plDetail} onClose={() => setPlDetail(null)} joined={plJoined.includes(plDetail.id)} pending={plPending.includes(plDetail.id)} onJoin={handlePLJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} saved={savedEvents.includes(plDetail.id)} onToggleSave={handleToggleSaveEvent} />}
             {numberDetail && <NumberDetailModal number={numberDetail} onClose={() => setNumberDetail(null)} joined={numberJoined.includes(numberDetail.id)} onJoin={handleNumberJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} onEdit={numberDetailEditable ? id => { setNumberDetail(null); setEditNumberId(id); } : undefined} onDeleted={numberDetailEditable ? () => { setNumberDetail(null); setRefreshKey(k => k + 1); } : undefined} user={user} saved={savedNumbers.includes(numberDetail.id)} onToggleSave={handleToggleSaveNumber} />}
             {confirmId && <ConfirmModal onConfirm={handleConfirmCancel} onCancel={() => setConfirmId(null)} />}
