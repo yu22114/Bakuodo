@@ -1,9 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import { MapPin, LogIn, LogOut, Navigation } from "lucide-react";
+import { MapPin, LogIn, LogOut } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
-import { SPOT_CHECKIN_HOURS, calcDistanceM } from "../lib/constants";
+import { SPOT_CHECKIN_HOURS } from "../lib/constants";
 
 type Checkin = {
   id: string;
@@ -26,15 +26,9 @@ type Spot = {
 // 一致しないスポットは写真なしの白いカードのまま
 const SPOT_PHOTOS = ["安田", "湘南台", "横浜", "中野", "代々木", "溝口"];
 
-function formatDistance(m: number): string {
-  if (m < 1000) return `${Math.round(m)}m`;
-  return `${(m / 1000).toFixed(1)}km`;
-}
-
-export function SpotCard({ spot, user, userLocation, onViewProfile }: {
+export function SpotCard({ spot, user, onViewProfile }: {
   spot: Spot;
   user: SupabaseUser;
-  userLocation: { lat: number; lng: number } | null;
   onViewProfile: (id: string) => void;
 }) {
   const photo = SPOT_PHOTOS.find(k => spot.name.includes(k));
@@ -44,11 +38,6 @@ export function SpotCard({ spot, user, userLocation, onViewProfile }: {
 
   const cutoff = new Date(Date.now() - SPOT_CHECKIN_HOURS * 60 * 60 * 1000).toISOString();
   const isCheckedIn = checkins.some(c => c.profile_id === user.id);
-
-  // スポットまでの距離（表示のみ。チェックインの可否には使わない）
-  const distance = (userLocation && spot.latitude && spot.longitude)
-    ? calcDistanceM(userLocation.lat, userLocation.lng, spot.latitude, spot.longitude)
-    : null;
 
   useEffect(() => {
     fetchCheckins();
@@ -65,9 +54,6 @@ export function SpotCard({ spot, user, userLocation, onViewProfile }: {
     setLoading(false);
   }
 
-  // 距離での足止めは一時的にオフ（「近くにいない人が押せる」ことより、
-  // 気軽にチェックインできる方を優先する判断）。SPOT_CHECKIN_RADIUS_Mは
-  // 再度必要になった時のために残してある
   const handleCheckin = async () => {
     setActing(true);
     if (isCheckedIn) {
@@ -88,13 +74,6 @@ export function SpotCard({ spot, user, userLocation, onViewProfile }: {
       <div style={{ padding: "14px 16px 12px", borderBottom: checkins.length > 0 ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
           <div style={{ flex: 1 }}>
-            {distance !== null && (
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-                <span style={{ display: "flex", alignItems: "center", gap: "2px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#16A34A", background: "rgba(22,163,74,0.08)", padding: "1px 6px", borderRadius: "8px" }}>
-                  <Navigation size={8} /> {formatDistance(distance)}
-                </span>
-              </div>
-            )}
             <div style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", letterSpacing: "0.05em", lineHeight: 1.1 }}>{spot.name}</div>
             <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.location)}`} target="_blank" rel="noopener noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: "4px", marginTop: "4px", textDecoration: "none" }}>

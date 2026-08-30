@@ -1,10 +1,10 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Bell, Search, X, SlidersHorizontal, Navigation, Loader, Plus, ChevronLeft, ChevronRight, MapPinOff, CalendarX, SearchX, Bookmark } from "lucide-react";
+import { Bell, Search, X, SlidersHorizontal, Plus, ChevronLeft, ChevronRight, MapPinOff, CalendarX, SearchX, Bookmark } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, PrivateLesson, DanceNumber, GenreKey } from "../lib/types";
-import { GENRES, EXTENDED_GENRES, GENRE_COLORS, genreLabel, timeUntil, formatDate, formatEndTime, calcDistanceM } from "../lib/constants";
+import { GENRES, EXTENDED_GENRES, GENRE_COLORS, genreLabel, timeUntil, formatDate, formatEndTime } from "../lib/constants";
 import { CypherCard } from "./CypherCard";
 import { PLCard } from "./PLCard";
 import { NumberCard } from "./NumberCard";
@@ -153,9 +153,6 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
   // カレンダーで表示中の月。今月からのズレを月数で持つ（開くたびに0＝今月に戻す）
   const [calendarMonthOffset, setCalendarMonthOffset] = useState(0);
   const [areaText, setAreaText] = useState("");
-  // 現在地
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [locating, setLocating] = useState(false);
   // スポット申請フォーム（載っていない練習場所をユーザーが送る）
   const [spotForm, setSpotForm] = useState<{ name: string; location: string; note: string } | null>(null);
   const [spotSending, setSpotSending] = useState(false);
@@ -324,28 +321,6 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
 
   const activeFilterCount = (selectedGenres.length > 0 ? 1 : 0) + (specificDate ? 1 : 0) + (areaText.trim() ? 1 : 0);
 
-  // 現在地取得 → 逆ジオコードでエリア名をareaTextに反映
-  const handleUseLocation = async () => {
-    if (!navigator.geolocation) { showToast("この端末では位置情報が使えません"); return; }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(async pos => {
-      const { latitude: lat, longitude: lng } = pos.coords;
-      setUserLocation({ lat, lng });
-      try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=ja`);
-        const data = await res.json();
-        const addr = data.address;
-        // 市区町村レベルの名前を取得（suburb > city_district > neighbourhood > city > town）
-        const area = addr.suburb ?? addr.city_district ?? addr.neighbourhood ?? addr.city ?? addr.town ?? addr.county ?? "";
-        if (area) setAreaText(area);
-      } catch { /* 逆ジオコード失敗しても位置情報はセット済み */ }
-      setLocating(false);
-    }, () => {
-      showToast("位置情報の取得に失敗しました。ブラウザの設定を確認してください");
-      setLocating(false);
-    });
-  };
-
   // スポット申請の送信。運営がSupabaseで中身を見てspotsに追加する運用
   const handleSubmitSpot = async () => {
     if (!spotForm || !spotForm.name.trim() || !spotForm.location.trim()) return;
@@ -362,14 +337,6 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
     showToast("スポットを申請しました！確認までしばらくお待ちください");
   };
 
-  // スポットを距離順にソート
-  const sortedSpots = userLocation
-    ? [...spots].sort((a, b) => {
-        const dA = (a.latitude && a.longitude) ? calcDistanceM(userLocation.lat, userLocation.lng, a.latitude, a.longitude) : Infinity;
-        const dB = (b.latitude && b.longitude) ? calcDistanceM(userLocation.lat, userLocation.lng, b.latitude, b.longitude) : Infinity;
-        return dA - dB;
-      })
-    : spots;
   const postCount = section === "pl" ? filteredLessons.length : section === "event" ? filteredEvents.length : section === "number" ? filteredNumbers.length : filtered.length;
 
   // ヘッダー左上に出す今日の日付。ロゴだけだと寂しいので添える
@@ -505,9 +472,9 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
       <div key={section} style={{ animation: `${slideDir === 1 ? "bdSlideFromRight" : "bdSlideFromLeft"} 0.2s ease-out` }}>
       {section === "spots" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 16px" }}>
-          {sortedSpots.length === 0
+          {spots.length === 0
             ? <EmptyState icon={MapPinOff}>スポット情報はまだありません</EmptyState>
-            : sortedSpots.map(s => <SpotCard key={s.id} spot={s} user={user} userLocation={userLocation} onViewProfile={id => onViewProfile?.(id)} />)}
+            : spots.map(s => <SpotCard key={s.id} spot={s} user={user} onViewProfile={id => onViewProfile?.(id)} />)}
           {/* 載っていない練習場所をユーザーから教えてもらう窓口 */}
           <button onClick={() => setSpotForm({ name: "", location: "", note: "" })}
             style={{ padding: "14px", background: "transparent", border: "1px dashed rgba(22,163,74,0.5)", borderRadius: "10px", color: "#16A34A", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
@@ -607,11 +574,6 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
                 />
                 {areaText && <button onClick={() => setAreaText("")} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "2px" }}><X size={14} /></button>}
               </div>
-              <button onClick={handleUseLocation} disabled={locating}
-                style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", background: userLocation ? "rgba(22,163,74,0.08)" : "#1A1A1A", border: `1px solid ${userLocation ? "rgba(22,163,74,0.3)" : "rgba(255,255,255,0.12)"}`, borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: userLocation ? "#16A34A" : "rgba(255,255,255,0.55)", opacity: locating ? 0.6 : 1 }}>
-                {locating ? <Loader size={13} style={{ animation: "spin 0.7s linear infinite" }} /> : <Navigation size={13} />}
-                {locating ? "取得中..." : userLocation ? "現在地を使用中" : "現在地から検索"}
-              </button>
             </div>
 
             {/* 日程 */}

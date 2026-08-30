@@ -3,20 +3,6 @@ import type { GenreKey, StaffRole } from "./types";
 // スポットのチェックイン有効時間（時間）— ここを変えるだけで全体に反映
 export const SPOT_CHECKIN_HOURS = 3;
 
-// チェックインを許可する最大距離（メートル）
-export const SPOT_CHECKIN_RADIUS_M = 500;
-
-// 2点間の距離をメートルで返す（Haversine公式）
-export function calcDistanceM(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371000;
-  const φ1 = lat1 * Math.PI / 180;
-  const φ2 = lat2 * Math.PI / 180;
-  const Δφ = (lat2 - lat1) * Math.PI / 180;
-  const Δλ = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(Δφ/2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-
 export const GENRES: GenreKey[] = [
   "Breaking",
   "Popping",
