@@ -294,6 +294,13 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
         const counts: Record<AttendanceStatus, number> = { yes: 0, maybe: 0, no: 0 };
         Object.values(schedAttendance).forEach(a => { if (a.status) counts[a.status]++; });
         const noAnswerCount = Math.max(0, (members ?? []).length - counts.yes - counts.maybe - counts.no);
+        // ○→×→△→未回答の順に並べる
+        const STATUS_RANK: Record<AttendanceStatus, number> = { yes: 0, no: 1, maybe: 2 };
+        const sortedMembers = [...(members ?? [])].sort((a, b) => {
+          const ar = schedAttendance[a.id]?.status;
+          const br = schedAttendance[b.id]?.status;
+          return (ar ? STATUS_RANK[ar] : 3) - (br ? STATUS_RANK[br] : 3);
+        });
         return (
           <div style={{ position: "fixed", inset: 0, zIndex: 245, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setViewingScheduleId(null)}>
             <div onClick={e => e.stopPropagation()} style={{ background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px", maxHeight: "80vh", overflowY: "auto", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }}>
@@ -319,7 +326,7 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {(members ?? []).map(m => {
+                {sortedMembers.map(m => {
                   const a = schedAttendance[m.id];
                   const meta = a?.status ? STATUS_META[a.status] : null;
                   return (
