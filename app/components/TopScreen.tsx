@@ -158,14 +158,37 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
   const [spotSending, setSpotSending] = useState(false);
   // ロゴを押すと登録済みユーザー一覧を出す
   const [showAllUsers, setShowAllUsers] = useState(false);
-  const [allUsers, setAllUsers] = useState<{ id: string; dancer_name: string; avatar_url: string | null; instagram: string | null }[] | null>(null);
+  const [allUsers, setAllUsers] = useState<{ id: string; dancer_name: string; avatar_url: string | null; instagram: string | null; is_private: boolean }[] | null>(null);
   const [userSearch, setUserSearch] = useState("");
+  // 全ユーザー一覧の右にフォローボタンを出すための、自分から見たフォロー状況
+  const [followMap, setFollowMap] = useState<Record<string, "pending" | "accepted">>({});
+  const [followLoadingId, setFollowLoadingId] = useState<string | null>(null);
   useEffect(() => {
     if (!showAllUsers) return;
-    supabase.from("profiles").select("id, dancer_name, avatar_url, instagram").order("dancer_name", { ascending: true }).then(({ data }) => {
-      setAllUsers((data as any[])?.map(p => ({ id: p.id, dancer_name: p.dancer_name || "UNKNOWN", avatar_url: p.avatar_url ?? null, instagram: p.instagram ?? null })) ?? []);
+    supabase.from("profiles").select("id, dancer_name, avatar_url, instagram, is_private").order("dancer_name", { ascending: true }).then(({ data }) => {
+      setAllUsers((data as any[])?.map(p => ({ id: p.id, dancer_name: p.dancer_name || "UNKNOWN", avatar_url: p.avatar_url ?? null, instagram: p.instagram ?? null, is_private: p.is_private ?? false })) ?? []);
     });
-  }, [showAllUsers]);
+    supabase.from("follows").select("following_id, status").eq("follower_id", user.id).then(({ data }) => {
+      const map: Record<string, "pending" | "accepted"> = {};
+      (data as any[] ?? []).forEach(r => { map[r.following_id] = r.status === "pending" ? "pending" : "accepted"; });
+      setFollowMap(map);
+    });
+  }, [showAllUsers, user.id]);
+
+  // フォロー/フォロー解除・申請の取り消し。鍵アカへの新規フォローは申請扱いになり、
+  // status（承認済みか申請中か）はDBトリガーが決める（クライアントからは送らない）
+  const handleToggleFollow = async (targetId: string) => {
+    if (followLoadingId) return;
+    setFollowLoadingId(targetId);
+    if (followMap[targetId]) {
+      await supabase.from("follows").delete().eq("follower_id", user.id).eq("following_id", targetId);
+      setFollowMap(m => { const next = { ...m }; delete next[targetId]; return next; });
+    } else {
+      const { data, error } = await supabase.from("follows").insert({ follower_id: user.id, following_id: targetId }).select("status").single();
+      if (!error && data) setFollowMap(m => ({ ...m, [targetId]: data.status === "pending" ? "pending" : "accepted" }));
+    }
+    setFollowLoadingId(null);
+  };
 
   useEffect(() => {
     async function fetchCyphers() {
@@ -712,7 +735,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                   {allUsers.filter(u => u.dancer_name.toLowerCase().includes(userSearch.trim().toLowerCase())).map(u => (
                     <button key={u.id} onClick={() => { setShowAllUsers(false); onViewProfile?.(u.id); }}
-                      style={{ background: "none", border: "none", cursor: onViewProfile ? "pointer" : "default", padding: "8px 4px", display: "flex", alignItems: "center", gap: "12px", textAlign: "left" }}>
+                      style={{ width: "100%", boxSizing: "border-box", background: "none", border: "none", cursor: onViewProfile ? "pointer" : "default", padding: "8px 4px", display: "flex", alignItems: "center", gap: "12px", textAlign: "left" }}>
                       <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
                         {u.avatar_url ? <img src={u.avatar_url} alt={u.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : u.dancer_name[0]?.toUpperCase()}
                       </div>
@@ -720,6 +743,16 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
                         <span style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{u.dancer_name}</span>
                         {u.instagram && <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#38BDF8" }}>@{u.instagram}</span>}
                       </div>
+                      {/* フォローボタン。自分自身の行には出さない。ネストできないので<button>ではなく<span>にする */}
+                      {u.id !== user.id && (
+                        <span onClick={e => { e.stopPropagation(); handleToggleFollow(u.id); }}
+                          style={{ flexShrink: 0, padding: "6px 12px", borderRadius: "20px", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", cursor: "pointer", opacity: followLoadingId === u.id ? 0.6 : 1,
+                            border: followMap[u.id] ? "1px solid rgba(255,255,255,0.16)" : "none",
+                            background: followMap[u.id] ? "transparent" : "linear-gradient(135deg, #DC2626, #A61B1B)",
+                            color: followMap[u.id] ? "rgba(255,255,255,0.55)" : "#fff" }}>
+                          {followMap[u.id] === "accepted" ? "フォロー中" : followMap[u.id] === "pending" ? "申請中" : (u.is_private ? "申請する" : "フォロー")}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
