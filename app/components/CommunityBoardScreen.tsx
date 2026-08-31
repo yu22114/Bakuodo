@@ -186,10 +186,6 @@ export function CommunityBoardScreen({ board, user, onBack, onViewProfile }: {
         ) : (
           <>
           {/* 添付画像はカード（一覧）側だけの表紙用。詳細画面には出さない */}
-          {/* メンバー欄：一覧は出さず合計人数だけ表示する */}
-          {members && members.length > 0 && (
-            <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "16px" }}>メンバー {members.length}人</div>
-          )}
 
           {/* 練習カードを作る（作成者以外も含め、この掲示板を見られる人なら誰でも）。タイトルを自由に決められる */}
           <div style={{ marginBottom: "16px" }}>
