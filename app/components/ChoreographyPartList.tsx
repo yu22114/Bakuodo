@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Plus, Trash2, Pencil, Check, X, GripVertical, Camera, Star } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, X, GripVertical, Camera } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { showToast } from "./Toast";
@@ -378,11 +378,6 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
                 animation: isMine && !dragging ? "bdGoldShine 2.6s ease-in-out infinite" : undefined,
                 transition: dragging ? "none" : "box-shadow 0.15s ease",
               }}>
-              {isMine && (
-                <div aria-hidden="true" style={{ position: "absolute", top: "-1px", right: "10px", display: "flex", alignItems: "center", gap: "3px", padding: "3px 8px 4px", borderRadius: "0 0 6px 6px", background: "linear-gradient(180deg, #FBBF24, #D97706)", color: "#1a1400", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 900, letterSpacing: "0.05em", boxShadow: "0 2px 6px rgba(0,0,0,0.35)" }}>
-                  <Star size={9} fill="#1a1400" /> 自分の担当
-                </div>
-              )}
               {editingId === part.id ? (
                 renderForm(editTitle, setEditTitle, editEightCount, setEditEightCount, editAssigneeIds, setEditAssigneeIds, editImage, setEditImage, () => setEditingId(null), saveEdit, savingEdit)
               ) : (
