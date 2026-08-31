@@ -45,6 +45,9 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
 }) {
   const swipeBack = useSwipeBack(onBack);
   const [profile, setProfile] = useState<ProfileState>({ dancer_name: "", genres: [], instagram: "", dance_years: "", age_group: "", birth_year: "", gender: "", bio: "", playlist_url: "", team: "", account_type: "individual" });
+  // 得意ジャンルの「その他」。固定一覧にない自由記入のジャンル名を1つだけ持てる
+  const [otherGenreSelected, setOtherGenreSelected] = useState(false);
+  const [otherGenreText, setOtherGenreText] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -60,9 +63,15 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
     async function fetchProfile() {
       const { data } = await supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, birth_year, gender, bio, playlist_url, team, avatar_url, is_private, account_type").eq("id", user.id).single();
       if (data) {
+        // 固定ジャンル一覧にない値＝「その他」で自由記入されたジャンル名として分けて持つ
+        const rawGenres = (data.genres ?? []) as string[];
+        const fixedGenres = rawGenres.filter(g => (GENRES as readonly string[]).includes(g)) as (typeof GENRES)[number][];
+        const customGenre = rawGenres.find(g => !(GENRES as readonly string[]).includes(g));
+        setOtherGenreSelected(!!customGenre);
+        setOtherGenreText(customGenre ?? "");
         setProfile({
           dancer_name: data.dancer_name ?? "",
-          genres: (data.genres ?? []) as (typeof GENRES)[number][],
+          genres: fixedGenres,
           instagram: data.instagram ?? "",
           dance_years: data.dance_years != null ? String(data.dance_years) : "",
           age_group: data.age_group ?? "",
@@ -153,10 +162,12 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
 
   const handleSave = async () => {
     setSaveError("");
+    // 固定ジャンル＋「その他」で入力した自由記入のジャンル名を1つの配列にまとめて保存する
+    const genres: string[] = [...profile.genres, ...(otherGenreSelected && otherGenreText.trim() ? [otherGenreText.trim()] : [])];
     const { error } = await supabase.from("profiles").upsert({
       id: user.id,
       dancer_name: profile.dancer_name,
-      genres: profile.genres,
+      genres,
       instagram: profile.instagram || null,
       dance_years: profile.dance_years ? Number(profile.dance_years) : null,
       age_group: profile.age_group || null,
@@ -285,7 +296,15 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
                 {g}{sel && <Check size={11} />}
               </button>
             ); })}
+            <button onClick={() => { setOtherGenreSelected(v => !v); setSaved(false); }}
+              style={{ padding: "10px", border: otherGenreSelected ? "1px solid #fff" : "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", background: otherGenreSelected ? "rgba(255,255,255,0.12)" : "#141414", color: otherGenreSelected ? "#fff" : "rgba(255,255,255,0.45)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              その他{otherGenreSelected && <Check size={11} />}
+            </button>
           </div>
+          {otherGenreSelected && (
+            <input style={{ ...inp, marginTop: "8px" }} placeholder="ジャンル名を入力" maxLength={20} value={otherGenreText}
+              onChange={e => { setOtherGenreText(e.target.value); setSaved(false); }} />
+          )}
         </div>
         {/* 鍵アカ設定 */}
         <button onClick={() => { setIsPrivate(v => !v); setSaved(false); }}

@@ -30,7 +30,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   onEditNumber?: (numberId: string) => void;
 }) {
   const isOwn = profileId === currentUserId;
-  type ProfileData = { dancer_name: string; genres: GenreKey[]; instagram: string | null; dance_years: number | null; age_group: string | null; birth_year: number | null; gender: string | null; bio: string | null; playlist_url: string | null; team: string | null; avatar_url: string | null; is_private: boolean; account_type: string };
+  // genresは固定ジャンルに加え、プロフィール編集の「その他」で自由記入された文字列も入るのでstring[]
+  type ProfileData = { dancer_name: string; genres: string[]; instagram: string | null; dance_years: number | null; age_group: string | null; birth_year: number | null; gender: string | null; bio: string | null; playlist_url: string | null; team: string | null; avatar_url: string | null; is_private: boolean; account_type: string };
   type HostedCypher = { id: string; title: string; starts_at: string; location: string; participant_count: number };
   type JoinedCypher = { id: string; title: string; starts_at: string; location: string; organizer_name: string };
   type HostedLesson = { id: string; title: string; starts_at: string; location: string; kind: "lesson" | "event"; participant_count: number };
@@ -41,7 +42,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   // このプロフィールの「得意ジャンル」（先頭に登録したもの）の色を、アバターやフォローボタンの
   // アクセント色にする。ジャンル未設定なら今まで通りの赤にフォールバック
-  const profileAccent = (profileData?.genres[0] && GENRE_COLORS[profileData.genres[0]]) || "#DC2626";
+  const profileAccent = (profileData?.genres[0] && (GENRE_COLORS as Record<string, string>)[profileData.genres[0]]) || "#DC2626";
   const [followStatus, setFollowStatus] = useState<"none" | "pending" | "accepted">("none");
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
