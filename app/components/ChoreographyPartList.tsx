@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Plus, Trash2, Pencil, Check, X, GripVertical, Camera } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, X, GripVertical, Camera, Star } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { showToast } from "./Toast";
@@ -338,6 +338,11 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
     // フォーム（画像添付などで縦に長くなることがある）も一覧も同じ領域でスクロールできるように、
     // 「上は固定・下だけスクロール」ではなく全体を1つのスクロール領域にする
     <div className="bd-scroll" style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflowY: "auto" }}>
+      {/* 自分が担当のパートをゴールドに光らせるアニメーション */}
+      <style>{`@keyframes bdGoldShine{
+        0%,100%{box-shadow:0 0 0 1px rgba(250,204,21,0.35), 0 4px 14px rgba(217,119,6,0.25);}
+        50%{box-shadow:0 0 0 1.5px rgba(253,224,71,0.8), 0 6px 24px rgba(250,204,21,0.55);}
+      }`}</style>
       {/* パートを作る。この掲示板を見られる人なら誰でも追加できる */}
       <div style={{ marginBottom: "12px" }}>
         {!showAdd ? (
@@ -355,18 +360,29 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
             // 編集・削除できるのは掲示板の作成者、またはこのパートを作った本人
             const canManage = isOwn || part.createdBy === user.id;
             const dragging = draggingId === part.id;
+            // 自分がこのパートの担当に選ばれているかどうか。一覧を見ただけで
+            // 「自分は何を担当しているか」が分かるように、カードをゴールドに光らせる
+            const isMine = part.assigneeIds.includes(user.id);
             return (
             <div key={part.id}
               ref={el => { if (el) itemRefs.current.set(part.id, el); else itemRefs.current.delete(part.id); }}
               style={{
-                width: "100%", boxSizing: "border-box", background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)",
-                border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px",
-                position: dragging ? "relative" : undefined,
+                width: "100%", boxSizing: "border-box", background: isMine
+                  ? "linear-gradient(105deg, transparent 32%, rgba(255,215,0,0.14) 46%, rgba(255,215,0,0.03) 58%, transparent 72%), linear-gradient(150deg, #33291a 0%, #241c10 25%, #2c220f 48%, #1c160a 70%, #302410 100%)"
+                  : "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)",
+                border: isMine ? "1px solid rgba(250,204,21,0.6)" : "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px",
+                position: "relative",
                 zIndex: dragging ? 5 : undefined,
                 transform: dragging ? `translateY(${dragOffsetY}px) scale(1.02)` : undefined,
                 boxShadow: dragging ? "0 10px 26px rgba(0,0,0,0.55)" : undefined,
+                animation: isMine && !dragging ? "bdGoldShine 2.6s ease-in-out infinite" : undefined,
                 transition: dragging ? "none" : "box-shadow 0.15s ease",
               }}>
+              {isMine && (
+                <div aria-hidden="true" style={{ position: "absolute", top: "-1px", right: "10px", display: "flex", alignItems: "center", gap: "3px", padding: "3px 8px 4px", borderRadius: "0 0 6px 6px", background: "linear-gradient(180deg, #FBBF24, #D97706)", color: "#1a1400", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 900, letterSpacing: "0.05em", boxShadow: "0 2px 6px rgba(0,0,0,0.35)" }}>
+                  <Star size={9} fill="#1a1400" /> 自分の担当
+                </div>
+              )}
               {editingId === part.id ? (
                 renderForm(editTitle, setEditTitle, editEightCount, setEditEightCount, editAssigneeIds, setEditAssigneeIds, editImage, setEditImage, () => setEditingId(null), saveEdit, savingEdit)
               ) : (
