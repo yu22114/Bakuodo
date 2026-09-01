@@ -118,7 +118,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
                 </div>
               </button>
               <div style={{ flex: 1 }}>
-                <p style={{ margin: 0, fontSize: "13px", color: "#F0F0F0", lineHeight: 1.5 }}>
+                <p onClick={() => actor?.id && onViewProfile?.(actor.id)} style={{ margin: 0, fontSize: "13px", color: "#F0F0F0", lineHeight: 1.5, cursor: actor?.id && onViewProfile ? "pointer" : "default" }}>
                   {/* 開催リマインドは「誰々さんが」ではなくイベントが主語 */}
                   {n.type === "reminder" ? <>まもなく<strong>「{cypherTitle}」</strong>が開催されます⏰</> : <><strong>{actorName}</strong>さんが{
                     n.type === "follow"          ? "あなたをフォローしました👋" :
