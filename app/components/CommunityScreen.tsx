@@ -81,9 +81,17 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
   // プロフィール画面の「マイコミュニティ」ボタンで追加したメンバー。この画面の見出しと同じ名前なので、
   // ここにも一覧を出す（community_membersテーブル。詳細はPublicProfileScreen参照）
   const [communityMembers, setCommunityMembers] = useState<{ id: string; dancer_name: string; avatar_url: string | null; instagram: string | null; bio: string | null }[] | null>(null);
-  // 左下のカレンダーボタンで開く月間カレンダー（ホーム画面のロゴから開くものと同じ、今日が何日か確認するだけのもの）
+  // 左下のカレンダーボタンで開く月間カレンダー（ホーム画面のロゴから開くものと同じ、今日が何日か確認するだけのもの）。
+  // マイコミュニティでは、練習日程が設定されている日にドットを付ける（RLSで見られる範囲だけが自然に返る）
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarMonthOffset, setCalendarMonthOffset] = useState(0);
+  const [scheduledDates, setScheduledDates] = useState<Set<string> | null>(null);
+  useEffect(() => {
+    if (!showCalendar || scheduledDates !== null) return;
+    supabase.from("community_board_practice_schedules").select("practice_date").then(({ data }) => {
+      setScheduledDates(new Set((data ?? []).map((r: any) => r.practice_date as string)));
+    });
+  }, [showCalendar, scheduledDates]);
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newSubtitle, setNewSubtitle] = useState("");
@@ -374,6 +382,10 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
               </div>
               <button onClick={() => setShowCalendar(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={20} /></button>
             </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "10px" }}>
+              <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#22D3EE" }} />
+              <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.45)" }}>練習日程あり</span>
+            </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: "4px" }}>
               {weekdays.map(w => (
                 <div key={w} style={{ textAlign: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.45)", padding: "6px 0" }}>{w}</div>
@@ -382,9 +394,15 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: "4px" }}>
               {calendarCells.map((d, i) => {
                 const isToday = calendarMonthOffset === 0 && d === today.getDate();
+                const dateStr = d !== null ? `${calendarViewDate.getFullYear()}-${String(calendarViewDate.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}` : null;
+                const hasSchedule = !!dateStr && !!scheduledDates?.has(dateStr);
                 return (
-                  <div key={i} style={{ aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: isToday ? "#A855F7" : "transparent", color: d === null ? "transparent" : isToday ? "#fff" : "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: isToday ? 700 : 400 }}>
-                    {d ?? "-"}
+                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+                    <div style={{ aspectRatio: "1", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: isToday ? "#A855F7" : "transparent", color: d === null ? "transparent" : isToday ? "#fff" : "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: isToday ? 700 : 400 }}>
+                      {d ?? "-"}
+                    </div>
+                    {/* 練習日程が設定されている日はドットを付ける */}
+                    <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: hasSchedule ? "#22D3EE" : "transparent" }} />
                   </div>
                 );
               })}
