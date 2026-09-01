@@ -224,16 +224,12 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {schedules.map((s, i) => {
-            // 日にちが過ぎたものは灰色にして終わったことがわかるようにする。
-            // まだ来ていないものは「今後の予定」バッジを出す
+            // 日にちが過ぎたものは灰色にして終わったことがわかるようにする
             const isPast = s.practice_date < todayStr();
             // 編集・削除できるのは掲示板の作成者、またはこの日程を追加した本人
             const canManage = isOwn || s.created_by === user.id;
             return (
               <div key={s.id} onClick={() => setViewingScheduleId(s.id)} style={{ width: "100%", boxSizing: "border-box", background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px", position: "relative", overflow: "hidden", opacity: isPast ? 0.5 : 1, cursor: "pointer", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }}>
-                {!isPast && (
-                  <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.12)", padding: "3px 10px", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", borderBottomLeftRadius: "4px" }}>今後の予定</div>
-                )}
                 {/* 番号は一番左に専用の列として配置する */}
                 <div style={{ alignSelf: "stretch", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "12px", borderRight: "1px solid rgba(255,255,255,0.1)", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
                   {circledNumber(i + 1)}
