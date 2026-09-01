@@ -227,37 +227,50 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
       {/* ホーム画面と同じ、縦横無尽に動く後光っぽい光。マイコミュニティは紫
           （このアプリで既にInstagramリンクなどに使っている「つながり」の色） */}
       <div ref={scrollShadow.ref} className="bd-scroll bd-glow-bg" style={{ flex: 1, overflowY: "auto", padding: "16px", backgroundColor: "#0A0A0A", backgroundImage: "radial-gradient(circle at center, rgba(168,85,247,0.9) 0%, rgba(168,85,247,0.08) 16%, transparent 32%)" }}>
-        {/* プロフィール画面の「マイコミュニティ」ボタンで追加したメンバー。1人もいなければ何も出さない。
-            名前だけでなくInstagram・一言（自己紹介）も見えるよう、アイコンの並びではなく縦のカードにする */}
-        {communityMembers && communityMembers.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
-            {communityMembers.map(m => (
-              <button key={m.id} onClick={() => onViewProfile?.(m.id)}
-                style={{ background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(168,85,247,0.4)", borderRadius: "12px", cursor: onViewProfile ? "pointer" : "default", padding: "18px 18px", display: "flex", alignItems: "center", gap: "12px", textAlign: "left", boxShadow: "0 6px 22px rgba(168,85,247,0.4), 0 2px 8px rgba(168,85,247,0.3), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
-                <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
-                  {m.avatar_url ? <img src={m.avatar_url} alt={m.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : m.dancer_name[0]?.toUpperCase()}
-                </div>
-                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <span style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{m.dancer_name}</span>
-                  {m.instagram && <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#38BDF8" }}>@{m.instagram}</span>}
-                  {m.bio && <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.bio}</span>}
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-        {boards === null ? (
+        {/* アカウント・投稿・アカウント・投稿の順に並べる：各メンバーのすぐ下に、
+            そのメンバーが作った掲示板を続けて表示する（自分自身の投稿は先頭にまとめる） */}
+        {boards === null || communityMembers === null ? (
           <CardSkeleton />
-        ) : boards.length === 0 ? (
-          <EmptyState icon={LayoutGrid} padding="60px 16px">まだ掲示板がありません。右下の＋から作ってみましょう</EmptyState>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {boards.map(b => (
-              <CommunityBoardCard key={b.id} board={b} isOwn={b.creator_id === user.id}
-                onClick={() => onOpenBoard(b)} onEdit={() => startEdit(b)} onDelete={() => setDeleteTarget(b.id)} />
-            ))}
-          </div>
-        )}
+        ) : (() => {
+          const myBoards = boards.filter(b => b.creator_id === user.id);
+          const boardsByCreator = new Map<string, Board[]>();
+          boards.forEach(b => {
+            if (b.creator_id === user.id) return;
+            const arr = boardsByCreator.get(b.creator_id) ?? [];
+            arr.push(b);
+            boardsByCreator.set(b.creator_id, arr);
+          });
+          if (myBoards.length === 0 && communityMembers.length === 0) {
+            return <EmptyState icon={LayoutGrid} padding="60px 16px">まだ掲示板がありません。右下の＋から作ってみましょう</EmptyState>;
+          }
+          return (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {myBoards.map(b => (
+                <CommunityBoardCard key={b.id} board={b} isOwn
+                  onClick={() => onOpenBoard(b)} onEdit={() => startEdit(b)} onDelete={() => setDeleteTarget(b.id)} />
+              ))}
+              {communityMembers.map(m => (
+                <div key={m.id} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <button onClick={() => onViewProfile?.(m.id)}
+                    style={{ background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(168,85,247,0.4)", borderRadius: "12px", cursor: onViewProfile ? "pointer" : "default", padding: "18px 18px", display: "flex", alignItems: "center", gap: "12px", textAlign: "left", boxShadow: "0 6px 22px rgba(168,85,247,0.4), 0 2px 8px rgba(168,85,247,0.3), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", flexShrink: 0 }}>
+                      {m.avatar_url ? <img src={m.avatar_url} alt={m.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : m.dancer_name[0]?.toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
+                      <span style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{m.dancer_name}</span>
+                      {m.instagram && <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#38BDF8" }}>@{m.instagram}</span>}
+                      {m.bio && <span style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.6)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.bio}</span>}
+                    </div>
+                  </button>
+                  {(boardsByCreator.get(m.id) ?? []).map(b => (
+                    <CommunityBoardCard key={b.id} board={b} isOwn={false}
+                      onClick={() => onOpenBoard(b)} onEdit={() => startEdit(b)} onDelete={() => setDeleteTarget(b.id)} />
+                  ))}
+                </div>
+              ))}
+            </div>
+          );
+        })()}
         <div style={{ height: "80px" }} />
       </div>
 
