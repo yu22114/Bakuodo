@@ -90,6 +90,10 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
     query = cardId ? query.eq("card_id", cardId) : query.is("card_id", null);
     const { data } = await query.order("practice_date", { ascending: true }).order("practice_time", { ascending: true }).order("created_at", { ascending: true });
     const list = (data as any[]) ?? [];
+    // 日付順に並んだ状態から、過ぎた日程だけを一番後ろへまとめて回す（安定ソートなので
+    // 「これから」「過ぎた」それぞれの中の日付順はそのまま保たれる）
+    const today = todayStr();
+    list.sort((a, b) => (a.practice_date < today ? 1 : 0) - (b.practice_date < today ? 1 : 0));
     setSchedules(list);
     onCountChange?.(list.length);
     fetchAttendances(list.map(s => s.id));
@@ -229,7 +233,7 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
             // 編集・削除できるのは掲示板の作成者、またはこの日程を追加した本人
             const canManage = isOwn || s.created_by === user.id;
             return (
-              <div key={s.id} onClick={() => setViewingScheduleId(s.id)} style={{ width: "100%", boxSizing: "border-box", background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px", position: "relative", overflow: "hidden", opacity: isPast ? 0.5 : 1, cursor: "pointer", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+              <div key={s.id} onClick={() => setViewingScheduleId(s.id)} style={{ width: "100%", boxSizing: "border-box", background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px", position: "relative", overflow: "hidden", filter: isPast ? "grayscale(1)" : undefined, opacity: isPast ? 0.55 : 1, cursor: "pointer", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }}>
                 {/* 番号は一番左に専用の列として配置する */}
                 <div style={{ alignSelf: "stretch", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "12px", borderRight: "1px solid rgba(255,255,255,0.1)", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
                   {circledNumber(i + 1)}
