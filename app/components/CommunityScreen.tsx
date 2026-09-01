@@ -398,8 +398,8 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
               <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.45)" }}>練習日程あり</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: "4px" }}>
-              {weekdays.map(w => (
-                <div key={w} style={{ textAlign: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.45)", padding: "6px 0" }}>{w}</div>
+              {weekdays.map((w, wi) => (
+                <div key={w} style={{ textAlign: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: wi === 0 ? "#F87171" : wi === 6 ? "#60A5FA" : "rgba(255,255,255,0.45)", padding: "6px 0" }}>{w}</div>
               ))}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: "4px" }}>
@@ -408,10 +408,13 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
                 const dateStr = d !== null ? `${calendarViewDate.getFullYear()}-${String(calendarViewDate.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}` : null;
                 const daySchedules = dateStr ? schedulesByDate?.get(dateStr) : undefined;
                 const hasSchedule = !!daySchedules && daySchedules.length > 0;
+                // 列（曜日）で色分け：日曜=赤、土曜=青。今日はこれまで通り紫の丸を優先する
+                const weekdayIndex = i % 7;
+                const weekdayColor = weekdayIndex === 0 ? "#F87171" : weekdayIndex === 6 ? "#60A5FA" : "#F0F0F0";
                 return (
                   <button key={i} onClick={() => hasSchedule && setViewingDate(dateStr)} disabled={!hasSchedule}
                     style={{ background: "none", border: "none", padding: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", cursor: hasSchedule ? "pointer" : "default" }}>
-                    <div style={{ aspectRatio: "1", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: isToday ? "#A855F7" : "transparent", color: d === null ? "transparent" : isToday ? "#fff" : "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: isToday ? 700 : 400 }}>
+                    <div style={{ aspectRatio: "1", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: isToday ? "#A855F7" : "transparent", color: d === null ? "transparent" : isToday ? "#fff" : weekdayColor, fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: isToday ? 700 : 400 }}>
                       {d ?? "-"}
                     </div>
                     {/* 練習日程が設定されている日はドットを付ける */}
