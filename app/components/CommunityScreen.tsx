@@ -84,7 +84,8 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
   // 左下のカレンダーボタンで開く月間カレンダー（ホーム画面のロゴから開くものと同じ、今日が何日か確認するだけのもの）。
   // マイコミュニティでは、練習日程が設定されている日にドットを付け、日付を押すとその日の日程を出す
   // （RLSで見られる範囲だけが自然に返る）
-  type DateSchedule = { id: string; board_id: string; board_title: string; practice_time: string | null; practice_end_time: string | null; place: string | null };
+  // board_title＝掲示板のイベント名、card_title＝日程がぶら下がる練習カードのタイトル（未設定の日程はnull）
+  type DateSchedule = { id: string; board_id: string; board_title: string; card_title: string | null; practice_time: string | null; practice_end_time: string | null; place: string | null };
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarMonthOffset, setCalendarMonthOffset] = useState(0);
   const [schedulesByDate, setSchedulesByDate] = useState<Map<string, DateSchedule[]> | null>(null);
@@ -92,12 +93,12 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
   useEffect(() => {
     if (!showCalendar || schedulesByDate !== null) return;
     supabase.from("community_board_practice_schedules")
-      .select("id, practice_date, practice_time, practice_end_time, place, board_id, board:board_id(title)")
+      .select("id, practice_date, practice_time, practice_end_time, place, board_id, board:board_id(title), card:card_id(title)")
       .then(({ data }) => {
         const map = new Map<string, DateSchedule[]>();
         (data as any[] ?? []).forEach(r => {
           const list = map.get(r.practice_date) ?? [];
-          list.push({ id: r.id, board_id: r.board_id, board_title: r.board?.title ?? "UNKNOWN", practice_time: r.practice_time, practice_end_time: r.practice_end_time, place: r.place });
+          list.push({ id: r.id, board_id: r.board_id, board_title: r.board?.title ?? "UNKNOWN", card_title: r.card?.title ?? null, practice_time: r.practice_time, practice_end_time: r.practice_end_time, place: r.place });
           map.set(r.practice_date, list);
         });
         setSchedulesByDate(map);
@@ -440,6 +441,9 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
                 <button key={s.id} onClick={() => { setViewingDate(null); setShowCalendar(false); onOpenBoard({ id: s.board_id, title: s.board_title }); }}
                   style={{ width: "100%", boxSizing: "border-box", textAlign: "left", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "12px 14px", cursor: "pointer" }}>
                   <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{s.board_title}</div>
+                  {s.card_title && (
+                    <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "#A855F7", marginTop: "2px" }}>{s.card_title}</div>
+                  )}
                   <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.55)", marginTop: "4px" }}>
                     {s.practice_time ? `${s.practice_time}${s.practice_end_time ? `〜${s.practice_end_time}` : ""}` : "時間未設定"}
                     {s.place ? `・${s.place}` : ""}
