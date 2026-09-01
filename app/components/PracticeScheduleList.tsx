@@ -172,6 +172,11 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
 
   return (
     <div style={scrollableList ? { display: "flex", flexDirection: "column", height: "100%", minHeight: 0, minWidth: 0 } : undefined}>
+      {/* 直近の練習日程を銀色に光らせるアニメーション。担当振付のゴールドと対になる色にしている */}
+      <style>{`@keyframes bdSilverShine{
+        0%,100%{box-shadow:0 0 0 1px rgba(203,213,225,0.35), 0 4px 14px rgba(148,163,184,0.25);}
+        50%{box-shadow:0 0 0 1.5px rgba(241,245,249,0.85), 0 6px 24px rgba(203,213,225,0.55);}
+      }`}</style>
       <div style={headerStyle}>
       {heading && <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>{heading}</div>}
 
@@ -232,8 +237,20 @@ export function PracticeScheduleList({ boardId, cardId, isOwn, user, members, al
             const isPast = s.practice_date < todayStr();
             // 編集・削除できるのは掲示板の作成者、またはこの日程を追加した本人
             const canManage = isOwn || s.created_by === user.id;
+            // 一番近い直近の日程（先頭かつ過ぎていない）だけを銀色に光らせる。
+            // 担当振付のゴールドの輝きと対になる演出
+            const isNearest = i === 0 && !isPast;
             return (
-              <div key={s.id} onClick={() => setViewingScheduleId(s.id)} style={{ width: "100%", boxSizing: "border-box", background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px", position: "relative", overflow: "hidden", filter: isPast ? "grayscale(1)" : undefined, opacity: isPast ? 0.55 : 1, cursor: "pointer", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+              <div key={s.id} onClick={() => setViewingScheduleId(s.id)} style={{
+                width: "100%", boxSizing: "border-box", background: isNearest
+                  ? "linear-gradient(105deg, transparent 32%, rgba(226,232,240,0.16) 46%, rgba(226,232,240,0.03) 58%, transparent 72%), linear-gradient(150deg, #33383f 0%, #21252b 25%, #292e35 48%, #191c21 70%, #2c3138 100%)"
+                  : "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)",
+                border: isNearest ? "1px solid rgba(226,232,240,0.55)" : "1px solid rgba(255,255,255,0.14)",
+                borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px", position: "relative", overflow: "hidden",
+                filter: isPast ? "grayscale(1)" : undefined, opacity: isPast ? 0.55 : 1, cursor: "pointer",
+                boxShadow: isNearest ? undefined : "inset 0 1px 0 rgba(255,255,255,0.08)",
+                animation: isNearest ? "bdSilverShine 2.6s ease-in-out infinite" : undefined,
+              }}>
                 {/* 番号は一番左に専用の列として配置する */}
                 <div style={{ alignSelf: "stretch", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "12px", borderRight: "1px solid rgba(255,255,255,0.1)", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
                   {circledNumber(i + 1)}
