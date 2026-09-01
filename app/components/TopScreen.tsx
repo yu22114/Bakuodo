@@ -711,8 +711,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
               ))}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: "4px" }}>
-              {weekdays.map(w => (
-                <div key={w} style={{ textAlign: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.45)", padding: "6px 0" }}>{w}</div>
+              {weekdays.map((w, wi) => (
+                <div key={w} style={{ textAlign: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: wi === 0 ? "#F87171" : wi === 6 ? "#60A5FA" : "rgba(255,255,255,0.45)", padding: "6px 0" }}>{w}</div>
               ))}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: "4px" }}>
@@ -720,9 +720,12 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
                 const isToday = calendarMonthOffset === 0 && d === today.getDate();
                 const dateStr = d !== null ? `${calendarViewDate.getFullYear()}-${String(calendarViewDate.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}` : null;
                 const marks = dateStr ? calendarDayMarks.get(dateStr) : undefined;
+                // 列（曜日）で色分け：日曜=赤、土曜=青。今日はこれまで通り赤い丸を優先する
+                const weekdayIndex = i % 7;
+                const weekdayColor = weekdayIndex === 0 ? "#F87171" : weekdayIndex === 6 ? "#60A5FA" : "#F0F0F0";
                 return (
                   <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
-                    <div style={{ aspectRatio: "1", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: isToday ? "#DC2626" : "transparent", color: d === null ? "transparent" : isToday ? "#fff" : "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: isToday ? 700 : 400 }}>
+                    <div style={{ aspectRatio: "1", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: isToday ? "#DC2626" : "transparent", color: d === null ? "transparent" : isToday ? "#fff" : weekdayColor, fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: isToday ? 700 : 400 }}>
                       {d ?? "-"}
                     </div>
                     {/* CYPHER・LESSON・EVENTがある日は、それぞれの色（タブと同じ色）で点を出す */}
