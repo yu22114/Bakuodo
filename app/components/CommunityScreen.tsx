@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Plus, X, Check, LayoutGrid, Camera } from "lucide-react";
+import { Plus, X, Check, LayoutGrid, Camera, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { todayStr } from "../lib/constants";
@@ -81,6 +81,9 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
   // プロフィール画面の「マイコミュニティ」ボタンで追加したメンバー。この画面の見出しと同じ名前なので、
   // ここにも一覧を出す（community_membersテーブル。詳細はPublicProfileScreen参照）
   const [communityMembers, setCommunityMembers] = useState<{ id: string; dancer_name: string; avatar_url: string | null; instagram: string | null; bio: string | null }[] | null>(null);
+  // 左下のカレンダーボタンで開く月間カレンダー（ホーム画面のロゴから開くものと同じ、今日が何日か確認するだけのもの）
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarMonthOffset, setCalendarMonthOffset] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newSubtitle, setNewSubtitle] = useState("");
@@ -222,6 +225,17 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
   const inp: React.CSSProperties = { width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" };
   const lbl: React.CSSProperties = { display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.12em", color: "rgba(255,255,255,0.5)", marginBottom: "5px" };
 
+  // カレンダーボタンで開く月間カレンダー用のマス目。月初の曜日ぶんだけ空マスを前に詰める
+  const today = new Date();
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  const calendarViewDate = new Date(today.getFullYear(), today.getMonth() + calendarMonthOffset, 1);
+  const firstWeekday = calendarViewDate.getDay();
+  const daysInMonth = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth() + 1, 0).getDate();
+  const calendarCells: (number | null)[] = [
+    ...Array(firstWeekday).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+
   return (
     <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* ホーム画面と同じ、縦横無尽に動く後光っぽい光。マイコミュニティは紫
@@ -335,13 +349,49 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
           （下部ナビと同じく外側は全幅の透明レイヤーにして中央寄せだけ担わせる）。
           以前は団体用アカウントだけだったが、個人用アカウントでも作れるようにした */}
       <div style={{ position: "fixed", bottom: "88px", left: 0, right: 0, zIndex: 40, display: "flex", justifyContent: "center", pointerEvents: "none" }}>
-        <div style={{ width: "100%", maxWidth: "480px", display: "flex", justifyContent: "flex-end", padding: "0 16px" }}>
+        <div style={{ width: "100%", maxWidth: "480px", display: "flex", justifyContent: "space-between", padding: "0 16px" }}>
+          {/* 左下：今日が何日かを確認する月間カレンダー（ホーム画面のロゴから開くものと同じ） */}
+          <button onClick={() => { setCalendarMonthOffset(0); setShowCalendar(true); }} aria-label="カレンダーを表示"
+            style={{ pointerEvents: "auto", background: "linear-gradient(180deg, #303030, #1c1c1c)", border: "none", borderRadius: "50%", cursor: "pointer", width: "52px", height: "52px", display: "flex", alignItems: "center", justifyContent: "center", color: "#F0F0F0", boxShadow: "0 4px 14px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12)" }}>
+            <Calendar size={22} />
+          </button>
           <button onClick={openCreate} aria-label="掲示板を作る"
             style={{ pointerEvents: "auto", background: "linear-gradient(135deg, #DC2626, #A61B1B)", border: "none", borderRadius: "50%", cursor: "pointer", width: "52px", height: "52px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(220,38,38,0.4), 0 2px 6px rgba(0,0,0,0.3)" }}>
             <Plus size={24} color="#fff" />
           </button>
         </div>
       </div>
+
+      {/* 左下のカレンダーボタンで開く月間カレンダー。今日が何日かを一目で確認するだけのもの */}
+      {showCalendar && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setShowCalendar(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <button onClick={() => setCalendarMonthOffset(o => o - 1)} aria-label="前の月" style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><ChevronLeft size={20} /></button>
+                <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", letterSpacing: "0.05em" }}>{calendarViewDate.getFullYear()}年{calendarViewDate.getMonth() + 1}月</span>
+                <button onClick={() => setCalendarMonthOffset(o => o + 1)} aria-label="次の月" style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><ChevronRight size={20} /></button>
+              </div>
+              <button onClick={() => setShowCalendar(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={20} /></button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: "4px" }}>
+              {weekdays.map(w => (
+                <div key={w} style={{ textAlign: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.45)", padding: "6px 0" }}>{w}</div>
+              ))}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: "4px" }}>
+              {calendarCells.map((d, i) => {
+                const isToday = calendarMonthOffset === 0 && d === today.getDate();
+                return (
+                  <div key={i} style={{ aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: isToday ? "#A855F7" : "transparent", color: d === null ? "transparent" : isToday ? "#fff" : "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: isToday ? 700 : 400 }}>
+                    {d ?? "-"}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 削除確認モーダル */}
       {deleteTarget && (
