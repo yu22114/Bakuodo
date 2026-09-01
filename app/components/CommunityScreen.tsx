@@ -82,16 +82,27 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
   // ここにも一覧を出す（community_membersテーブル。詳細はPublicProfileScreen参照）
   const [communityMembers, setCommunityMembers] = useState<{ id: string; dancer_name: string; avatar_url: string | null; instagram: string | null; bio: string | null }[] | null>(null);
   // 左下のカレンダーボタンで開く月間カレンダー（ホーム画面のロゴから開くものと同じ、今日が何日か確認するだけのもの）。
-  // マイコミュニティでは、練習日程が設定されている日にドットを付ける（RLSで見られる範囲だけが自然に返る）
+  // マイコミュニティでは、練習日程が設定されている日にドットを付け、日付を押すとその日の日程を出す
+  // （RLSで見られる範囲だけが自然に返る）
+  type DateSchedule = { id: string; board_id: string; board_title: string; practice_time: string | null; practice_end_time: string | null; place: string | null };
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarMonthOffset, setCalendarMonthOffset] = useState(0);
-  const [scheduledDates, setScheduledDates] = useState<Set<string> | null>(null);
+  const [schedulesByDate, setSchedulesByDate] = useState<Map<string, DateSchedule[]> | null>(null);
+  const [viewingDate, setViewingDate] = useState<string | null>(null);
   useEffect(() => {
-    if (!showCalendar || scheduledDates !== null) return;
-    supabase.from("community_board_practice_schedules").select("practice_date").then(({ data }) => {
-      setScheduledDates(new Set((data ?? []).map((r: any) => r.practice_date as string)));
-    });
-  }, [showCalendar, scheduledDates]);
+    if (!showCalendar || schedulesByDate !== null) return;
+    supabase.from("community_board_practice_schedules")
+      .select("id, practice_date, practice_time, practice_end_time, place, board_id, board:board_id(title)")
+      .then(({ data }) => {
+        const map = new Map<string, DateSchedule[]>();
+        (data as any[] ?? []).forEach(r => {
+          const list = map.get(r.practice_date) ?? [];
+          list.push({ id: r.id, board_id: r.board_id, board_title: r.board?.title ?? "UNKNOWN", practice_time: r.practice_time, practice_end_time: r.practice_end_time, place: r.place });
+          map.set(r.practice_date, list);
+        });
+        setSchedulesByDate(map);
+      });
+  }, [showCalendar, schedulesByDate]);
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newSubtitle, setNewSubtitle] = useState("");
@@ -395,17 +406,43 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
               {calendarCells.map((d, i) => {
                 const isToday = calendarMonthOffset === 0 && d === today.getDate();
                 const dateStr = d !== null ? `${calendarViewDate.getFullYear()}-${String(calendarViewDate.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}` : null;
-                const hasSchedule = !!dateStr && !!scheduledDates?.has(dateStr);
+                const daySchedules = dateStr ? schedulesByDate?.get(dateStr) : undefined;
+                const hasSchedule = !!daySchedules && daySchedules.length > 0;
                 return (
-                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+                  <button key={i} onClick={() => hasSchedule && setViewingDate(dateStr)} disabled={!hasSchedule}
+                    style={{ background: "none", border: "none", padding: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", cursor: hasSchedule ? "pointer" : "default" }}>
                     <div style={{ aspectRatio: "1", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: isToday ? "#A855F7" : "transparent", color: d === null ? "transparent" : isToday ? "#fff" : "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: isToday ? 700 : 400 }}>
                       {d ?? "-"}
                     </div>
                     {/* 練習日程が設定されている日はドットを付ける */}
                     <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: hasSchedule ? "#22D3EE" : "transparent" }} />
-                  </div>
+                  </button>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* カレンダーで日付を押すと出る、その日の練習日程一覧。タップした掲示板を開く */}
+      {viewingDate && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 210, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setViewingDate(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px", maxHeight: "80vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+              <span style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{viewingDate.replace(/-/g, "/")}の練習日程</span>
+              <button onClick={() => setViewingDate(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {(schedulesByDate?.get(viewingDate) ?? []).map(s => (
+                <button key={s.id} onClick={() => { setViewingDate(null); setShowCalendar(false); onOpenBoard({ id: s.board_id, title: s.board_title }); }}
+                  style={{ width: "100%", boxSizing: "border-box", textAlign: "left", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "12px 14px", cursor: "pointer" }}>
+                  <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{s.board_title}</div>
+                  <div style={{ fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.55)", marginTop: "4px" }}>
+                    {s.practice_time ? `${s.practice_time}${s.practice_end_time ? `〜${s.practice_end_time}` : ""}` : "時間未設定"}
+                    {s.place ? `・${s.place}` : ""}
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
         </div>
