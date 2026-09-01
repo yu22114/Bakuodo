@@ -253,10 +253,10 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
             {applicants && applicants.length > 0 && (
               <div style={{ marginBottom: "16px" }}>
                 <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>参加申請したユーザー（{applicants.length}人）</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+                <div className="bd-scroll" style={{ display: "flex", flexWrap: "nowrap", gap: "12px", overflowX: "auto", paddingBottom: "2px" }}>
                   {applicants.map(a => (
                     <button key={a.id} onClick={() => onViewProfile?.(a.id)}
-                      style={{ background: "none", border: "none", cursor: onViewProfile ? "pointer" : "default", padding: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", width: "56px" }}>
+                      style={{ background: "none", border: "none", cursor: onViewProfile ? "pointer" : "default", padding: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", width: "56px", flexShrink: 0 }}>
                       <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
                         {a.avatar_url ? <img src={a.avatar_url} alt={a.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : a.dancer_name[0]?.toUpperCase()}
                       </div>
