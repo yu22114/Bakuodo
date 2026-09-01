@@ -186,6 +186,8 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
       setSaved(true);
       if (profile.dancer_name) onDancerNameChange?.(profile.dancer_name);
       onAccountTypeChange?.(profile.account_type);
+      // 保存できたことが分かるよう一瞬「SAVED!」を見せてから、自動でプロフィール画面へ戻る
+      setTimeout(() => onBack?.(), 500);
     }
   };
 

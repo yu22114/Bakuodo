@@ -377,6 +377,21 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
 
+  // カレンダーの各日に、その日始まりのCYPHER/LESSON/EVENTがあるかを示す小さな点を出すための集計。
+  // 一覧タブと同じ、既に取得済みのcyphers/lessons/eventsをそのまま使う（表示中は「これから」だけなので
+  // 過ぎた月に切り替えても点は出ないが、月間カレンダーは元々「今日が何日か」を見る用途なのでこれでよい）
+  const calendarDayMarks = new Map<string, { cypher: boolean; pl: boolean; event: boolean }>();
+  const markCalendarDay = (startsAt: string, key: "cypher" | "pl" | "event") => {
+    const d = new Date(startsAt);
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const entry = calendarDayMarks.get(dateStr) ?? { cypher: false, pl: false, event: false };
+    entry[key] = true;
+    calendarDayMarks.set(dateStr, entry);
+  };
+  cyphers.forEach(c => markCalendarDay(c.starts_at, "cypher"));
+  lessons.forEach(l => markCalendarDay(l.starts_at, "pl"));
+  events.forEach(e => markCalendarDay(e.starts_at, "event"));
+
   return (
     // 画面全体をビューポート高さで固定し、下の「固定ヘッダー＋スクロール領域」に分ける。
     // 浮き島の下部ナビは position:fixed で別レイヤーなのでここでは特に気にしなくていい
@@ -686,6 +701,15 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
               </div>
               <button onClick={() => setShowCalendar(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={20} /></button>
             </div>
+            {/* 点の色の意味（タブの色と揃えている） */}
+            <div style={{ display: "flex", gap: "12px", marginBottom: "10px" }}>
+              {(["cypher", "pl", "event"] as const).map(key => (
+                <div key={key} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                  <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: SECTION_COLOR[key] }} />
+                  <span style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.45)" }}>{SECTION_LABEL[key]}</span>
+                </div>
+              ))}
+            </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: "4px" }}>
               {weekdays.map(w => (
                 <div key={w} style={{ textAlign: "center", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.45)", padding: "6px 0" }}>{w}</div>
@@ -694,9 +718,19 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: "4px" }}>
               {calendarCells.map((d, i) => {
                 const isToday = calendarMonthOffset === 0 && d === today.getDate();
+                const dateStr = d !== null ? `${calendarViewDate.getFullYear()}-${String(calendarViewDate.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}` : null;
+                const marks = dateStr ? calendarDayMarks.get(dateStr) : undefined;
                 return (
-                  <div key={i} style={{ aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: isToday ? "#DC2626" : "transparent", color: d === null ? "transparent" : isToday ? "#fff" : "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: isToday ? 700 : 400 }}>
-                    {d ?? "-"}
+                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+                    <div style={{ aspectRatio: "1", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: isToday ? "#DC2626" : "transparent", color: d === null ? "transparent" : isToday ? "#fff" : "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: isToday ? 700 : 400 }}>
+                      {d ?? "-"}
+                    </div>
+                    {/* CYPHER・LESSON・EVENTがある日は、それぞれの色（タブと同じ色）で点を出す */}
+                    <div style={{ display: "flex", gap: "2px", height: "4px" }}>
+                      {marks?.cypher && <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: SECTION_COLOR.cypher }} />}
+                      {marks?.pl && <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: SECTION_COLOR.pl }} />}
+                      {marks?.event && <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: SECTION_COLOR.event }} />}
+                    </div>
                   </div>
                 );
               })}
