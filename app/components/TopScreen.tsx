@@ -152,6 +152,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
   const [showCalendar, setShowCalendar] = useState(false);
   // カレンダーで表示中の月。今月からのズレを月数で持つ（開くたびに0＝今月に戻す）
   const [calendarMonthOffset, setCalendarMonthOffset] = useState(0);
+  // カレンダーの日付を押すと、その日のCYPHER/LESSON/EVENTを出す（"YYYY-MM-DD"）
+  const [viewingCalendarDate, setViewingCalendarDate] = useState<string | null>(null);
   const [areaText, setAreaText] = useState("");
   // スポット申請フォーム（載っていない練習場所をユーザーが送る）
   const [spotForm, setSpotForm] = useState<{ name: string; location: string; note: string } | null>(null);
@@ -380,10 +382,13 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
   // カレンダーの各日に、その日始まりのCYPHER/LESSON/EVENTがあるかを示す小さな点を出すための集計。
   // 一覧タブと同じ、既に取得済みのcyphers/lessons/eventsをそのまま使う（表示中は「これから」だけなので
   // 過ぎた月に切り替えても点は出ないが、月間カレンダーは元々「今日が何日か」を見る用途なのでこれでよい）
+  const toDateStr = (iso: string) => {
+    const d = new Date(iso);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
   const calendarDayMarks = new Map<string, { cypher: boolean; pl: boolean; event: boolean }>();
   const markCalendarDay = (startsAt: string, key: "cypher" | "pl" | "event") => {
-    const d = new Date(startsAt);
-    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const dateStr = toDateStr(startsAt);
     const entry = calendarDayMarks.get(dateStr) ?? { cypher: false, pl: false, event: false };
     entry[key] = true;
     calendarDayMarks.set(dateStr, entry);
@@ -391,6 +396,10 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
   cyphers.forEach(c => markCalendarDay(c.starts_at, "cypher"));
   lessons.forEach(l => markCalendarDay(l.starts_at, "pl"));
   events.forEach(e => markCalendarDay(e.starts_at, "event"));
+  // カレンダーの日付を押した時に出す、その日のカード一覧
+  const viewingDateCyphers = viewingCalendarDate ? cyphers.filter(c => toDateStr(c.starts_at) === viewingCalendarDate) : [];
+  const viewingDateLessons = viewingCalendarDate ? lessons.filter(l => toDateStr(l.starts_at) === viewingCalendarDate) : [];
+  const viewingDateEvents = viewingCalendarDate ? events.filter(e => toDateStr(e.starts_at) === viewingCalendarDate) : [];
 
   return (
     // 画面全体をビューポート高さで固定し、下の「固定ヘッダー＋スクロール領域」に分ける。
@@ -723,8 +732,10 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
                 // 列（曜日）で色分け：日曜=赤、土曜=青。今日はこれまで通り赤い丸を優先する
                 const weekdayIndex = i % 7;
                 const weekdayColor = weekdayIndex === 0 ? "#F87171" : weekdayIndex === 6 ? "#60A5FA" : "#F0F0F0";
+                const hasItems = !!marks && (marks.cypher || marks.pl || marks.event);
                 return (
-                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+                  <button key={i} onClick={() => hasItems && dateStr && setViewingCalendarDate(dateStr)} disabled={!hasItems}
+                    style={{ background: "none", border: "none", padding: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", cursor: hasItems ? "pointer" : "default" }}>
                     <div style={{ aspectRatio: "1", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: isToday ? "#DC2626" : "transparent", color: d === null ? "transparent" : isToday ? "#fff" : weekdayColor, fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: isToday ? 700 : 400 }}>
                       {d ?? "-"}
                     </div>
@@ -734,10 +745,33 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
                       {marks?.pl && <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: SECTION_COLOR.pl }} />}
                       {marks?.event && <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: SECTION_COLOR.event }} />}
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* カレンダーで日付を押すと出る、その日のCYPHER・LESSON・EVENT一覧 */}
+      {viewingCalendarDate && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 210, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setViewingCalendarDate(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "480px", margin: "0 auto", background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "16px 16px 0 0", padding: "24px 20px 40px", maxHeight: "85vh", overflowY: "auto" }} className="bd-scroll">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <span style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", letterSpacing: "0.05em" }}>{viewingCalendarDate.replace(/-/g, "/")}の予定</span>
+              <button onClick={() => setViewingCalendarDate(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={20} /></button>
+            </div>
+            {viewingDateCyphers.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: (viewingDateLessons.length > 0 || viewingDateEvents.length > 0) ? "16px" : 0 }}>
+                {viewingDateCyphers.map((c, i) => <CypherCard key={c.id} cypher={c} index={i} onClick={() => { setViewingCalendarDate(null); setShowCalendar(false); onCardClick(c); }} />)}
+              </div>
+            )}
+            {(viewingDateLessons.length > 0 || viewingDateEvents.length > 0) && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                {viewingDateLessons.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => { setViewingCalendarDate(null); setShowCalendar(false); onPLClick(l); }} />)}
+                {viewingDateEvents.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => { setViewingCalendarDate(null); setShowCalendar(false); onPLClick(l); }} />)}
+              </div>
+            )}
           </div>
         </div>
       )}
