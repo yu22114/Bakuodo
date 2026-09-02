@@ -59,7 +59,8 @@ export function CommunityBoardCard({ board: b, isOwn, onClick, onEdit, onDelete 
 
         <div style={{ margin: "auto 0 0" }}>
           <h3 style={{ margin: 0, fontSize: "26px", fontWeight: 900, fontStyle: "italic", color: "#fff", fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", letterSpacing: "-0.01em", lineHeight: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>【{b.title}】</h3>
-          {b.subtitle && <div style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.75)", marginTop: "6px" }}>{b.subtitle}</div>}
+          {/* タイトルと同じセリフ体の斜体にして、フライヤーの煽り文句っぽい見せ方にする */}
+          {b.subtitle && <div style={{ fontSize: "18px", fontFamily: "'Playfair Display','Noto Sans JP',sans-serif", fontStyle: "italic", fontWeight: 600, letterSpacing: "0.02em", color: "rgba(255,255,255,0.88)", marginTop: "6px", textShadow: "0 1px 8px rgba(0,0,0,0.6)" }}>{b.subtitle}</div>}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "14px" }}>
