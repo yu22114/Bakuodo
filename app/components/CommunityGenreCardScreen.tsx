@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { ChevronLeft, Trash2, Pencil, X, Check, UserPlus } from "lucide-react";
+import { ChevronLeft, ChevronDown, Trash2, Pencil, X, Check, UserPlus } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { GENRES, GENRE_COLORS, genreLabel, toggleGenre, normalizeInstagramUrl, instagramHandle } from "../lib/constants";
@@ -68,6 +68,8 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
   const [applying, setApplying] = useState(false);
   // 参加申請したユーザー一覧（練習日程を追加の上に表示する。参加状況にも使う）
   const [applicants, setApplicants] = useState<{ id: string; dancer_name: string; avatar_url: string | null; instagram: string | null }[] | null>(null);
+  // 参加申請したユーザーの一覧は最初は畳んでおき、見出しを押すと上から下にスライドして出す
+  const [applicantsOpen, setApplicantsOpen] = useState(false);
   // 練習日程 / 担当振付タブ。左右スワイプで切り替えられる（TopScreenのタブ切り替えと同じ仕組み）
   const [tab, setTab] = useState<"schedule" | "choreo">("schedule");
   const [tabSlideDir, setTabSlideDir] = useState<1 | -1>(1);
@@ -249,20 +251,28 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
         <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
           {/* 参加申請したユーザー・タブは固定。ここから下がタブの中身 */}
           <div style={{ flexShrink: 0, padding: "20px 16px 0" }}>
-            {/* 参加申請したユーザー。練習日程を追加の上に出す */}
+            {/* 参加申請したユーザー。最初は畳んでおき、見出しを押すと上から下にスライドして出す */}
             {applicants && applicants.length > 0 && (
               <div style={{ marginBottom: "16px" }}>
-                <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>参加申請したユーザー（{applicants.length}人）</div>
-                <div className="bd-scroll" style={{ display: "flex", flexWrap: "nowrap", gap: "12px", overflowX: "auto", paddingBottom: "2px" }}>
-                  {applicants.map(a => (
-                    <button key={a.id} onClick={() => onViewProfile?.(a.id)}
-                      style={{ background: "none", border: "none", cursor: onViewProfile ? "pointer" : "default", padding: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", width: "56px", flexShrink: 0 }}>
-                      <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
-                        {a.avatar_url ? <img src={a.avatar_url} alt={a.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : a.dancer_name[0]?.toUpperCase()}
-                      </div>
-                      <span title={a.dancer_name} style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "56px" }}>{a.dancer_name}</span>
-                    </button>
-                  ))}
+                <button onClick={() => setApplicantsOpen(v => !v)}
+                  style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: "5px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.5)" }}>
+                  参加申請したユーザー（{applicants.length}人）
+                  <ChevronDown size={13} style={{ transform: applicantsOpen ? "rotate(180deg)" : "none", transition: "transform 0.25s ease" }} />
+                </button>
+                <div style={{ display: "grid", gridTemplateRows: applicantsOpen ? "1fr" : "0fr", transition: "grid-template-rows 0.25s ease" }}>
+                  <div style={{ overflow: "hidden" }}>
+                    <div className="bd-scroll" style={{ display: "flex", flexWrap: "nowrap", gap: "12px", overflowX: "auto", paddingTop: "10px", paddingBottom: "2px" }}>
+                      {applicants.map(a => (
+                        <button key={a.id} onClick={() => onViewProfile?.(a.id)}
+                          style={{ background: "none", border: "none", cursor: onViewProfile ? "pointer" : "default", padding: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", width: "56px", flexShrink: 0 }}>
+                          <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>
+                            {a.avatar_url ? <img src={a.avatar_url} alt={a.dancer_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : a.dancer_name[0]?.toUpperCase()}
+                          </div>
+                          <span title={a.dancer_name} style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "56px" }}>{a.dancer_name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
