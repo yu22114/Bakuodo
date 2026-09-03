@@ -55,9 +55,37 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [loading, setLoading] = useState(true);
+  // アカウント削除（危険な操作）
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const toggleGenre = (g: (typeof GENRES)[number]) => { setProfile(p => ({ ...p, genres: p.genres.includes(g) ? p.genres.filter(x => x !== g) : [...p.genres, g] })); setSaved(false); };
   const handleSignOut = async () => { await supabase.auth.signOut(); };
+
+  // アプリ内アカウント削除。サーバー側（/api/delete-account）でプロフィールの匿名化と
+  // ログイン無効化を行う。成功したらこちらでサインアウトする（以降はpage.tsx側の
+  // onAuthStateChangeが検知してログイン画面に切り替える）
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    setDeleteError("");
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setDeleteError("ログイン情報の取得に失敗しました"); setDeleting(false); return; }
+    try {
+      const res = await fetch("/api/delete-account", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` } });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setDeleteError(`削除に失敗しました: ${body.error ?? res.statusText}`);
+        setDeleting(false);
+        return;
+      }
+    } catch (e) {
+      setDeleteError(`削除に失敗しました: ${e instanceof Error ? e.message : "不明なエラー"}`);
+      setDeleting(false);
+      return;
+    }
+    await supabase.auth.signOut();
+  };
 
   useEffect(() => {
     async function fetchProfile() {
@@ -327,7 +355,32 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
         <button onClick={handleSave} style={{ width: "100%", padding: "13px", border: "none", borderRadius: "6px", background: saved ? "rgba(22,163,74,0.12)" : "#DC2626", color: saved ? "#16A34A" : "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
           {saved ? <><Check size={15} />SAVED!</> : <><Star size={15} />プロフィールを保存する</>}
         </button>
+
+        {/* 危険な操作：アカウント削除。目立たないよう一番下に置く */}
+        <div style={{ marginTop: "24px", paddingTop: "20px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+          <button onClick={() => setDeleteConfirmOpen(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(220,38,38,0.7)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", padding: "4px", textDecoration: "underline", textUnderlineOffset: "2px" }}>
+            アカウントを削除する
+          </button>
+        </div>
       </div>
+
+      {/* アカウント削除の確認モーダル */}
+      {deleteConfirmOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 260, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => !deleting && setDeleteConfirmOpen(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "12px", padding: "28px 24px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
+            <div style={{ fontSize: "28px", marginBottom: "8px" }}>⚠️</div>
+            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "18px", color: "#F0F0F0", marginBottom: "8px" }}>アカウントを削除</div>
+            <div style={{ fontSize: "13px", color: "#F0F0F0", marginBottom: "20px", lineHeight: "1.6" }}>
+              削除すると二度とログインできなくなり、プロフィール情報（名前・アイコン・自己紹介等）は消去されます。投稿した内容は履歴として残りますが、投稿者名は「退会したユーザー」と表示されます。この操作は元に戻せません。
+            </div>
+            {deleteError && <div style={{ marginBottom: "12px", fontSize: "11px", color: "#DC2626" }}>{deleteError}</div>}
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button onClick={() => setDeleteConfirmOpen(false)} disabled={deleting} style={{ flex: 1, padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#F0F0F0" }}>キャンセル</button>
+              <button onClick={handleDeleteAccount} disabled={deleting} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #DC2626, #A61B1B)", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold", opacity: deleting ? 0.6 : 1 }}>{deleting ? "削除中..." : "削除する"}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

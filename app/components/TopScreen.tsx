@@ -167,7 +167,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
   const [followLoadingId, setFollowLoadingId] = useState<string | null>(null);
   useEffect(() => {
     if (!showAllUsers) return;
-    supabase.from("profiles").select("id, dancer_name, avatar_url, instagram, is_private").order("dancer_name", { ascending: true }).then(({ data }) => {
+    // 退会済みアカウント（deleted_at設定済み）は一覧に出さない
+    supabase.from("profiles").select("id, dancer_name, avatar_url, instagram, is_private").is("deleted_at", null).order("dancer_name", { ascending: true }).then(({ data }) => {
       setAllUsers((data as any[])?.map(p => ({ id: p.id, dancer_name: p.dancer_name || "UNKNOWN", avatar_url: p.avatar_url ?? null, instagram: p.instagram ?? null, is_private: p.is_private ?? false })) ?? []);
     });
     supabase.from("follows").select("following_id, status").eq("follower_id", user.id).then(({ data }) => {
