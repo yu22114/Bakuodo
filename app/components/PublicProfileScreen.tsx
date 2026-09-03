@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText, MessageCircle, Music, Download, UserPlus, ClipboardList, Mail, Phone, AtSign, CalendarX } from "lucide-react";
+import { Clock, X, Pencil, Trash2, LogOut, Menu, ChevronLeft, Link, BookOpen, FileText, MessageCircle, Music, Download, UserPlus, ClipboardList, Mail, Phone, AtSign, CalendarX, Flag, Ban } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import type { GenreKey } from "../lib/types";
 import { formatDate, timeUntil, GENRE_COLORS } from "../lib/constants";
@@ -113,6 +113,14 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [answersModal, setAnswersModal] = useState<{ title: string; kind: "event" | "number" } | null>(null);
   const [answers, setAnswers] = useState<{ profile_id: string; dancer_name: string; avatar_url: string | null; answer_dancer_name: string | null; answer_email: string | null; answer_phone: string | null; answer_instagram: string | null }[] | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  // 他人のプロフィールを見ている時の「報告する」「ブロックする」メニューまわり
+  const [otherMenuOpen, setOtherMenuOpen] = useState(false);
+  const [blockStatus, setBlockStatus] = useState<"none" | "blocked_by_me" | "blocked_by_them">("none");
+  const [blockLoading, setBlockLoading] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportDetail, setReportDetail] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [followSheet, setFollowSheet] = useState<{ type: "followers" | "following" | "friends"; users: { id: string; dancer_name: string; avatar_url: string | null }[] } | null>(null);
   const [followSheetLoading, setFollowSheetLoading] = useState(false);
@@ -272,6 +280,11 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       if (!isOwn && currentUserId) {
         const { data: myFollow } = await supabase.from("follows").select("id, status").eq("follower_id", currentUserId).eq("following_id", profileId).maybeSingle();
         setFollowStatus((myFollow as any)?.status === "accepted" ? "accepted" : (myFollow as any)?.status === "pending" ? "pending" : "none");
+        const { data: blockRows } = await supabase.from("blocks").select("blocker_id, blocked_id")
+          .or(`and(blocker_id.eq.${currentUserId},blocked_id.eq.${profileId}),and(blocker_id.eq.${profileId},blocked_id.eq.${currentUserId})`);
+        const blockedByMe = (blockRows ?? []).some((b: any) => b.blocker_id === currentUserId);
+        const blockedByThem = (blockRows ?? []).some((b: any) => b.blocker_id === profileId);
+        setBlockStatus(blockedByMe ? "blocked_by_me" : blockedByThem ? "blocked_by_them" : "none");
       }
       const countMap: Record<string, number> = {};
       (allPartsRes.data ?? []).forEach((p: any) => { countMap[p.cypher_id] = (countMap[p.cypher_id] ?? 0) + 1; });
@@ -335,6 +348,38 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       }
     }
     setFollowLoading(false);
+  };
+
+  // ブロック／ブロック解除。ブロックすると、DBトリガーが既存のフォロー関係を自動で解除する
+  // （フォローボタンはblocked_by_meの間は出さないので、ここでの後始末は不要）
+  const handleToggleBlock = async () => {
+    if (blockLoading || !currentUserId) return;
+    setBlockLoading(true);
+    setOtherMenuOpen(false);
+    if (blockStatus === "blocked_by_me") {
+      const { error } = await supabase.from("blocks").delete().eq("blocker_id", currentUserId).eq("blocked_id", profileId);
+      if (error) { showToast(`ブロック解除に失敗しました: ${error.message}`); setBlockLoading(false); return; }
+      setBlockStatus("none");
+    } else {
+      const { error } = await supabase.from("blocks").insert({ blocker_id: currentUserId, blocked_id: profileId });
+      if (error) { showToast(`ブロックに失敗しました: ${error.message}`); setBlockLoading(false); return; }
+      setBlockStatus("blocked_by_me");
+      setFollowStatus("none");
+    }
+    setBlockLoading(false);
+  };
+
+  // 通報。内容の確認はSupabaseダッシュボードから運営が直接行う
+  const handleSubmitReport = async () => {
+    if (!reportReason || reportSubmitting || !currentUserId) return;
+    setReportSubmitting(true);
+    const { error } = await supabase.from("reports").insert({ reporter_id: currentUserId, reported_user_id: profileId, reason: reportReason, detail: reportDetail.trim() || null });
+    setReportSubmitting(false);
+    if (error) { showToast(`報告に失敗しました: ${error.message}`); return; }
+    setShowReportModal(false);
+    setReportReason("");
+    setReportDetail("");
+    showToast("報告を受け付けました");
   };
 
   const openFollowSheet = async (type: "followers" | "following" | "friends") => {
@@ -676,6 +721,27 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                 </>)}
               </div>
             )}
+            {!isOwn && currentUserId && (
+              <div style={{ position: "relative" }}>
+                <button onClick={() => setOtherMenuOpen(m => !m)}
+                  style={{ background: "none", border: "none", borderRadius: "8px", cursor: "pointer", padding: "8px 10px", display: "flex", alignItems: "center", color: "#F0F0F0" }}>
+                  <Menu size={16} />
+                </button>
+                {otherMenuOpen && (<>
+                  <div onClick={() => setOtherMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 9 }} />
+                  <div style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", background: "#1E1E1E", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "10px", boxShadow: "0 4px 20px rgba(0,0,0,0.4)", overflow: "hidden", zIndex: 10, minWidth: "160px" }}>
+                    <button onClick={() => { setOtherMenuOpen(false); setShowReportModal(true); }}
+                      style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", textAlign: "left", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                      <Flag size={13} /> 報告する
+                    </button>
+                    <button onClick={handleToggleBlock} disabled={blockLoading}
+                      style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#DC2626", textAlign: "left", opacity: blockLoading ? 0.6 : 1 }}>
+                      <Ban size={13} /> {blockStatus === "blocked_by_me" ? "ブロックを解除" : "ブロックする"}
+                    </button>
+                  </div>
+                </>)}
+              </div>
+            )}
           </div>
         </div>
 
@@ -765,6 +831,14 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
               style={{ flex: 1, padding: "6px 10px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "transparent", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
               プロフィールをシェア
             </button>
+          </div>
+        ) : currentUserId && blockStatus === "blocked_by_me" ? (
+          <div style={{ width: "100%", marginTop: "8px", padding: "8px", border: "1px solid rgba(220,38,38,0.4)", borderRadius: "8px", background: "rgba(220,38,38,0.1)", color: "#DC2626", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", textAlign: "center" }}>
+            🚫 ブロック中（メニューから解除できます）
+          </div>
+        ) : currentUserId && blockStatus === "blocked_by_them" ? (
+          <div style={{ width: "100%", marginTop: "8px", padding: "8px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "transparent", color: "rgba(255,255,255,0.4)", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px", fontWeight: "bold", textAlign: "center" }}>
+            フォローできません
           </div>
         ) : currentUserId && (
           <button onClick={handleFollow} disabled={followLoading}
@@ -1085,6 +1159,33 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
           </div>
         );
       })()}
+
+      {/* 「報告する」で開く通報フォーム。内容の確認はSupabaseダッシュボードから運営が直接行う */}
+      {showReportModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 260, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setShowReportModal(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em" }}>REPORT</div>
+              <button onClick={() => setShowReportModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#F0F0F0", padding: "4px" }}><X size={18} /></button>
+            </div>
+            <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", marginBottom: "14px" }}>{profileData?.dancer_name ?? "このアカウント"}を報告します</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "12px" }}>
+              {["誹謗中傷・嫌がらせ", "なりすまし", "スパム・勧誘", "不適切な投稿・画像", "その他"].map(r => (
+                <button key={r} onClick={() => setReportReason(r)}
+                  style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: reportReason === r ? "1px solid #DC2626" : "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", background: reportReason === r ? "rgba(220,38,38,0.1)" : "#141414", color: reportReason === r ? "#DC2626" : "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
+                  {r}
+                </button>
+              ))}
+            </div>
+            <textarea value={reportDetail} onChange={e => setReportDetail(e.target.value)} placeholder="詳しい内容（任意）" maxLength={500} rows={3}
+              style={{ width: "100%", padding: "10px 12px", background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box", resize: "vertical" }} />
+            <button onClick={handleSubmitReport} disabled={!reportReason || reportSubmitting}
+              style={{ marginTop: "14px", width: "100%", padding: "11px", border: "none", borderRadius: "8px", background: reportReason ? "linear-gradient(135deg, #DC2626, #A61B1B)" : "rgba(255,255,255,0.08)", color: reportReason ? "#fff" : "rgba(255,255,255,0.3)", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", cursor: reportReason ? "pointer" : "default" }}>
+              {reportSubmitting ? "送信中..." : "報告する"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 「Rep」ボタンで開くチーム表示。チームメイトの追加はフォロー中から選ぶ */}
       {showTeam && profileData?.team && (() => {
