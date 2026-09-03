@@ -1,10 +1,14 @@
+"use client";
+
 export default function TermsPage() {
   const CONTACT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdtORTcN86YUDCwq_v8f300PtwnmUENTAvGXs8AYvVS50IyGA/viewform";
 
   return (
     <div style={{ maxWidth: "480px", margin: "0 auto", padding: "32px 20px 80px", fontFamily: "'Noto Sans JP', sans-serif", color: "#F0F0F0", background: "#000000", minHeight: "100vh" }}>
       <div style={{ marginBottom: "28px" }}>
-        <a href="/" style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "rgba(255,255,255,0.08)", borderRadius: "8px", padding: "10px 16px", marginBottom: "20px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "600", color: "#F0F0F0", textDecoration: "none" }}>← 戻る</a>
+        {/* 元いた画面（プロフィールなど）へ戻す。href="/"だとホーム画面に飛んでしまうため、
+            ブラウザの履歴を1つ戻すことで、開く前の画面（多くはプロフィール）に復帰させる */}
+        <button onClick={() => window.history.back()} style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", padding: "10px 16px", marginBottom: "20px", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "600", color: "#F0F0F0", cursor: "pointer" }}>← 戻る</button>
         <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.2em", marginBottom: "8px" }}>▶ LEGAL</div>
         <h1 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "36px", color: "#F0F0F0" }}>利用規約</h1>
         <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>最終更新: 2026年7月31日</p>
