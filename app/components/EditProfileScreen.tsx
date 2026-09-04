@@ -39,12 +39,11 @@ async function convertHeicIfNeeded(file: File): Promise<Blob> {
   return await res.blob();
 }
 
-export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, onAccountTypeChange, onLightModeChange, onBack }: {
+export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, onAccountTypeChange, onBack }: {
   user: SupabaseUser;
   onDancerNameChange?: (name: string) => void;
   onAvatarChange?: (url: string) => void;
   onAccountTypeChange?: (type: string) => void;
-  onLightModeChange?: (on: boolean) => void;
   onBack?: () => void;
 }) {
   const swipeBack = useSwipeBack(onBack);
@@ -53,8 +52,6 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
   const [otherGenreSelected, setOtherGenreSelected] = useState(false);
   const [otherGenreText, setOtherGenreText] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
-  // ホーム画面を自分だけ白テーマにする設定
-  const [lightMode, setLightMode] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState("");
@@ -95,7 +92,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
 
   useEffect(() => {
     async function fetchProfile() {
-      const { data } = await supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, birth_year, gender, bio, playlist_url, team, avatar_url, is_private, account_type, theme_color, light_mode").eq("id", user.id).single();
+      const { data } = await supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, birth_year, gender, bio, playlist_url, team, avatar_url, is_private, account_type, theme_color").eq("id", user.id).single();
       if (data) {
         // 固定ジャンル一覧にない値＝「その他」で自由記入されたジャンル名として分けて持つ
         const rawGenres = (data.genres ?? []) as string[];
@@ -119,7 +116,6 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
         });
         setAvatarUrl((data as any).avatar_url ?? null);
         setIsPrivate((data as any).is_private ?? false);
-        setLightMode((data as any).light_mode ?? false);
       }
       setLoading(false);
     }
@@ -215,7 +211,6 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
       is_private: isPrivate,
       account_type: profile.account_type,
       theme_color: profile.theme_color || null,
-      light_mode: lightMode,
     }, { onConflict: "id" });
     if (error) {
       console.error("profile save error:", error);
@@ -224,7 +219,6 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
       setSaved(true);
       if (profile.dancer_name) onDancerNameChange?.(profile.dancer_name);
       onAccountTypeChange?.(profile.account_type);
-      onLightModeChange?.(lightMode);
       // 保存できたことが分かるよう一瞬「SAVED!」を見せてから、自動でプロフィール画面へ戻る
       setTimeout(() => onBack?.(), 500);
     }
@@ -370,21 +364,6 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
             プロフィールのアイコンやフォローボタンの色に使われます。未設定なら得意ジャンルの色になります。
           </div>
         </div>
-        {/* ホーム画面の白テーマ設定。テーマカラー（他人から見た色）とは別で、自分の画面表示だけに効く */}
-        <button onClick={() => { setLightMode(v => !v); setSaved(false); }}
-          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
-          <div>
-            <div style={{ fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", fontWeight: "bold", display: "flex", alignItems: "center", gap: "6px" }}>
-              ☀️ 白テーマ
-            </div>
-            <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginTop: "3px" }}>
-              ONにするとホーム画面（背景・カード）が自分の画面だけ白基調になります
-            </div>
-          </div>
-          <div style={{ width: "44px", height: "26px", borderRadius: "13px", background: lightMode ? "#DC2626" : "rgba(255,255,255,0.16)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}>
-            <div style={{ position: "absolute", top: "3px", left: lightMode ? "21px" : "3px", width: "20px", height: "20px", borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.4)", transition: "left 0.2s" }} />
-          </div>
-        </button>
         {/* 鍵アカ設定 */}
         <button onClick={() => { setIsPrivate(v => !v); setSaved(false); }}
           style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 16px", background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}>
