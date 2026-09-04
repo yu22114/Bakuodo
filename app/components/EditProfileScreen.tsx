@@ -10,6 +10,9 @@ import { useSwipeBack } from "../lib/useSwipeBack";
 
 const AVATAR_OUTPUT = 600; // 書き出す画像の一辺のサイズ(px)。高解像度の端末でも荒れないように大きめにする
 
+// テーマカラーのおすすめスウォッチ。ジャンルバッジの色とかぶらないよう別に用意する
+const THEME_SWATCHES = ["#DC2626", "#EA580C", "#D97706", "#65A30D", "#0D9488", "#0891B2", "#2563EB", "#7C3AED", "#C026D3", "#DB2777"];
+
 // <img>タグに読み込ませてHTMLImageElementとして受け取るだけの小さなヘルパー。
 // createImageBitmapと違い、HEICも含めてSafariが表示できる画像形式ならほぼ確実に読める
 function loadImageElement(blob: Blob): Promise<HTMLImageElement> {
@@ -44,7 +47,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
   onBack?: () => void;
 }) {
   const swipeBack = useSwipeBack(onBack);
-  const [profile, setProfile] = useState<ProfileState>({ dancer_name: "", genres: [], instagram: "", dance_years: "", age_group: "", birth_year: "", gender: "", bio: "", playlist_url: "", team: "", account_type: "individual" });
+  const [profile, setProfile] = useState<ProfileState>({ dancer_name: "", genres: [], instagram: "", dance_years: "", age_group: "", birth_year: "", gender: "", bio: "", playlist_url: "", team: "", account_type: "individual", theme_color: "" });
   // 得意ジャンルの「その他」。固定一覧にない自由記入のジャンル名を1つだけ持てる
   const [otherGenreSelected, setOtherGenreSelected] = useState(false);
   const [otherGenreText, setOtherGenreText] = useState("");
@@ -89,7 +92,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
 
   useEffect(() => {
     async function fetchProfile() {
-      const { data } = await supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, birth_year, gender, bio, playlist_url, team, avatar_url, is_private, account_type").eq("id", user.id).single();
+      const { data } = await supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, birth_year, gender, bio, playlist_url, team, avatar_url, is_private, account_type, theme_color").eq("id", user.id).single();
       if (data) {
         // 固定ジャンル一覧にない値＝「その他」で自由記入されたジャンル名として分けて持つ
         const rawGenres = (data.genres ?? []) as string[];
@@ -109,6 +112,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
           playlist_url: (data as any).playlist_url ?? "",
           team: (data as any).team ?? "",
           account_type: (data as any).account_type === "organization" ? "organization" : "individual",
+          theme_color: (data as any).theme_color ?? "",
         });
         setAvatarUrl((data as any).avatar_url ?? null);
         setIsPrivate((data as any).is_private ?? false);
@@ -206,6 +210,7 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
       team: profile.team.trim() || null,
       is_private: isPrivate,
       account_type: profile.account_type,
+      theme_color: profile.theme_color || null,
     }, { onConflict: "id" });
     if (error) {
       console.error("profile save error:", error);
@@ -335,6 +340,29 @@ export function EditProfileScreen({ user, onDancerNameChange, onAvatarChange, on
             <input style={{ ...inp, marginTop: "8px" }} placeholder="ジャンル名を入力" maxLength={20} value={otherGenreText}
               onChange={e => { setOtherGenreText(e.target.value); setSaved(false); }} />
           )}
+        </div>
+        <div>
+          <label style={lbl}>テーマカラー</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center" }}>
+            {THEME_SWATCHES.map(c => (
+              <button key={c} onClick={() => { setProfile(p => ({ ...p, theme_color: c })); setSaved(false); }} title={c}
+                style={{ width: "30px", height: "30px", borderRadius: "50%", background: c, border: profile.theme_color === c ? "2px solid #fff" : "2px solid transparent", boxShadow: profile.theme_color === c ? `0 0 0 2px ${c}` : "none", cursor: "pointer", padding: 0 }} />
+            ))}
+            {/* カスタムカラー。ネイティブのカラーピッカーをそのまま丸く見せる */}
+            <label title="自由に選ぶ" style={{ width: "30px", height: "30px", borderRadius: "50%", position: "relative", cursor: "pointer", overflow: "hidden", border: profile.theme_color && !THEME_SWATCHES.includes(profile.theme_color) ? "2px solid #fff" : "2px dashed rgba(255,255,255,0.3)", background: profile.theme_color && !THEME_SWATCHES.includes(profile.theme_color) ? profile.theme_color : "conic-gradient(from 0deg, #DC2626, #D97706, #65A30D, #0891B2, #7C3AED, #DB2777, #DC2626)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <input type="color" value={profile.theme_color || "#DC2626"} onChange={e => { setProfile(p => ({ ...p, theme_color: e.target.value })); setSaved(false); }}
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer" }} />
+            </label>
+            {profile.theme_color && (
+              <button onClick={() => { setProfile(p => ({ ...p, theme_color: "" })); setSaved(false); }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", textDecoration: "underline", textUnderlineOffset: "2px", padding: "4px" }}>
+                リセット
+              </button>
+            )}
+          </div>
+          <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.4)", marginTop: "6px" }}>
+            プロフィールのアイコンやフォローボタンの色に使われます。未設定なら得意ジャンルの色になります。
+          </div>
         </div>
         {/* 鍵アカ設定 */}
         <button onClick={() => { setIsPrivate(v => !v); setSaved(false); }}
