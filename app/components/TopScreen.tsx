@@ -48,7 +48,7 @@ const SECTION_BG: Record<TopSection, string> = {
   spots: "radial-gradient(circle at center, rgba(22,163,74,0.9) 0%, rgba(22,163,74,0.08) 16%, #000000 32%)",
 };
 
-export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onViewProfile, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell, section, onSectionChange, accountType, savedCypherIds, savedEventIds, savedNumberIds }: {
+export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onViewProfile, user, refreshKey, dancerName, myAvatarUrl, unreadCount, onBell, section, onSectionChange, accountType, light, savedCypherIds, savedEventIds, savedNumberIds }: {
   onNav: (s: string) => void;
   onCardClick: (c: Cypher) => void;
   onPLClick: (l: PrivateLesson) => void;
@@ -66,6 +66,9 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
   onSectionChange: (s: TopSection) => void;
   // 団体用アカウントではSPOTS機能を使わないため、タブごと隠す
   accountType?: string;
+  // 本人設定の白テーマ。背景・ヘッダー・タブ・カードだけを対象にする
+  // （検索・カレンダー等のモーダルは常に暗い半透明の背景に乗るので、白テーマでも今まで通り見た目が壊れない）
+  light?: boolean;
   // 「気になる」（参加とは別の軽いブックマーク）。CYPHER・LESSON・EVENT・NUMBERすべてが持つ
   savedCypherIds?: string[];
   savedEventIds?: string[];
@@ -402,22 +405,50 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
   const viewingDateLessons = viewingCalendarDate ? lessons.filter(l => toDateStr(l.starts_at) === viewingCalendarDate) : [];
   const viewingDateEvents = viewingCalendarDate ? events.filter(e => toDateStr(e.starts_at) === viewingCalendarDate) : [];
 
+  // 白テーマ用の色トークン。対象は背景・ヘッダー・タブ・ジャンルチップ・カードだけにしている
+  // （検索・カレンダー等のモーダルは常に暗い半透明の背景の上に乗るので、白テーマでも見た目は壊れない）
+  const T = light ? {
+    pageBg: "#FAFAFA",
+    headerBorder: "rgba(0,0,0,0.08)",
+    text: "#181818",
+    tabTrackBg: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.6) 46%, rgba(255,255,255,0.15) 58%, transparent 72%), linear-gradient(150deg, #ffffff 0%, #f0f0f0 25%, #f7f7f7 48%, #eaeaea 70%, #f4f4f4 100%)",
+    tabTrackShadow: "inset 0 2px 5px rgba(0,0,0,0.08)",
+    tabActiveBg: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.8) 46%, rgba(255,255,255,0.25) 58%, transparent 72%), linear-gradient(150deg, #ffffff 0%, #f5f5f5 25%, #fafafa 48%, #eeeeee 70%, #f7f7f7 100%)",
+    tabActiveShadow: "0 3px 8px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.9)",
+    tabInactive: "rgba(0,0,0,0.45)",
+    chipBorder: "rgba(0,0,0,0.14)",
+    chipInactive: "rgba(0,0,0,0.5)",
+    allChip: "#181818",
+  } : {
+    pageBg: SECTION_BG[section],
+    headerBorder: "rgba(255,255,255,0.08)",
+    text: "#FFFFFF",
+    tabTrackBg: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)",
+    tabTrackShadow: "inset 0 2px 5px rgba(0,0,0,0.4)",
+    tabActiveBg: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.18) 46%, rgba(255,255,255,0.03) 58%, transparent 72%), linear-gradient(150deg, #4a4a4a 0%, #363636 25%, #404040 48%, #2c2c2c 70%, #464646 100%)",
+    tabActiveShadow: "0 3px 8px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15)",
+    tabInactive: "rgba(255,255,255,0.55)",
+    chipBorder: "rgba(255,255,255,0.14)",
+    chipInactive: "rgba(255,255,255,0.55)",
+    allChip: "#F0F0F0",
+  };
+
   return (
     // 画面全体をビューポート高さで固定し、下の「固定ヘッダー＋スクロール領域」に分ける。
     // 浮き島の下部ナビは position:fixed で別レイヤーなのでここでは特に気にしなくていい
-    <div className="bd-glow-bg" style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden", background: SECTION_BG[section], transition: "background 0.2s" }}>
+    <div className="bd-glow-bg" style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden", background: T.pageBg, transition: "background 0.2s" }}>
     {/* ヘッダー〜タブ〜ジャンルチップはスクロールしない固定エリア。
         奥の光が画面全体に効くよう、この固定エリアの背景も透過させて
         親（上のdiv）の光をそのまま透かして見せる。
         下の一覧がスクロールして中身が隠れている時だけ、うっすら影を出す */}
     <div style={{ flexShrink: 0, boxShadow: scrollShadow.scrolled ? "0 4px 12px rgba(0,0,0,0.35)" : "none", transition: "box-shadow 0.2s ease", position: "relative", zIndex: 1 }}>
       {/* ヘッダー。タブ・ジャンルチップと同じく背景を透過させ、奥の光を見せる */}
-      <div style={{ padding: "16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+      <div style={{ padding: "16px 16px", borderBottom: `1px solid ${T.headerBorder}` }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
           {/* 今日の日付は常に出しておく。左のカレンダーアイコンを押すと月間カレンダーが開く */}
           <button onClick={() => { setCalendarMonthOffset(0); setShowCalendar(true); }} aria-label="カレンダーを表示"
             style={{ justifySelf: "start", background: "none", border: "none", padding: "6px", cursor: "pointer", display: "flex", alignItems: "center" }}>
-            <span style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#FFFFFF", letterSpacing: "0.02em" }}>{todayLabel}</span>
+            <span style={{ fontSize: "16px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: T.text, letterSpacing: "0.02em" }}>{todayLabel}</span>
           </button>
           {/* ロゴを押すと登録済みユーザーが全員出てくる */}
           <h1 style={{ margin: 0, lineHeight: 0, textAlign: "center" }}>
@@ -429,11 +460,11 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "4px" }}>
             {/* 気になるリスト。参加とは別にブックマークしたEVENT・NUMBERの一覧を出す */}
             <button onClick={() => setShowSaved(true)} style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "6px" }}>
-              <Bookmark size={22} color="#FFFFFF" />
+              <Bookmark size={22} color={T.text} />
             </button>
             {/* 検索ボタン */}
             <button onClick={() => setSearchOpen(true)} style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "6px" }}>
-              <Search size={22} color={activeFilterCount > 0 ? "#DC2626" : "#FFFFFF"} />
+              <Search size={22} color={activeFilterCount > 0 ? "#DC2626" : T.text} />
               {activeFilterCount > 0 && (
                 <span style={{ position: "absolute", top: "2px", right: "2px", background: "#DC2626", color: "#fff", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", minWidth: "16px", height: "16px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", transform: "translate(4px,-4px)", lineHeight: 1 }}>
                   {activeFilterCount}
@@ -441,7 +472,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
               )}
             </button>
             <button onClick={onBell} style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "6px" }}>
-              <Bell size={22} color="#FFFFFF" />
+              <Bell size={22} color={T.text} />
               {unreadCount > 0 && (
                 <span style={{ position: "absolute", top: "2px", right: "2px", background: "#DC2626", color: "#fff", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", minWidth: "16px", height: "16px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", transform: "translate(4px,-4px)", lineHeight: 1, animation: badgePulsing ? "bdBadgePulse 0.5s ease-out" : undefined }}>
                   {unreadCount > 99 ? "99+" : unreadCount}
@@ -453,15 +484,15 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
       </div>
 
       {/* セクション切り替え：四角い下線タブから、丸い枠の中で選択中だけ浮くセグメント風に */}
-      <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ display: "flex", background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", borderRadius: "14px", padding: "4px", position: "relative", boxShadow: "inset 0 2px 5px rgba(0,0,0,0.4)" }}>
+      <div style={{ padding: "10px 16px", borderBottom: `1px solid ${T.headerBorder}` }}>
+        <div style={{ display: "flex", background: T.tabTrackBg, borderRadius: "14px", padding: "4px", position: "relative", boxShadow: T.tabTrackShadow }}>
           {/* 選択中を示す背景の板。個別にON/OFFするのではなく、1枚がヌルッと隣のタブへ移動する
               （下バーのアクティブ表示と同じ仕組み）。トラックと同じ斜めグラデーションを
               一段明るくして、溝に浮かぶ金属板のような立体感を付ける */}
-          <div aria-hidden="true" style={{ position: "absolute", top: "4px", left: "4px", bottom: "4px", width: `calc((100% - 8px) / ${visibleSections.length})`, borderRadius: "10px", background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.18) 46%, rgba(255,255,255,0.03) 58%, transparent 72%), linear-gradient(150deg, #4a4a4a 0%, #363636 25%, #404040 48%, #2c2c2c 70%, #464646 100%)", boxShadow: "0 3px 8px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15)", transform: `translateX(${Math.max(0, visibleSections.indexOf(section)) * 100}%)`, transition: "transform 0.4s cubic-bezier(0.22,1,0.36,1)", pointerEvents: "none" }} />
+          <div aria-hidden="true" style={{ position: "absolute", top: "4px", left: "4px", bottom: "4px", width: `calc((100% - 8px) / ${visibleSections.length})`, borderRadius: "10px", background: T.tabActiveBg, boxShadow: T.tabActiveShadow, transform: `translateX(${Math.max(0, visibleSections.indexOf(section)) * 100}%)`, transition: "transform 0.4s cubic-bezier(0.22,1,0.36,1)", pointerEvents: "none" }} />
           {visibleSections.map(key => { const label = SECTION_LABEL[key]; const color = SECTION_COLOR[key]; return (
             <button key={key} onClick={() => goToSection(key)}
-              style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: "transparent", position: "relative", zIndex: 1, color: section === key ? color : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "color 0.15s" }}>
+              style={{ flex: 1, padding: "9px 4px", border: "none", borderRadius: "10px", background: "transparent", position: "relative", zIndex: 1, color: section === key ? color : T.tabInactive, fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: section === key ? "bold" : "normal", letterSpacing: "0.06em", transition: "color 0.15s" }}>
               {/* 選んでいるタブだけ、文字を1つずつ左から順に上下させてウェーブっぽく見せる。
                   タブを選んだ時に1回だけ流れる（選び直すまで繰り返さない） */}
               {section === key
@@ -478,15 +509,15 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
       {/* ジャンルチップ（横スクロール）。CYPHER/LESSON共通。
           GIRLS/JAZZ/FREESTYLEはLESSON・EVENT・NUMBERだけに出す（CYPHERは従来の8種のまま） */}
       {section !== "spots" && (
-        <div style={{ display: "flex", gap: "6px", padding: "10px 16px", overflowX: "auto", scrollbarWidth: "none", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <div style={{ display: "flex", gap: "6px", padding: "10px 16px", overflowX: "auto", scrollbarWidth: "none", borderBottom: `1px solid ${T.headerBorder}` }}>
           {(["ALL", ...(section === "cypher" ? GENRES : EXTENDED_GENRES)] as (GenreKey | "ALL")[]).map(g => {
             const sel = g === "ALL" ? selectedGenres.length === 0 : selectedGenres.includes(g as GenreKey);
             // ALLは「絞り込みなし」であって特定のジャンル/セクションではないので、
             // CYPHERタブと同じ色を使わず中立な色にする
-            const col = g === "ALL" ? "#F0F0F0" : GENRE_COLORS[g as GenreKey];
+            const col = g === "ALL" ? T.allChip : GENRE_COLORS[g as GenreKey];
             return (
               <button key={g} onClick={() => setSelectedGenres(prev => g === "ALL" ? [] : prev.includes(g as GenreKey) ? [] : [g as GenreKey])}
-                style={{ flexShrink: 0, padding: "5px 12px", border: sel ? "none" : "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", background: sel ? `linear-gradient(180deg, color-mix(in srgb, ${col} 55%, white 45%), color-mix(in srgb, ${col} 55%, white 15%))` : "transparent", boxShadow: sel ? `0 3px 7px ${col}33, inset 0 1px 0 rgba(255,255,255,0.5)` : "inset 0 1px 3px rgba(0,0,0,0.3)", color: sel ? (g === "ALL" ? "#000" : `color-mix(in srgb, ${col} 100%, black 35%)`) : "rgba(255,255,255,0.55)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: sel ? "bold" : "normal" }}>
+                style={{ flexShrink: 0, padding: "5px 12px", border: sel ? "none" : `1px solid ${T.chipBorder}`, borderRadius: "20px", background: sel ? `linear-gradient(180deg, color-mix(in srgb, ${col} 55%, white 45%), color-mix(in srgb, ${col} 55%, white 15%))` : "transparent", boxShadow: sel ? `0 3px 7px ${col}33, inset 0 1px 0 rgba(255,255,255,0.5)` : (light ? "none" : "inset 0 1px 3px rgba(0,0,0,0.3)"), color: sel ? (g === "ALL" ? "#000" : `color-mix(in srgb, ${col} 100%, black 35%)`) : T.chipInactive, fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", fontWeight: sel ? "bold" : "normal" }}>
                 {genreLabel(g)}
               </button>
             );
@@ -542,7 +573,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
               ? <div style={{ gridColumn: "1 / -1" }}><EmptyState icon={CalendarX}>まだ{noun}がありません</EmptyState></div>
               : !loading && shown.length === 0
                 ? <div style={{ gridColumn: "1 / -1" }}><EmptyState icon={SearchX}>条件に合う{noun}がありません</EmptyState></div>
-                : shown.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => onPLClick(l)} />)}
+                : shown.map((l, i) => <PLCard key={l.id} lesson={l} index={i} light={light} onClick={() => onPLClick(l)} />)}
         </div>
         );
       })() : section === "number" ? (
@@ -553,7 +584,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
               ? <div style={{ gridColumn: "1 / -1" }}><EmptyState icon={CalendarX}>まだNUMBERがありません</EmptyState></div>
               : !loading && filteredNumbers.length === 0
                 ? <div style={{ gridColumn: "1 / -1" }}><EmptyState icon={SearchX}>条件に合うNUMBERがありません</EmptyState></div>
-                : filteredNumbers.map((n, i) => <NumberCard key={n.id} number={n} index={i} onClick={() => onNumberClick(n)} />)}
+                : filteredNumbers.map((n, i) => <NumberCard key={n.id} number={n} index={i} light={light} onClick={() => onNumberClick(n)} />)}
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 16px" }}>
@@ -562,7 +593,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
             ? <CardSkeleton />
             : !loading && filtered.length === 0
               ? <EmptyState icon={SearchX}>条件に合うサイファーがありません</EmptyState>
-              : filtered.map((c, i) => <CypherCard key={c.id} cypher={c} index={i} onClick={() => onCardClick(c)} />)}
+              : filtered.map((c, i) => <CypherCard key={c.id} cypher={c} index={i} light={light} onClick={() => onCardClick(c)} />)}
         </div>
       )}
       {/* 浮き島の下部ナビに隠れないための余白 */}
@@ -682,14 +713,14 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
               <>
                 {savedCypherCards.length > 0 && (
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: hasGridCards ? "16px" : 0 }}>
-                    {savedCypherCards.map((c, i) => <CypherCard key={c.id} cypher={c} index={i} onClick={() => { setShowSaved(false); onCardClick(c); }} />)}
+                    {savedCypherCards.map((c, i) => <CypherCard key={c.id} cypher={c} index={i} light={light} onClick={() => { setShowSaved(false); onCardClick(c); }} />)}
                   </div>
                 )}
                 {hasGridCards && (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                    {savedLessonCards.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => { setShowSaved(false); onPLClick(l); }} />)}
-                    {savedEventCards.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => { setShowSaved(false); onPLClick(l); }} />)}
-                    {savedNumberCards.map((n, i) => <NumberCard key={n.id} number={n} index={i} onClick={() => { setShowSaved(false); onNumberClick(n); }} />)}
+                    {savedLessonCards.map((l, i) => <PLCard key={l.id} lesson={l} index={i} light={light} onClick={() => { setShowSaved(false); onPLClick(l); }} />)}
+                    {savedEventCards.map((l, i) => <PLCard key={l.id} lesson={l} index={i} light={light} onClick={() => { setShowSaved(false); onPLClick(l); }} />)}
+                    {savedNumberCards.map((n, i) => <NumberCard key={n.id} number={n} index={i} light={light} onClick={() => { setShowSaved(false); onNumberClick(n); }} />)}
                   </div>
                 )}
               </>
@@ -764,13 +795,13 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
             </div>
             {viewingDateCyphers.length > 0 && (
               <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: (viewingDateLessons.length > 0 || viewingDateEvents.length > 0) ? "16px" : 0 }}>
-                {viewingDateCyphers.map((c, i) => <CypherCard key={c.id} cypher={c} index={i} onClick={() => { setViewingCalendarDate(null); setShowCalendar(false); onCardClick(c); }} />)}
+                {viewingDateCyphers.map((c, i) => <CypherCard key={c.id} cypher={c} index={i} light={light} onClick={() => { setViewingCalendarDate(null); setShowCalendar(false); onCardClick(c); }} />)}
               </div>
             )}
             {(viewingDateLessons.length > 0 || viewingDateEvents.length > 0) && (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                {viewingDateLessons.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => { setViewingCalendarDate(null); setShowCalendar(false); onPLClick(l); }} />)}
-                {viewingDateEvents.map((l, i) => <PLCard key={l.id} lesson={l} index={i} onClick={() => { setViewingCalendarDate(null); setShowCalendar(false); onPLClick(l); }} />)}
+                {viewingDateLessons.map((l, i) => <PLCard key={l.id} lesson={l} index={i} light={light} onClick={() => { setViewingCalendarDate(null); setShowCalendar(false); onPLClick(l); }} />)}
+                {viewingDateEvents.map((l, i) => <PLCard key={l.id} lesson={l} index={i} light={light} onClick={() => { setViewingCalendarDate(null); setShowCalendar(false); onPLClick(l); }} />)}
               </div>
             )}
           </div>
