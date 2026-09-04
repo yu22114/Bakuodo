@@ -125,6 +125,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [followSheet, setFollowSheet] = useState<{ type: "followers" | "following" | "friends"; users: { id: string; dancer_name: string; avatar_url: string | null }[] } | null>(null);
   const [followSheetLoading, setFollowSheetLoading] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  // アイコンをタップすると全画面表示する（自分・他人どちらのプロフィールでも）
+  const [viewingAvatar, setViewingAvatar] = useState(false);
   const [showTeam, setShowTeam] = useState(false);
   // チームメイト（Repボタンで表示）。追加候補はフォロー中のアカウントから選ぶ
   const [teammates, setTeammates] = useState<{ id: string; dancer_name: string; avatar_url: string | null }[]>([]);
@@ -747,12 +749,13 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 
         {/* アバターは左、名前とその真下に数字（開催が先頭）を右側にまとめる */}
         <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
-          <div style={{ width: "82px", height: "82px", borderRadius: "50%", background: `linear-gradient(135deg, ${profileAccent}, color-mix(in srgb, ${profileAccent} 100%, white 40%))`, border: "3px solid #141414", boxShadow: "0 2px 10px rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
+          <button onClick={() => profileData?.avatar_url && setViewingAvatar(true)}
+            style={{ width: "82px", height: "82px", borderRadius: "50%", background: `linear-gradient(135deg, ${profileAccent}, color-mix(in srgb, ${profileAccent} 100%, white 40%))`, border: "3px solid #141414", boxShadow: "0 2px 10px rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0, padding: 0, cursor: profileData?.avatar_url ? "pointer" : "default" }}>
             {profileData?.avatar_url
               ? <img src={profileData.avatar_url} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               : <span style={{ fontSize: "30px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#fff" }}>{name[0]?.toUpperCase() ?? "?"}</span>
             }
-          </div>
+          </button>
           <div style={{ flex: 1, marginTop: "14px" }}>
             <h2 style={{ margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "12px", color: "#F0F0F0" }}>{name}</h2>
             {/* 名前の位置はそのまま、右寄せにする（右端にくっつきすぎないよう少し余白を空ける） */}
@@ -1121,6 +1124,14 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
               <button onClick={handleDelete} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #DC2626, #A61B1B)", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>削除する</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* アイコンをタップすると出る全画面表示。タップまたは背景クリックで閉じる */}
+      {viewingAvatar && profileData?.avatar_url && (
+        <div onClick={() => setViewingAvatar(false)} style={{ position: "fixed", inset: 0, zIndex: 280, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+          <button onClick={() => setViewingAvatar(false)} style={{ position: "absolute", top: "16px", right: "16px", background: "rgba(255,255,255,0.12)", border: "none", borderRadius: "50%", cursor: "pointer", color: "#fff", width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={18} /></button>
+          <img src={profileData.avatar_url} alt={name} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: "8px" }} />
         </div>
       )}
 
