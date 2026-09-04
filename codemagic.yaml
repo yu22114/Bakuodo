@@ -1,0 +1,52 @@
+workflows:
+  ios-bakuodo:
+    name: Bakuodo iOS (TestFlight)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      # Codemagicの管理画面で「App Store Connect」連携を作り、
+      # ここに付けた名前（例: appstore）を指定する。証明書・プロビジョニングは
+      # Codemagicが自動で発行・管理するので、こちら側で手動生成しなくてよい。
+      app_store_connect: appstore
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.bakuodo.app
+      vars:
+        XCODE_PROJECT: "ios/App/App.xcodeproj"
+        XCODE_SCHEME: "App"
+      xcode: latest
+      node: latest
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+      cancel_previous_builds: true
+    scripts:
+      - name: Install npm dependencies
+        script: npm ci
+      - name: Capacitorの設定をiOSプロジェクトへ反映
+        script: npx cap sync ios
+      - name: 自動署名の設定を取得
+        script: |
+          xcode-project use-profiles
+      - name: ビルド番号をCodemagicのビルド番号に合わせる
+        script: |
+          cd ios/App
+          agvtool new-version -all $PROJECT_BUILD_NUMBER
+      - name: ipaをビルド
+        script: |
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        # 最初は自分たちだけの内部テストに留める（Apple審査なしで即配信される）
+        # 外部の一般テスターに配る段階になったら beta_groups を設定する
