@@ -31,7 +31,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
 }) {
   const isOwn = profileId === currentUserId;
   // genresは固定ジャンルに加え、プロフィール編集の「その他」で自由記入された文字列も入るのでstring[]
-  type ProfileData = { dancer_name: string; genres: string[]; instagram: string | null; dance_years: number | null; age_group: string | null; birth_year: number | null; gender: string | null; bio: string | null; playlist_url: string | null; team: string | null; avatar_url: string | null; is_private: boolean; account_type: string; theme_color: string | null };
+  type ProfileData = { dancer_name: string; genres: string[]; instagram: string | null; dance_years: number | null; age_group: string | null; birth_year: number | null; gender: string | null; bio: string | null; playlist_url: string | null; team: string | null; avatar_url: string | null; is_private: boolean; account_type: string };
   type HostedCypher = { id: string; title: string; starts_at: string; location: string; participant_count: number };
   type JoinedCypher = { id: string; title: string; starts_at: string; location: string; organizer_name: string };
   type HostedLesson = { id: string; title: string; starts_at: string; location: string; kind: "lesson" | "event"; participant_count: number };
@@ -42,8 +42,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   // このプロフィールの「得意ジャンル」（先頭に登録したもの）の色を、アバターやフォローボタンの
   // アクセント色にする。ジャンル未設定なら今まで通りの赤にフォールバック
-  // 本人が選んだテーマカラーを優先し、無ければ得意ジャンルの色→赤の順にフォールバックする
-  const profileAccent = profileData?.theme_color || (profileData?.genres[0] && (GENRE_COLORS as Record<string, string>)[profileData.genres[0]]) || "#DC2626";
+  const profileAccent = (profileData?.genres[0] && (GENRE_COLORS as Record<string, string>)[profileData.genres[0]]) || "#DC2626";
   const [followStatus, setFollowStatus] = useState<"none" | "pending" | "accepted">("none");
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
@@ -254,7 +253,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     async function fetchAll() {
       setLoading(true);
       const [profileRes, hostedRes, hostedLessonsRes, hostedNumbersRes, numberCountRes, allPartsRes, allPlPartsRes, followersRes, followingRes] = await Promise.all([
-        supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, birth_year, gender, bio, playlist_url, team, avatar_url, is_private, account_type, theme_color").eq("id", profileId).single(),
+        supabase.from("profiles").select("dancer_name, genres, instagram, dance_years, age_group, birth_year, gender, bio, playlist_url, team, avatar_url, is_private, account_type").eq("id", profileId).single(),
         supabase.from("cyphers").select("id, title, starts_at, location").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("private_lessons").select("id, title, starts_at, location, kind").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
         supabase.from("numbers").select("id, title, starts_at, location").eq("organizer_id", profileId).order("starts_at", { ascending: false }),
@@ -267,7 +266,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       if (profileRes.data) {
         const d = profileRes.data as any;
         const genres = (d.genres ?? []) as GenreKey[];
-        setProfileData({ dancer_name: d.dancer_name ?? "", genres, instagram: d.instagram ?? null, dance_years: d.dance_years ?? null, age_group: d.age_group ?? null, birth_year: d.birth_year ?? null, gender: d.gender ?? null, bio: d.bio ?? null, playlist_url: d.playlist_url ?? null, team: d.team ?? null, avatar_url: d.avatar_url ?? null, is_private: d.is_private ?? false, account_type: (d as any).account_type ?? "individual", theme_color: (d as any).theme_color ?? null });
+        setProfileData({ dancer_name: d.dancer_name ?? "", genres, instagram: d.instagram ?? null, dance_years: d.dance_years ?? null, age_group: d.age_group ?? null, birth_year: d.birth_year ?? null, gender: d.gender ?? null, bio: d.bio ?? null, playlist_url: d.playlist_url ?? null, team: d.team ?? null, avatar_url: d.avatar_url ?? null, is_private: d.is_private ?? false, account_type: (d as any).account_type ?? "individual" });
         // フレンド＝得意ジャンルが1つでも重なっている人（自分以外）。フォローの有無は問わない
         if (genres.length > 0) {
           const { data: sameGenreRows } = await supabase.from("profiles").select("genres").neq("id", profileId);

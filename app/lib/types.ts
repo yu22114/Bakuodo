@@ -115,8 +115,6 @@ export interface ProfileState {
   playlist_url: string;
   team: string;
   account_type: "individual" | "organization";
-  // プロフィールのアクセントカラー（自分で選んだテーマカラー）。空文字なら未設定＝得意ジャンルの色に自動フォールバック
-  theme_color: string;
 }
 
 export interface ParticipantProfile {
