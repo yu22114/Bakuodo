@@ -47,3 +47,12 @@ next-env.d.ts
 
 # UXリサーチ用ドキュメント（ローカルのみ・リポジトリには含めない）
 /research/
+
+# Capacitor / Xcode（iOSアプリの殻）
+ios/App/build/
+ios/App/Pods/
+ios/DerivedData/
+ios/.xcode.env.local
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
