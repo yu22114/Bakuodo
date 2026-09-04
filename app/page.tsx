@@ -57,6 +57,8 @@ export default function BakuOdori() {
   const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null);
   // アカウントの種類（個人用/団体用）。団体用ではホーム画面からSPOTS機能を隠す
   const [accountType, setAccountType] = useState("individual");
+  // ホーム画面を自分だけ白テーマにする設定
+  const [lightMode, setLightMode] = useState(false);
   // プロフィール遷移スタック（Instagram風の重ねて表示）
   const [profileStack, setProfileStack] = useState<string[]>([]);
   // 通知関連
@@ -83,7 +85,7 @@ export default function BakuOdori() {
   // ログイン後にダンサーネームと参加済みサイファー・レッスン一覧・未読通知数をDBから取得
   const fetchUserData = async (u: SupabaseUser) => {
     const [profileRes, partsRes, plPartsRes, numberPartsRes, notifRes, cypherSavesRes, plSavesRes, numberSavesRes] = await Promise.all([
-      supabase.from("profiles").select("dancer_name, avatar_url, account_type").eq("id", u.id).single(),
+      supabase.from("profiles").select("dancer_name, avatar_url, account_type, light_mode").eq("id", u.id).single(),
       supabase.from("participations").select("cypher_id, status").eq("profile_id", u.id),
       supabase.from("pl_participations").select("lesson_id, status").eq("profile_id", u.id),
       supabase.from("number_participations").select("number_id").eq("profile_id", u.id),
@@ -96,6 +98,7 @@ export default function BakuOdori() {
     if (name) setDancerName(name);
     setMyAvatarUrl((profileRes.data as any)?.avatar_url ?? null);
     setAccountType((profileRes.data as any)?.account_type === "organization" ? "organization" : "individual");
+    setLightMode((profileRes.data as any)?.light_mode ?? false);
     if (partsRes.data) {
       setJoined(partsRes.data.filter((p: any) => p.status !== "pending").map((p: any) => p.cypher_id));
       setPendingJoins(partsRes.data.filter((p: any) => p.status === "pending").map((p: any) => p.cypher_id));
@@ -432,12 +435,12 @@ export default function BakuOdori() {
           <LoginScreen />
         ) : (
           <>
-            {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} onPLClick={setPlDetail} onNumberClick={n => { setNumberDetail(n); setNumberDetailEditable(false); }} onViewProfile={id => setProfileStack(s => [...s, id])} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} section={topSection} onSectionChange={setTopSection} accountType={accountType} savedCypherIds={savedCyphers} savedEventIds={savedEvents} savedNumberIds={savedNumbers} />}
+            {screen === "top"     && <TopScreen onNav={setScreen} onCardClick={setDetail} onPLClick={setPlDetail} onNumberClick={n => { setNumberDetail(n); setNumberDetailEditable(false); }} onViewProfile={id => setProfileStack(s => [...s, id])} user={user} refreshKey={refreshKey} dancerName={dancerName} myAvatarUrl={myAvatarUrl} unreadCount={unreadCount} onBell={() => setShowNotifications(true)} section={topSection} onSectionChange={setTopSection} accountType={accountType} light={lightMode} savedCypherIds={savedCyphers} savedEventIds={savedEvents} savedNumberIds={savedNumbers} />}
             {screen === "following" && <FollowingActivityScreen user={user} onCardClick={setDetail} onPLClick={setPlDetail} onViewProfile={id => setProfileStack(s => [...s, id])} refreshKey={refreshKey} />}
             {screen === "post"    && <PostScreen onNav={setScreen} user={user} initialTab={topSection === "pl" || topSection === "event" || topSection === "number" ? topSection : "cypher"} accountType={accountType} />}
             {screen === "profile" && <PublicProfileScreen profileId={user.id} currentUserId={user.id} onEdit={() => setScreen("edit")} onLogout={() => supabase.auth.signOut()} onViewProfile={id => setProfileStack(s => [...s, id])} onCypherClick={openCypherDetail} onLessonClick={openLessonDetail} onNumberClick={openNumberDetail} onEditCypher={id => setEditCypherId(id)} onEditLesson={id => setEditLessonId(id)} onEditNumber={id => setEditNumberId(id)} />}
             {screen === "community" && <CommunityScreen user={user} onOpenBoard={setBoardTarget} onViewProfile={id => setProfileStack(s => [...s, id])} />}
-            {screen === "edit"    && <EditProfileScreen user={user} onDancerNameChange={setDancerName} onAvatarChange={setMyAvatarUrl} onAccountTypeChange={setAccountType} onBack={() => setScreen("profile")} />}
+            {screen === "edit"    && <EditProfileScreen user={user} onDancerNameChange={setDancerName} onAvatarChange={setMyAvatarUrl} onAccountTypeChange={setAccountType} onLightModeChange={setLightMode} onBack={() => setScreen("profile")} />}
             <BottomNav current={screen} onNav={s => { setScreen(s); setProfileStack([]); }} onProfileLongPress={() => setShowSwitchAccount(true)} />
             {detail && <DetailModal cypher={detail} onClose={() => setDetail(null)} joined={joined.includes(detail.id)} pending={pendingJoins.includes(detail.id)} onJoin={handleJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} saved={savedCyphers.includes(detail.id)} onToggleSave={handleToggleSaveCypher} />}
             {plDetail && <PLDetailModal lesson={plDetail} onClose={() => setPlDetail(null)} joined={plJoined.includes(plDetail.id)} pending={plPending.includes(plDetail.id)} onJoin={handlePLJoin} onViewProfile={id => { setProfileStack(s => [...s, id]); }} user={user} saved={savedEvents.includes(plDetail.id)} onToggleSave={handleToggleSaveEvent} />}
