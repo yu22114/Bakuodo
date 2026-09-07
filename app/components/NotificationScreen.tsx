@@ -84,8 +84,8 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
   };
 
   return (
-    <div {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", overflowY: "auto", animation: "slideInRight 0.22s ease-out" }}>
-      <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "center", gap: "16px" }}>
+    <div {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 150, background: "#000000", display: "flex", flexDirection: "column", overflow: "hidden", animation: "slideInRight 0.22s ease-out" }}>
+      <div style={{ padding: "32px 16px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "center", gap: "16px", flexShrink: 0 }}>
         <button onClick={onBack} style={{ background: "linear-gradient(180deg, #303030, #1c1c1c)", boxShadow: "0 3px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "13px", fontWeight: "600", padding: "10px 16px", display: "flex", alignItems: "center", gap: "4px", minHeight: "44px", flexShrink: 0 }}>
           <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
         </button>
@@ -93,7 +93,7 @@ export function NotificationScreen({ currentUserId, onBack, onViewProfile }: {
           <h2 style={{ margin: 0, fontSize: "28px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.05em", color: "#F0F0F0" }}>お知らせ</h2>
         </div>
       </div>
-      <div style={{ paddingBottom: "80px" }}>
+      <div style={{ flex: 1, overflowY: "auto", paddingBottom: "80px" }}>
         {loading ? (
           <div style={{ padding: "60px 16px", textAlign: "center", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "12px" }}>読み込み中...</div>
         ) : items.length === 0 ? (
