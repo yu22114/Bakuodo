@@ -226,7 +226,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   const [storyLoading, setStoryLoading] = useState(false);
   // EVENTのみ：定員に達した後も申請自体は受け付けているので、承認待ちの人を「キャンセル待ち」として見せる
   const [pendingParticipants, setPendingParticipants] = useState<ParticipantProfile[]>([]);
-  // EVENTは申請前にダンサーネーム・メールアドレス・Instagramアカウントを必須で答えてもらう
+  // 申請前にダンサーネーム・メールアドレス・Instagramアカウントを必須で答えてもらう（EVENT・LESSON共通）
   const [showApplyForm, setShowApplyForm] = useState(false);
   const [answerDancerName, setAnswerDancerName] = useState("");
   const [answerEmail, setAnswerEmail] = useState("");
@@ -557,8 +557,8 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
                 {justJoined && <div aria-hidden="true" style={{ position: "absolute", inset: 0, borderRadius: "6px", border: "2px solid #16A34A", animation: "bdJoinRing 0.7s ease-out", pointerEvents: "none" }} />}
                 <button onClick={() => {
                   hapticTap();
-                  // EVENTへの新規申請だけ、先に必須項目を聞くフォームを挟む
-                  if (isEvent && !joined && !pending) { setShowApplyForm(true); return; }
+                  // 新規申請時は、先に必須項目（ダンサーネーム・メール・Instagram）を聞くフォームを挟む（EVENT・LESSON共通）
+                  if (!joined && !pending) { setShowApplyForm(true); return; }
                   // 承認不要の直接申し込みを押した瞬間だけ、閉じる前にエフェクトを一瞬見せる
                   const isDirectJoin = !joined && !pending && !lesson.requires_approval;
                   onJoin(lesson.id);
@@ -664,7 +664,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
       </div>
     </div>
 
-    {/* EVENT申請前の必須項目フォーム */}
+    {/* 申請前の必須項目フォーム（EVENT・LESSON共通） */}
     {showApplyForm && (
       <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setShowApplyForm(false)}>
         <div onClick={e => e.stopPropagation()} style={{ background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.1) 46%, rgba(255,255,255,0.02) 58%, transparent 72%), linear-gradient(150deg, #2c2c2c 0%, #1a1a1a 25%, #242424 48%, #161616 70%, #282828 100%)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "340px" }}>

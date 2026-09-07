@@ -108,9 +108,9 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const [loading, setLoading] = useState(true);
   const [participantSheet, setParticipantSheet] = useState<{ title: string; participants: Array<{ profile_id: string; dancer_name: string; avatar_url: string | null }> } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; kind: "cypher" | "lesson" | "number" } | null>(null);
-  // EVENT申請時の回答（ダンサーネーム・メールアドレス・電話番号）・NUMBER申請時の回答
-  // （ダンサーネーム・Instagram）は、主催者のこの画面からしか見られない
-  const [answersModal, setAnswersModal] = useState<{ title: string; kind: "event" | "number" } | null>(null);
+  // EVENT・LESSON申請時の回答（ダンサーネーム・メールアドレス・Instagram、古いデータのみ電話番号）
+  // ・NUMBER申請時の回答（ダンサーネーム・Instagram）は、主催者のこの画面からしか見られない
+  const [answersModal, setAnswersModal] = useState<{ title: string; kind: "event" | "lesson" | "number" } | null>(null);
   const [answers, setAnswers] = useState<{ profile_id: string; dancer_name: string; avatar_url: string | null; answer_dancer_name: string | null; answer_email: string | null; answer_phone: string | null; answer_instagram: string | null }[] | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   // 他人のプロフィールを見ている時の「報告する」「ブロックする」メニューまわり
@@ -489,9 +489,9 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     setParticipantSheet({ title: cypher.title, participants: (data ?? []).map((row: any) => ({ profile_id: row.profile_id, dancer_name: row.profiles?.dancer_name ?? "UNKNOWN", avatar_url: row.profiles?.avatar_url ?? null })) });
   };
 
-  // EVENT申請時の回答一覧を開く（自分が主催したEVENTのみ、この画面からしか見られない）
+  // EVENT・LESSON申請時の回答一覧を開く（自分が主催したものだけ、この画面からしか見られない）
   const handleOpenAnswers = async (lesson: HostedLesson) => {
-    setAnswersModal({ title: lesson.title, kind: "event" });
+    setAnswersModal({ title: lesson.title, kind: lesson.kind });
     setAnswers(null);
     const { data } = await supabase.from("pl_participations")
       // answer_phone は電話番号を集めていた頃の過去の回答を表示するためだけに残してある（今の申請フォームはInstagramアカウントを聞く）
@@ -565,8 +565,8 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             : showType && <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: accent, fontWeight: "bold", padding: "2px 7px", background: accent + "14", borderRadius: "3px" }}>{isEv ? "EVENT" : "PRIVATE"}</span>}
           {/* 参加人数はCYPHERの主催カードと同じ見せ方 */}
           <span style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: ended ? "rgba(255,255,255,0.35)" : accent, fontWeight: "bold" }}>{l.participant_count}人</span>
-          {/* EVENTの参加申請の回答（ダンサーネーム・メール・電話番号）は、主催者がここからだけ見られる */}
-          {isOwn && isEv && (
+          {/* 参加申請の回答（ダンサーネーム・メール・Instagram）は、主催者がここからだけ見られる */}
+          {isOwn && (
             <button onClick={e => { e.stopPropagation(); handleOpenAnswers(l); }} title="回答を見る"
               style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "#F0F0F0", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}><ClipboardList size={13} /></button>
           )}
@@ -1065,7 +1065,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
         </div>
       )}
 
-      {/* EVENT申請の回答一覧（ダンサーネーム・メールアドレス・電話番号）。主催者のこの画面からしか見られない */}
+      {/* EVENT・LESSON申請の回答一覧（ダンサーネーム・メールアドレス・Instagram）。主催者のこの画面からしか見られない */}
       {answersModal && (
         <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={() => setAnswersModal(null)}>
           <div onClick={e => e.stopPropagation()} style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "24px 20px", width: "100%", maxWidth: "360px", maxHeight: "80vh", overflowY: "auto" }}>
