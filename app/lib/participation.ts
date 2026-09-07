@@ -66,14 +66,14 @@ export async function cancelNumber(userId: string, numberId: string): Promise<{ 
 }
 
 // EVENTの参加申請時だけ必須で答えてもらう項目（レッスンでは使わない）
-export type EventApplicationAnswers = { dancerName: string; email: string; phone: string };
+export type EventApplicationAnswers = { dancerName: string; email: string; instagram: string };
 
 export async function joinLesson(userId: string, lessonId: string, answers?: EventApplicationAnswers): Promise<JoinResult> {
   const { data, error } = await supabase
     .from("pl_participations")
     .insert({
       lesson_id: lessonId, profile_id: userId,
-      ...(answers ? { answer_dancer_name: answers.dancerName, answer_email: answers.email, answer_phone: answers.phone } : {}),
+      ...(answers ? { answer_dancer_name: answers.dancerName, answer_email: answers.email, answer_instagram: answers.instagram } : {}),
     })
     .select("status")
     .single();
