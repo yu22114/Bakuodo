@@ -494,13 +494,14 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     setAnswersModal({ title: lesson.title, kind: "event" });
     setAnswers(null);
     const { data } = await supabase.from("pl_participations")
-      .select("profile_id, answer_dancer_name, answer_email, answer_phone, profiles:profile_id(dancer_name, avatar_url)")
+      // answer_phone は電話番号を集めていた頃の過去の回答を表示するためだけに残してある（今の申請フォームはInstagramアカウントを聞く）
+      .select("profile_id, answer_dancer_name, answer_email, answer_phone, answer_instagram, profiles:profile_id(dancer_name, avatar_url)")
       .eq("lesson_id", lesson.id);
     setAnswers((data ?? []).map((row: any) => ({
       profile_id: row.profile_id,
       dancer_name: row.profiles?.dancer_name ?? "UNKNOWN",
       avatar_url: row.profiles?.avatar_url ?? null,
-      answer_dancer_name: row.answer_dancer_name, answer_email: row.answer_email, answer_phone: row.answer_phone, answer_instagram: null,
+      answer_dancer_name: row.answer_dancer_name, answer_email: row.answer_email, answer_phone: row.answer_phone, answer_instagram: row.answer_instagram,
     })));
   };
 
