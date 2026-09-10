@@ -36,8 +36,8 @@ export async function cancelCypher(userId: string, cypherId: string): Promise<{ 
   return {};
 }
 
-// NUMBER参加申請時だけ必須で答えてもらう項目（EVENTのダンサーネーム・メール・電話番号とは別の項目）
-export type NumberApplicationAnswers = { dancerName: string; instagram: string };
+// NUMBER参加申請時だけ必須で答えてもらう項目
+export type NumberApplicationAnswers = { dancerName: string; instagram: string; email: string };
 
 // NUMBERは承認制がないので、参加は単純なINSERT/DELETEだけで完結する（statusは扱わない）
 export async function joinNumber(userId: string, numberId: string, answers?: NumberApplicationAnswers): Promise<{ error?: string }> {
@@ -45,7 +45,7 @@ export async function joinNumber(userId: string, numberId: string, answers?: Num
     .from("number_participations")
     .insert({
       number_id: numberId, profile_id: userId,
-      ...(answers ? { answer_dancer_name: answers.dancerName, answer_instagram: answers.instagram } : {}),
+      ...(answers ? { answer_dancer_name: answers.dancerName, answer_instagram: answers.instagram, answer_email: answers.email } : {}),
     });
   if (error) {
     console.error("number join error:", error);
