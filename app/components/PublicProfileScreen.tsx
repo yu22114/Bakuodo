@@ -510,13 +510,13 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
     setAnswersModal({ title: n.title, kind: "number" });
     setAnswers(null);
     const { data } = await supabase.from("number_participations")
-      .select("profile_id, answer_dancer_name, answer_instagram, profiles:profile_id(dancer_name, avatar_url)")
+      .select("profile_id, answer_dancer_name, answer_instagram, answer_email, profiles:profile_id(dancer_name, avatar_url)")
       .eq("number_id", n.id);
     setAnswers((data ?? []).map((row: any) => ({
       profile_id: row.profile_id,
       dancer_name: row.profiles?.dancer_name ?? "UNKNOWN",
       avatar_url: row.profiles?.avatar_url ?? null,
-      answer_dancer_name: row.answer_dancer_name, answer_email: null, answer_phone: null, answer_instagram: row.answer_instagram,
+      answer_dancer_name: row.answer_dancer_name, answer_email: row.answer_email, answer_phone: null, answer_instagram: row.answer_instagram,
     })));
   };
 

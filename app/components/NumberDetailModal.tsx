@@ -189,10 +189,11 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
   const [justJoined, setJustJoined] = useState(false);
-  // 参加申請前の必須項目フォーム（EVENTと同じ考え方。項目はダンサーネーム・Instagramの2つ）
+  // 参加申請前の必須項目フォーム（EVENT・LESSONと同じ考え方。項目はダンサーネーム・Instagram・メールアドレスの3つ）
   const [showApplyForm, setShowApplyForm] = useState(false);
   const [answerDancerName, setAnswerDancerName] = useState("");
   const [answerInstagram, setAnswerInstagram] = useState("");
+  const [answerEmail, setAnswerEmail] = useState("");
   // ストーリーズ用画像の作成中（少し時間がかかるため連打防止も兼ねる）
   const [storyLoading, setStoryLoading] = useState(false);
   // コメントの取得・投稿はサイファー・レッスンと同じ処理を使う（commentsテーブル共通）
@@ -250,9 +251,9 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
   };
 
   const submitApply = () => {
-    if (!answerDancerName.trim() || !answerInstagram.trim()) return;
+    if (!answerDancerName.trim() || !answerInstagram.trim() || !answerEmail.trim()) return;
     hapticTap();
-    onJoin(number.id, { dancerName: answerDancerName.trim(), instagram: answerInstagram.trim() });
+    onJoin(number.id, { dancerName: answerDancerName.trim(), instagram: answerInstagram.trim(), email: answerEmail.trim() });
     setShowApplyForm(false);
     // 参加できたことを示すエフェクトを一瞬見せてから閉じる（EVENTと違い承認制がないので必ず即参加になる）
     setJustJoined(true);
@@ -492,11 +493,16 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
                 <input value={answerInstagram} onChange={e => setAnswerInstagram(e.target.value)} maxLength={100} placeholder="@ユーザー名" autoCapitalize="none" autoCorrect="off"
                   style={{ width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
               </div>
+              <div>
+                <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "4px" }}>メールアドレス</label>
+                <input type="email" value={answerEmail} onChange={e => setAnswerEmail(e.target.value)} maxLength={200}
+                  style={{ width: "100%", padding: "10px 12px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "13px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" }} />
+              </div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "18px" }}>
               <button onClick={() => setShowApplyForm(false)} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "8px", cursor: "pointer", color: "#F0F0F0", padding: "10px 16px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>キャンセル</button>
-              <button onClick={submitApply} disabled={!answerDancerName.trim() || !answerInstagram.trim()}
-                style={{ background: (answerDancerName.trim() && answerInstagram.trim()) ? "#EC4899" : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: (answerDancerName.trim() && answerInstagram.trim()) ? "pointer" : "default", color: (answerDancerName.trim() && answerInstagram.trim()) ? "#fff" : "rgba(255,255,255,0.3)", padding: "10px 16px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>
+              <button onClick={submitApply} disabled={!answerDancerName.trim() || !answerInstagram.trim() || !answerEmail.trim()}
+                style={{ background: (answerDancerName.trim() && answerInstagram.trim() && answerEmail.trim()) ? "#EC4899" : "rgba(255,255,255,0.12)", border: "none", borderRadius: "8px", cursor: (answerDancerName.trim() && answerInstagram.trim() && answerEmail.trim()) ? "pointer" : "default", color: (answerDancerName.trim() && answerInstagram.trim() && answerEmail.trim()) ? "#fff" : "rgba(255,255,255,0.3)", padding: "10px 16px", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>
                 申請する
               </button>
             </div>
