@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import { ScrollFeatureShowcase } from "./ScrollFeatureShowcase";
 
 // 爆踊の紹介LP。アプリ本体（app/page.tsx、クライアントコンポーネント）とは完全に独立したページ。
-// Vercelで別ドメインを割り当てて、middleware.tsがそのドメインへのアクセスだけを
-// このページにリライトする（詳しくはmiddleware.tsのコメント参照）。
+// Vercelで別ドメインを割り当てて、proxy.tsがそのドメインへのアクセスだけを
+// このページにリライトする（詳しくはproxy.tsのコメント参照）。
 // アプリ側のログイン・セッション処理には一切触れない、サーバーコンポーネントの静的ページ。
+// ※「5つの遊び方」セクションだけ、スクロール連動の演出のためクライアントコンポーネント
+// （ScrollFeatureShowcase.tsx）に切り出している。それ以外はこのファイルのまま静的。
 
 export const metadata: Metadata = {
   title: "爆踊 | 今日、ここで、踊ろう。",
@@ -11,14 +14,6 @@ export const metadata: Metadata = {
 };
 
 const APP_URL = "https://bakuodo.vercel.app";
-
-const FEATURES = [
-  { tag: "CYPHER", color: "#DC2626", title: "サイファーを開く・混ざる", desc: "開催情報を出すだけで人が集まる。参加も一言リクエストするだけ。" },
-  { tag: "LESSON", color: "#2563EB", title: "プライベートレッスン", desc: "講師と受講者をつなぐ。レベル・定員を決めて募集できる。" },
-  { tag: "EVENT", color: "#EAB308", title: "本番イベントの告知", desc: "JUDGE・DJ・MCまで載せて、観客ありの本番を告知できる。" },
-  { tag: "NUMBER", color: "#EC4899", title: "振付作品の出演者募集", desc: "大人数振付の出演者をInstagramひとつで募集・確定。" },
-  { tag: "SPOTS", color: "#16A34A", title: "聖地の今を知る", desc: "今そのスポットに何人いるか、リアルタイムでわかる。" },
-];
 
 const VALUES = [
   { title: "登録は無料", desc: "アカウント作成から検索・参加まで、料金は一切かかりません。" },
@@ -35,8 +30,6 @@ export default function LandingPage() {
         .lp-fade { animation: lpFadeUp 0.6s ease-out both; }
         .lp-cta:hover { filter: brightness(1.08); transform: translateY(-1px); }
         .lp-cta { transition: filter 0.2s, transform 0.2s; }
-        .lp-feature:hover { border-color: rgba(255,255,255,0.24); transform: translateY(-2px); }
-        .lp-feature { transition: border-color 0.2s, transform 0.2s; }
         @media (max-width: 640px) {
           .lp-hero-deco { display: none; }
         }
@@ -93,20 +86,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 5つの遊び方 */}
-      <section style={{ maxWidth: "1040px", margin: "0 auto", padding: "40px 20px" }}>
-        <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.4)", letterSpacing: "0.2em", marginBottom: "8px" }}>WHAT YOU CAN DO</div>
-        <h2 style={{ margin: "0 0 32px", fontSize: "26px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>5つの遊び方</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px" }}>
-          {FEATURES.map(f => (
-            <div key={f.tag} className="lp-feature" style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderLeft: `3px solid ${f.color}`, borderRadius: "10px", padding: "18px" }}>
-              <span style={{ fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: "bold", color: f.color, background: f.color + "1f", borderRadius: "3px", padding: "3px 7px" }}>{f.tag}</span>
-              <div style={{ marginTop: "12px", fontSize: "15px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700 }}>{f.title}</div>
-              <div style={{ marginTop: "6px", fontSize: "12px", lineHeight: 1.7, color: "rgba(255,255,255,0.55)", fontFamily: "'Noto Sans JP',sans-serif" }}>{f.desc}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* 5つの遊び方（スクロール連動でスマホ画面が切り替わる演出） */}
+      <ScrollFeatureShowcase />
 
       {/* マイコミュニティ */}
       <section style={{ maxWidth: "1040px", margin: "0 auto", padding: "40px 20px" }}>
