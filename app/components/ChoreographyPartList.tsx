@@ -1,18 +1,22 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Plus, Trash2, Pencil, Check, X, GripVertical, Camera } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, X, GripVertical, Camera, Video as VideoIcon } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import { showToast } from "./Toast";
 
 const ACCENT = "#DC2626";
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024; // post-videosバケットのfile_size_limitと合わせる
 
 export type Assignee = { id: string; dancer_name: string; avatar_url: string | null };
-type ChoreoPart = { id: string; title: string; eightCount: number | null; createdBy: string | null; assigneeIds: string[]; imageUrl: string | null };
+type ChoreoPart = { id: string; title: string; eightCount: number | null; createdBy: string | null; assigneeIds: string[]; imageUrl: string | null; videoUrl: string | null };
 
-// パートの画像（フォーメーション図・参考写真など、任意で1枚）。
-// 「保存済み（existing）」か「今回選び直した新しい画像（new）」かで表示・保存の扱いが変わる
-type PartImage = { kind: "existing"; url: string } | { kind: "new"; file: File; preview: string };
+// パートの添付（フォーメーション図などの画像 or 振り入れ動画、任意で1つだけ）。
+// 「保存済み（existing）」か「今回選び直した新しいファイル（new）」か、
+// 「画像（image）」か「動画（video）」かで表示・保存の扱いが変わる
+type PartAttachment =
+  | { kind: "existing"; mediaType: "image" | "video"; url: string }
+  | { kind: "new"; mediaType: "image" | "video"; file: File; preview: string };
 
 function loadImageElement(blob: Blob): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -57,6 +61,17 @@ async function uploadPartImage(userId: string, file: File): Promise<string> {
   return publicUrl;
 }
 
+// 動画は画像と違って加工しない（切り抜き・圧縮はしない）。そのままpost-videosバケットへ
+async function uploadPartVideo(userId: string, file: File): Promise<string> {
+  if (file.size > MAX_VIDEO_BYTES) throw new Error("動画は50MBまでです");
+  const ext = file.name.includes(".") ? file.name.split(".").pop() : "mp4";
+  const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from("post-videos").upload(path, file, { contentType: file.type || "video/mp4" });
+  if (error) throw new Error(`動画のアップロードに失敗しました: ${error.message}`);
+  const { data: { publicUrl } } = supabase.storage.from("post-videos").getPublicUrl(path);
+  return publicUrl;
+}
+
 // 「担当振付」タブの中身：曲・パート名ごとに担当メンバーを紐づける。
 // パートの追加はこのカードを見られる人なら誰でも。編集・削除は掲示板の作成者、
 // またはそのパートを作った本人だけ
@@ -71,13 +86,13 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
   const [newTitle, setNewTitle] = useState("");
   const [newEightCount, setNewEightCount] = useState("");
   const [newAssigneeIds, setNewAssigneeIds] = useState<string[]>([]);
-  const [newImage, setNewImage] = useState<PartImage | null>(null);
+  const [newAttachment, setNewAttachment] = useState<PartAttachment | null>(null);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editEightCount, setEditEightCount] = useState("");
   const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>([]);
-  const [editImage, setEditImage] = useState<PartImage | null>(null);
+  const [editAttachment, setEditAttachment] = useState<PartAttachment | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -103,9 +118,9 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
   useEffect(() => () => { if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current); }, []);
 
   const fetchParts = async () => {
-    const { data: partRows } = await supabase.from("community_board_choreography_parts").select("id, title, eight_count, created_by, image_url")
+    const { data: partRows } = await supabase.from("community_board_choreography_parts").select("id, title, eight_count, created_by, image_url, video_url")
       .eq("card_id", cardId).order("sort_order", { ascending: true }).order("created_at", { ascending: true });
-    const list = (partRows as { id: string; title: string; eight_count: number | null; created_by: string | null; image_url: string | null }[] | null) ?? [];
+    const list = (partRows as { id: string; title: string; eight_count: number | null; created_by: string | null; image_url: string | null; video_url: string | null }[] | null) ?? [];
     if (list.length === 0) { setParts([]); return; }
     const { data: assigneeRows } = await supabase.from("community_board_choreography_assignees").select("part_id, profile_id").in("part_id", list.map(p => p.id));
     setParts(list.map(p => ({
@@ -114,6 +129,7 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
       eightCount: p.eight_count,
       createdBy: p.created_by,
       imageUrl: p.image_url,
+      videoUrl: p.video_url,
       assigneeIds: (assigneeRows as any[] ?? []).filter(r => r.part_id === p.id).map(r => r.profile_id),
     })));
   };
@@ -219,19 +235,22 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
     const eightCount = newEightCount ? Number(newEightCount) : null;
     const sortOrder = parts?.length ?? 0; // 新しいパートは常に一番下に追加する
     let imageUrl: string | null = null;
-    if (newImage?.kind === "new") {
-      try { imageUrl = await uploadPartImage(user.id, newImage.file); }
-      catch (e) { setAdding(false); showToast(e instanceof Error ? e.message : "画像のアップロードに失敗しました"); return; }
+    let videoUrl: string | null = null;
+    if (newAttachment?.kind === "new") {
+      try {
+        if (newAttachment.mediaType === "video") videoUrl = await uploadPartVideo(user.id, newAttachment.file);
+        else imageUrl = await uploadPartImage(user.id, newAttachment.file);
+      } catch (e) { setAdding(false); showToast(e instanceof Error ? e.message : "アップロードに失敗しました"); return; }
     }
-    const { error } = await supabase.from("community_board_choreography_parts").insert({ id: newId, card_id: cardId, title, eight_count: eightCount, created_by: user.id, sort_order: sortOrder, image_url: imageUrl });
+    const { error } = await supabase.from("community_board_choreography_parts").insert({ id: newId, card_id: cardId, title, eight_count: eightCount, created_by: user.id, sort_order: sortOrder, image_url: imageUrl, video_url: videoUrl });
     if (error) { setAdding(false); console.error("community_board_choreography_parts insert error:", error); showToast(`パートの作成に失敗しました: ${error.message}`); return; }
     if (newAssigneeIds.length > 0) {
       const { error: aErr } = await supabase.from("community_board_choreography_assignees").insert(newAssigneeIds.map(pid => ({ part_id: newId, profile_id: pid })));
       if (aErr) console.error("community_board_choreography_assignees insert error:", aErr);
     }
     setAdding(false);
-    setParts(list => [...(list ?? []), { id: newId, title, eightCount, createdBy: user.id, imageUrl, assigneeIds: newAssigneeIds }]);
-    setNewTitle(""); setNewEightCount(""); setNewAssigneeIds([]); setNewImage(null); setShowAdd(false);
+    setParts(list => [...(list ?? []), { id: newId, title, eightCount, createdBy: user.id, imageUrl, videoUrl, assigneeIds: newAssigneeIds }]);
+    setNewTitle(""); setNewEightCount(""); setNewAssigneeIds([]); setNewAttachment(null); setShowAdd(false);
   };
 
   const openEdit = (part: ChoreoPart) => {
@@ -239,7 +258,11 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
     setEditTitle(part.title);
     setEditEightCount(part.eightCount != null ? String(part.eightCount) : "");
     setEditAssigneeIds(part.assigneeIds);
-    setEditImage(part.imageUrl ? { kind: "existing", url: part.imageUrl } : null);
+    setEditAttachment(
+      part.imageUrl ? { kind: "existing", mediaType: "image", url: part.imageUrl }
+      : part.videoUrl ? { kind: "existing", mediaType: "video", url: part.videoUrl }
+      : null
+    );
   };
 
   const saveEdit = async () => {
@@ -247,12 +270,15 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
     if (!title || !editingId || savingEdit) return;
     setSavingEdit(true);
     const eightCount = editEightCount ? Number(editEightCount) : null;
-    let imageUrl: string | null = editImage?.kind === "existing" ? editImage.url : null;
-    if (editImage?.kind === "new") {
-      try { imageUrl = await uploadPartImage(user.id, editImage.file); }
-      catch (e) { setSavingEdit(false); showToast(e instanceof Error ? e.message : "画像のアップロードに失敗しました"); return; }
+    let imageUrl: string | null = editAttachment?.kind === "existing" && editAttachment.mediaType === "image" ? editAttachment.url : null;
+    let videoUrl: string | null = editAttachment?.kind === "existing" && editAttachment.mediaType === "video" ? editAttachment.url : null;
+    if (editAttachment?.kind === "new") {
+      try {
+        if (editAttachment.mediaType === "video") videoUrl = await uploadPartVideo(user.id, editAttachment.file);
+        else imageUrl = await uploadPartImage(user.id, editAttachment.file);
+      } catch (e) { setSavingEdit(false); showToast(e instanceof Error ? e.message : "アップロードに失敗しました"); return; }
     }
-    const { error } = await supabase.from("community_board_choreography_parts").update({ title, eight_count: eightCount, image_url: imageUrl }).eq("id", editingId);
+    const { error } = await supabase.from("community_board_choreography_parts").update({ title, eight_count: eightCount, image_url: imageUrl, video_url: videoUrl }).eq("id", editingId);
     if (error) { setSavingEdit(false); console.error("community_board_choreography_parts update error:", error); showToast(`保存に失敗しました: ${error.message}`); return; }
     // 担当者は一旦全部消してから今のフォームの内容で入れ直す
     await supabase.from("community_board_choreography_assignees").delete().eq("part_id", editingId);
@@ -261,7 +287,7 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
       if (aErr) { console.error("community_board_choreography_assignees insert error:", aErr); showToast(`担当者の保存に失敗しました: ${aErr.message}`); }
     }
     setSavingEdit(false);
-    setParts(list => (list ?? []).map(p => p.id === editingId ? { ...p, title, eightCount, imageUrl, assigneeIds: editAssigneeIds } : p));
+    setParts(list => (list ?? []).map(p => p.id === editingId ? { ...p, title, eightCount, imageUrl, videoUrl, assigneeIds: editAssigneeIds } : p));
     setEditingId(null);
   };
 
@@ -276,31 +302,39 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
 
   const inp: React.CSSProperties = { width: "100%", padding: "8px 10px", background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "6px", color: "#F0F0F0", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", outline: "none", boxSizing: "border-box" };
 
-  // パート作成・編集フォーム共通（タイトル・エイト数・画像＋担当者のチェックリスト）
-  const renderForm = (title: string, setTitle: (v: string) => void, eightCount: string, setEightCount: (v: string) => void, assigneeIds: string[], setAssigneeIds: (v: string[]) => void, image: PartImage | null, setImage: (v: PartImage | null) => void, onCancel: () => void, onSave: () => void, saving: boolean) => {
-    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // パート作成・編集フォーム共通（タイトル・エイト数・画像or動画＋担当者のチェックリスト）
+  const renderForm = (title: string, setTitle: (v: string) => void, eightCount: string, setEightCount: (v: string) => void, assigneeIds: string[], setAssigneeIds: (v: string[]) => void, attachment: PartAttachment | null, setAttachment: (v: PartAttachment | null) => void, onCancel: () => void, onSave: () => void, saving: boolean) => {
+    const handleAttachmentSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       e.target.value = "";
       if (!file) return;
-      setImage({ kind: "new", file, preview: URL.createObjectURL(file) });
+      const mediaType: "image" | "video" = file.type.startsWith("video/") ? "video" : "image";
+      if (mediaType === "video" && file.size > MAX_VIDEO_BYTES) { showToast("動画は50MBまでです"); return; }
+      setAttachment({ kind: "new", mediaType, file, preview: URL.createObjectURL(file) });
     };
-    const imageSrc = image?.kind === "existing" ? image.url : image?.kind === "new" ? image.preview : null;
+    const attachmentSrc = attachment?.kind === "existing" ? attachment.url : attachment?.kind === "new" ? attachment.preview : null;
+    const attachmentIsVideo = attachment?.mediaType === "video";
     return (
     <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "8px", padding: "10px" }}>
       <input value={title} onChange={e => setTitle(e.target.value)} placeholder="パート名（例: 1番サビ）" maxLength={40} autoFocus style={inp} />
       <input value={eightCount} onChange={e => setEightCount(e.target.value.replace(/[^0-9]/g, ""))} placeholder="エイト数（任意）" inputMode="numeric" maxLength={3}
         style={{ ...inp, marginTop: "6px" }} />
       <div style={{ marginTop: "10px" }}>
-        <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "6px" }}>画像（任意・フォーメーション図など）</label>
-        {imageSrc ? (
+        <label style={{ display: "block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "6px" }}>画像・動画（任意・フォーメーション図や振り入れ動画など、動画は50MBまで）</label>
+        {attachmentSrc ? (
           <div style={{ position: "relative", width: "84px" }}>
-            <img src={imageSrc} alt="" style={{ width: "84px", height: "84px", objectFit: "cover", borderRadius: "8px", display: "block" }} />
-            <button type="button" onClick={() => setImage(null)} style={{ position: "absolute", top: "-6px", right: "-6px", width: "20px", height: "20px", borderRadius: "50%", background: "rgba(0,0,0,0.75)", border: "none", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={12} /></button>
+            {attachmentIsVideo ? (
+              <video src={attachmentSrc} muted playsInline style={{ width: "84px", height: "84px", objectFit: "cover", borderRadius: "8px", display: "block", background: "#000" }} />
+            ) : (
+              <img src={attachmentSrc} alt="" style={{ width: "84px", height: "84px", objectFit: "cover", borderRadius: "8px", display: "block" }} />
+            )}
+            {attachmentIsVideo && <VideoIcon size={16} color="#fff" style={{ position: "absolute", top: "6px", left: "6px", filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.8))" }} />}
+            <button type="button" onClick={() => setAttachment(null)} style={{ position: "absolute", top: "-6px", right: "-6px", width: "20px", height: "20px", borderRadius: "50%", background: "rgba(0,0,0,0.75)", border: "none", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={12} /></button>
           </div>
         ) : (
           <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "4px", width: "84px", height: "84px", border: "1px dashed rgba(255,255,255,0.24)", borderRadius: "8px", color: "rgba(255,255,255,0.5)", fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer" }}>
             <Camera size={16} /> 追加
-            <input type="file" accept="image/*" onChange={handleImageSelect} style={{ display: "none" }} />
+            <input type="file" accept="image/*,video/*" onChange={handleAttachmentSelect} style={{ display: "none" }} />
           </label>
         )}
       </div>
@@ -349,7 +383,7 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
           <button onClick={() => setShowAdd(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", background: "none", border: "1px dashed rgba(255,255,255,0.25)", borderRadius: "8px", padding: "10px", color: "rgba(255,255,255,0.6)", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", cursor: "pointer", boxSizing: "border-box" }}>
             <Plus size={14} /> パートを作る
           </button>
-        ) : renderForm(newTitle, setNewTitle, newEightCount, setNewEightCount, newAssigneeIds, setNewAssigneeIds, newImage, setNewImage, () => { setShowAdd(false); setNewTitle(""); setNewEightCount(""); setNewAssigneeIds([]); setNewImage(null); }, addPart, adding)}
+        ) : renderForm(newTitle, setNewTitle, newEightCount, setNewEightCount, newAssigneeIds, setNewAssigneeIds, newAttachment, setNewAttachment, () => { setShowAdd(false); setNewTitle(""); setNewEightCount(""); setNewAssigneeIds([]); setNewAttachment(null); }, addPart, adding)}
       </div>
 
       {parts.length === 0 ? (
@@ -379,12 +413,18 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
                 transition: dragging ? "none" : "box-shadow 0.15s ease",
               }}>
               {editingId === part.id ? (
-                renderForm(editTitle, setEditTitle, editEightCount, setEditEightCount, editAssigneeIds, setEditAssigneeIds, editImage, setEditImage, () => setEditingId(null), saveEdit, savingEdit)
+                renderForm(editTitle, setEditTitle, editEightCount, setEditEightCount, editAssigneeIds, setEditAssigneeIds, editAttachment, setEditAttachment, () => setEditingId(null), saveEdit, savingEdit)
               ) : (
                 <button onClick={() => setViewingPartId(part.id)} style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
                     {part.imageUrl && (
                       <img src={part.imageUrl} alt="" style={{ width: "40px", height: "40px", borderRadius: "6px", objectFit: "cover", flexShrink: 0 }} />
+                    )}
+                    {/* 動画は一覧では読み込まず、動画であることが分かるアイコンだけ出す */}
+                    {part.videoUrl && (
+                      <div style={{ width: "40px", height: "40px", borderRadius: "6px", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <VideoIcon size={16} color="rgba(255,255,255,0.7)" />
+                      </div>
                     )}
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0" }}>{part.title}</div>
@@ -435,6 +475,11 @@ export function ChoreographyPartList({ cardId, isOwn, user, candidates }: {
               {part.imageUrl && (
                 <img src={part.imageUrl} alt="" onClick={() => setViewingImageUrl(part.imageUrl)}
                   style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", borderRadius: "10px", marginBottom: "12px", display: "block", cursor: "pointer" }} />
+              )}
+              {/* 動画は標準のcontrolsに再生・全画面ボタンが揃っているので、専用のビューアーは作らない */}
+              {part.videoUrl && (
+                <video src={part.videoUrl} controls playsInline
+                  style={{ width: "100%", maxHeight: "280px", borderRadius: "10px", marginBottom: "12px", display: "block", background: "#000" }} />
               )}
               <div style={{ fontSize: "18px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, color: "#F0F0F0", marginBottom: "4px" }}>{part.title}</div>
               {part.eightCount != null && <div style={{ fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif", color: "rgba(255,255,255,0.5)", marginBottom: "16px" }}>{part.eightCount}エイト</div>}
