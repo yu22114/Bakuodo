@@ -26,6 +26,20 @@ export default function HelpPage() {
         <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>爆踊のつかいかた</p>
       </div>
 
+      {/* 初めて見た人向けの導入文。Q&A形式の各セクションより前に、アプリ全体の説明を平易な言葉で置く */}
+      <div style={{ background: "#141414", borderLeft: "3px solid #DC2626", borderRadius: "8px", padding: "16px 18px", marginBottom: "32px" }}>
+        <p style={{ margin: 0, fontSize: "13px", lineHeight: "1.9", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
+          「爆踊（ばくおど）」は、ストリートダンサーのための無料コミュニティアプリです。
+          一緒に踊る仲間を探している人も、レッスンやイベントを開きたい人も、ここに集まっています。
+        </p>
+        <p style={{ margin: "12px 0 0", fontSize: "13px", lineHeight: "1.9", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
+          即興で踊り合う「サイファー」の開催・参加から、レッスンやイベントの告知、大人数の振付作品（ナンバー）の出演者募集、チーム内の練習管理まで、ダンサーが集まり・つながるための機能がひとつのアプリにまとまっています。
+        </p>
+        <p style={{ margin: "12px 0 0", fontSize: "13px", lineHeight: "1.9", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif" }}>
+          難しい設定はいりません。アカウントを作ったら、気になるタブをタップしてみてください。
+        </p>
+      </div>
+
       {section("爆踊とは", [
         {
           q: "爆踊ってなに？",
