@@ -191,6 +191,7 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
   const [justJoined, setJustJoined] = useState(false);
   // 参加申請前の必須項目フォーム（EVENT・LESSONと同じ考え方。項目はダンサーネーム・Instagram・メールアドレスの3つ）
   const [showApplyForm, setShowApplyForm] = useState(false);
+  const [cancelConfirm, setCancelConfirm] = useState(false);
   const [answerDancerName, setAnswerDancerName] = useState("");
   const [answerInstagram, setAnswerInstagram] = useState("");
   const [answerEmail, setAnswerEmail] = useState("");
@@ -383,7 +384,8 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
                   hapticTap();
                   // 新規参加だけ、先に必須項目（ダンサーネーム・Instagram）を聞くフォームを挟む
                   if (!joined) { setShowApplyForm(true); return; }
-                  onJoin(number.id);
+                  // 参加の取り消しは、確認を1回挟んでから
+                  setCancelConfirm(true);
                 }}
                   className={!justJoined && !joined ? "bd-spray" : undefined}
                   style={{ width: "100%", padding: "14px", border: "none", borderRadius: "6px", background: justJoined ? "#16A34A" : joined ? "rgba(22,163,74,0.12)" : "linear-gradient(135deg, #EC4899, #BE185D)", color: justJoined ? "#fff" : joined ? "#16A34A" : "#fff", fontSize: "14px", fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, letterSpacing: "0.15em", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", animation: justJoined ? "bdJoinPop 0.4s ease-out" : undefined }}>
@@ -471,6 +473,20 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={() => setDeleteConfirm(false)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#F0F0F0" }}>キャンセル</button>
               <button onClick={handleDelete} disabled={deleting} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #DC2626, #A61B1B)", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>{deleting ? "削除中..." : "削除する"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 参加の取り消し前の確認（押し間違いで参加を外してしまわないように1回挟む） */}
+      {cancelConfirm && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={e => { e.stopPropagation(); setCancelConfirm(false); }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "12px", padding: "28px 24px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
+            <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "20px", color: "#F0F0F0", marginBottom: "8px" }}>参加を取り消す</div>
+            <div style={{ fontSize: "13px", color: "#F0F0F0", marginBottom: "24px", lineHeight: "1.6" }}>本当によろしいですか？</div>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button onClick={() => setCancelConfirm(false)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#F0F0F0" }}>やめる</button>
+              <button onClick={() => { setCancelConfirm(false); onJoin(number.id); }} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #DC2626, #A61B1B)", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>取り消す</button>
             </div>
           </div>
         </div>

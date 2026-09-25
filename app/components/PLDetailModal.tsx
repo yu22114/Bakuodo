@@ -228,6 +228,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   const [pendingParticipants, setPendingParticipants] = useState<ParticipantProfile[]>([]);
   // 申請前にダンサーネーム・メールアドレス・Instagramアカウントを必須で答えてもらう（EVENT・LESSON共通）
   const [showApplyForm, setShowApplyForm] = useState(false);
+  const [cancelConfirm, setCancelConfirm] = useState(false);
   const [answerDancerName, setAnswerDancerName] = useState("");
   const [answerEmail, setAnswerEmail] = useState("");
   const [answerInstagram, setAnswerInstagram] = useState("");
@@ -559,6 +560,8 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
                   hapticTap();
                   // 新規申請時は、先に必須項目（ダンサーネーム・メール・Instagram）を聞くフォームを挟む（EVENT・LESSON共通）
                   if (!joined && !pending) { setShowApplyForm(true); return; }
+                  // 申込済み・申請中の取り消しは、確認を1回挟んでから
+                  if (joined || pending) { setCancelConfirm(true); return; }
                   // 承認不要の直接申し込みを押した瞬間だけ、閉じる前にエフェクトを一瞬見せる
                   const isDirectJoin = !joined && !pending && !lesson.requires_approval;
                   onJoin(lesson.id);
@@ -663,6 +666,20 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
         </div>
       </div>
     </div>
+
+{/* 参加の取り消し前の確認（押し間違いで参加を外してしまわないように1回挟む） */}
+    {cancelConfirm && (
+      <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }} onClick={e => { e.stopPropagation(); setCancelConfirm(false); }}>
+        <div onClick={e => e.stopPropagation()} style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", borderRadius: "12px", padding: "28px 24px", width: "100%", maxWidth: "320px", textAlign: "center" }}>
+          <div style={{ fontFamily: "'Noto Sans JP',sans-serif", fontWeight: 700, fontSize: "20px", color: "#F0F0F0", marginBottom: "8px" }}>{pending ? "申請を取り消す" : "申し込みを取り消す"}</div>
+          <div style={{ fontSize: "13px", color: "#F0F0F0", marginBottom: "24px", lineHeight: "1.6" }}>本当によろしいですか？</div>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button onClick={() => setCancelConfirm(false)} style={{ flex: 1, padding: "12px", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", background: "none", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#F0F0F0" }}>やめる</button>
+            <button onClick={() => { setCancelConfirm(false); onJoin(lesson.id); }} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #DC2626, #A61B1B)", cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif", fontSize: "11px", color: "#FFFFFF", fontWeight: "bold" }}>取り消す</button>
+          </div>
+        </div>
+      </div>
+    )}
 
     {/* 申請前の必須項目フォーム（EVENT・LESSON共通） */}
     {showApplyForm && (
