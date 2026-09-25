@@ -4,7 +4,7 @@ import { Bell, Search, X, SlidersHorizontal, Plus, ChevronLeft, ChevronRight, Ma
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, PrivateLesson, DanceNumber, GenreKey } from "../lib/types";
-import { GENRES, EXTENDED_GENRES, GENRE_COLORS, genreLabel, timeUntil, formatDate, formatEndTime } from "../lib/constants";
+import { GENRES, EXTENDED_GENRES, GENRE_COLORS, genreLabel, timeUntil, formatDate, formatEndTime, todayStr } from "../lib/constants";
 import { CypherCard } from "./CypherCard";
 import { PLCard } from "./PLCard";
 import { NumberCard } from "./NumberCard";
@@ -317,6 +317,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
 
   // NUMBER側もサイファーと同じ条件で絞り込む（ジャンル/日付/エリア）
   const filteredNumbers = numbers.filter(n => {
+    // 募集期限を過ぎたNUMBERはホームの一覧に出さない（判定はNumberCardの「募集終了」表示と同じ）
+    if (n.recruitment_deadline && n.recruitment_deadline < todayStr()) return false;
     if (selectedGenres.length > 0 && !selectedGenres.some(g => n.genres.includes(g))) return false;
     if (specificDate) {
       const d = new Date(n.starts_at);
