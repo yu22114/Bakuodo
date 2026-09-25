@@ -660,6 +660,9 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   };
   const joinedPlList = joinedLessons.filter(l => l.kind === "lesson");
   const joinedEventList = joinedLessons.filter(l => l.kind === "event");
+  // 参加・主催タブでは終了したCYPHERを出さない（レッスン・イベント・NUMBERは引き続き履歴として残す）
+  const activeJoinedCyphers = joinedCyphers.filter(c => new Date(c.starts_at) >= new Date());
+  const activeHostedCyphers = hostedCyphers.filter(c => new Date(c.starts_at) >= new Date());
 
   return (
     <div style={onBack
@@ -882,14 +885,14 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             <div key={cypherTab} style={{ animation: `${tabSlideDir === 1 ? "bdSlideFromRight" : "bdSlideFromLeft"} 0.2s ease-out` }}>
             {showJoinedTab && cypherTab === "joined" ? (
               // 参加タブも主催タブと同じくCYPHER / P LESSON / EVENTで見出しを分けて表示する
-              joinedCyphers.length === 0 && joinedLessons.length === 0
+              activeJoinedCyphers.length === 0 && joinedLessons.length === 0
                 ? <EmptyState icon={CalendarX} padding="32px">まだ参加しているサイファー・レッスンはありません</EmptyState>
                 : (<>
-                    {joinedCyphers.length > 0 && (
+                    {activeJoinedCyphers.length > 0 && (
                       <div style={{ marginBottom: (joinedPlList.length > 0 || joinedEventList.length > 0) ? "12px" : 0 }}>
                         <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#DC2626", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#DC262614", borderRadius: "3px", margin: "0 0 6px 2px" }}>CYPHER</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                          {joinedCyphers.map(c => renderJoinedRow(c, "#DC2626", onCypherClick))}
+                          {activeJoinedCyphers.map(c => renderJoinedRow(c, "#DC2626", onCypherClick))}
                         </div>
                       </div>
                     )}
@@ -913,14 +916,14 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             ) : (
               // 主催タブ：CYPHER / P LESSON / EVENT / NUMBER を種類ごとに見出しを分けて表示する
               // （NUMBERは一番最後に置く）
-              hostedNumbers.length === 0 && hostedCyphers.length === 0 && hostedLessons.length === 0
+              hostedNumbers.length === 0 && activeHostedCyphers.length === 0 && hostedLessons.length === 0
                 ? <EmptyState icon={CalendarX} padding="32px">まだ主催しているサイファー・レッスン・NUMBERはありません</EmptyState>
                 : (<>
-                    {hostedCyphers.length > 0 && (
+                    {activeHostedCyphers.length > 0 && (
                       <div style={{ marginBottom: (hostedPlList.length > 0 || hostedEventList.length > 0) ? "12px" : 0 }}>
                         <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#DC2626", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#DC262614", borderRadius: "3px", margin: "0 0 6px 2px" }}>CYPHER</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                          {hostedCyphers.map(c => {
+                          {activeHostedCyphers.map(c => {
                             const { date, time } = formatDate(c.starts_at);
                             const isPast = new Date(c.starts_at) < new Date();
                             return (
