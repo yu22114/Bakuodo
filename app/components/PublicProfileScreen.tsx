@@ -619,8 +619,10 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   };
 
   // 主催タブ：CYPHER / P LESSON / EVENT で見出しを分けて表示するための振り分け
-  const hostedPlList = hostedLessons.filter(l => l.kind === "lesson");
-  const hostedEventList = hostedLessons.filter(l => l.kind === "event");
+  // （自分の主催タブでは終了したものを出さないので、振り分け前に絞り込む）
+  const activeHostedLessons = hostedLessons.filter(l => new Date(l.starts_at) >= new Date());
+  const hostedPlList = activeHostedLessons.filter(l => l.kind === "lesson");
+  const hostedEventList = activeHostedLessons.filter(l => l.kind === "event");
 
   // 主催レッスン・イベント一覧（他人のプロフィールでは種類を分けずまとめて出す）
   const lessonRows = hostedLessons.length > 0 && (
@@ -658,11 +660,14 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
       </div>
     );
   };
-  const joinedPlList = joinedLessons.filter(l => l.kind === "lesson");
-  const joinedEventList = joinedLessons.filter(l => l.kind === "event");
-  // 参加・主催タブでは終了したCYPHERを出さない（レッスン・イベント・NUMBERは引き続き履歴として残す）
+  // 参加タブも同様、振り分け前に終了したものを絞り込む
+  const activeJoinedLessons = joinedLessons.filter(l => new Date(l.starts_at) >= new Date());
+  const joinedPlList = activeJoinedLessons.filter(l => l.kind === "lesson");
+  const joinedEventList = activeJoinedLessons.filter(l => l.kind === "event");
+  // 参加・主催タブでは終了したCYPHER・NUMBERを出さない（他人のプロフィールの主催一覧では引き続き履歴として残す）
   const activeJoinedCyphers = joinedCyphers.filter(c => new Date(c.starts_at) >= new Date());
   const activeHostedCyphers = hostedCyphers.filter(c => new Date(c.starts_at) >= new Date());
+  const activeHostedNumbers = hostedNumbers.filter(n => new Date(n.starts_at) >= new Date());
 
   return (
     <div style={onBack
@@ -885,7 +890,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             <div key={cypherTab} style={{ animation: `${tabSlideDir === 1 ? "bdSlideFromRight" : "bdSlideFromLeft"} 0.2s ease-out` }}>
             {showJoinedTab && cypherTab === "joined" ? (
               // 参加タブも主催タブと同じくCYPHER / P LESSON / EVENTで見出しを分けて表示する
-              activeJoinedCyphers.length === 0 && joinedLessons.length === 0
+              activeJoinedCyphers.length === 0 && activeJoinedLessons.length === 0
                 ? <EmptyState icon={CalendarX} padding="32px">まだ参加しているサイファー・レッスンはありません</EmptyState>
                 : (<>
                     {activeJoinedCyphers.length > 0 && (
@@ -916,7 +921,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
             ) : (
               // 主催タブ：CYPHER / P LESSON / EVENT / NUMBER を種類ごとに見出しを分けて表示する
               // （NUMBERは一番最後に置く）
-              hostedNumbers.length === 0 && activeHostedCyphers.length === 0 && hostedLessons.length === 0
+              activeHostedNumbers.length === 0 && activeHostedCyphers.length === 0 && activeHostedLessons.length === 0
                 ? <EmptyState icon={CalendarX} padding="32px">まだ主催しているサイファー・レッスン・NUMBERはありません</EmptyState>
                 : (<>
                     {activeHostedCyphers.length > 0 && (
@@ -958,18 +963,18 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
                       </div>
                     )}
                     {hostedEventList.length > 0 && (
-                      <div style={{ marginBottom: hostedNumbers.length > 0 ? "12px" : 0 }}>
+                      <div style={{ marginBottom: activeHostedNumbers.length > 0 ? "12px" : 0 }}>
                         <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#EAB308", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#EAB30814", borderRadius: "3px", margin: "0 0 6px 2px" }}>EVENT</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                           {hostedEventList.map(l => renderLessonRow(l, false))}
                         </div>
                       </div>
                     )}
-                    {hostedNumbers.length > 0 && (
+                    {activeHostedNumbers.length > 0 && (
                       <div>
                         <div style={{ display: "inline-block", fontSize: "9px", fontFamily: "'Noto Sans JP',sans-serif", color: "#EC4899", fontWeight: "bold", letterSpacing: "0.1em", padding: "2px 7px", background: "#EC489914", borderRadius: "3px", margin: "0 0 6px 2px" }}>NUMBER</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                          {hostedNumbers.map(n => renderNumberRow(n))}
+                          {activeHostedNumbers.map(n => renderNumberRow(n))}
                         </div>
                       </div>
                     )}
