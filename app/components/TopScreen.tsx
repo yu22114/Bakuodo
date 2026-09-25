@@ -666,7 +666,8 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
         const savedCypherCards = cyphers.filter(c => (savedCypherIds ?? []).includes(c.id));
         const savedLessonCards = lessons.filter(l => (savedEventIds ?? []).includes(l.id));
         const savedEventCards = events.filter(e => (savedEventIds ?? []).includes(e.id));
-        const savedNumberCards = numbers.filter(n => (savedNumberIds ?? []).includes(n.id));
+        // 募集期限を過ぎたNUMBERは「気になる」にも出さない（ホームの一覧と同じ扱い）
+        const savedNumberCards = numbers.filter(n => (savedNumberIds ?? []).includes(n.id) && !(n.recruitment_deadline && n.recruitment_deadline < todayStr()));
         const hasGridCards = savedLessonCards.length > 0 || savedEventCards.length > 0 || savedNumberCards.length > 0;
         return (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end" }} onClick={() => setShowSaved(false)}>
