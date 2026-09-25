@@ -619,9 +619,10 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   };
 
   // 主催タブ：CYPHER / P LESSON / EVENT で見出しを分けて表示するための振り分け
-  // 自分の主催タブでは、終了したレッスン・イベント・NUMBERのカードは出さない（CYPHERと同じ扱い）
+  // 自分の主催タブでは、終了したレッスン・NUMBERのカードは出さない（CYPHERと同じ扱い）。
+  // イベントは終了後も残す
   const hostedPlList = hostedLessons.filter(l => l.kind === "lesson" && new Date(l.starts_at) >= new Date());
-  const hostedEventList = hostedLessons.filter(l => l.kind === "event" && new Date(l.starts_at) >= new Date());
+  const hostedEventList = hostedLessons.filter(l => l.kind === "event");
   const upcomingHostedNumbers = hostedNumbers.filter(n => new Date(n.starts_at) >= new Date());
 
   // 主催レッスン・イベント一覧（他人のプロフィールでは種類を分けずまとめて出す）
@@ -663,9 +664,9 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   // 自分の参加/主催タブでは、終了したCYPHERのカードは出さない（これから始まる・開催中のものだけ）
   const upcomingJoinedCyphers = joinedCyphers.filter(c => new Date(c.starts_at) >= new Date());
   const upcomingHostedCyphers = hostedCyphers.filter(c => new Date(c.starts_at) >= new Date());
-  // 参加タブも同じく、終了したレッスン・イベントは出さない
+  // 参加タブも同じく、終了したレッスンは出さない（イベントは終了後も残す）
   const joinedPlList = joinedLessons.filter(l => l.kind === "lesson" && new Date(l.starts_at) >= new Date());
-  const joinedEventList = joinedLessons.filter(l => l.kind === "event" && new Date(l.starts_at) >= new Date());
+  const joinedEventList = joinedLessons.filter(l => l.kind === "event");
 
   return (
     <div style={onBack
