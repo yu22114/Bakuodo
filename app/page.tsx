@@ -125,7 +125,31 @@ export default function BakuOdori() {
       setUser(u);
       if (u) { ensureProfile(u); fetchUserData(u); }
     });
-    return () => subscription.unsubscribe();
+    // iPhoneアプリでSafari側のGoogleログインが終わると com.bakuodo.app://login-callback で
+    // アプリに戻ってくる。そのURLに付いてくるログイン情報を受け取り、アプリ内でログイン済みにする
+    let removeUrlListener: (() => void) | undefined;
+    (async () => {
+      const { Capacitor } = await import("@capacitor/core");
+      if (!Capacitor.isNativePlatform()) return;
+      const { App } = await import("@capacitor/app");
+      const { Browser } = await import("@capacitor/browser");
+      const handle = await App.addListener("appUrlOpen", async ({ url }) => {
+        if (!url.startsWith("com.bakuodo.app://login-callback")) return;
+        await Browser.close().catch(() => {});
+        const u = new URL(url);
+        const params = new URLSearchParams(u.hash.slice(1));
+        const accessToken = params.get("access_token");
+        const refreshToken = params.get("refresh_token");
+        const code = u.searchParams.get("code");
+        if (accessToken && refreshToken) {
+          await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        } else if (code) {
+          await supabase.auth.exchangeCodeForSession(code);
+        }
+      });
+      removeUrlListener = () => handle.remove();
+    })();
+    return () => { subscription.unsubscribe(); removeUrlListener?.(); };
   }, []);
 
   // 別のGoogleアカウントに切り替える（団体用・個人用など）。サインアウト後、
@@ -133,6 +157,19 @@ export default function BakuOdori() {
   const handleSwitchAccount = async () => {
     setShowSwitchAccount(false);
     await supabase.auth.signOut();
+    // iPhoneアプリの中ではSafariの画面でログインする（LoginScreenのGoogleログインと同じ理由）
+    const { Capacitor } = await import("@capacitor/core");
+    if (Capacitor.isNativePlatform()) {
+      const { data } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: "com.bakuodo.app://login-callback", skipBrowserRedirect: true, queryParams: { prompt: "select_account" } },
+      });
+      if (data.url) {
+        const { Browser } = await import("@capacitor/browser");
+        await Browser.open({ url: data.url });
+      }
+      return;
+    }
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {

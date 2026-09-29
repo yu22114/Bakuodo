@@ -17,6 +17,20 @@ export function LoginScreen() {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
+    // iPhoneアプリの中では、Googleがアプリ内画面でのログインを禁止しているため
+    // Safariの画面を開いてログインしてもらう。終わるとアプリに戻り、page.tsx側で受け取る
+    const { Capacitor } = await import("@capacitor/core");
+    if (Capacitor.isNativePlatform()) {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: "com.bakuodo.app://login-callback", skipBrowserRedirect: true },
+      });
+      setLoading(false);
+      if (error || !data.url) { showToast("ログインを開始できませんでした"); return; }
+      const { Browser } = await import("@capacitor/browser");
+      await Browser.open({ url: data.url });
+      return;
+    }
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: typeof window !== "undefined" ? window.location.origin : "" },
