@@ -148,7 +148,7 @@ export default function BakuOdori() {
         }
       });
       removeUrlListener = () => handle.remove();
-    })();
+    })().catch(() => {});
     return () => { subscription.unsubscribe(); removeUrlListener?.(); };
   }, []);
 
@@ -158,8 +158,9 @@ export default function BakuOdori() {
     setShowSwitchAccount(false);
     await supabase.auth.signOut();
     // iPhoneアプリの中ではSafariの画面でログインする（LoginScreenのGoogleログインと同じ理由）
-    const { Capacitor } = await import("@capacitor/core");
-    if (Capacitor.isNativePlatform()) {
+    let isNative = false;
+    try { isNative = (await import("@capacitor/core")).Capacitor.isNativePlatform(); } catch {}
+    if (isNative) {
       const { data } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo: "com.bakuodo.app://login-callback", skipBrowserRedirect: true, queryParams: { prompt: "select_account" } },

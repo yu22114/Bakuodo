@@ -19,8 +19,10 @@ export function LoginScreen() {
     setLoading(true);
     // iPhoneアプリの中では、Googleがアプリ内画面でのログインを禁止しているため
     // Safariの画面を開いてログインしてもらう。終わるとアプリに戻り、page.tsx側で受け取る
-    const { Capacitor } = await import("@capacitor/core");
-    if (Capacitor.isNativePlatform()) {
+    // 判定に失敗しても、Webでは今まで通りのログインに進めるようにしておく
+    let isNative = false;
+    try { isNative = (await import("@capacitor/core")).Capacitor.isNativePlatform(); } catch {}
+    if (isNative) {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo: "com.bakuodo.app://login-callback", skipBrowserRedirect: true },
