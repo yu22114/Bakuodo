@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, MapPin, User, X, Check, BookOpen, Share2, Trash2, Bookmark, Download, Loader, Camera } from "lucide-react";
+import { Clock, MapPin, User, X, Check, BookOpen, Share2, Trash2, Bookmark, Download, Loader, Camera, Flag } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { PrivateLesson, ParticipantProfile } from "../lib/types";
@@ -10,6 +10,7 @@ import { hapticTap } from "../lib/haptics";
 import type { EventApplicationAnswers } from "../lib/participation";
 import { ParticipantBar } from "./ParticipantBar";
 import { showToast } from "./Toast";
+import { ReportPostModal } from "./ReportPostModal";
 
 const LEVEL_LABELS: Record<string, string> = {
   all: "全レベル対象",
@@ -304,6 +305,7 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
   const { station, venue } = splitLocation(lesson.location);
   const isEnded = timeUntil(lesson.starts_at) === "終了";
   const isOwn = lesson.organizer.id === user?.id;
+  const [showReport, setShowReport] = useState(false);
   // イベントもこのモーダルを使い回す。色と呼び方だけ切り替える
   const isEvent = lesson.kind === "event";
   const accent = isEvent ? "#EAB308" : "#2563EB";
@@ -610,6 +612,18 @@ export function PLDetailModal({ lesson, onClose, joined, pending, onJoin, onView
                 </div>
               )}
             </div>
+          )}
+
+          {/* 投稿の報告（自分の投稿以外・ログイン中のみ）。Appleの審査で求められる「不適切な投稿を報告できる」機能 */}
+          {user && !isOwn && (
+            <div style={{ marginTop: "20px", textAlign: "right" }}>
+              <button onClick={() => setShowReport(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", display: "inline-flex", alignItems: "center", gap: "4px", padding: "8px 0" }}>
+                <Flag size={11} /> この投稿を報告
+              </button>
+            </div>
+          )}
+          {showReport && user && (
+            <ReportPostModal kind={isEvent ? "EVENT" : "LESSON"} postId={lesson.id} title={lesson.title} organizerId={lesson.organizer.id} reporterId={user.id} onClose={() => setShowReport(false)} />
           )}
 
           <div style={{ marginTop: "28px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "20px" }}>

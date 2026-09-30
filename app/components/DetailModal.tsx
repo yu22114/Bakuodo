@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Clock, MapPin, User, X, Check, Zap, Share2, Trash2, Bookmark } from "lucide-react";
+import { Clock, MapPin, User, X, Check, Zap, Share2, Trash2, Bookmark, Flag } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { Cypher, ParticipantProfile } from "../lib/types";
 import { formatDate, timeUntil, formatEndTime, timeAgo, splitLocation, GENRE_COLORS, genreLabel } from "../lib/constants";
 import { ParticipantBar } from "./ParticipantBar";
 import { showToast } from "./Toast";
+import { ReportPostModal } from "./ReportPostModal";
 import { useComments } from "../lib/useComments";
 import { hapticTap } from "../lib/haptics";
 
@@ -32,6 +33,7 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
   const { station, venue } = splitLocation(cypher.location);
   const isEnded = timeUntil(cypher.starts_at) === "終了";
   const isOwn = organizerId === user?.id;
+  const [showReport, setShowReport] = useState(false);
   // ホーム画面のカードと同じ、背景に敷く色付きジャンル名
   const genreColor = GENRE_COLORS[cypher.genres[0]] ?? "#DC2626";
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
@@ -201,6 +203,18 @@ export function DetailModal({ cypher, onClose, joined, pending, onJoin, onViewPr
               </div>
             );
           })())}
+
+          {/* 投稿の報告（自分の投稿以外・ログイン中のみ）。Appleの審査で求められる「不適切な投稿を報告できる」機能 */}
+          {user && !isOwn && (
+            <div style={{ marginTop: "20px", textAlign: "right" }}>
+              <button onClick={() => setShowReport(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", display: "inline-flex", alignItems: "center", gap: "4px", padding: "8px 0" }}>
+                <Flag size={11} /> この投稿を報告
+              </button>
+            </div>
+          )}
+          {showReport && user && (
+            <ReportPostModal kind={"CYPHER"} postId={cypher.id} title={cypher.title} organizerId={organizerId} reporterId={user.id} onClose={() => setShowReport(false)} />
+          )}
 
           <div style={{ marginTop: "28px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "20px" }}>
             <div style={{ fontSize: "10px", fontFamily: "'Noto Sans JP',sans-serif", color: "#F0F0F0", letterSpacing: "0.15em", marginBottom: "14px" }}>コメント{comments.length > 0 ? ` (${comments.length})` : ""}</div>

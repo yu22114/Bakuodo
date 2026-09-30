@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Calendar, MapPin, User, X, Check, Zap, Share2, Pencil, Trash2, Star, Bookmark, Download, Loader, Hourglass } from "lucide-react";
+import { Calendar, MapPin, User, X, Check, Zap, Share2, Pencil, Trash2, Star, Bookmark, Download, Loader, Hourglass, Flag } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 import type { DanceNumber, ParticipantProfile } from "../lib/types";
@@ -9,6 +9,7 @@ import { useComments } from "../lib/useComments";
 import type { NumberApplicationAnswers } from "../lib/participation";
 import { ParticipantBar } from "./ParticipantBar";
 import { showToast } from "./Toast";
+import { ReportPostModal } from "./ReportPostModal";
 import { hapticTap } from "../lib/haptics";
 
 // 本番当日（"YYYY-MM-DD"）を「9/10(木)」のように短く表示する
@@ -186,6 +187,7 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
   // 募集期限：想定練習期間そのものの終了とは別に、参加受付だけ先に締め切れる
   const recruitmentClosed = !!number.recruitment_deadline && number.recruitment_deadline < todayStr();
   const isOwn = organizerId === user?.id;
+  const [showReport, setShowReport] = useState(false);
   const [participants, setParticipants] = useState<ParticipantProfile[]>([]);
   const [participantsFetched, setParticipantsFetched] = useState(false);
   const [justJoined, setJustJoined] = useState(false);
@@ -408,6 +410,18 @@ export function NumberDetailModal({ number, onClose, joined, onJoin, onViewProfi
                 <Trash2 size={13} /> 削除する
               </button>
             </div>
+          )}
+
+          {/* 投稿の報告（自分の投稿以外・ログイン中のみ）。Appleの審査で求められる「不適切な投稿を報告できる」機能 */}
+          {user && !isOwn && (
+            <div style={{ marginTop: "20px", textAlign: "right" }}>
+              <button onClick={() => setShowReport(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", fontSize: "11px", fontFamily: "'Noto Sans JP',sans-serif", display: "inline-flex", alignItems: "center", gap: "4px", padding: "8px 0" }}>
+                <Flag size={11} /> この投稿を報告
+              </button>
+            </div>
+          )}
+          {showReport && user && (
+            <ReportPostModal kind={"NUMBER"} postId={number.id} title={number.title} organizerId={organizerId} reporterId={user.id} onClose={() => setShowReport(false)} />
           )}
 
           <div style={{ marginTop: "28px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "20px" }}>
