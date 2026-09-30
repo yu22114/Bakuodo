@@ -132,11 +132,8 @@ and recruit dancers for choreography projects.
 
 Please sign in with the demo account above using the email/password form on the login screen.
 
-User-generated content: users can report and block other users
-from the menu (top right) on each user's profile. Reports are reviewed by our team.
+User-generated content: users can report any post ("Report this post" link above the comments
+on each post's detail screen), and report or block other users from the menu (top right) on each
+user's profile. Reports are reviewed by our team.
 Users can delete their account from Profile > Edit Profile > (bottom of the page).
 ```
-
-※ 今の報告機能はユーザー単位だけ（投稿ごとの報告ボタンはない）。Appleのガイドライン1.2は
-「不快な投稿を報告できること」を求めているので、審査で投稿単位の報告を求められる可能性がある。
-その場合は投稿の詳細画面に「報告する」を足す。
