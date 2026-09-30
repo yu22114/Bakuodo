@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import { Logo } from "./Logo";
 import { showToast } from "./Toast";
@@ -14,6 +14,12 @@ export function LoginScreen() {
   // 新規登録後、メール確認が必要な設定（Supabase側のデフォルト）だとまだセッションが無いので、
   // その旨を案内するために出す
   const [signupSent, setSignupSent] = useState(false);
+  // iPhoneアプリの中かどうか。「Appleでサインイン」はアプリの中だけに出す
+  // （Googleログインがあるアプリには、Appleの審査ルールでAppleのログインも必要なため）
+  const [isNative, setIsNative] = useState(false);
+  useEffect(() => {
+    import("@capacitor/core").then(({ Capacitor }) => setIsNative(Capacitor.isNativePlatform())).catch(() => {});
+  }, []);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -37,6 +43,25 @@ export function LoginScreen() {
       provider: "google",
       options: { redirectTo: typeof window !== "undefined" ? window.location.origin : "" },
     });
+  };
+
+  // Appleでサインイン（iPhoneアプリのみ）。iPhone標準のApple ID確認画面が出て、
+  // 受け取った証明書（identityToken）をSupabaseに渡してログインする。
+  // なりすまし防止の合言葉（nonce）は、Appleにはハッシュ化したもの、Supabaseには元のものを渡す決まり
+  const handleAppleLogin = async () => {
+    setLoading(true);
+    try {
+      const rawNonce = crypto.randomUUID();
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(rawNonce));
+      const hashedNonce = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
+      const { SignInWithApple } = await import("@capacitor-community/apple-sign-in");
+      const res = await SignInWithApple.authorize({ clientId: "com.bakuodo.app", redirectURI: "", scopes: "email name", nonce: hashedNonce });
+      const { error } = await supabase.auth.signInWithIdToken({ provider: "apple", token: res.response.identityToken, nonce: rawNonce });
+      if (error) showToast(`ログインに失敗しました: ${error.message}`);
+    } catch {
+      // Apple IDの確認画面でキャンセルした時もここに来る。その場合は何もしない
+    }
+    setLoading(false);
   };
 
   // メールアドレス・パスワードでの登録／ログイン。成功時（確認メール不要な設定、または
@@ -65,6 +90,14 @@ export function LoginScreen() {
         <h1 style={{ margin: 0, lineHeight: 0 }}><Logo size={132} /></h1>
         <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#F0F0F0", fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: "0.1em" }}>今日、ここで、踊ろう。</p>
       </div>
+      {isNative && (
+        <button onClick={handleAppleLogin} disabled={loading}
+          style={{ display: "flex", alignItems: "center", gap: "10px", padding: "14px 24px", marginBottom: "12px", background: "#FFFFFF", border: "none", borderRadius: "6px", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, fontSize: "14px", fontFamily: "-apple-system, 'Noto Sans JP', sans-serif", fontWeight: "bold", color: "#000000", width: "100%", maxWidth: "320px", justifyContent: "center" }}>
+          {/* Appleのロゴ（Appleのデザインルールに合わせ、白地に黒） */}
+          <svg width="16" height="18" viewBox="0 0 814 1000" fill="#000000"><path d="M788 341c-6 4-108 62-108 190 0 148 130 200 134 201-1 3-21 72-69 142-43 62-88 124-156 124s-86-40-165-40c-77 0-104 41-167 41s-106-57-156-128C44 790 0 669 0 555c0-184 120-282 238-282 63 0 115 41 155 41 38 0 97-44 169-44 27 0 126 3 191 71zM554 170c30-35 51-84 51-133 0-7-1-14-2-19-48 2-106 32-140 73-27 31-53 80-53 130 0 8 1 15 2 18 3 1 9 2 14 2 44 0 99-29 128-71z"/></svg>
+          Appleでサインイン
+        </button>
+      )}
       <button
         onClick={handleGoogleLogin}
         disabled={loading}
