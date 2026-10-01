@@ -141,10 +141,17 @@ export default function BakuOdori() {
         const accessToken = params.get("access_token");
         const refreshToken = params.get("refresh_token");
         const code = u.searchParams.get("code");
+        // 失敗した時は理由を出す（何も出ないとログイン画面に戻っただけに見えて原因が分からないため）
+        const errorDescription = params.get("error_description") ?? u.searchParams.get("error_description");
+        if (errorDescription) { showToast(`ログインに失敗しました: ${errorDescription}`); return; }
         if (accessToken && refreshToken) {
-          await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+          const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+          if (error) showToast(`ログインに失敗しました: ${error.message}`);
         } else if (code) {
-          await supabase.auth.exchangeCodeForSession(code);
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) showToast(`ログインに失敗しました: ${error.message}`);
+        } else {
+          showToast("ログイン情報を受け取れませんでした");
         }
       });
       removeUrlListener = () => handle.remove();
