@@ -709,8 +709,9 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
           </button>
         </>)}
         {/* 浮き島の下部ナビに隠れないための余白。投稿するボタンが際どく隠れて
-            見えることがあったので、他画面より少し多めに取る */}
-        <div style={{ height: "110px" }} />
+            見えることがあったので、他画面より少し多めに取る。
+            iPhoneアプリでは下部ナビをホームバーの分だけ上げているので、その分も足す */}
+        <div style={{ height: "calc(110px + env(safe-area-inset-bottom))", flexShrink: 0 }} />
       </div>
     </div>
   );
