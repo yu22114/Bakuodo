@@ -58,8 +58,10 @@ export function LoginScreen() {
       const res = await SignInWithApple.authorize({ clientId: "com.bakuodo.app", redirectURI: "", scopes: "email name", nonce: hashedNonce });
       const { error } = await supabase.auth.signInWithIdToken({ provider: "apple", token: res.response.identityToken, nonce: rawNonce });
       if (error) showToast(`ログインに失敗しました: ${error.message}`);
-    } catch {
-      // Apple IDの確認画面でキャンセルした時もここに来る。その場合は何もしない
+    } catch (e) {
+      // Apple IDの確認画面でキャンセルした時（エラー番号1001）は何も出さない。それ以外は原因を出す
+      const message = e instanceof Error ? e.message : String(e);
+      if (!message.includes("1001")) showToast(`Appleでサインインできませんでした: ${message}`);
     }
     setLoading(false);
   };
