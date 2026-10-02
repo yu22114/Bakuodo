@@ -257,10 +257,11 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
   ];
 
   return (
-    <div className="bd-safe-top" style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div className="bd-safe-top bd-glow-bg" style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden", backgroundColor: "#0A0A0A", backgroundImage: "radial-gradient(circle at center, rgba(168,85,247,0.9) 0%, rgba(168,85,247,0.08) 16%, transparent 32%)" }}>
+      {/* 動く光（.bd-glow-bg）は画面全体の土台に敷く。カメラ・時計の部分まで光が届くようにするため */}
       {/* ホーム画面と同じ、縦横無尽に動く後光っぽい光。マイコミュニティは紫
           （このアプリで既にInstagramリンクなどに使っている「つながり」の色） */}
-      <div ref={scrollShadow.ref} className="bd-scroll bd-glow-bg" style={{ flex: 1, overflowY: "auto", padding: "16px", backgroundColor: "#0A0A0A", backgroundImage: "radial-gradient(circle at center, rgba(168,85,247,0.9) 0%, rgba(168,85,247,0.08) 16%, transparent 32%)" }}>
+      <div ref={scrollShadow.ref} className="bd-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
         {/* アカウント・投稿・アカウント・投稿の順に並べる：各メンバーのすぐ下に、
             そのメンバーが作った掲示板を続けて表示する（自分自身の投稿は先頭にまとめる） */}
         {boards === null || communityMembers === null ? (

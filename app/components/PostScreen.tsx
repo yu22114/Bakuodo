@@ -484,10 +484,12 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
 
   // ホーム画面（TopScreen）と同じく、ヘッダー＋タブは固定し、入力項目だけがスクロールする作りにする
   return (
-    <div className="bd-safe-top" style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div className="bd-safe-top bd-glow-bg" style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden", background: TAB_BG[tab], transition: "background 0.2s" }}>
+      {/* 動く光（.bd-glow-bg）は画面全体の土台に敷く。カメラ・時計の部分まで光が届くようにするため */}
       <div style={{ flexShrink: 0 }}>
         {/* タブはホーム画面と同じ、丸い枠の中で選択中だけ浮くセグメント風 */}
-        <div style={{ padding: "10px 16px", background: "#0D0D0D", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        {/* ホーム画面の見出しと同じく背景を透過させ、奥の光をカメラの部分まで見せる */}
+        <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         {(() => {
           const shownTabs = ([["number", "NUMBER", "#EC4899"], ["event", "EVENT", "#EAB308"], ["cypher", "CYPHER", "#DC2626"], ["pl", "LESSON", "#2563EB"]] as const).filter(([key]) => visibleTabs.includes(key));
           return (
@@ -506,7 +508,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
         })()}
         </div>
       </div>
-      <div className="bd-scroll bd-glow-bg" style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any, background: TAB_BG[tab], transition: "background 0.2s", padding: "20px 16px", display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div className="bd-scroll" style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" as any, padding: "20px 16px", display: "flex", flexDirection: "column", gap: "16px" }}>
         {error && <div style={{ padding: "10px 12px", background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: "6px", color: "#DC2626", fontSize: "12px", fontFamily: "'Noto Sans JP',sans-serif" }}>{error}</div>}
 
         {/* 勝手に前回の入力が入っていると驚くので、復元したことを明示して捨てられるようにする */}
