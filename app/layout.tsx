@@ -11,6 +11,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  // iPhoneアプリで画面いっぱい（カメラ・時計の部分まで）に描くため。カメラの下に来てほしい中身は
+  // .bd-safe-top（globals.css）でその分の余白を取る。ブラウザの縦画面では余白は0なので見た目は変わらない
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

@@ -206,7 +206,7 @@ export function CommunityGenreCardScreen({ card, boardId, isOwn, user, members, 
   };
 
   return (
-    <div {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 160, background: "#000000", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }}>
+    <div className="bd-safe-top" {...swipeBack} style={{ position: "fixed", inset: 0, zIndex: 160, background: "#000000", display: "flex", flexDirection: "column", animation: "slideInRight 0.22s ease-out" }}>
       <div style={{ flexShrink: 0, padding: "24px 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "#0D0D0D", display: "flex", alignItems: "flex-start", gap: "16px", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
         {/* 背景に敷くジャンル名。ホーム画面のCYPHERカードと同じ仕組み（右側に大きく薄く色付き）。
             「その他」の自由記述ジャンルは色を持たないので黒で表示する */}

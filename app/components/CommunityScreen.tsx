@@ -257,7 +257,7 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
   ];
 
   return (
-    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div className="bd-safe-top" style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* ホーム画面と同じ、縦横無尽に動く後光っぽい光。マイコミュニティは紫
           （このアプリで既にInstagramリンクなどに使っている「つながり」の色） */}
       <div ref={scrollShadow.ref} className="bd-scroll bd-glow-bg" style={{ flex: 1, overflowY: "auto", padding: "16px", backgroundColor: "#0A0A0A", backgroundImage: "radial-gradient(circle at center, rgba(168,85,247,0.9) 0%, rgba(168,85,247,0.08) 16%, transparent 32%)" }}>

@@ -669,7 +669,7 @@ export function PublicProfileScreen({ profileId, currentUserId, onBack, onEdit, 
   const joinedEventList = joinedLessons.filter(l => l.kind === "event");
 
   return (
-    <div style={onBack
+    <div className="bd-safe-top" style={onBack
       // 他ユーザーのプロフィールは既存の画面（ホーム画面など）の上に重ねて表示するため、
       // iPhone SafariでグラデーションだけだとGPU合成の癖で背景が一瞬透けて下の画面が
       // うっすら見えることがある。backgroundColorで先に不透明な下地を塗ってから

@@ -484,7 +484,7 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
 
   // ホーム画面（TopScreen）と同じく、ヘッダー＋タブは固定し、入力項目だけがスクロールする作りにする
   return (
-    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div className="bd-safe-top" style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <div style={{ flexShrink: 0 }}>
         {/* タブはホーム画面と同じ、丸い枠の中で選択中だけ浮くセグメント風 */}
         <div style={{ padding: "10px 16px", background: "#0D0D0D", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>

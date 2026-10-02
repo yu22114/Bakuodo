@@ -34,3 +34,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .native-app * {
   overscroll-behavior-y: contain;
 }
+
+/* 画面の上端の余白：背景はカメラ・時計の部分まで描き、中身（見出しやボタン）だけその下から始める。
+   iPhoneアプリでだけ余白が付き、ブラウザの縦画面では 0 になる（layout.tsx の viewportFit: "cover" とセット） */
+.bd-safe-top {
+  padding-top: env(safe-area-inset-top);
+}

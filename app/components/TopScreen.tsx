@@ -408,7 +408,7 @@ export function TopScreen({ onNav, onCardClick, onPLClick, onNumberClick, onView
   return (
     // 画面全体をビューポート高さで固定し、下の「固定ヘッダー＋スクロール領域」に分ける。
     // 浮き島の下部ナビは position:fixed で別レイヤーなのでここでは特に気にしなくていい
-    <div className="bd-glow-bg" style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden", background: SECTION_BG[section], transition: "background 0.2s" }}>
+    <div className="bd-glow-bg bd-safe-top" style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden", background: SECTION_BG[section], transition: "background 0.2s" }}>
     {/* ヘッダー〜タブ〜ジャンルチップはスクロールしない固定エリア。
         奥の光が画面全体に効くよう、この固定エリアの背景も透過させて
         親（上のdiv）の光をそのまま透かして見せる。

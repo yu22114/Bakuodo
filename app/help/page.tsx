@@ -16,7 +16,7 @@ export default function HelpPage() {
   );
 
   return (
-    <div style={{ maxWidth: "480px", margin: "0 auto", padding: "32px 20px 80px", fontFamily: "'Noto Sans JP', sans-serif", color: "#F0F0F0", background: "#000000", minHeight: "100vh" }}>
+    <div style={{ maxWidth: "480px", margin: "0 auto", padding: "calc(32px + env(safe-area-inset-top)) 20px 80px", fontFamily: "'Noto Sans JP', sans-serif", color: "#F0F0F0", background: "#000000", minHeight: "100vh" }}>
       <div style={{ marginBottom: "32px" }}>
         {/* 元いた画面（プロフィールなど）へ戻す。href="/"だとホーム画面に飛んでしまうため、
             ブラウザの履歴を1つ戻すことで、開く前の画面（多くはプロフィール）に復帰させる */}
