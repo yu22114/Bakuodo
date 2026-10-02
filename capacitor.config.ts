@@ -12,6 +12,8 @@ const config: CapacitorConfig = {
     url: "https://bakuodo.vercel.app",
     cleartext: false,
   },
+  // 画面上部（時計・電池の部分）と下部の余白が白く見えないよう、爆踊の背景と同じ黒にする
+  backgroundColor: "#000000",
   ios: {
     contentInset: "automatic",
   },
