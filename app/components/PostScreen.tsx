@@ -710,8 +710,8 @@ export function PostScreen({ onNav, user, initialTab = "cypher", accountType }: 
         </>)}
         {/* 浮き島の下部ナビに隠れないための余白。投稿するボタンが際どく隠れて
             見えることがあったので、他画面より少し多めに取る。
-            iPhoneアプリでは下部ナビをホームバーの分だけ上げているので、その分も足す */}
-        <div style={{ height: "calc(110px + env(safe-area-inset-bottom))", flexShrink: 0 }} />
+            iPhoneアプリでは下部ナビを上げているので少し足す（アプリでは約114px、ブラウザでは今まで通り110px） */}
+        <div style={{ height: "max(110px, calc(80px + env(safe-area-inset-bottom)))", flexShrink: 0 }} />
       </div>
     </div>
   );

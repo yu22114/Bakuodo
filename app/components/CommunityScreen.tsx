@@ -369,9 +369,10 @@ export function CommunityScreen({ user, onOpenBoard, onViewProfile }: {
       {/* 掲示板を作るボタン。ヘッダーを無くした代わりに、右下に浮かぶ丸ボタンとして残す
           （下部ナビと同じく外側は全幅の透明レイヤーにして中央寄せだけ担わせる）。
           以前は団体用アカウントだけだったが、個人用アカウントでも作れるようにした */}
-      {/* iPhoneアプリでは下部ナビをホームバーの分だけ上げているので、このボタンも同じだけ上げる
-          （env(safe-area-inset-bottom) はアプリではホームバーの高さ、ブラウザの縦画面では0） */}
-      <div style={{ position: "fixed", bottom: "calc(88px + env(safe-area-inset-bottom))", left: 0, right: 0, zIndex: 40, display: "flex", justifyContent: "center", pointerEvents: "none" }}>
+      {/* iPhoneアプリでは下部ナビを上げているので、このボタンも上げる（アプリでは下から約106px）。
+          env(safe-area-inset-bottom) はアプリではホームバーの高さ、ブラウザの縦画面では0なので、
+          ブラウザでは今まで通りの88pxになる */}
+      <div style={{ position: "fixed", bottom: "max(88px, calc(72px + env(safe-area-inset-bottom)))", left: 0, right: 0, zIndex: 40, display: "flex", justifyContent: "center", pointerEvents: "none" }}>
         <div style={{ width: "100%", maxWidth: "480px", display: "flex", justifyContent: "space-between", padding: "0 16px" }}>
           {/* 左下：今日が何日かを確認する月間カレンダー（ホーム画面のロゴから開くものと同じ） */}
           <button onClick={() => { setCalendarMonthOffset(0); setShowCalendar(true); }} aria-label="カレンダーを表示"
