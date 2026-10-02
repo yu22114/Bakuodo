@@ -27,3 +27,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   margin-left: 4px;
   padding: 0;
 }
+
+/* iPhoneアプリの中だけ：一覧の一番上・一番下で、一覧の部分だけが跳ね返るようにする。
+   （contain にすると、スクロールが画面全体に伝わらず、その要素自体がバウンドする。
+   画面全体が動かないので、背景の外側の黒が見える境目も出ない） */
+.native-app * {
+  overscroll-behavior-y: contain;
+}

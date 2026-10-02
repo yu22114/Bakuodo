@@ -131,6 +131,8 @@ export default function BakuOdori() {
     (async () => {
       const { Capacitor } = await import("@capacitor/core");
       if (!Capacitor.isNativePlatform()) return;
+      // iPhoneアプリの中だけに効かせる見た目の調整（globals.css の .native-app）用の目印
+      document.documentElement.classList.add("native-app");
       const { App } = await import("@capacitor/app");
       const { Browser } = await import("@capacitor/browser");
       const handle = await App.addListener("appUrlOpen", async ({ url }) => {
