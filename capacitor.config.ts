@@ -16,6 +16,9 @@ const config: CapacitorConfig = {
   backgroundColor: "#000000",
   ios: {
     contentInset: "automatic",
+    // 画面全体はスクロールさせない（背景ごと上下にずれて、画面の外側が見えてしまうため）。
+    // 爆踊の各画面は一覧の部分だけが内側でスクロールする作りなので、一覧は今まで通り動く
+    scrollEnabled: false,
   },
 };
 
