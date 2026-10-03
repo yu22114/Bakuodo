@@ -79,9 +79,9 @@ App Store Connect の各欄にそのまま貼れる形にしてある。文字�
 
 | 欄 | 入れるもの |
 |---|---|
-| サポートURL（必須） | https://bakuodo.vercel.app/help |
-| プライバシーポリシーURL（必須） | https://bakuodo.vercel.app/privacy |
-| マーケティングURL（任意） | https://bakuodo.vercel.app |
+| サポートURL（必須） | https://bakuodo.app/help |
+| プライバシーポリシーURL（必須） | https://bakuodo.app/privacy |
+| マーケティングURL（任意） | https://bakuodo.app |
 
 ---
 

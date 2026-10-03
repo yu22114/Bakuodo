@@ -9,7 +9,7 @@ const config: CapacitorConfig = {
   appName: "爆踊",
   webDir: "public",
   server: {
-    url: "https://bakuodo.vercel.app",
+    url: "https://bakuodo.app",
     cleartext: false,
   },
   // 画面上部（時計・電池の部分）と下部の余白が白く見えないよう、爆踊の背景と同じ黒にする
